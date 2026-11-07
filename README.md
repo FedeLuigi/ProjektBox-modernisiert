@@ -202,4 +202,26 @@ Nicht alles muss über WebSockets laufen. Für Login, Registrierung oder statisc
 
 ---
 
+## ☁️ Deployment auf Render.com (Web Service)
+
+Wenn du das Projekt auf [Render](https://render.com) veröffentlichst, beachte folgende Einstellungen:
+
+### Option A: Automatisches Deployment mit `render.yaml`
+Im Projekt ist eine fertige `render.yaml` hinterlegt. Wenn du das Repository mit Render verknüpfst, wähle **Blueprint** – Render konfiguriert alle Befehle automatisch.
+
+### Option B: Manuelle Konfiguration im Render Dashboard
+Wenn du einen neuen **Web Service** anlegst:
+
+| Feld | Wert | Hinweis |
+| :--- | :--- | :--- |
+| **Root Directory** | *(leer lassen)* | Läuft im Hauptverzeichnis |
+| **Environment** | `Node` | Node.js Runtime |
+| **Build Command** | `npm run build` | **Wichtig!** Baut Client & Server und erzeugt `server/dist/index.js` |
+| **Start Command** | `npm start` | Führt `node server/dist/index.js` aus |
+
+> **Warum der Fehler `Cannot find module '/opt/render/project/src/server/dist/index.js'` auftritt:**  
+> Da der Ordner `dist/` in der `.gitignore` liegt, existiert er im Git-Repository nicht. Wenn bei Render als **Build Command** nur `npm install` statt `npm run build` eingetragen ist, wird TypeScript nicht kompiliert und `server/dist/index.js` wird nicht erstellt. Mit `npm run build` wird der Build-Schritt ordnungsgemäß ausgeführt.
+
+---
+
 Viel Erfolg beim Entwickeln deiner Echtzeit-Webanwendung! 🚀
