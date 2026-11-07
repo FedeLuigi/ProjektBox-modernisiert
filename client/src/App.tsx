@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import {
   ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
-  Swords, Brain, Zap, Puzzle, Clock3, Plus,
+  Brain, Zap, Puzzle, Clock3, Plus,
 } from 'lucide-react';
 
 type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
