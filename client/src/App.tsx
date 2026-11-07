@@ -219,6 +219,7 @@ export function App() {
       document.removeEventListener('gestureend', preventGesture);
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
+      window.removeEventListener('pointerdown', triggerFullscreenLandscape);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
