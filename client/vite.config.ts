@@ -25,7 +25,7 @@ export default defineConfig({
         theme_color: '#faf9f6',
         background_color: '#faf9f6',
         display: 'standalone',
-        orientation: 'portrait-primary',
+        orientation: 'landscape',
         scope: '/',
         start_url: '/',
         categories: ['games', 'entertainment'],

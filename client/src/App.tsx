@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
-  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff
+  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff, Smartphone
 } from 'lucide-react';
 
 type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
@@ -81,8 +81,37 @@ export function App() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   useEffect(() => {
+    // 1. Quermodus-Sperre (Screen Orientation Lock API für installierte PWA & Fullscreen)
+    const tryLockLandscape = async () => {
+      try {
+        const orientation = window.screen?.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+        if (orientation?.lock) {
+          await orientation.lock('landscape');
+        }
+      } catch {
+        // Wird ignoriert, falls Browser / OS im aktuellen Modus keine programmatische Sperre erlaubt
+      }
+    };
+
+    // 2. Prüfen, ob Smartphone im Hochformat gehalten wird
+    const checkOrientation = () => {
+      const isMobile = window.matchMedia('(max-width: 900px)').matches;
+      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+      setIsPortraitMobile(isMobile && isPortrait);
+    };
+
+    checkOrientation();
+    tryLockLandscape();
+
+    // Bei Berührung erneut versuchen (für Browser, die eine Nutzerinteraktion für den Lock verlangen)
+    window.addEventListener('pointerdown', tryLockLandscape, { once: true });
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+
+    // 3. PWA-Events
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -106,6 +135,9 @@ export function App() {
     }
 
     return () => {
+      window.removeEventListener('pointerdown', tryLockLandscape);
+      window.removeEventListener('resize', checkOrientation);
+      window.removeEventListener('orientationchange', checkOrientation);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
       window.removeEventListener('online', handleOnline);
@@ -133,6 +165,31 @@ export function App() {
 
   return (
     <div className="min-h-screen">
+      {isPortraitMobile && (
+        <aside
+          role="status"
+          aria-live="polite"
+          style={{
+            background: 'var(--brand)',
+            color: 'var(--bg)',
+            padding: '10px 16px',
+            fontSize: '12px',
+            fontWeight: 600,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            position: 'sticky',
+            top: 0,
+            zIndex: 100,
+            boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
+          }}
+        >
+          <Smartphone size={16} style={{ transform: 'rotate(90deg)' }} />
+          <span>Für das beste Spielerlebnis: Bitte Gerät ins Querformat drehen</span>
+        </aside>
+      )}
+
       {isOffline && (
         <div style={{
           background: 'var(--surface-alt)',
