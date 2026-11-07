@@ -170,3 +170,84 @@ button { cursor: pointer; }
   .coming-soon > span { display: none; }
   .site-footer { padding: 18px; flex-wrap: wrap; gap: 12px; }
 }
+
+ 
+/* Dark theme */
+:root { color: #eeeaf7; background: #101016; color-scheme: dark; }
+body { background: #101016; color: #eeeaf7; }
+::selection { background: #7956a8; color: #fff; }
+.site-header { border-bottom-color: #292631; }
+.brand-mark { background: #a98bd8; color: #17131f; }
+.brand-light { color: #827b91; }
+.header-nav { color: #9690a2; }
+.header-nav a:hover, .header-nav .nav-active { color: #f4efff; border-color: #b69ae8; }
+.header-action { border-color: #383342; color: #ded8e9; background: #17151e; }
+.header-action:hover { background: #24202d; }
+.eyebrow { color: #91899f; }
+.eyebrow-dot { background: #b99ae9; box-shadow: 0 0 12px #b99ae980; }
+.intro-copy h1 { color: #f1edf7; }
+.intro-copy h1 span { color: #b99be8; }
+.intro-text { color: #aaa4b4; }
+.primary-link { background: #b69ae6; color: #211a2b; }
+.primary-link:hover { background: #c8b2ef; }
+.art-orbit { border-color: #393044; }
+.art-card { box-shadow: 0 18px 55px #0008; }
+.art-card-back { background: #4a3b62; color: #c5a9ef; }
+.art-card-front { background: #785b68; color: #f5d9c9; }
+.art-spark { color: #c1a5ec; }
+.art-pill { border-color: #393243; background: #1d1a25; color: #c3bbce; }
+.featured-section { background: linear-gradient(112deg, #292238, #30253f 58%, #382a46); border: 1px solid #453655; }
+.featured-label { color: #c2a7ed; }
+.featured-copy h2 { color: #f5efff; }
+.featured-copy p { color: #b7adca; }
+.featured-button { background: #c0a3ed; color: #211a2b; }
+.featured-button:hover { background: #d0baf4; }
+.memory-tile { box-shadow: 0 10px 24px #09070d66; }
+.tile-a { background: #76534f; color: #f2c6b4; }
+.tile-b { background: #59476f; color: #ddc9fa; }
+.tile-c { background: #766044; color: #f0d7a8; }
+.tile-d { background: #55485f; color: #e1c9ef; }
+.tile-e { background: #3f6659; color: #c0e2d0; }
+.featured-index { color: #b7a6cd; }
+.section-heading h2 { color: #f0ecf6; }
+.section-subtitle { color: #a39cac; }
+.game-count { color: #8e8798; }
+.game-count span { color: #eeeaf7; }
+.filter-tab { color: #a69fb0; }
+.filter-tab:hover { color: #f0eafa; background: #282430; }
+.filter-tab.active { background: #b69ae6; color: #211a2b; }
+.search-box { border-color: #373240; background: #191720; color: #a99eb9; }
+.search-box input { color: #eeeaf7; }
+.search-box input::placeholder { color: #777181; }
+.search-box kbd { border-color: #393342; color: #898195; }
+.game-card { border-color: #302b38; background: #19171f; }
+.game-card:hover { border-color: #685282; box-shadow: 0 16px 35px #0005; }
+.game-card-content h3 { color: #f0ecf6; }
+.game-card-content p { color: #a39cac; }
+.game-card-meta { color: #817a8d; }
+.game-card-meta span:first-child { color: #c2b8d0; }
+.game-card-footer { border-top-color: #302b37; color: #938b9d; }
+.art-number { color: #2b2533b8; }
+.art-arrow { background: #17131ebd; color: #eee3ff; }
+.game-art.peach { background: #61443f; color: #f0bca8; }
+.game-art.lavender { background: #514365; color: #d1b9f5; }
+.game-art.mint { background: #344f46; color: #a8d6bd; }
+.game-art.blue { background: #354c5d; color: #b0d0e5; }
+.empty-state { color: #a39cac; }
+.empty-state h3 { color: #f0ecf6; }
+.empty-state button { background: #b69ae6; color: #211a2b; }
+.coming-soon { border-color: #393342; }
+.coming-icon { background: #292431; color: #bba2e3; }
+.coming-soon h3 { color: #e8e1f0; }
+.coming-soon p, .coming-soon > span { color: #91899c; }
+.site-footer { border-top-color: #292631; color: #928b9c; }
+.footer-brand { color: #eeeaf7; }
+.footer-brand .brand-mark { background: #a98bd8; color: #17131f; }
+.game-modal { background: #1b1822; color: #eeeaf7; border: 1px solid #393142; }
+.modal-close { color: #b4aabe; }
+.game-modal > p { color: #aaa2b5; }
+.modal-note { background: #292431; color: #c0b6ce; }
+.modal-art.peach { background: #61443f; color: #f0bca8; }
+.modal-art.lavender { background: #514365; color: #d1b9f5; }
+.modal-art.mint { background: #344f46; color: #a8d6bd; }
+.modal-art.blue { background: #354c5d; color: #b0d0e5; }
