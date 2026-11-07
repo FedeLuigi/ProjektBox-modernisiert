@@ -26,7 +26,7 @@ export default defineConfig({
         background_color: '#120e1d',
         display: 'fullscreen',
         display_override: ['fullscreen', 'standalone', 'window-controls-overlay'],
-        orientation: 'landscape',
+        orientation: 'any',
         scope: '/',
         start_url: '/',
         categories: ['games', 'entertainment'],

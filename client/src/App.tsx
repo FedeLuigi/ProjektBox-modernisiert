@@ -78,7 +78,6 @@ export function App() {
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
-  const [isPortraitMobile, setIsPortraitMobile] = useState(false);
 
   // Touch Swipe Koordinaten
   const touchStartX = useRef<number | null>(null);
@@ -122,28 +121,6 @@ export function App() {
     setActiveIndex((prev) => (prev - 1 + games.length) % games.length);
   };
 
-  // Vollbild & Querformat anfordern
-  const triggerFullscreenLandscape = async () => {
-    try {
-      const doc = document.documentElement as HTMLElement & {
-        webkitRequestFullscreen?: () => Promise<void>;
-      };
-      if (!document.fullscreenElement) {
-        if (doc.requestFullscreen) {
-          await doc.requestFullscreen();
-        } else if (doc.webkitRequestFullscreen) {
-          await doc.webkitRequestFullscreen();
-        }
-      }
-      const orientation = window.screen?.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
-      if (orientation?.lock) {
-        await orientation.lock('landscape');
-      }
-    } catch {
-      // Ignorieren falls nicht unterstützt
-    }
-  };
-
   useEffect(() => {
     // 1. Zoom auf Mobilgeräten komplett blockieren
     const preventZoom = (e: TouchEvent) => {
@@ -161,21 +138,7 @@ export function App() {
     document.addEventListener('gesturechange', preventGesture);
     document.addEventListener('gestureend', preventGesture);
 
-    // 2. Querformat-Check
-    const checkOrientation = () => {
-      const isMobile = window.matchMedia('(max-width: 900px)').matches;
-      const isPortrait = window.matchMedia('(orientation: portrait)').matches;
-      setIsPortraitMobile(isMobile && isPortrait);
-    };
-
-    checkOrientation();
-    window.addEventListener('resize', checkOrientation);
-    window.addEventListener('orientationchange', checkOrientation);
-
-    // Bei Berührung Vollbild anfordern
-    window.addEventListener('pointerdown', triggerFullscreenLandscape, { once: true });
-
-    // 3. Tastatur-Steuerung (Pfeiltasten Links/Rechts & Enter zum Starten)
+    // 2. Tastatur-Steuerung (Pfeiltasten Links/Rechts & Enter zum Starten)
     const handleKeyDown = (e: KeyboardEvent) => {
       if (selectedGame) return;
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
@@ -186,14 +149,13 @@ export function App() {
         handlePrevGame();
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        triggerFullscreenLandscape();
         setSelectedGame(activeGame);
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
 
-    // 4. PWA Install Event
+    // 3. PWA Install Event
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -217,9 +179,6 @@ export function App() {
       document.removeEventListener('gesturestart', preventGesture);
       document.removeEventListener('gesturechange', preventGesture);
       document.removeEventListener('gestureend', preventGesture);
-      window.removeEventListener('resize', checkOrientation);
-      window.removeEventListener('orientationchange', checkOrientation);
-      window.removeEventListener('pointerdown', triggerFullscreenLandscape);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', handleAppInstalled);
@@ -263,7 +222,7 @@ export function App() {
 
   return (
     <div
-      className={`app-screen ${isPortraitMobile ? 'force-landscape' : ''}`}
+      className="app-screen"
       onTouchStart={onTouchStart}
       onTouchEnd={onTouchEnd}
     >
@@ -317,10 +276,7 @@ export function App() {
 
             <button
               className="hero-play-button"
-              onClick={() => {
-                triggerFullscreenLandscape();
-                setSelectedGame(activeGame);
-              }}
+              onClick={() => setSelectedGame(activeGame)}
             >
               <Play size={13} fill="currentColor" /> JETZT SPIELEN
             </button>
@@ -364,7 +320,6 @@ export function App() {
                   className={`dock-card ${isCurrent ? 'active' : ''}`}
                   onClick={() => handleSelectGame(index)}
                   onDoubleClick={() => {
-                    triggerFullscreenLandscape();
                     setSelectedGame(game);
                   }}
                 >

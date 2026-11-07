@@ -98,7 +98,6 @@ button { cursor: pointer; }
 .console-stage {
   flex: 1;
   display: grid;
-  grid-template-columns: 1fr 1.35fr;
   gap: 14px;
   padding: 12px 16px;
   align-items: stretch;
@@ -107,7 +106,49 @@ button { cursor: pointer; }
   height: 100dvh;
 }
 
-/* ─── Linke Seite: Hero Showcase Card für das aktive Spiel ─── */
+/* Querformat (Landscape): 2 Spalten nebeneinander */
+@media (orientation: landscape) {
+  .console-stage {
+    grid-template-columns: 1fr 1.35fr;
+  }
+}
+
+/* Hochformat (Portrait): 2 Zeilen übereinander, passt exakt auf einen Bildschirm */
+@media (orientation: portrait) {
+  .console-stage {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1.15fr 1fr;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .hero-showcase {
+    padding: 14px 16px;
+  }
+
+  .hero-icon-large {
+    width: 48px;
+    height: 48px;
+    margin-bottom: 8px;
+  }
+
+  .hero-title {
+    font-size: 21px;
+    margin-bottom: 4px;
+  }
+
+  .hero-description {
+    font-size: 11px;
+    -webkit-line-clamp: 2;
+  }
+
+  .hero-play-button {
+    padding: 8px 16px;
+    font-size: 12px;
+  }
+}
+
+/* ─── Hero Showcase Card für das aktive Spiel ─── */
 .hero-showcase {
   position: relative;
   display: flex;
@@ -555,20 +596,4 @@ button { cursor: pointer; }
   padding: 10px;
   font-size: 12px;
   font-weight: 750;
-}
-
-/* ─── Virtuelles Querformat auf Smartphone im Hochformat ─── */
-@media (max-width: 900px) and (orientation: portrait) {
-  .force-landscape {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vh !important;
-    width: 100dvh !important;
-    height: 100vw !important;
-    height: 100dvw !important;
-    transform-origin: top left !important;
-    transform: rotate(90deg) translateY(-100%) !important;
-    overflow: hidden !important;
-  }
 }
