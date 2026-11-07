@@ -24,7 +24,7 @@ export default defineConfig({
         description: 'Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.',
         theme_color: '#faf9f6',
         background_color: '#faf9f6',
-        display: 'standalone',
+        display: 'fullscreen',
         orientation: 'landscape',
         scope: '/',
         start_url: '/',

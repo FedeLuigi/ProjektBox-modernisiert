@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
-  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff, Smartphone
+  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff, Smartphone,
+  Maximize2, RotateCw
 } from 'lucide-react';
 
 type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
@@ -82,6 +83,29 @@ export function App() {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
+  const [autoForceLandscape, setAutoForceLandscape] = useState(true);
+
+  // Vollbild & Querformat anfordern
+  const triggerFullscreenLandscape = async () => {
+    try {
+      const doc = document.documentElement as HTMLElement & {
+        webkitRequestFullscreen?: () => Promise<void>;
+      };
+      if (!document.fullscreenElement) {
+        if (doc.requestFullscreen) {
+          await doc.requestFullscreen();
+        } else if (doc.webkitRequestFullscreen) {
+          await doc.webkitRequestFullscreen();
+        }
+      }
+      const orientation = window.screen?.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
+      if (orientation?.lock) {
+        await orientation.lock('landscape');
+      }
+    } catch {
+      // Falls vom Browser/OS blockiert (z.B. iOS Safari), bleibt der CSS-Quermodus aktiv
+    }
+  };
 
   useEffect(() => {
     // 1. Quermodus-Sperre (Screen Orientation Lock API für installierte PWA & Fullscreen)
@@ -106,7 +130,7 @@ export function App() {
     checkOrientation();
     tryLockLandscape();
 
-    // Bei Berührung erneut versuchen (für Browser, die eine Nutzerinteraktion für den Lock verlangen)
+    // Bei erster Nutzerberührung versuchen wir direkt Vollbild/Querformat zu sperren
     window.addEventListener('pointerdown', tryLockLandscape, { once: true });
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
@@ -164,7 +188,7 @@ export function App() {
   const featured = games.find((game) => game.featured)!;
 
   return (
-    <div className="min-h-screen">
+    <div className={`min-h-screen ${autoForceLandscape ? 'force-landscape' : ''}`}>
       {isPortraitMobile && (
         <aside
           role="status"
@@ -172,12 +196,12 @@ export function App() {
           style={{
             background: 'var(--brand)',
             color: 'var(--bg)',
-            padding: '10px 16px',
-            fontSize: '12px',
+            padding: '8px 16px',
+            fontSize: '11px',
             fontWeight: 600,
             display: 'flex',
             alignItems: 'center',
-            justifyContent: 'center',
+            justifyContent: 'space-between',
             gap: '8px',
             position: 'sticky',
             top: 0,
@@ -185,8 +209,50 @@ export function App() {
             boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
           }}
         >
-          <Smartphone size={16} style={{ transform: 'rotate(90deg)' }} />
-          <span>Für das beste Spielerlebnis: Bitte Gerät ins Querformat drehen</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Smartphone size={15} style={{ transform: 'rotate(90deg)' }} />
+            <span>{autoForceLandscape ? 'Querformat aktiv' : 'Querformat empfohlen'}</span>
+          </div>
+          <div style={{ display: 'flex', gap: '6px' }}>
+            <button
+              onClick={triggerFullscreenLandscape}
+              style={{
+                background: 'var(--surface-alt)',
+                color: 'var(--text)',
+                border: 'none',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '10px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Vollbildmodus aktivieren"
+            >
+              <Maximize2 size={12} /> Vollbild
+            </button>
+            <button
+              onClick={() => setAutoForceLandscape(!autoForceLandscape)}
+              style={{
+                background: 'transparent',
+                color: 'var(--bg)',
+                border: '1px solid currentColor',
+                borderRadius: '6px',
+                padding: '4px 8px',
+                fontSize: '10px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
+              }}
+              title="Zwischen Querformat und Hochformat umschalten"
+            >
+              <RotateCw size={12} /> {autoForceLandscape ? 'Hochformat' : 'Querformat'}
+            </button>
+          </div>
         </aside>
       )}
 
