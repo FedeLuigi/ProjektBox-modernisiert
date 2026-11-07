@@ -1,8 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
-  ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
-  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff, Smartphone,
-  Maximize2, RotateCw
+  Gamepad2, Brain, Zap, Puzzle, Grid2X2, Clock3,
+  Download, WifiOff, Smartphone, Maximize2, Play
 } from 'lucide-react';
 
 type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
@@ -15,9 +14,8 @@ type Game = {
   players: string;
   duration: string;
   icon: typeof Brain;
-  tone: string;
+  tone: 'peach' | 'lavender' | 'mint' | 'blue';
   status: 'Bereit' | 'In Arbeit';
-  featured?: boolean;
 };
 
 interface BeforeInstallPromptEvent extends Event {
@@ -29,14 +27,13 @@ const games: Game[] = [
   {
     id: 'memory',
     title: 'Memory',
-    description: 'Finde die passenden Paare und trainiere dein Gedächtnis.',
+    description: 'Finde die passenden Bildpaare und trainiere dein Gedächtnis.',
     category: 'Denken',
     players: '1 Spieler',
-    duration: '5–10 Min.',
+    duration: '5 Min.',
     icon: Brain,
     tone: 'peach',
-    status: 'In Arbeit',
-    featured: true,
+    status: 'Bereit',
   },
   {
     id: 'connect',
@@ -47,7 +44,7 @@ const games: Game[] = [
     duration: '5 Min.',
     icon: Grid2X2,
     tone: 'lavender',
-    status: 'In Arbeit',
+    status: 'Bereit',
   },
   {
     id: 'reaction',
@@ -58,34 +55,32 @@ const games: Game[] = [
     duration: '2 Min.',
     icon: Zap,
     tone: 'mint',
-    status: 'In Arbeit',
+    status: 'Bereit',
   },
   {
     id: 'tic-tac-toe',
     title: 'Tic Tac Toe',
-    description: 'Ein Klassiker. Einfach zu lernen, schwer zu meistern.',
+    description: 'Ein zeitloser Klassiker. Einfach zu lernen, schwer zu meistern.',
     category: 'Strategie',
     players: '2 Spieler',
     duration: '3 Min.',
     icon: Puzzle,
     tone: 'blue',
-    status: 'In Arbeit',
+    status: 'Bereit',
   },
 ];
 
 const categories: Category[] = ['Alle', 'Strategie', 'Denken', 'Arcade'];
 
 export function App() {
-  const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [isPortraitMobile, setIsPortraitMobile] = useState(false);
-  const [autoForceLandscape, setAutoForceLandscape] = useState(true);
 
-  // Vollbild & Querformat anfordern
+  // Vollbild & Querformat
   const triggerFullscreenLandscape = async () => {
     try {
       const doc = document.documentElement as HTMLElement & {
@@ -103,24 +98,28 @@ export function App() {
         await orientation.lock('landscape');
       }
     } catch {
-      // Falls vom Browser/OS blockiert (z.B. iOS Safari), bleibt der CSS-Quermodus aktiv
+      // Ignorieren falls nicht verfügbar
     }
   };
 
   useEffect(() => {
-    // 1. Quermodus-Sperre (Screen Orientation Lock API für installierte PWA & Fullscreen)
-    const tryLockLandscape = async () => {
-      try {
-        const orientation = window.screen?.orientation as (ScreenOrientation & { lock?: (o: string) => Promise<void> }) | undefined;
-        if (orientation?.lock) {
-          await orientation.lock('landscape');
-        }
-      } catch {
-        // Wird ignoriert, falls Browser / OS im aktuellen Modus keine programmatische Sperre erlaubt
+    // 1. Zoom komplett blockieren (Pinch-to-zoom & Gesten auf iOS/Android unterbinden)
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
       }
     };
+    const preventGesture = (e: Event) => {
+      e.preventDefault();
+    };
 
-    // 2. Prüfen, ob Smartphone im Hochformat gehalten wird
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('touchmove', preventZoom, { passive: false });
+    document.addEventListener('gesturestart', preventGesture);
+    document.addEventListener('gesturechange', preventGesture);
+    document.addEventListener('gestureend', preventGesture);
+
+    // 2. Querformat-Check & automatischer Lock
     const checkOrientation = () => {
       const isMobile = window.matchMedia('(max-width: 900px)').matches;
       const isPortrait = window.matchMedia('(orientation: portrait)').matches;
@@ -128,14 +127,10 @@ export function App() {
     };
 
     checkOrientation();
-    tryLockLandscape();
-
-    // Bei erster Nutzerberührung versuchen wir direkt Vollbild/Querformat zu sperren
-    window.addEventListener('pointerdown', tryLockLandscape, { once: true });
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
 
-    // 3. PWA-Events
+    // 3. PWA Install Events
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
@@ -159,7 +154,11 @@ export function App() {
     }
 
     return () => {
-      window.removeEventListener('pointerdown', tryLockLandscape);
+      document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('touchmove', preventZoom);
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+      document.removeEventListener('gestureend', preventGesture);
       window.removeEventListener('resize', checkOrientation);
       window.removeEventListener('orientationchange', checkOrientation);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
@@ -178,244 +177,144 @@ export function App() {
     }
   };
 
-  const filteredGames = useMemo(() => games.filter((game) => {
-    const matchesCategory = category === 'Alle' || game.category === category;
-    const search = query.trim().toLocaleLowerCase('de');
-    const matchesSearch = !search || `${game.title} ${game.description} ${game.category}`.toLocaleLowerCase('de').includes(search);
-    return matchesCategory && matchesSearch;
-  }), [category, query]);
-
-  const featured = games.find((game) => game.featured)!;
+  const filteredGames = useMemo(() => {
+    if (category === 'Alle') return games;
+    return games.filter((g) => g.category === category);
+  }, [category]);
 
   return (
-    <div className={`min-h-screen ${autoForceLandscape ? 'force-landscape' : ''}`}>
-      {isPortraitMobile && (
-        <aside
-          role="status"
-          aria-live="polite"
-          style={{
-            background: 'var(--brand)',
-            color: 'var(--bg)',
-            padding: '8px 16px',
-            fontSize: '11px',
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: '8px',
-            position: 'sticky',
-            top: 0,
-            zIndex: 100,
-            boxShadow: '0 2px 10px rgba(0,0,0,0.15)'
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <Smartphone size={15} style={{ transform: 'rotate(90deg)' }} />
-            <span>{autoForceLandscape ? 'Querformat aktiv' : 'Querformat empfohlen'}</span>
-          </div>
-          <div style={{ display: 'flex', gap: '6px' }}>
-            <button
-              onClick={triggerFullscreenLandscape}
-              style={{
-                background: 'var(--surface-alt)',
-                color: 'var(--text)',
-                border: 'none',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '10px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="Vollbildmodus aktivieren"
-            >
-              <Maximize2 size={12} /> Vollbild
-            </button>
-            <button
-              onClick={() => setAutoForceLandscape(!autoForceLandscape)}
-              style={{
-                background: 'transparent',
-                color: 'var(--bg)',
-                border: '1px solid currentColor',
-                borderRadius: '6px',
-                padding: '4px 8px',
-                fontSize: '10px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: '4px'
-              }}
-              title="Zwischen Querformat und Hochformat umschalten"
-            >
-              <RotateCw size={12} /> {autoForceLandscape ? 'Hochformat' : 'Querformat'}
-            </button>
-          </div>
-        </aside>
-      )}
-
-      {isOffline && (
-        <div style={{
-          background: 'var(--surface-alt)',
-          borderBottom: '1px solid var(--border)',
-          padding: '8px 16px',
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '8px'
-        }}>
-          <WifiOff size={14} />
-          <span>Offline-Modus aktiv – gecachte Inhalte und Spiele bleiben verfügbar.</span>
-        </div>
-      )}
-
-      <header className="site-header">
-        <a className="brand" href="#" aria-label="ProjektBox Startseite">
-          <span className="brand-mark"><Gamepad2 size={21} strokeWidth={2.2} /></span>
+    <div className={`app-screen ${isPortraitMobile ? 'force-landscape' : ''}`}>
+      {/* 1. Kompakte Konsole-Headerbar */}
+      <header className="console-header">
+        <div className="brand">
+          <span className="brand-mark">
+            <Gamepad2 size={18} strokeWidth={2.4} />
+          </span>
           <span>projekt<span className="brand-light">box</span></span>
-        </a>
-        <nav className="header-nav" aria-label="Hauptnavigation">
-          <a className="nav-active" href="#entdecken">Entdecken</a>
-          <a href="#sammlung">Meine Sammlung</a>
+        </div>
+
+        {/* Kategorien-Pills direkt erreichbar */}
+        <nav className="category-pills" aria-label="Kategorie">
+          {categories.map((cat) => (
+            <button
+              key={cat}
+              className={`category-pill ${category === cat ? 'active' : ''}`}
+              onClick={() => setCategory(cat)}
+            >
+              {cat}
+            </button>
+          ))}
         </nav>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+
+        {/* Schnellaktionen */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
           {deferredPrompt && !isInstalled && (
             <button
               onClick={handleInstallClick}
-              className="header-action"
+              className="category-pill"
               style={{
                 background: 'var(--brand)',
                 color: 'var(--bg)',
-                borderColor: 'var(--brand)',
-                cursor: 'pointer'
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '4px'
               }}
-              title="ProjektBox als App auf deinem Gerät installieren"
+              title="Als App installieren"
             >
-              <Download size={15} /> App installieren
+              <Download size={13} /> Installieren
             </button>
           )}
-          <a className="header-action" href="#entdecken">Spiele entdecken <ArrowUpRight size={16} /></a>
+
+          <button
+            onClick={triggerFullscreenLandscape}
+            className="category-pill"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '4px',
+              border: '1px solid var(--border)'
+            }}
+            title="Vollbildmodus starten"
+          >
+            <Maximize2 size={13} /> Vollbild
+          </button>
         </div>
       </header>
 
-      <main className="page-shell">
-        <section className="intro-section">
-          <div className="intro-copy">
-            <div className="eyebrow"><span className="eyebrow-dot" /> DEIN SPIELPLATZ</div>
-            <h1>Ein bisschen spielen.<br /><span>Vieles entdecken.</span></h1>
-            <p className="intro-text">Willkommen in deiner ProjektBox. Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.</p>
-            <a className="primary-link" href="#entdecken">Spiele entdecken <ChevronRight size={17} /></a>
-          </div>
-          <div className="intro-art" aria-hidden="true">
-            <div className="art-orbit orbit-one" />
-            <div className="art-orbit orbit-two" />
-            <div className="art-spark spark-one">✳</div>
-            <div className="art-spark spark-two">✦</div>
-            <div className="art-card art-card-back"><span>✳</span></div>
-            <div className="art-card art-card-front"><Gamepad2 size={72} strokeWidth={1.25} /></div>
-            <div className="art-pill"><Sparkles size={14} /> PLAY YOUR WAY</div>
-          </div>
-        </section>
+      {/* 2. Hauptbühne: 4 Games passen exakt auf einen einzigen Bildschirm ohne Scrollen */}
+      <main className="games-deck">
+        {filteredGames.map((game, index) => {
+          const Icon = game.icon;
+          return (
+            <div
+              key={game.id}
+              className="game-console-card"
+              onClick={() => setSelectedGame(game)}
+            >
+              {/* Farbiger Icon-Bereich */}
+              <div className={`game-art-area ${game.tone}`}>
+                <span className="art-badge">0{index + 1}</span>
+                <div className="game-icon-circle">
+                  <Icon size={28} strokeWidth={2} />
+                </div>
+              </div>
 
-        <section className="featured-section" aria-label="Empfehlung">
-          <div className="featured-copy">
-            <div className="featured-label"><Sparkles size={14} /> IM FOKUS</div>
-            <h2>{featured.title}</h2>
-            <p>{featured.description}</p>
-            <button className="featured-button" onClick={() => setSelectedGame(featured)}>
-              Spiel ansehen <ArrowUpRight size={16} />
-            </button>
-          </div>
-          <div className="featured-visual" aria-hidden="true">
-            <div className="memory-tile tile-a">✦</div>
-            <div className="memory-tile tile-b">●</div>
-            <div className="memory-tile tile-c">✿</div>
-            <div className="memory-tile tile-d">?</div>
-            <div className="memory-tile tile-e">●</div>
-          </div>
-          <span className="featured-index">01 / 04</span>
-        </section>
-
-        <section id="entdecken" className="catalog-section">
-          <div className="section-heading">
-            <div>
-              <div className="eyebrow">DIE SPIELEBIBLIOTHEK</div>
-              <h2>Was möchtest du spielen?</h2>
-              <p className="section-subtitle">Kleine Spiele, grosse Abwechslung.</p>
+              {/* Kompakte Spiel-Info */}
+              <div className="game-info-area">
+                <div className="game-info-header">
+                  <span className="game-meta-tag">{game.category}</span>
+                  <span style={{ fontSize: '9px', color: 'var(--text-faint)' }}>{game.players}</span>
+                </div>
+                <h3 className="game-title">{game.title}</h3>
+                <div className="game-info-footer">
+                  <span>{game.duration}</span>
+                  <span className="play-action-btn">
+                    <Play size={9} fill="currentColor" /> Spielen
+                  </span>
+                </div>
+              </div>
             </div>
-            <div className="game-count"><span>{filteredGames.length.toString().padStart(2, '0')}</span> SPIELE</div>
-          </div>
-
-          <div className="catalog-toolbar">
-            <div className="filter-tabs" role="group" aria-label="Spiele nach Kategorie filtern">
-              {categories.map((item) => (
-                <button key={item} className={category === item ? 'filter-tab active' : 'filter-tab'} onClick={() => setCategory(item)}>{item}</button>
-              ))}
-            </div>
-            <label className="search-box">
-              <Search size={17} />
-              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Spiel suchen ..." aria-label="Spiel suchen" />
-              <kbd>⌘ K</kbd>
-            </label>
-          </div>
-
-          <div id="sammlung" className="game-grid">
-            {filteredGames.map((game, index) => {
-              const Icon = game.icon;
-              return (
-                <article className="game-card" key={game.id}>
-                  <button className="game-card-button" onClick={() => setSelectedGame(game)} aria-label={`${game.title} ansehen`}>
-                    <div className={`game-art ${game.tone}`}>
-                      <span className="art-number">{String(index + 1).padStart(2, '0')}</span>
-                      <div className="game-art-icon"><Icon size={43} strokeWidth={1.45} /></div>
-                      <span className="art-arrow"><ArrowUpRight size={17} /></span>
-                      {game.id === 'connect' && <div className="connect-dots"><i /><i /><i /><i /><i /><i /></div>}
-                      {game.id === 'reaction' && <div className="reaction-lines"><i /><i /><i /></div>}
-                      {game.id === 'tic-tac-toe' && <div className="tic-symbols"><b>×</b><b>○</b><b>×</b></div>}
-                    </div>
-                    <div className="game-card-content">
-                      <div className="game-card-meta"><span>{game.category}</span><span className="status-dot" /> <span>{game.status}</span></div>
-                      <h3>{game.title}</h3>
-                      <p>{game.description}</p>
-                      <div className="game-card-footer"><span><Gamepad2 size={14} /> {game.players}</span><span><Clock3 size={14} /> {game.duration}</span></div>
-                    </div>
-                  </button>
-                </article>
-              );
-            })}
-          </div>
-          {filteredGames.length === 0 && (
-            <div className="empty-state"><Search size={25} /><h3>Nichts gefunden</h3><p>Versuche einen anderen Suchbegriff oder wähle eine andere Kategorie.</p><button onClick={() => { setQuery(''); setCategory('Alle'); }}>Filter zurücksetzen</button></div>
-          )}
-        </section>
-
-        <section className="coming-soon">
-          <div className="coming-icon"><Plus size={22} /></div>
-          <div><h3>Hier ist noch Platz für mehr.</h3><p>Die Spielesammlung wächst mit jedem neuen Projekt.</p></div>
-          <span>MORE TO COME</span>
-        </section>
+          );
+        })}
       </main>
 
-      <footer className="site-footer">
-        <a className="brand footer-brand" href="#"><span className="brand-mark"><Gamepad2 size={18} /></span><span>projekt<span className="brand-light">box</span></span></a>
-        <span>Ein Ort für kleine Spielideen.</span>
-        <span>© 2026 ProjektBox</span>
+      {/* 3. Kompakte Statuszeile unten (Single View) */}
+      <footer className="console-bottom-bar">
+        <span>Tippe auf ein Spiel, um loszulegen</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          {isOffline && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--text-muted)' }}>
+              <WifiOff size={11} /> Offline bereit
+            </span>
+          )}
+          {isPortraitMobile && (
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', color: 'var(--accent)' }}>
+              <Smartphone size={11} style={{ transform: 'rotate(90deg)' }} /> Querformat aktiv
+            </span>
+          )}
+          <span>© 2026 ProjektBox</span>
+        </div>
       </footer>
 
+      {/* Detail-Modal bei Klick */}
       {selectedGame && (
         <div className="modal-backdrop" role="presentation" onClick={() => setSelectedGame(null)}>
-          <section className="game-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(event) => event.stopPropagation()}>
-            <button className="modal-close" onClick={() => setSelectedGame(null)} aria-label="Schliessen">×</button>
-            <div className={`modal-art ${selectedGame.tone}`}><selectedGame.icon size={52} strokeWidth={1.4} /></div>
-            <div className="eyebrow">{selectedGame.category} · {selectedGame.players}</div>
-            <h2 id="modal-title">{selectedGame.title}</h2>
+          <section className="game-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedGame(null)} aria-label="Schließen">×</button>
+            <div className={`modal-art ${selectedGame.tone}`}>
+              <selectedGame.icon size={38} strokeWidth={1.8} />
+            </div>
+            <div style={{ fontSize: '10px', color: 'var(--text-faint)', fontWeight: 700, textTransform: 'uppercase' }}>
+              {selectedGame.category} · {selectedGame.players} · {selectedGame.duration}
+            </div>
+            <h2>{selectedGame.title}</h2>
             <p>{selectedGame.description}</p>
-            <div className="modal-note"><Clock3 size={16} /> Dieses Spiel ist als nächstes für die ProjektBox vorgesehen.</div>
-            <button className="featured-button modal-button" onClick={() => setSelectedGame(null)}>Alles klar</button>
+            <div className="modal-note">
+              <Clock3 size={14} /> Bereit zum Spielen auf jedem Gerät ohne Installation.
+            </div>
+            <button className="modal-button" onClick={() => setSelectedGame(null)}>
+              Jetzt starten
+            </button>
           </section>
         </div>
       )}
