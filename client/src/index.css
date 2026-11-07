@@ -407,3 +407,49 @@ button { cursor: pointer; }
     overflow: hidden !important; /* Absolut kein Scrollen */
   }
 }
+
+/* ─── Smartphone Immersive View: Header & Footer komplett ausblenden ─── */
+@media (max-width: 900px), (max-height: 550px) {
+  .console-header,
+  .console-bottom-bar {
+    display: none !important;
+  }
+
+  .games-deck {
+    height: 100% !important;
+    height: 100dvh !important;
+    padding: 8px 12px !important;
+    gap: 10px !important;
+  }
+
+  .game-console-card {
+    border-radius: 12px !important;
+  }
+
+  .game-icon-circle {
+    width: 46px !important;
+    height: 46px !important;
+  }
+
+  .mobile-install-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    position: fixed;
+    top: 8px;
+    right: 10px;
+    z-index: 100;
+    background: var(--brand);
+    color: var(--bg);
+    border: none;
+    border-radius: 20px;
+    padding: 5px 10px;
+    font-size: 10px;
+    font-weight: 750;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+}
+
+.mobile-install-pill {
+  display: none;
+}

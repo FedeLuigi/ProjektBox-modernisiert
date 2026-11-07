@@ -129,6 +129,7 @@ export function App() {
     checkOrientation();
     window.addEventListener('resize', checkOrientation);
     window.addEventListener('orientationchange', checkOrientation);
+    window.addEventListener('pointerdown', triggerFullscreenLandscape, { once: true });
 
     // 3. PWA Install Events
     const handleBeforeInstall = (e: Event) => {
@@ -184,7 +185,18 @@ export function App() {
 
   return (
     <div className={`app-screen ${isPortraitMobile ? 'force-landscape' : ''}`}>
-      {/* 1. Kompakte Konsole-Headerbar */}
+      {/* Mobiler dezenter Install-Button (nur sichtbar, wenn installierbar) */}
+      {deferredPrompt && !isInstalled && (
+        <button
+          onClick={handleInstallClick}
+          className="mobile-install-pill"
+          title="App installieren"
+        >
+          <Download size={11} /> App installieren
+        </button>
+      )}
+
+      {/* 1. Kompakte Konsole-Headerbar (auf Smartphones ausgeblendet) */}
       <header className="console-header">
         <div className="brand">
           <span className="brand-mark">
@@ -249,7 +261,10 @@ export function App() {
             <div
               key={game.id}
               className="game-console-card"
-              onClick={() => setSelectedGame(game)}
+              onClick={() => {
+                triggerFullscreenLandscape();
+                setSelectedGame(game);
+              }}
             >
               {/* Farbiger Icon-Bereich */}
               <div className={`game-art-area ${game.tone}`}>
