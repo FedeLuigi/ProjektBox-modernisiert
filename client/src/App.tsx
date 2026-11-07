@@ -1,180 +1,219 @@
-import { useState, useEffect } from 'react';
-import { socket } from './socket';
-import type { ChatMessage, UserNotification } from './types/socket';
-import { Header } from './components/Header';
-import { ChatDemo } from './components/ChatDemo';
-import { CounterDemo } from './components/CounterDemo';
-import { ApiDemo } from './components/ApiDemo';
-import { TechStackGuide } from './components/TechStackGuide';
-import { Heart, Sparkles, Check } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import {
+  ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
+  Swords, Brain, Zap, Puzzle, Clock3, Plus,
+} from 'lucide-react';
+
+type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
+
+type Game = {
+  id: string;
+  title: string;
+  description: string;
+  category: Exclude<Category, 'Alle'>;
+  players: string;
+  duration: string;
+  icon: typeof Brain;
+  tone: string;
+  status: 'Bereit' | 'In Arbeit';
+  featured?: boolean;
+};
+
+const games: Game[] = [
+  {
+    id: 'memory',
+    title: 'Memory',
+    description: 'Finde die passenden Paare und trainiere dein Gedächtnis.',
+    category: 'Denken',
+    players: '1 Spieler',
+    duration: '5–10 Min.',
+    icon: Brain,
+    tone: 'peach',
+    status: 'In Arbeit',
+    featured: true,
+  },
+  {
+    id: 'connect',
+    title: 'Vier gewinnt',
+    description: 'Denke voraus und bringe vier Steine in eine Reihe.',
+    category: 'Strategie',
+    players: '2 Spieler',
+    duration: '5 Min.',
+    icon: Grid2X2,
+    tone: 'lavender',
+    status: 'In Arbeit',
+  },
+  {
+    id: 'reaction',
+    title: 'Reaktions-Test',
+    description: 'Wie schnell kannst du reagieren? Stelle dich der Challenge.',
+    category: 'Arcade',
+    players: '1 Spieler',
+    duration: '2 Min.',
+    icon: Zap,
+    tone: 'mint',
+    status: 'In Arbeit',
+  },
+  {
+    id: 'tic-tac-toe',
+    title: 'Tic Tac Toe',
+    description: 'Ein Klassiker. Einfach zu lernen, schwer zu meistern.',
+    category: 'Strategie',
+    players: '2 Spieler',
+    duration: '3 Min.',
+    icon: Puzzle,
+    tone: 'blue',
+    status: 'In Arbeit',
+  },
+];
+
+const categories: Category[] = ['Alle', 'Strategie', 'Denken', 'Arcade'];
 
 export function App() {
-  const [isConnected, setIsConnected] = useState<boolean>(socket.connected);
-  const [socketId, setSocketId] = useState<string | null>(socket.id || null);
-  const [userCount, setUserCount] = useState<number>(1);
-  const [counter, setCounter] = useState<number>(0);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [notifications, setNotifications] = useState<UserNotification[]>([]);
-  const [latency, setLatency] = useState<number | null>(null);
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState<Category>('Alle');
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
 
-  useEffect(() => {
-    // Verbindungs-Events
-    function onConnect() {
-      setIsConnected(true);
-      setSocketId(socket.id || null);
-    }
+  const filteredGames = useMemo(() => games.filter((game) => {
+    const matchesCategory = category === 'Alle' || game.category === category;
+    const search = query.trim().toLocaleLowerCase('de');
+    const matchesSearch = !search || `${game.title} ${game.description} ${game.category}`.toLocaleLowerCase('de').includes(search);
+    return matchesCategory && matchesSearch;
+  }), [category, query]);
 
-    function onDisconnect() {
-      setIsConnected(false);
-      setSocketId(null);
-      setLatency(null);
-    }
-
-    // Server-Events
-    function onUserCount(count: number) {
-      setUserCount(count);
-    }
-
-    function onCounterUpdated(count: number) {
-      setCounter(count);
-    }
-
-    function onReceiveMessage(message: ChatMessage) {
-      setMessages((prev) => {
-        // Duplikate vermeiden
-        if (prev.some((m) => m.id === message.id)) return prev;
-        return [...prev, message];
-      });
-    }
-
-    function onUserNotification(notification: UserNotification) {
-      setNotifications((prev) => [...prev.slice(-4), notification]);
-      // Nach 4 Sekunden wieder ausblenden
-      setTimeout(() => {
-        setNotifications((prev) => prev.filter((n) => n !== notification));
-      }, 4000);
-    }
-
-    function onPong(clientTimestamp: number) {
-      const pingDuration = Date.now() - clientTimestamp;
-      setLatency(pingDuration);
-    }
-
-    // Event Listener registrieren
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('userCount', onUserCount);
-    socket.on('counterUpdated', onCounterUpdated);
-    socket.on('receiveMessage', onReceiveMessage);
-    socket.on('userNotification', onUserNotification);
-    socket.on('pong', onPong);
-
-    // Initialer Zustand abfragen, falls bereits verbunden
-    if (socket.connected) {
-      onConnect();
-    }
-
-    // Regelmäßige Ping-Messung (alle 4 Sekunden)
-    const pingInterval = setInterval(() => {
-      if (socket.connected) {
-        socket.emit('ping', Date.now());
-      }
-    }, 4000);
-
-    // Aufräumen beim Entladen der Komponente
-    return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('userCount', onUserCount);
-      socket.off('counterUpdated', onCounterUpdated);
-      socket.off('receiveMessage', onReceiveMessage);
-      socket.off('userNotification', onUserNotification);
-      socket.off('pong', onPong);
-      clearInterval(pingInterval);
-    };
-  }, []);
+  const featured = games.find((game) => game.featured)!;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800">
-      {/* Kopfzeile */}
-      <Header
-        isConnected={isConnected}
-        userCount={userCount}
-        latency={latency}
-        socketId={socketId}
-      />
+    <div className="min-h-screen bg-[#faf9f6] text-[#252522]">
+      <header className="site-header">
+        <a className="brand" href="#" aria-label="ProjektBox Startseite">
+          <span className="brand-mark"><Gamepad2 size={21} strokeWidth={2.2} /></span>
+          <span>projekt<span className="brand-light">box</span></span>
+        </a>
+        <nav className="header-nav" aria-label="Hauptnavigation">
+          <a className="nav-active" href="#entdecken">Entdecken</a>
+          <a href="#sammlung">Meine Sammlung</a>
+        </nav>
+        <a className="header-action" href="#entdecken">Spiele entdecken <ArrowUpRight size={16} /></a>
+      </header>
 
-      {/* Hauptbereich */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-        {/* Begrüßungs-Banner */}
-        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-700 via-indigo-600 to-violet-600 p-6 sm:p-8 text-white shadow-lg shadow-indigo-100">
-          <div className="relative z-10 max-w-3xl space-y-3">
-            <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-xs font-semibold text-indigo-100">
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-              <span>Einsteigerfreundliches Fullstack Boilerplate</span>
+      <main className="page-shell">
+        <section className="intro-section">
+          <div className="intro-copy">
+            <div className="eyebrow"><span className="eyebrow-dot" /> DEIN SPIELPLATZ</div>
+            <h1>Ein bisschen spielen.<br /><span>Vieles entdecken.</span></h1>
+            <p className="intro-text">Willkommen in deiner ProjektBox. Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.</p>
+            <a className="primary-link" href="#entdecken">Spiele entdecken <ChevronRight size={17} /></a>
+          </div>
+          <div className="intro-art" aria-hidden="true">
+            <div className="art-orbit orbit-one" />
+            <div className="art-orbit orbit-two" />
+            <div className="art-spark spark-one">✳</div>
+            <div className="art-spark spark-two">✦</div>
+            <div className="art-card art-card-back"><span>✳</span></div>
+            <div className="art-card art-card-front"><Gamepad2 size={72} strokeWidth={1.25} /></div>
+            <div className="art-pill"><Sparkles size={14} /> PLAY YOUR WAY</div>
+          </div>
+        </section>
+
+        <section className="featured-section" aria-label="Empfehlung">
+          <div className="featured-copy">
+            <div className="featured-label"><Sparkles size={14} /> IM FOKUS</div>
+            <h2>{featured.title}</h2>
+            <p>{featured.description}</p>
+            <button className="featured-button" onClick={() => setSelectedGame(featured)}>
+              Spiel ansehen <ArrowUpRight size={16} />
+            </button>
+          </div>
+          <div className="featured-visual" aria-hidden="true">
+            <div className="memory-tile tile-a">✦</div>
+            <div className="memory-tile tile-b">●</div>
+            <div className="memory-tile tile-c">✿</div>
+            <div className="memory-tile tile-d">?</div>
+            <div className="memory-tile tile-e">●</div>
+          </div>
+          <span className="featured-index">01 / 04</span>
+        </section>
+
+        <section id="entdecken" className="catalog-section">
+          <div className="section-heading">
+            <div>
+              <div className="eyebrow">DIE SPIELEBIBLIOTHEK</div>
+              <h2>Was möchtest du spielen?</h2>
+              <p className="section-subtitle">Kleine Spiele, grosse Abwechslung.</p>
             </div>
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight">
-              Echtzeit-Webanwendungen mit React & Socket.io
-            </h1>
-            <p className="text-indigo-100 text-sm sm:text-base leading-relaxed">
-              Dieses Boilerplate kombiniert moderne Webtechnologien in einer sauberen, modularen Struktur.
-              Alle Komponenten sind sofort einsatzbereit, typisiert und mit nützlichen Kommentaren versehen.
-            </p>
-            <div className="pt-2 flex flex-wrap gap-2 text-xs font-medium">
-              <span className="bg-white/10 px-2.5 py-1 rounded-md flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> React 19 + Vite
-              </span>
-              <span className="bg-white/10 px-2.5 py-1 rounded-md flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> Tailwind CSS + Lucide
-              </span>
-              <span className="bg-white/10 px-2.5 py-1 rounded-md flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> Node + Express + TypeScript
-              </span>
-              <span className="bg-white/10 px-2.5 py-1 rounded-md flex items-center gap-1">
-                <Check className="w-3.5 h-3.5 text-emerald-400" /> Socket.io WebSockets
-              </span>
+            <div className="game-count"><span>{filteredGames.length.toString().padStart(2, '0')}</span> SPIELE</div>
+          </div>
+
+          <div className="catalog-toolbar">
+            <div className="filter-tabs" role="group" aria-label="Spiele nach Kategorie filtern">
+              {categories.map((item) => (
+                <button key={item} className={category === item ? 'filter-tab active' : 'filter-tab'} onClick={() => setCategory(item)}>{item}</button>
+              ))}
             </div>
+            <label className="search-box">
+              <Search size={17} />
+              <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="Spiel suchen ..." aria-label="Spiel suchen" />
+              <kbd>⌘ K</kbd>
+            </label>
           </div>
 
-          {/* Deko-Effekt im Hintergrund */}
-          <div className="absolute -right-12 -bottom-12 w-64 h-64 rounded-full bg-white/5 blur-2xl pointer-events-none" />
-        </div>
-
-        {/* Interaktive Demo-Widgets */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Linke Spalte: Echtzeit-Chat (7 Spalten) */}
-          <div className="lg:col-span-7">
-            <ChatDemo
-              messages={messages}
-              notifications={notifications}
-              isConnected={isConnected}
-            />
+          <div id="sammlung" className="game-grid">
+            {filteredGames.map((game, index) => {
+              const Icon = game.icon;
+              return (
+                <article className="game-card" key={game.id}>
+                  <button className="game-card-button" onClick={() => setSelectedGame(game)} aria-label={`${game.title} ansehen`}>
+                    <div className={`game-art ${game.tone}`}>
+                      <span className="art-number">{String(index + 1).padStart(2, '0')}</span>
+                      <div className="game-art-icon"><Icon size={43} strokeWidth={1.45} /></div>
+                      <span className="art-arrow"><ArrowUpRight size={17} /></span>
+                      {game.id === 'connect' && <div className="connect-dots"><i /><i /><i /><i /><i /><i /></div>}
+                      {game.id === 'reaction' && <div className="reaction-lines"><i /><i /><i /></div>}
+                      {game.id === 'tic-tac-toe' && <div className="tic-symbols"><b>×</b><b>○</b><b>×</b></div>}
+                    </div>
+                    <div className="game-card-content">
+                      <div className="game-card-meta"><span>{game.category}</span><span className="status-dot" /> <span>{game.status}</span></div>
+                      <h3>{game.title}</h3>
+                      <p>{game.description}</p>
+                      <div className="game-card-footer"><span><Gamepad2 size={14} /> {game.players}</span><span><Clock3 size={14} /> {game.duration}</span></div>
+                    </div>
+                  </button>
+                </article>
+              );
+            })}
           </div>
+          {filteredGames.length === 0 && (
+            <div className="empty-state"><Search size={25} /><h3>Nichts gefunden</h3><p>Versuche einen anderen Suchbegriff oder wähle eine andere Kategorie.</p><button onClick={() => { setQuery(''); setCategory('Alle'); }}>Filter zurücksetzen</button></div>
+          )}
+        </section>
 
-          {/* Rechte Spalte: Live-Zähler & REST-API Tester (5 Spalten) */}
-          <div className="lg:col-span-5 space-y-6">
-            <CounterDemo count={counter} isConnected={isConnected} />
-            <ApiDemo />
-          </div>
-        </div>
-
-        {/* Struktur & Entwickler-Guide */}
-        <TechStackGuide />
+        <section className="coming-soon">
+          <div className="coming-icon"><Plus size={22} /></div>
+          <div><h3>Hier ist noch Platz für mehr.</h3><p>Die Spielesammlung wächst mit jedem neuen Projekt.</p></div>
+          <span>MORE TO COME</span>
+        </section>
       </main>
 
-      {/* Fußzeile */}
-      <footer className="border-t border-slate-200 bg-white py-6 mt-12 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-3">
-          <p className="flex items-center gap-1">
-            Erstellt mit <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500 inline" /> für einen einfachen Start in moderne Fullstack-Entwicklung.
-          </p>
-          <div className="flex items-center gap-4 text-slate-400">
-            <span>Client: Port 5173</span>
-            <span>•</span>
-            <span>Server: Port 5000</span>
-          </div>
-        </div>
+      <footer className="site-footer">
+        <a className="brand footer-brand" href="#"><span className="brand-mark"><Gamepad2 size={18} /></span><span>projekt<span className="brand-light">box</span></span></a>
+        <span>Ein Ort für kleine Spielideen.</span>
+        <span>© 2026 ProjektBox</span>
       </footer>
+
+      {selectedGame && (
+        <div className="modal-backdrop" role="presentation" onClick={() => setSelectedGame(null)}>
+          <section className="game-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" onClick={(event) => event.stopPropagation()}>
+            <button className="modal-close" onClick={() => setSelectedGame(null)} aria-label="Schliessen">×</button>
+            <div className={`modal-art ${selectedGame.tone}`}><selectedGame.icon size={52} strokeWidth={1.4} /></div>
+            <div className="eyebrow">{selectedGame.category} · {selectedGame.players}</div>
+            <h2 id="modal-title">{selectedGame.title}</h2>
+            <p>{selectedGame.description}</p>
+            <div className="modal-note"><Clock3 size={16} /> Dieses Spiel ist als nächstes für die ProjektBox vorgesehen.</div>
+            <button className="featured-button modal-button" onClick={() => setSelectedGame(null)}>Alles klar</button>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
