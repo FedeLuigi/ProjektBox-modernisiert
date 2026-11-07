@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d2244" />
+      <stop offset="50%" stop-color="#1f1830" />
+      <stop offset="100%" stop-color="#120e1d" />
+    </linearGradient>
+    <linearGradient id="pad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#caa7fc" />
+      <stop offset="100%" stop-color="#9d76db" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="16" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="512" height="512" rx="112" fill="url(#bg)" />
+  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#684f8e" stroke-opacity="0.4" stroke-width="4" />
+
+  <!-- Soft glow behind controller -->
+  <circle cx="256" cy="256" r="140" fill="#a885e3" opacity="0.18" filter="url(#glow)" />
+
+  <!-- Gamepad Body -->
+  <g transform="translate(96, 126)" fill="none" stroke="url(#pad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <!-- Controller outline -->
+    <path d="M48 92 C48 36, 92 16, 160 16 C228 16, 272 36, 272 92 L296 200 C306 244, 256 264, 224 220 L196 182 L124 182 L96 220 C64 264, 14 244, 24 200 Z" />
+    
+    <!-- D-Pad (Left) -->
+    <path d="M84 74 L84 114" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
+    <path d="M64 94 L104 94" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
+    
+    <!-- Action Buttons (Right) -->
+    <circle cx="216" cy="74" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="236" cy="94" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="196" cy="94" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="216" cy="114" r="10" fill="#ffffff" stroke="none" />
+  </g>
+
+  <!-- Subtle spark -->
+  <text x="390" y="110" font-size="42" fill="#caa7fc" opacity="0.8" font-family="sans-serif">✦</text>
+  <text x="90" y="430" font-size="32" fill="#caa7fc" opacity="0.5" font-family="sans-serif">✳</text>
+</svg>

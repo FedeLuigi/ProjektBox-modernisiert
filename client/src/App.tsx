@@ -1,7 +1,7 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   ArrowUpRight, ChevronRight, Gamepad2, Grid2X2, Search, Sparkles,
-  Brain, Zap, Puzzle, Clock3, Plus,
+  Brain, Zap, Puzzle, Clock3, Plus, Download, WifiOff
 } from 'lucide-react';
 
 type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
@@ -18,6 +18,11 @@ type Game = {
   status: 'Bereit' | 'In Arbeit';
   featured?: boolean;
 };
+
+interface BeforeInstallPromptEvent extends Event {
+  prompt: () => Promise<void>;
+  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
 
 const games: Game[] = [
   {
@@ -73,6 +78,49 @@ export function App() {
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isInstalled, setIsInstalled] = useState(false);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  useEffect(() => {
+    const handleBeforeInstall = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e as BeforeInstallPromptEvent);
+    };
+
+    const handleAppInstalled = () => {
+      setIsInstalled(true);
+      setDeferredPrompt(null);
+    };
+
+    const handleOnline = () => setIsOffline(false);
+    const handleOffline = () => setIsOffline(true);
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
+    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setIsInstalled(true);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
+      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const handleInstallClick = async () => {
+    if (!deferredPrompt) return;
+    await deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    if (outcome === 'accepted') {
+      setDeferredPrompt(null);
+    }
+  };
 
   const filteredGames = useMemo(() => games.filter((game) => {
     const matchesCategory = category === 'Alle' || game.category === category;
@@ -85,6 +133,23 @@ export function App() {
 
   return (
     <div className="min-h-screen">
+      {isOffline && (
+        <div style={{
+          background: 'var(--surface-alt)',
+          borderBottom: '1px solid var(--border)',
+          padding: '8px 16px',
+          fontSize: '12px',
+          color: 'var(--text-muted)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px'
+        }}>
+          <WifiOff size={14} />
+          <span>Offline-Modus aktiv – gecachte Inhalte und Spiele bleiben verfügbar.</span>
+        </div>
+      )}
+
       <header className="site-header">
         <a className="brand" href="#" aria-label="ProjektBox Startseite">
           <span className="brand-mark"><Gamepad2 size={21} strokeWidth={2.2} /></span>
@@ -94,7 +159,24 @@ export function App() {
           <a className="nav-active" href="#entdecken">Entdecken</a>
           <a href="#sammlung">Meine Sammlung</a>
         </nav>
-        <a className="header-action" href="#entdecken">Spiele entdecken <ArrowUpRight size={16} /></a>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          {deferredPrompt && !isInstalled && (
+            <button
+              onClick={handleInstallClick}
+              className="header-action"
+              style={{
+                background: 'var(--brand)',
+                color: 'var(--bg)',
+                borderColor: 'var(--brand)',
+                cursor: 'pointer'
+              }}
+              title="ProjektBox als App auf deinem Gerät installieren"
+            >
+              <Download size={15} /> App installieren
+            </button>
+          )}
+          <a className="header-action" href="#entdecken">Spiele entdecken <ArrowUpRight size={16} /></a>
+        </div>
       </header>
 
       <main className="page-shell">

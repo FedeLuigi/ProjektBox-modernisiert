@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <defs>
+    <linearGradient id="bg-192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#2d2244" />
+      <stop offset="50%" stop-color="#1f1830" />
+      <stop offset="100%" stop-color="#120e1d" />
+    </linearGradient>
+    <linearGradient id="pad-192" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#caa7fc" />
+      <stop offset="100%" stop-color="#9d76db" />
+    </linearGradient>
+  </defs>
+
+  <!-- Background -->
+  <rect width="192" height="192" rx="42" fill="url(#bg-192)" />
+  <rect width="188" height="188" x="2" y="2" rx="40" fill="none" stroke="#684f8e" stroke-opacity="0.4" stroke-width="2" />
+
+  <!-- Gamepad Body -->
+  <g transform="translate(36, 48) scale(0.375)" fill="none" stroke="url(#pad-192)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M48 92 C48 36, 92 16, 160 16 C228 16, 272 36, 272 92 L296 200 C306 244, 256 264, 224 220 L196 182 L124 182 L96 220 C64 264, 14 244, 24 200 Z" />
+    <path d="M84 74 L84 114" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
+    <path d="M64 94 L104 94" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
+    <circle cx="216" cy="74" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="236" cy="94" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="196" cy="94" r="10" fill="#ffffff" stroke="none" />
+    <circle cx="216" cy="114" r="10" fill="#ffffff" stroke="none" />
+  </g>
+</svg>
