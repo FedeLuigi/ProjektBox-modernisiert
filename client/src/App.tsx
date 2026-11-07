@@ -84,7 +84,7 @@ export function App() {
   const featured = games.find((game) => game.featured)!;
 
   return (
-    <div className="min-h-screen bg-[#faf9f6] text-[#252522]">
+    <div className="min-h-screen">
       <header className="site-header">
         <a className="brand" href="#" aria-label="ProjektBox Startseite">
           <span className="brand-mark"><Gamepad2 size={21} strokeWidth={2.2} /></span>
