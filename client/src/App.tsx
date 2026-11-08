@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Download } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Download } from 'lucide-react';
 import {
   CATEGORIES,
   type Category,
   GAMES,
   type Game,
+  TONE_STYLES,
 } from './data/games';
 import { GameCard } from './components/GameCard';
 import { GameSheet } from './components/GameSheet';
@@ -23,6 +24,9 @@ export function App() {
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
 
+  // Echtzeit-Wischgeste (Diashow Drag)
+  const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const touchStartX = useRef<number | null>(null);
   const touchStartY = useRef<number | null>(null);
 
@@ -33,6 +37,7 @@ export function App() {
 
   const safeIndex = activeIndex >= games.length ? 0 : activeIndex;
   const activeGame = games[safeIndex] || games[0];
+  const activeStyle = TONE_STYLES[activeGame.tone];
 
   const triggerHaptic = () => {
     try {
@@ -45,7 +50,7 @@ export function App() {
   };
 
   const handleSelectGame = (index: number) => {
-    if (index !== safeIndex) {
+    if (index !== safeIndex && index >= 0 && index < games.length) {
       triggerHaptic();
       setActiveIndex(index);
     }
@@ -126,15 +131,33 @@ export function App() {
     };
   }, [games, safeIndex, selectedGame, activeGame, showSplash]);
 
+  // Diashow Touch-Steuerung mit Live-Mitziehen
   const onTouchStart = (e: React.TouchEvent) => {
-    if (showSplash) return;
+    if (showSplash || selectedGame) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
+    setIsDragging(true);
+  };
+
+  const onTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging || touchStartX.current === null || touchStartY.current === null) return;
+    const currentX = e.touches[0].clientX;
+    const currentY = e.touches[0].clientY;
+    const diffX = currentX - touchStartX.current;
+    const diffY = currentY - touchStartY.current;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      setDragX(diffX * 0.75);
+    }
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
-    if (showSplash) return;
-    if (touchStartX.current === null || touchStartY.current === null) return;
+    if (showSplash || selectedGame || touchStartX.current === null || touchStartY.current === null) {
+      setIsDragging(false);
+      setDragX(0);
+      return;
+    }
+
     const diffX = touchStartX.current - e.changedTouches[0].clientX;
     const diffY = touchStartY.current - e.changedTouches[0].clientY;
 
@@ -143,6 +166,8 @@ export function App() {
       else handlePrev();
     }
 
+    setIsDragging(false);
+    setDragX(0);
     touchStartX.current = null;
     touchStartY.current = null;
   };
@@ -154,27 +179,20 @@ export function App() {
     if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
-  // Proportionales Grid für Hoch- und Querformat (verhindert zu breites Ziehen im Querformat)
-  const gridClass =
-    games.length === 1
-      ? 'grid-cols-1 grid-rows-1 max-w-sm mx-auto w-full'
-      : games.length === 2
-        ? 'portrait:grid-cols-1 portrait:grid-rows-2 landscape:grid-cols-2 landscape:grid-rows-1 max-w-2xl mx-auto w-full'
-        : 'portrait:grid-cols-2 portrait:grid-rows-2 landscape:grid-cols-4 landscape:grid-rows-1 w-full';
-
   return (
     <div
       onTouchStart={onTouchStart}
+      onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
       className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7] dark:bg-[#0B0B0F] text-[#1C1C1E] dark:text-white select-none"
     >
       {/* ─── Animierter Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* ─── Vollflächiger Haupt-Container mit luftigen Abständen ─── */}
-      <div className="flex h-full w-full flex-col justify-between gap-4 sm:gap-6 p-4 sm:p-6 overflow-hidden">
-        {/* 1. OBERE LEISTE: Nur der zentrierte iOS Kategorie-Filter (ohne Logo/Titel) */}
-        <header className="relative flex shrink-0 items-center justify-center">
+      {/* ─── Haupt-Container mit sicherem Abstand zur iPhone 11 Notch / Lautsprecher ─── */}
+      <div className="safe-screen flex h-full w-full flex-col justify-between overflow-hidden">
+        {/* 1. OBERE LEISTE: Zentrierter iOS Kategorie-Filter */}
+        <header className="relative z-30 flex shrink-0 items-center justify-center">
           <nav
             role="tablist"
             aria-label="Spielkategorien"
@@ -189,7 +207,7 @@ export function App() {
                   aria-selected={isSelected}
                   type="button"
                   onClick={() => handleSelectCategory(cat)}
-                  className={`rounded-full px-3.5 py-1.5 sm:px-4 sm:py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all duration-200 cursor-pointer ${
                     isSelected
                       ? 'bg-white dark:bg-[#2C2C2E] text-[#1C1C1E] dark:text-white shadow-[0_2px_8px_rgba(0,0,0,0.08)]'
                       : 'text-[#6C6C70] dark:text-[#98989D] hover:text-[#1C1C1E] dark:hover:text-white'
@@ -214,18 +232,87 @@ export function App() {
           )}
         </header>
 
-        {/* 2. HAUPTBÜHNE: Luftiges Spiele-Grid über den gesamten Bildschirm */}
-        <main className={`grid flex-1 min-h-0 gap-4 sm:gap-5 ${gridClass}`}>
-          {games.map((game, index) => (
-            <GameCard
-              key={game.id}
-              game={game}
-              isActive={index === safeIndex}
-              onSelect={() => handleSelectGame(index)}
-              onPlay={() => setSelectedGame(game)}
-            />
-          ))}
+        {/* 2. MITTE: Kompakte, wischbare Diashow (Carousel) */}
+        <main className="relative flex flex-1 min-h-0 w-full items-center justify-center overflow-visible">
+          {/* Links-Pfeil (bei mehr als 1 Spiel) */}
+          {games.length > 1 && (
+            <button
+              type="button"
+              onClick={handlePrev}
+              aria-label="Vorheriges Spiel"
+              className="absolute left-0 sm:left-4 z-30 grid h-10 w-10 place-items-center rounded-full bg-white/85 dark:bg-[#1C1C1E]/90 text-[#1C1C1E] dark:text-white shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-90 cursor-pointer"
+            >
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+          )}
+
+          {/* Diashow-Kartenbühne */}
+          <div className="relative flex h-full w-full items-center justify-center">
+            {games.map((game, index) => {
+              const offset = index - safeIndex;
+              const isVisible = Math.abs(offset) <= 1;
+
+              return (
+                <div
+                  key={game.id}
+                  style={{
+                    transform: `translate3d(calc(${offset * 106}% + ${dragX}px), 0, 0)`,
+                    transition: isDragging
+                      ? 'none'
+                      : 'transform 360ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease',
+                  }}
+                  className={`absolute flex items-center justify-center ${
+                    isVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                  }`}
+                >
+                  <GameCard
+                    game={game}
+                    isActive={index === safeIndex}
+                    onSelect={() => handleSelectGame(index)}
+                    onPlay={() => setSelectedGame(game)}
+                  />
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Rechts-Pfeil (bei mehr als 1 Spiel) */}
+          {games.length > 1 && (
+            <button
+              type="button"
+              onClick={handleNext}
+              aria-label="Nächstes Spiel"
+              className="absolute right-0 sm:right-4 z-30 grid h-10 w-10 place-items-center rounded-full bg-white/85 dark:bg-[#1C1C1E]/90 text-[#1C1C1E] dark:text-white shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-90 cursor-pointer"
+            >
+              <ChevronRight className="h-5 w-5" />
+            </button>
+          )}
         </main>
+
+        {/* 3. UNTEN: Dezente Diashow-Punkte (Slide-Indikator) */}
+        <div className="relative z-30 flex shrink-0 flex-col items-center gap-1.5">
+          <div className="flex items-center gap-2 rounded-full bg-black/[0.05] dark:bg-white/[0.08] px-3.5 py-2 backdrop-blur-md">
+            {games.map((game, idx) => {
+              const isCurrent = idx === safeIndex;
+              return (
+                <button
+                  key={game.id}
+                  type="button"
+                  onClick={() => handleSelectGame(idx)}
+                  aria-label={`Gehe zu ${game.title}`}
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    isCurrent
+                      ? `w-6 ${activeStyle.dot}`
+                      : 'w-2 bg-black/20 dark:bg-white/25 hover:bg-black/40 dark:hover:bg-white/40'
+                  }`}
+                />
+              );
+            })}
+          </div>
+          <span className="text-[10px] font-semibold tracking-wide text-[#8E8E93] dark:text-[#636366]">
+            Wischen zum Blättern ({safeIndex + 1}/{games.length})
+          </span>
+        </div>
       </div>
 
       {/* ─── iOS Detail-Sheet beim Öffnen eines Spiels ─── */}

@@ -22,6 +22,23 @@
   }
 }
 
+/* ─── iPhone Notch / Lautsprecher Schutzabstand (Portrait & Landscape) ─── */
+.safe-screen {
+  padding-top: max(3.25rem, calc(env(safe-area-inset-top, 0px) + 1rem));
+  padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
+  padding-left: max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem));
+  padding-right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1rem));
+}
+
+@media (orientation: landscape) {
+  .safe-screen {
+    padding-top: max(1rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
+    padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+    padding-left: max(3.5rem, calc(env(safe-area-inset-left, 0px) + 1rem));
+    padding-right: max(3.5rem, calc(env(safe-area-inset-right, 0px) + 1rem));
+  }
+}
+
 /* ─── Keyframe Animationen für den interaktiven Ladebildschirm ─── */
 @keyframes splashFloat {
   0%, 100% {
