@@ -4,6 +4,7 @@ import { type Category, GAMES, type Game } from './data/games';
 import { FeaturedCard } from './components/FeaturedCard';
 import { GameDock } from './components/GameDock';
 import { GameSheet } from './components/GameSheet';
+import { SplashScreen } from './components/SplashScreen';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -11,6 +12,7 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function App() {
+  const [showSplash, setShowSplash] = useState(true);
   const [category, setCategory] = useState<Category>('Alle');
   const [activeIndex, setActiveIndex] = useState(0);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
@@ -61,6 +63,11 @@ export function App() {
     setActiveIndex(0);
   };
 
+  const handleSplashFinish = () => {
+    triggerHaptic();
+    setShowSplash(false);
+  };
+
   useEffect(() => {
     // Multi-Touch Pinch-Zoom auf iOS Safari unterbinden
     const preventZoom = (e: TouchEvent) => {
@@ -76,6 +83,12 @@ export function App() {
 
     // Tastatursteuerung
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (showSplash) {
+        if (e.key === ' ' || e.key === 'Enter' || e.key === 'Escape') {
+          handleSplashFinish();
+        }
+        return;
+      }
       if (selectedGame) {
         if (e.key === 'Escape') setSelectedGame(null);
         return;
@@ -109,14 +122,16 @@ export function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
-  }, [games, safeIndex, selectedGame, activeGame]);
+  }, [games, safeIndex, selectedGame, activeGame, showSplash]);
 
   const onTouchStart = (e: React.TouchEvent) => {
+    if (showSplash) return;
     touchStartX.current = e.touches[0].clientX;
     touchStartY.current = e.touches[0].clientY;
   };
 
   const onTouchEnd = (e: React.TouchEvent) => {
+    if (showSplash) return;
     if (touchStartX.current === null || touchStartY.current === null) return;
     const diffX = touchStartX.current - e.changedTouches[0].clientX;
     const diffY = touchStartY.current - e.changedTouches[0].clientY;
@@ -143,6 +158,9 @@ export function App() {
       onTouchEnd={onTouchEnd}
       className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7] dark:bg-[#0B0B0F] text-[#1C1C1E] dark:text-white select-none"
     >
+      {/* ─── Kurzer interaktiver Ladebildschirm beim App-Start ─── */}
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+
       {/* Optionaler iOS-Pille Install-Button falls Browser Installation anbietet */}
       {deferredPrompt && (
         <button
