@@ -22,23 +22,6 @@
   }
 }
 
-/* ─── iOS Safe-Area Abstände (Notch, Dynamic Island & Home-Indikator) ─── */
-.ios-safe-stage {
-  padding-top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.75rem));
-  padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
-  padding-left: max(1.25rem, calc(env(safe-area-inset-left, 0px) + 1rem));
-  padding-right: max(1.25rem, calc(env(safe-area-inset-right, 0px) + 1rem));
-}
-
-@media (min-width: 768px) {
-  .ios-safe-stage {
-    padding-top: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 1.25rem));
-    padding-bottom: max(1.75rem, calc(env(safe-area-inset-bottom, 0px) + 1.25rem));
-    padding-left: max(2rem, calc(env(safe-area-inset-left, 0px) + 1.5rem));
-    padding-right: max(2rem, calc(env(safe-area-inset-right, 0px) + 1.5rem));
-  }
-}
-
 /* ─── Keyframe Animationen für den interaktiven Ladebildschirm ─── */
 @keyframes splashFloat {
   0%, 100% {
