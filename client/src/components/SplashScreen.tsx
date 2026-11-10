@@ -766,7 +766,11 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <div
       role="presentation"
-      className={`fixed inset-0 z-50 w-screen h-screen overflow-hidden bg-[#030308] flex items-center justify-center select-none font-['Outfit',sans-serif] transition-all duration-800 ease-out ${
+      style={{
+        paddingTop: 'max(16px, env(safe-area-inset-top))',
+        paddingBottom: 'env(safe-area-inset-bottom)',
+      }}
+      className={`fixed inset-0 z-50 w-full h-full min-h-screen overflow-hidden bg-[#030308] flex items-center justify-center select-none font-['Outfit',sans-serif] transition-all duration-800 ease-out pt-[max(1rem,env(safe-area-inset-top))] pb-[env(safe-area-inset-bottom)] ${
         isFadingOut ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >

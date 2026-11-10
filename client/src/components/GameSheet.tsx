@@ -19,7 +19,8 @@ export function GameSheet({ game, onClose }: GameSheetProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-screen-title"
-      className="fixed inset-0 z-50 flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7] dark:bg-[#0B0B0F] text-[#1C1C1E] dark:text-white select-none animate-fade-in"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in pb-[env(safe-area-inset-bottom)]"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details ─── */}
       <BackgroundCometCanvas opacity={0.45} />

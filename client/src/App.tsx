@@ -175,21 +175,27 @@ export function App() {
   const showAll = category === 'Alle';
 
   return (
-    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7] dark:bg-[#0B0B0F] text-[#1C1C1E] dark:text-white select-none">
+    <div
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-0 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none pb-[env(safe-area-inset-bottom)]"
+    >
       {/* ─── Globale Vollbild-Kometen-Animation hinter allen Menüs & Buttons ─── */}
       <BackgroundCometCanvas opacity={0.65} />
 
       {/* ─── Animierter Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* ─── 1. OBERE LEISTE: Header & iOS Kategorie-Filter ─── */}
-      <header className="relative z-30 shrink-0 border-b border-black/[0.04] dark:border-white/[0.06] bg-[#F2F2F7]/85 dark:bg-[#0B0B0F]/85 backdrop-blur-xl px-4 sm:px-6 pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.35rem))] pb-2.5 overflow-hidden">
+      {/* ─── 1. OBERE LEISTE: Header & iOS Kategorie-Filter mit Notch-Schutz ─── */}
+      <header
+        style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
+        className="relative z-30 shrink-0 border-b border-white/[0.06] bg-[#0B0B0F]/90 backdrop-blur-xl px-4 sm:px-6 pt-[max(1rem,env(safe-area-inset-top))] pb-2.5 overflow-hidden"
+      >
         {/* Weicher, abgedunkelter radialer Farbverlauf (Lila/Blau) als stimmungsvolles Hintergrund-Licht */}
         <div
           className="absolute inset-0 pointer-events-none -z-20"
           style={{
             background:
-              'radial-gradient(130% 160% at 50% -20%, rgba(139, 92, 246, 0.22) 0%, rgba(59, 130, 246, 0.12) 40%, rgba(168, 85, 247, 0.05) 75%, transparent 100%)',
+              'radial-gradient(130% 160% at 50% -20%, rgba(139, 92, 246, 0.25) 0%, rgba(59, 130, 246, 0.14) 40%, rgba(168, 85, 247, 0.05) 75%, transparent 100%)',
           }}
         />
 
@@ -205,10 +211,10 @@ export function App() {
               <Gamepad2 className="h-4 w-4" />
             </div>
             <div>
-              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none bg-gradient-to-r from-zinc-900 via-zinc-800 to-purple-600 dark:from-white dark:via-[#FAF5FF] dark:to-[#D8B4FE] bg-clip-text text-transparent">
+              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none bg-gradient-to-r from-white via-[#FAF5FF] to-[#D8B4FE] bg-clip-text text-transparent">
                 ProjektBox
               </h1>
-              <span className="text-[10px] font-semibold text-[#8E8E93] dark:text-[#98989D]">
+              <span className="text-[10px] font-semibold text-[#98989D]">
                 Dein Spielplatz
               </span>
             </div>
@@ -224,9 +230,9 @@ export function App() {
               }}
               aria-label="Einstellungen öffnen"
               title="Einstellungen"
-              className="grid h-8.5 w-8.5 place-items-center rounded-full bg-black/[0.04] dark:bg-white/[0.07] hover:bg-black/[0.08] dark:hover:bg-white/[0.12] text-[#1C1C1E] dark:text-white ring-1 ring-black/5 dark:ring-white/10 transition-transform active:scale-95 cursor-pointer shadow-xs"
+              className="grid h-8.5 w-8.5 place-items-center rounded-full bg-white/[0.07] hover:bg-white/[0.12] text-white ring-1 ring-white/10 transition-transform active:scale-95 cursor-pointer shadow-xs"
             >
-              <Settings className="h-4.5 w-4.5 text-[#1C1C1E] dark:text-white" />
+              <Settings className="h-4.5 w-4.5 text-white" />
             </button>
           </div>
         </div>
@@ -248,8 +254,8 @@ export function App() {
                 onClick={() => handleSelectCategory(cat)}
                 className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                   isSelected
-                    ? 'bg-[#1C1C1E] text-white dark:bg-white dark:text-[#1C1C1E] shadow-xs'
-                    : 'bg-black/[0.05] dark:bg-white/[0.08] text-[#6C6C70] dark:text-[#98989D] hover:text-[#1C1C1E] dark:hover:text-white'
+                    ? 'bg-white text-[#1C1C1E] shadow-xs'
+                    : 'bg-white/[0.08] text-[#98989D] hover:text-white'
                 }`}
               >
                 {cat}
@@ -260,7 +266,7 @@ export function App() {
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[max(2rem,calc(env(safe-area-inset-bottom,0px)+1.5rem))] pt-3 space-y-6 scrollbar-none">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none">
         {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">

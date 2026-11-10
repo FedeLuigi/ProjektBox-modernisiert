@@ -183,7 +183,8 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      className="fixed inset-0 z-50 flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7]/95 dark:bg-[#0B0B0F]/95 backdrop-blur-2xl text-[#1C1C1E] dark:text-white select-none animate-fade-in"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
+      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F]/95 backdrop-blur-2xl text-white select-none animate-fade-in pb-[env(safe-area-inset-bottom)]"
     >
       {/* ─── VOLLBILD-KOMETEN-ANIMATION HINTER DER GESAMTEN EINSTELLUNGSSEITE ─── */}
       <BackgroundCometCanvas opacity={0.6} />
