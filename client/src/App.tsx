@@ -402,7 +402,6 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={handleToggleVibration}
         onInstall={deferredPrompt ? handleInstall : undefined}
-        onReplaySplash={() => setShowSplash(true)}
       />
     </div>
   );
