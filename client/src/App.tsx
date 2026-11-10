@@ -9,7 +9,6 @@ import {
 import { CompactGameCard } from './components/CompactGameCard';
 import { QuickLaunchTile } from './components/QuickLaunchTile';
 import { GameSheet } from './components/GameSheet';
-import { isMultiplayerGame } from './games/registry';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
@@ -408,16 +407,12 @@ export function App() {
         game={selectedGame}
         onClose={() => setSelectedGame(null)}
         onPlay={(game) => {
-          if (isMultiplayerGame(game)) {
-            setSelectedGame(null);
-            setMultiplayerGame(game);
-          } else {
-            setSelectedGame(null);
-          }
+          setSelectedGame(null);
+          setMultiplayerGame(game);
         }}
       />
 
-      {/* ─── Multiplayer Lobby- & Spielbildschirm (für 2+ Spieler) ─── */}
+      {/* ─── Multiplayer Lobby- & Spielbildschirm (für alle Spiele) ─── */}
       {multiplayerGame && (
         <LobbyScreen
           game={multiplayerGame}

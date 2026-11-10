@@ -126,14 +126,10 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
               <button
                 type="button"
                 onClick={handlePlayClick}
-                className={`mt-6 landscape:mt-5 flex w-full sm:w-auto min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer ${
-                  isMultiplayer
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110'
-                    : style.playBtn
-                }`}
+                className="mt-6 landscape:mt-5 flex w-full sm:w-auto min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110"
               >
                 <Play className="h-4 w-4 fill-current" />
-                <span>{isMultiplayer ? 'Jetzt online spielen' : 'Jetzt losspielen'}</span>
+                <span>Jetzt losspielen</span>
               </button>
             </div>
           </div>

@@ -2,6 +2,7 @@ import type { ComponentType } from 'react';
 import type { GameRendererProps } from './types';
 import { TicTacToeBoard } from './components/TicTacToeBoard';
 import { ConnectFourBoard } from './components/ConnectFourBoard';
+import { GenericDuelBoard } from './components/GenericDuelBoard';
 
 export class ClientGameRegistry {
   private renderers = new Map<string, ComponentType<GameRendererProps<any, any>>>();
@@ -15,8 +16,8 @@ export class ClientGameRegistry {
     this.renderers.set(gameId, component);
   }
 
-  public get(gameId: string): ComponentType<GameRendererProps<any, any>> | undefined {
-    return this.renderers.get(gameId);
+  public get(gameId: string): ComponentType<GameRendererProps<any, any>> {
+    return this.renderers.get(gameId) || GenericDuelBoard;
   }
 
   public has(gameId: string): boolean {
@@ -26,6 +27,6 @@ export class ClientGameRegistry {
 
 export const clientGameRegistry = new ClientGameRegistry();
 
-export function isMultiplayerGame(game: { id: string; players: string }): boolean {
-  return clientGameRegistry.has(game.id) || !game.players.includes('1');
+export function isMultiplayerGame(_game?: { id: string; players: string }): boolean {
+  return true;
 }
