@@ -162,85 +162,105 @@ export function MultiplayerGameView({
           </div>
         </header>
 
-        {/* 2. SPIELER-HUD (DU VS GEGNER) */}
-        <section className="shrink-0 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full my-2">
-          {/* Dein Profil */}
-          <div
-            className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
-              isMyTurn
-                ? 'bg-purple-600/25 ring-2 ring-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.35)] scale-[1.02]'
-                : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
-            }`}
-          >
-            <div className="relative shrink-0">
-              <Avatar config={currentUser.avatar} size={42} />
-              {myPlayer?.symbol && (
-                <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[11px] font-black shadow-sm ring-2 ring-black">
-                  {myPlayer.symbol}
-                </span>
-              )}
-              {myPlayer?.color && (
-                <span
-                  className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                    myPlayer.color === 'red'
-                      ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
-                      : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                  }`}
-                />
-              )}
+        {/* 2. SPIELER-HUD (KOMPAKT FÜR ZEICHNEN & RATEN, STANDARD FÜR DUELLE) */}
+        {lobby.gameId === 'draw-and-guess' ? (
+          <section className="shrink-0 flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 max-w-lg mx-auto w-full my-1 text-xs">
+            <div className="flex items-center gap-2 min-w-0">
+              <Avatar config={currentUser.avatar} size={28} />
+              <span className="font-bold text-white truncate max-w-[100px]">{currentUser.name}</span>
+              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-black shrink-0">
+                {gameState?.scores?.[currentUser.id] || 0} Pkt
+              </span>
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="flex items-center gap-1 text-xs font-bold truncate">
-                <span className="truncate">{currentUser.name}</span>
-                <span className="text-[10px] text-purple-400 shrink-0">(Du)</span>
-              </div>
-              <div className="text-[11px] font-semibold text-[#8E8E93]">
-                {isMyTurn ? (
-                  <span className="text-purple-300 font-bold animate-pulse">Dein Zug!</span>
-                ) : (
-                  'Wartet...'
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Gegner Profil */}
-          <div
-            className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
-              !isMyTurn && gameState?.status === 'playing'
-                ? 'bg-pink-600/25 ring-2 ring-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-[1.02]'
-                : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
-            }`}
-          >
-            <div className="relative shrink-0">
-              <Avatar config={opponent?.avatar || ({} as any)} size={42} />
-              {opponent?.symbol && (
-                <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-600 text-[11px] font-black shadow-sm ring-2 ring-black">
-                  {opponent.symbol}
-                </span>
-              )}
-              {opponent?.color && (
-                <span
-                  className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                    opponent.color === 'red'
-                      ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
-                      : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                  }`}
-                />
-              )}
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-black shrink-0">
+                {gameState?.scores?.[opponent?.id || ''] || 0} Pkt
+              </span>
+              <span className="font-bold text-white truncate max-w-[100px]">{opponent?.name || 'Gegner'}</span>
+              <Avatar config={opponent?.avatar || ({} as any)} size={28} />
             </div>
-            <div className="min-w-0 flex-1">
-              <div className="text-xs font-bold truncate">{opponent?.name || 'Gegner'}</div>
-              <div className="text-[11px] font-semibold text-[#8E8E93]">
-                {!isMyTurn && gameState?.status === 'playing' ? (
-                  <span className="text-pink-300 font-bold animate-pulse">Denkt nach...</span>
-                ) : (
-                  'Wartet...'
+          </section>
+        ) : (
+          <section className="shrink-0 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full my-2">
+            {/* Dein Profil */}
+            <div
+              className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
+                isMyTurn
+                  ? 'bg-purple-600/25 ring-2 ring-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.35)] scale-[1.02]'
+                  : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
+              }`}
+            >
+              <div className="relative shrink-0">
+                <Avatar config={currentUser.avatar} size={42} />
+                {myPlayer?.symbol && (
+                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[11px] font-black shadow-sm ring-2 ring-black">
+                    {myPlayer.symbol}
+                  </span>
+                )}
+                {myPlayer?.color && (
+                  <span
+                    className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
+                      myPlayer.color === 'red'
+                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                        : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                    }`}
+                  />
                 )}
               </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1 text-xs font-bold truncate">
+                  <span className="truncate">{currentUser.name}</span>
+                  <span className="text-[10px] text-purple-400 shrink-0">(Du)</span>
+                </div>
+                <div className="text-[11px] font-semibold text-[#8E8E93]">
+                  {isMyTurn ? (
+                    <span className="text-purple-300 font-bold animate-pulse">Dein Zug!</span>
+                  ) : (
+                    'Wartet...'
+                  )}
+                </div>
+              </div>
             </div>
-          </div>
-        </section>
+
+            {/* Gegner Profil */}
+            <div
+              className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
+                !isMyTurn && gameState?.status === 'playing'
+                  ? 'bg-pink-600/25 ring-2 ring-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-[1.02]'
+                  : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
+              }`}
+            >
+              <div className="relative shrink-0">
+                <Avatar config={opponent?.avatar || ({} as any)} size={42} />
+                {opponent?.symbol && (
+                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-600 text-[11px] font-black shadow-sm ring-2 ring-black">
+                    {opponent.symbol}
+                  </span>
+                )}
+                {opponent?.color && (
+                  <span
+                    className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
+                      opponent.color === 'red'
+                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                        : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                    }`}
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="text-xs font-bold truncate">{opponent?.name || 'Gegner'}</div>
+                <div className="text-[11px] font-semibold text-[#8E8E93]">
+                  {!isMyTurn && gameState?.status === 'playing' ? (
+                    <span className="text-pink-300 font-bold animate-pulse">Denkt nach...</span>
+                  ) : (
+                    'Wartet...'
+                  )}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {/* ─── Fehler-Banner ─── */}
         {errorMsg && (
@@ -322,7 +342,7 @@ export function MultiplayerGameView({
               </button>
             </div>
           </div>
-        ) : (
+        ) : lobby.gameId === 'draw-and-guess' ? null : (
           <footer className="shrink-0 text-center text-xs font-medium text-[#8E8E93] py-2">
             {isMyTurn ? (
               <span className="text-purple-400 font-bold">Du bist am Zug!</span>

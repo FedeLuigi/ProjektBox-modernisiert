@@ -36,9 +36,9 @@ export function App() {
       if (parseLobbyCode(window.location.href)) {
         return false;
       }
-      // 2. Wenn Splash-Screen in dieser Session bereits gesehen wurde: nicht erneut zeigen
+      // 2. Wurde die Startanimation bereits einmal geladen (z. B. bei Reload)? -> Überspringen!
       try {
-        if (sessionStorage.getItem('projektbox_splash_seen') === 'true') {
+        if (localStorage.getItem('projektbox_splash_seen_v1') === 'true') {
           return false;
         }
       } catch {
@@ -121,7 +121,7 @@ export function App() {
     triggerHaptic();
     setShowSplash(false);
     try {
-      sessionStorage.setItem('projektbox_splash_seen', 'true');
+      localStorage.setItem('projektbox_splash_seen_v1', 'true');
     } catch {
       // ignore
     }
@@ -506,7 +506,7 @@ export function App() {
         onInstall={deferredPrompt ? handleInstall : undefined}
         onReplaySplash={() => {
           try {
-            sessionStorage.removeItem('projektbox_splash_seen');
+            localStorage.removeItem('projektbox_splash_seen_v1');
           } catch {
             // ignore
           }

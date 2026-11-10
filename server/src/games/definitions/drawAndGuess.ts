@@ -26,18 +26,22 @@ export interface DrawAndGuessState extends BaseGameState {
   categoryName: string;
   round: number;
   maxRounds: number;
+  roundDuration: number; // Dauer einer Runde in Sekunden (z. B. 60)
+  roundEndsAt: number;   // Timestamp wann die Runde abläuft
   strokes: StrokeSegment[];
   guesses: DrawAndGuessGuess[];
   scores: Record<string, number>;
   correctGuesserIds: string[];
   roundStatus: 'drawing' | 'round_over' | 'game_over';
   roundWinnerName?: string;
+  roundEndReason?: 'guessed' | 'time_up';
 }
 
 export type DrawAndGuessMove =
   | { type: 'stroke'; stroke: StrokeSegment }
   | { type: 'clear' }
   | { type: 'guess'; text: string }
+  | { type: 'time_up' }
   | { type: 'next_round' };
 
 // Umfangreicher deutscher Wortschatz für Zeichnen & Raten
@@ -131,11 +135,15 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       throw new Error('Zeichnen & Raten benötigt mindestens 2 Spieler.');
     }
 
+    // Zufällige Auswahl des ersten Zeichners beim Spielstart
+    const randomIndex = Math.floor(Math.random() * players.length);
     const drawer = starterId && players.some((p) => p.id === starterId)
       ? starterId
-      : players[0].id;
+      : players[randomIndex].id;
 
     const { word, category } = getRandomWord();
+    const roundDuration = 60; // 60 Sekunden Zeit pro Runde
+    const now = Date.now();
 
     return {
       gameId: 'draw-and-guess',
@@ -146,6 +154,8 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       categoryName: category,
       round: 1,
       maxRounds: Math.max(players.length * 2, 4),
+      roundDuration,
+      roundEndsAt: now + roundDuration * 1000,
       strokes: [],
       guesses: [],
       scores: Object.fromEntries(players.map((p) => [p.id, 0])),
@@ -153,7 +163,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       roundStatus: 'drawing',
       status: 'playing',
       winnerId: null,
-      startedAt: Date.now(),
+      startedAt: now,
     };
   },
 
@@ -245,7 +255,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
         roundWinnerName = player?.name;
 
         // Haben alle Rater das Wort erraten?
-        const totalGuessers = players.length - 1;
+        const totalGuessers = Math.max(1, players.length - 1);
         if (newCorrectIds.length >= totalGuessers) {
           newRoundStatus = 'round_over';
         }
@@ -260,6 +270,22 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           correctGuesserIds: newCorrectIds,
           roundStatus: newRoundStatus,
           roundWinnerName,
+          roundEndReason: isMatch ? 'guessed' : state.roundEndReason,
+        },
+      };
+    }
+
+    // 3b. ZUG: ZEIT ABGELAUFEN (AUTOMATISCH VOM CLIENT/SERVER)
+    if (move.type === 'time_up') {
+      if (state.roundStatus !== 'drawing') {
+        return { valid: true, state };
+      }
+      return {
+        valid: true,
+        state: {
+          ...state,
+          roundStatus: 'round_over',
+          roundEndReason: 'time_up',
         },
       };
     }
@@ -296,6 +322,8 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       }
 
       const { word, category } = getRandomWord();
+      const roundDuration = state.roundDuration || 60;
+      const now = Date.now();
 
       return {
         valid: true,
@@ -307,11 +335,14 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           wordHint: makeWordHint(word),
           categoryName: category,
           round: nextRoundNum,
+          roundDuration,
+          roundEndsAt: now + roundDuration * 1000,
           strokes: [],
           guesses: [],
           correctGuesserIds: [],
           roundStatus: 'drawing',
           roundWinnerName: undefined,
+          roundEndReason: undefined,
         },
       };
     }

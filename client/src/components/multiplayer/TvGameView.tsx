@@ -132,11 +132,26 @@ export function TvGameView({
               {player1?.name || 'Spieler 1'}
             </h3>
 
-            <span className="text-xs font-semibold text-purple-300 mt-0.5">
-              {currentTurnPlayer?.id === player1?.id && !isGameOver
-                ? 'Ist am Zug (Handy)...'
-                : 'Wartet...'}
-            </span>
+            {lobby.gameId === 'draw-and-guess' ? (
+              <div className="flex flex-col items-center mt-1 gap-1">
+                <span
+                  className={`text-xs font-bold ${
+                    gameState?.currentDrawerId === player1?.id ? 'text-amber-400 font-black' : 'text-purple-300'
+                  }`}
+                >
+                  {gameState?.currentDrawerId === player1?.id ? '🎨 Zeichnet' : '🤔 Rät'}
+                </span>
+                <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full bg-white/10 ring-1 ring-white/15">
+                  {gameState?.scores?.[player1?.id] || 0} Pkt
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs font-semibold text-purple-300 mt-0.5">
+                {currentTurnPlayer?.id === player1?.id && !isGameOver
+                  ? 'Ist am Zug (Handy)...'
+                  : 'Wartet...'}
+              </span>
+            )}
           </div>
 
           {/* Spielfeld (Zentrum) */}
@@ -206,11 +221,26 @@ export function TvGameView({
               {player2?.name || 'Spieler 2'}
             </h3>
 
-            <span className="text-xs font-semibold text-pink-300 mt-0.5">
-              {currentTurnPlayer?.id === player2?.id && !isGameOver
-                ? 'Ist am Zug (Handy)...'
-                : 'Wartet...'}
-            </span>
+            {lobby.gameId === 'draw-and-guess' ? (
+              <div className="flex flex-col items-center mt-1 gap-1">
+                <span
+                  className={`text-xs font-bold ${
+                    gameState?.currentDrawerId === player2?.id ? 'text-amber-400 font-black' : 'text-pink-300'
+                  }`}
+                >
+                  {gameState?.currentDrawerId === player2?.id ? '🎨 Zeichnet' : '🤔 Rät'}
+                </span>
+                <span className="text-xs font-black text-white px-2.5 py-0.5 rounded-full bg-white/10 ring-1 ring-white/15">
+                  {gameState?.scores?.[player2?.id] || 0} Pkt
+                </span>
+              </div>
+            ) : (
+              <span className="text-xs font-semibold text-pink-300 mt-0.5">
+                {currentTurnPlayer?.id === player2?.id && !isGameOver
+                  ? 'Ist am Zug (Handy)...'
+                  : 'Wartet...'}
+              </span>
+            )}
           </div>
         </main>
 
