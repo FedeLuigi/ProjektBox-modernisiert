@@ -44,43 +44,9 @@ export class LobbyManager {
     }
   }
 
-  // 1. Offene öffentliche Lobbys abrufen
-  public getPublicLobbies(gameId: string): LobbySummary[] {
-    this.cleanupExpiredLobbies();
-    const list: LobbySummary[] = [];
-    const now = Date.now();
-
-    for (const lobby of this.lobbies.values()) {
-      const activePlayers = lobby.isTvMode
-        ? lobby.players.filter((p) => !p.isTvScreen)
-        : lobby.players;
-
-      if (
-        lobby.gameId === gameId &&
-        !lobby.isPrivate &&
-        lobby.status === 'waiting' &&
-        activePlayers.length < lobby.maxPlayers &&
-        (!lobby.expiresAt || now <= lobby.expiresAt)
-      ) {
-        const host = lobby.players.find((p) => p.isHost);
-        list.push({
-          id: lobby.id,
-          code: lobby.code,
-          name: lobby.name,
-          isPrivate: lobby.isPrivate,
-          gameId: lobby.gameId,
-          minPlayers: lobby.minPlayers,
-          maxPlayers: lobby.maxPlayers,
-          playerCount: activePlayers.length,
-          hostName: host ? host.name : 'Unbekannt',
-          status: lobby.status,
-          createdAt: lobby.createdAt,
-          expiresAt: lobby.expiresAt,
-          isTvMode: lobby.isTvMode,
-        });
-      }
-    }
-    return list.sort((a, b) => b.createdAt - a.createdAt);
+  // 1. Offene öffentliche Lobbys abrufen (Lobbys sind immer privat - kein Public Listing)
+  public getPublicLobbies(_gameId: string): LobbySummary[] {
+    return [];
   }
 
   // 2. Lobby erstellen (inkl. TV-Modus mit QR-Code)
@@ -121,7 +87,7 @@ export class LobbyManager {
       id: lobbyId,
       code,
       name: name.trim().slice(0, 30) || (isTvMode ? '📺 TV-Runde' : `${hostPlayer.name}s Runde`),
-      isPrivate: Boolean(isPrivate),
+      isPrivate: true, // Lobbys sind ausnahmslos privat
       gameId,
       minPlayers: gameDef.minPlayers,
       maxPlayers: gameDef.maxPlayers,

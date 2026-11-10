@@ -3,20 +3,15 @@ import {
   ArrowLeft,
   Clock3,
   KeyRound,
-  Lock,
   QrCode,
   RefreshCw,
-  Search,
   Sparkles,
   Tv,
   Users,
   Wifi,
 } from 'lucide-react';
 import { GAMES, type Game, TONE_STYLES } from '../../data/games';
-import type {
-  Lobby,
-  LobbySummary,
-} from '../../types/multiplayer';
+import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
@@ -35,7 +30,7 @@ interface LobbyScreenProps {
   onGameChange?: (game: Game) => void;
 }
 
-type TabType = 'browse' | 'code' | 'create';
+type TabType = 'code' | 'create';
 
 export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
@@ -51,9 +46,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     }
   }, [initialLobby]);
 
-  const [activeTab, setActiveTab] = useState<TabType>('browse');
-  const [lobbies, setLobbies] = useState<LobbySummary[]>([]);
-  const [isLoadingLobbies, setIsLoadingLobbies] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>('code');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   // QR-Scanner Modal
@@ -62,7 +55,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
   // Formular "Lobby erstellen"
   const currentUser = getUserProfile();
   const [createName, setCreateName] = useState(`${currentUser.name}s Runde`);
-  const [isPrivate, setIsPrivate] = useState(false);
   const [isTvMode, setIsTvMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -72,26 +64,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
 
   const gameId = game.id;
 
-  // Lobbys laden
-  const loadLobbies = async () => {
-    setIsLoadingLobbies(true);
-    try {
-      const list = await socketService.fetchLobbies(gameId);
-      setLobbies(list);
-      setErrorMsg(null);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lobbys konnten nicht abgerufen werden.');
-    } finally {
-      setIsLoadingLobbies(false);
-    }
-  };
-
   useEffect(() => {
-    loadLobbies();
-    const unsubList = socketService.onListUpdated(() => {
-      loadLobbies();
-    });
-
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setCurrentLobby(updatedLobby);
       setIsInGame(true);
@@ -102,7 +75,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     });
 
     return () => {
-      unsubList();
       unsubStarted();
       unsubUpdated();
     };
@@ -116,7 +88,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     }
   }, [errorMsg]);
 
-  // Lobby erstellen (inkl. Option TV-Modus)
+  // Lobby erstellen (immer privat, Zugriff nur via Code oder TV QR-Code)
   const handleCreateLobby = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isCreating) return;
@@ -126,7 +98,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     try {
       const created = await socketService.createLobby(
         createName,
-        isPrivate,
+        true, // Immer privat
         gameId,
         isTvMode
       );
@@ -135,23 +107,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
       setErrorMsg(err.message || 'Lobby konnte nicht erstellt werden.');
     } finally {
       setIsCreating(false);
-    }
-  };
-
-  // Lobby beitreten (aus Liste)
-  const handleJoinLobby = async (lobbyId: string) => {
-    setErrorMsg(null);
-    try {
-      const joined = await socketService.joinLobby(lobbyId);
-      setCurrentLobby(joined);
-      if (joined.gameId !== game.id) {
-        const targetGame = GAMES.find((g) => g.id === joined.gameId);
-        if (targetGame && onGameChange) {
-          onGameChange(targetGame);
-        }
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Beitritt fehlgeschlagen.');
     }
   };
 
@@ -191,7 +146,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     await socketService.leaveLobby();
     setCurrentLobby(null);
     setIsInGame(false);
-    loadLobbies();
   };
 
   const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
@@ -396,19 +350,8 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 </span>
               </div>
 
-              {/* ─── TAB-NAVIGATION mit dezentem Dark-Glass & Gradient-Aktivierung ─── */}
-              <div className="grid grid-cols-3 gap-1 p-1 rounded-full bg-black/30 dark:bg-black/40 ring-1 ring-white/10 backdrop-blur-md mb-3 shrink-0">
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('browse')}
-                  className={`py-2 px-1 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${
-                    activeTab === 'browse'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/25'
-                      : 'text-[#8E8E93] hover:text-white'
-                  }`}
-                >
-                  Offene Räume
-                </button>
+              {/* ─── TAB-NAVIGATION (2 TABS: Mit Code / Lobby erstellen) ─── */}
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-black/30 dark:bg-black/40 ring-1 ring-white/10 backdrop-blur-md mb-3 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveTab('code')}
@@ -418,7 +361,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                       : 'text-[#8E8E93] hover:text-white'
                   }`}
                 >
-                  Mit Code
+                  Mit Code beitreten
                 </button>
                 <button
                   type="button"
@@ -429,86 +372,13 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                       : 'text-[#8E8E93] hover:text-white'
                   }`}
                 >
-                  Erstellen
+                  Lobby erstellen
                 </button>
               </div>
 
               {/* ─── TAB-INHALTE ─── */}
               <div className="min-h-[220px] flex flex-col justify-center">
-                {/* TAB 1: OFFENE LOBBYS */}
-                {activeTab === 'browse' && (
-                  <div className="flex flex-col gap-2 animate-fade-in">
-                    <div className="flex items-center justify-between px-1 mb-1 text-xs text-[#8E8E93] font-bold">
-                      <span>Räume in der Nähe</span>
-                      <button
-                        type="button"
-                        onClick={loadLobbies}
-                        disabled={isLoadingLobbies}
-                        className="inline-flex items-center gap-1.5 hover:text-white text-purple-300 transition-colors cursor-pointer"
-                      >
-                        <RefreshCw className={`h-3 w-3 ${isLoadingLobbies ? 'animate-spin' : ''}`} />
-                        <span>Aktualisieren</span>
-                      </button>
-                    </div>
-
-                    {isLoadingLobbies && lobbies.length === 0 ? (
-                      <div className="py-8 text-center text-xs text-[#8E8E93]">Lobbys werden geladen...</div>
-                    ) : lobbies.length === 0 ? (
-                      <div className="flex flex-col items-center justify-center p-5 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 text-center my-1">
-                        <Search className="h-7 w-7 text-[#8E8E93] mb-1.5 opacity-60" />
-                        <p className="text-xs sm:text-sm font-bold text-white">Keine offenen Räume gefunden</p>
-                        <p className="mt-0.5 text-[11px] text-[#8E8E93]">
-                          Erstelle jetzt deine eigene Runde oder scanne den TV QR-Code!
-                        </p>
-                        <button
-                          type="button"
-                          onClick={() => setActiveTab('create')}
-                          className="mt-3 px-4 py-1.5 rounded-full bg-white/10 hover:bg-white/15 text-xs font-bold text-white ring-1 ring-white/15 transition-all active:scale-95 cursor-pointer"
-                        >
-                          + Neuen Raum erstellen
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="max-h-[220px] overflow-y-auto overscroll-y-contain scrollbar-none space-y-2 pr-0.5">
-                        {lobbies.map((lob) => (
-                          <div
-                            key={lob.id}
-                            className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] ring-1 ring-white/10 backdrop-blur-md transition-all"
-                          >
-                            <div className="min-w-0 pr-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-extrabold text-xs sm:text-sm text-white truncate">{lob.name}</span>
-                                {lob.isTvMode && (
-                                  <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/20 text-purple-300 px-1.5 py-0.5 text-[10px] font-black uppercase ring-1 ring-purple-500/30">
-                                    <Tv className="h-2.5 w-2.5" />
-                                    TV
-                                  </span>
-                                )}
-                              </div>
-                              <div className="mt-0.5 text-[11px] text-[#8E8E93] flex items-center gap-2">
-                                <span>Host: {lob.hostName}</span>
-                                <span>•</span>
-                                <span>
-                                  {lob.playerCount}/{lob.maxPlayers} Spieler
-                                </span>
-                              </div>
-                            </div>
-
-                            <button
-                              type="button"
-                              onClick={() => handleJoinLobby(lob.id)}
-                              className="shrink-0 px-4 py-1.5 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 hover:brightness-110 text-xs font-bold text-white shadow-xs shadow-purple-500/20 transition-all active:scale-95 cursor-pointer"
-                            >
-                              Beitreten
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* TAB 2: MIT CODE BEITRETEN */}
+                {/* TAB 1: MIT CODE BEITRETEN */}
                 {activeTab === 'code' && (
                   <form onSubmit={handleJoinByCodeForm} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 mb-2">
@@ -545,9 +415,9 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                   </form>
                 )}
 
-                {/* TAB 3: LOBBY ERSTELLEN */}
+                {/* TAB 2: LOBBY ERSTELLEN */}
                 {activeTab === 'create' && (
-                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3 p-4 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
+                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 p-4 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
                     <div>
                       <label className="text-xs font-bold text-white/80 block mb-1">
                         Lobby-Name
@@ -604,38 +474,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                         <span
                           className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
                             isTvMode ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
-                      </div>
-                    </div>
-
-                    {/* Sichtbarkeit: Öffentlich vs Privat */}
-                    <div
-                      onClick={() => setIsPrivate(!isPrivate)}
-                      role="switch"
-                      aria-checked={isPrivate}
-                      className="flex items-center justify-between p-3 rounded-2xl bg-white/[0.03] hover:bg-white/[0.05] ring-1 ring-white/10 cursor-pointer select-none transition-colors"
-                    >
-                      <div className="flex items-center gap-2.5">
-                        <div className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${isPrivate ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30' : 'bg-white/5 text-[#8E8E93]'}`}>
-                          <Lock className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-white">Privater Raum</div>
-                          <div className="text-[10px] text-[#8E8E93]">
-                            {isPrivate ? 'Nur über QR-Code oder Einladungscode' : 'In der öffentlichen Liste sichtbar'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div
-                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                          isPrivate ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-white/20'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            isPrivate ? 'translate-x-6' : 'translate-x-1'
                           }`}
                         />
                       </div>

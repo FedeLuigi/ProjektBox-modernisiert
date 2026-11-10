@@ -138,7 +138,7 @@ class SocketService {
 
   public async createLobby(
     name: string,
-    isPrivate: boolean,
+    isPrivate = true,
     gameId: string,
     isTvMode = false
   ): Promise<Lobby> {
