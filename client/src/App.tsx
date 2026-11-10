@@ -179,45 +179,39 @@ export function App() {
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
       className="fixed inset-0 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none pb-[env(safe-area-inset-bottom)]"
     >
+      {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (wie beim Game-Screen, fixiert) ─── */}
+      <div
+        className="pointer-events-none absolute inset-0 -z-10"
+        style={{
+          background:
+            'radial-gradient(110% 75% at 50% -10%, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.09) 40%, transparent 80%)',
+        }}
+      />
+      <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/20" />
+      <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-50 bg-indigo-600/15" />
+
       {/* ─── Globale Vollbild-Kometen-Animation hinter allen Menüs & Buttons ─── */}
       <BackgroundCometCanvas opacity={0.65} />
 
       {/* ─── Animierter Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* ─── 1. OBERE LEISTE: Header & iOS Kategorie-Filter mit Notch-Schutz ─── */}
+      {/* ─── 1. OBERE LEISTE: Transparenter, ruhiger Header & iOS Kategorie-Filter ─── */}
       <header
         style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
-        className="relative z-30 shrink-0 border-b border-white/[0.06] bg-[#0B0B0F]/90 backdrop-blur-xl px-4 sm:px-6 pt-[max(1rem,env(safe-area-inset-top))] pb-2.5 overflow-hidden"
+        className="relative z-30 shrink-0 bg-transparent px-4 sm:px-6 pt-[max(1rem,env(safe-area-inset-top))] pb-2"
       >
-        {/* Weicher, abgedunkelter radialer Farbverlauf (Lila/Blau) als stimmungsvolles Hintergrund-Licht */}
-        <div
-          className="absolute inset-0 pointer-events-none -z-20"
-          style={{
-            background:
-              'radial-gradient(130% 160% at 50% -20%, rgba(139, 92, 246, 0.25) 0%, rgba(59, 130, 246, 0.14) 40%, rgba(168, 85, 247, 0.05) 75%, transparent 100%)',
-          }}
-        />
-
         <div className="flex items-center justify-between mb-2.5">
-          {/* Logo & Titel mit Glow & Farbverlauf */}
+          {/* Logo & Titel: ruhig, dezent, mit dem Hintergrund verschmolzen */}
           <div className="flex items-center gap-2.5">
             <div
-              style={{
-                boxShadow: '0 0 20px rgba(168, 85, 247, 0.35)',
-              }}
-              className="grid h-8 w-8 place-items-center rounded-[10px] bg-gradient-to-tr from-[#6366F1] via-[#8B5CF6] to-[#EC4899] text-white ring-1 ring-white/20 transition-transform active:scale-95"
+              className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-purple-500/15 via-violet-500/10 to-indigo-500/10 text-purple-300/85 ring-1 ring-white/[0.08] shadow-[0_2px_16px_rgba(139,92,246,0.18)] transition-transform active:scale-95"
             >
-              <Gamepad2 className="h-4 w-4" />
+              <Gamepad2 className="h-4 w-4 text-purple-300/85" strokeWidth={1.8} />
             </div>
-            <div>
-              <h1 className="text-base sm:text-lg font-black tracking-tight leading-none bg-gradient-to-r from-white via-[#FAF5FF] to-[#D8B4FE] bg-clip-text text-transparent">
-                ProjektBox
-              </h1>
-              <span className="text-[10px] font-semibold text-[#98989D]">
-                Dein Spielplatz
-              </span>
-            </div>
+            <h1 className="text-sm sm:text-base font-bold tracking-wide text-zinc-200/90 leading-none">
+              ProjektBox
+            </h1>
           </div>
 
           {/* Rechte Seite: Als einziger Button das Einstellungs-Icon (Zahnrad) */}
@@ -230,9 +224,9 @@ export function App() {
               }}
               aria-label="Einstellungen öffnen"
               title="Einstellungen"
-              className="grid h-8.5 w-8.5 place-items-center rounded-full bg-white/[0.07] hover:bg-white/[0.12] text-white ring-1 ring-white/10 transition-transform active:scale-95 cursor-pointer shadow-xs"
+              className="grid h-8.5 w-8.5 place-items-center rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 ring-1 ring-white/[0.06] transition-transform active:scale-95 cursor-pointer shadow-xs"
             >
-              <Settings className="h-4.5 w-4.5 text-white" />
+              <Settings className="h-4.5 w-4.5 text-zinc-300" />
             </button>
           </div>
         </div>
