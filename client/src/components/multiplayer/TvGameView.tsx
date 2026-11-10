@@ -163,47 +163,49 @@ export function TvGameView({
 
         {/* 2. MITTE: 3-SPALTEN-LAYOUT FÜR ZEICHNEN & RATEN ODER STANDARD-DUELL */}
         {isDrawAndGuess ? (
-          <main className="my-auto flex flex-1 items-center justify-between gap-6 py-3 w-full overflow-hidden">
+          <main className="my-auto flex flex-1 items-center justify-between gap-6 py-2 w-full overflow-visible">
             {/* Linke Spalte: Spieler & Rangliste */}
-            <div className="w-60 shrink-0 flex flex-col gap-2 max-h-[64vh] overflow-y-auto pr-1">
-              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1 border-b border-white/10">
+            <div className="w-64 shrink-0 flex flex-col gap-2 max-h-[68vh] h-full">
+              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1.5 border-b border-white/10 shrink-0">
                 <span>SPIELER & PUNKTE</span>
                 <span className="font-mono text-purple-400">{activePlayers.length}</span>
               </div>
-              {activePlayers.map((p, idx) => {
-                const isCurrentDrawer = p.id === gameState?.currentDrawerId;
-                const hasGuessed = gameState?.correctGuesserIds?.includes(p.id);
-                const score = gameState?.scores?.[p.id] || 0;
-                return (
-                  <div
-                    key={p.id || idx}
-                    className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
-                      isCurrentDrawer
-                        ? 'bg-amber-500/20 ring-2 ring-amber-400/50 shadow-[0_0_20px_rgba(245,158,11,0.2)]'
-                        : 'bg-white/[0.04] ring-1 ring-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Avatar config={p.avatar} size={38} />
-                      <div className="min-w-0">
-                        <div className="text-xs font-bold text-white truncate max-w-[100px]">{p.name}</div>
-                        <div className="text-[10px] font-semibold">
-                          {isCurrentDrawer ? (
-                            <span className="text-amber-400 font-black">🎨 Zeichnet</span>
-                          ) : hasGuessed ? (
-                            <span className="text-emerald-400 font-bold">✅ Erraten!</span>
-                          ) : (
-                            <span className="text-purple-300">🤔 Rät</span>
-                          )}
+              <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 p-1.5 pb-8 overscroll-contain">
+                {activePlayers.map((p, idx) => {
+                  const isCurrentDrawer = p.id === gameState?.currentDrawerId;
+                  const hasGuessed = gameState?.correctGuesserIds?.includes(p.id);
+                  const score = gameState?.scores?.[p.id] || 0;
+                  return (
+                    <div
+                      key={p.id || idx}
+                      className={`flex items-center justify-between p-3 rounded-2xl transition-all ${
+                        isCurrentDrawer
+                          ? 'bg-amber-500/20 ring-2 ring-amber-400/60 shadow-[0_0_20px_rgba(245,158,11,0.25)]'
+                          : 'bg-white/[0.04] ring-1 ring-white/10'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <Avatar config={p.avatar} size={38} />
+                        <div className="min-w-0">
+                          <div className="text-xs font-bold text-white truncate max-w-[100px]">{p.name}</div>
+                          <div className="text-[10px] font-semibold">
+                            {isCurrentDrawer ? (
+                              <span className="text-amber-400 font-black">🎨 Zeichnet</span>
+                            ) : hasGuessed ? (
+                              <span className="text-emerald-400 font-bold">✅ Erraten!</span>
+                            ) : (
+                              <span className="text-purple-300">🤔 Rät</span>
+                            )}
+                          </div>
                         </div>
                       </div>
+                      <span className="text-xs font-black text-white px-2 py-0.5 rounded-full bg-white/10 shrink-0">
+                        {score} Pkt
+                      </span>
                     </div>
-                    <span className="text-xs font-black text-white px-2 py-0.5 rounded-full bg-white/10 shrink-0">
-                      {score} Pkt
-                    </span>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
 
             {/* Mittlere Spalte: TV-Leinwand (Hero) */}
@@ -234,12 +236,12 @@ export function TvGameView({
             </div>
 
             {/* Rechte Spalte: Live-Tipps Feed */}
-            <div className="w-64 shrink-0 flex flex-col gap-2 max-h-[64vh] h-full">
-              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1 border-b border-white/10">
+            <div className="w-64 shrink-0 flex flex-col gap-2 max-h-[68vh] h-full">
+              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1.5 border-b border-white/10 shrink-0">
                 <span>WAS ERRATEN WURDE</span>
                 <span className="font-mono text-purple-400">{gameState?.guesses?.length || 0} Tipps</span>
               </div>
-              <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 pr-1">
+              <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 p-1.5 pb-8 overscroll-contain">
                 {gameState?.guesses && gameState.guesses.length > 0 ? (
                   gameState.guesses.map((g: any) => (
                     <div
