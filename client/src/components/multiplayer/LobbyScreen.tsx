@@ -663,12 +663,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
           </div>
         </main>
 
-        {/* 3. UNTEN: Sanfter optischer Ausgleich für luftiges Vollbild-Gefühl (wie in GameSheet) */}
-        <footer className="shrink-0 text-center text-[11px] font-medium text-[#8E8E93] dark:text-[#636366]">
-          Multiplayer-Lobby • TV-Modus & QR-Code-Beitritt aktiv
-        </footer>
-      </div>
-
+        </div>
       {/* ─── KAMERA-SCANNER OVERLAY MODAL ─── */}
       <QrScannerModal
         isOpen={showScanner}

@@ -437,11 +437,7 @@ export function SettingsSheet({
           </div>
         </main>
 
-        {/* 3. UNTEN: Versionsanzeige & Auto-Save Hinweis */}
-        <footer className="shrink-0 text-center text-[11px] font-medium text-[#8E8E93] dark:text-[#636366]">
-          ProjektBox &bull; Alle Änderungen werden automatisch gespeichert
-        </footer>
-      </div>
+        </div>
 
       {/* ─── MODAL ZUM ANPASSEN DES AVATARS (HÜTE, FARBEN, FIGUR ETC.) ─── */}
       <AvatarCustomizerModal

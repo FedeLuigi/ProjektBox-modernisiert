@@ -135,11 +135,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
           </div>
         </main>
 
-        {/* 3. UNTEN: Sanfter optischer Ausgleich für luftiges Vollbild-Gefühl */}
-        <footer className="shrink-0 text-center text-[11px] font-medium text-[#8E8E93] dark:text-[#636366]">
-          {isMultiplayer ? 'Multiplayer-Lobby mit Socket.io' : 'Vollbild-Modus aktiv'}
-        </footer>
-      </div>
+        </div>
     </div>
   );
 }
