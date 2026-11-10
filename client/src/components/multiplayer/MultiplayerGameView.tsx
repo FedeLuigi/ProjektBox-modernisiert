@@ -30,8 +30,13 @@ export function MultiplayerGameView({
   const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
 
   const currentUser = getUserProfile();
-  const myPlayer = lobby.players.find((p) => p.id === currentUser.id);
-  const opponent = lobby.players.find((p) => p.id !== currentUser.id);
+  const activePlayers = lobby.isTvMode
+    ? lobby.players.filter((p) => !p.isTvScreen)
+    : lobby.players;
+  const myPlayer =
+    activePlayers.find((p) => p.id === currentUser.id) ||
+    lobby.players.find((p) => p.id === currentUser.id);
+  const opponent = activePlayers.find((p) => p.id !== currentUser.id);
 
   const gameState = lobby.gameState;
   const isMyTurn = gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
@@ -152,7 +157,7 @@ export function MultiplayerGameView({
           <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-white/80 ring-1 ring-white/10">
             <Users className="h-3 w-3 text-purple-400" />
             <span>
-              {lobby.players.length}/{lobby.maxPlayers}
+              {activePlayers.length}/{lobby.maxPlayers}
             </span>
           </div>
         </header>
@@ -259,7 +264,7 @@ export function MultiplayerGameView({
               gameState={gameState}
               myPlayer={myPlayer}
               opponent={opponent}
-              allPlayers={lobby.players}
+              allPlayers={activePlayers}
               isMyTurn={isMyTurn}
               isGameOver={isGameOver}
               onMove={handleSendMove}
@@ -289,7 +294,7 @@ export function MultiplayerGameView({
 
             <p className="mt-1 text-xs text-[#8E8E93]">
               {lobby.rematchVotes.length > 0
-                ? `${lobby.rematchVotes.length}/${lobby.players.length} Spieler möchten Revanche`
+                ? `${lobby.rematchVotes.length}/${activePlayers.length} Spieler möchten Revanche`
                 : 'Bereit für eine Revanche?'}
             </p>
 

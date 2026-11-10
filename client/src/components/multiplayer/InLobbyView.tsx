@@ -6,6 +6,7 @@ import {
   Crown,
   Play,
   Sparkles,
+  Tv,
   Users,
 } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
@@ -33,13 +34,31 @@ export function InLobbyView({
   const [isStarting, setIsStarting] = useState(false);
 
   const currentUser = getUserProfile();
-  const myPlayer = lobby.players.find((p) => p.id === currentUser.id);
+
+  // Im TV-Modus ist der TV-Screen kein Mitglied der Lobby, sondern nur der Großbildschirm!
+  const activePlayers = lobby.isTvMode
+    ? lobby.players.filter((p) => !p.isTvScreen)
+    : lobby.players;
+
+  const myPlayer =
+    activePlayers.find((p) => p.id === currentUser.id) ||
+    lobby.players.find((p) => p.id === currentUser.id);
+
   const isHost = myPlayer?.isHost ?? false;
+  const isRoomLeader = lobby.isTvMode
+    ? activePlayers[0]?.id === currentUser.id
+    : isHost;
   const isReady = myPlayer?.isReady ?? false;
+
   const allReady =
-    lobby.players.length >= lobby.minPlayers &&
-    lobby.players.length <= lobby.maxPlayers &&
-    lobby.players.every((p) => p.isReady);
+    activePlayers.length >= lobby.minPlayers &&
+    activePlayers.length <= lobby.maxPlayers &&
+    activePlayers.every((p) => p.isReady);
+
+  // Wer darf das Spiel starten?
+  // Im regulären Modus: Nur der Host
+  // Im TV-Modus: Der Raumleiter (Spieler 1 auf Handy) oder jeder Smartphone-Spieler, sobald alle bereit sind!
+  const canStartGame = lobby.isTvMode ? (isRoomLeader || allReady) : isHost;
 
   useEffect(() => {
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
@@ -89,7 +108,7 @@ export function InLobbyView({
   };
 
   const handleStartGame = async () => {
-    if (!allReady || !isHost || isStarting) return;
+    if (!allReady || !canStartGame || isStarting) return;
     setIsStarting(true);
     try {
       await socketService.startLobby();
@@ -133,10 +152,18 @@ export function InLobbyView({
           {lobby.name}
         </h2>
 
+        {/* ─── TV-Modus Hinweisbanner ─── */}
+        {lobby.isTvMode && (
+          <div className="mt-3 w-full max-w-xs flex items-center gap-2.5 rounded-2xl bg-purple-500/15 border border-purple-500/30 px-3.5 py-2 text-xs font-semibold text-purple-200 backdrop-blur-md">
+            <Tv className="h-4 w-4 text-purple-400 shrink-0" />
+            <span>TV-Modus: Dein Smartphone ist der Controller. Der Fernseher zeigt das Spielfeld.</span>
+          </div>
+        )}
+
         {/* ─── Große Raum-Code Karte zum Kopieren & Teilen ─── */}
         <div
           onClick={handleCopyCode}
-          className="mt-5 flex flex-col items-center justify-center p-4 rounded-3xl bg-white/[0.06] hover:bg-white/[0.09] ring-1 ring-white/15 backdrop-blur-xl transition-all cursor-pointer active:scale-98 group w-full max-w-xs shadow-xl"
+          className="mt-4 flex flex-col items-center justify-center p-4 rounded-3xl bg-white/[0.06] hover:bg-white/[0.09] ring-1 ring-white/15 backdrop-blur-xl transition-all cursor-pointer active:scale-98 group w-full max-w-xs shadow-xl"
         >
           <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93]">
             Beitrittscode für Freunde
@@ -154,62 +181,75 @@ export function InLobbyView({
           </span>
         </div>
 
-        {/* ─── SPIELERLISTE ─── */}
-        <div className="mt-7 w-full flex flex-col gap-3">
+        {/* ─── SPIELERLISTE (NUR ECHTE SMARTPHONE-SPIELER) ─── */}
+        <div className="mt-6 w-full flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs font-bold text-[#8E8E93] px-1">
             <span>
-              Spieler im Raum ({lobby.players.length}/{lobby.maxPlayers})
+              Spieler im Raum ({activePlayers.length}/{lobby.maxPlayers})
             </span>
-            {lobby.players.length < lobby.maxPlayers && (
+            {activePlayers.length < lobby.maxPlayers && (
               <span className="text-amber-400 animate-pulse">Warte auf Mitspieler...</span>
             )}
           </div>
 
-          {/* Spieler-Karten dynamisch rendern */}
-          {lobby.players.map((p, idx) => (
-            <div
-              key={p.id || idx}
-              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative">
-                  <Avatar config={p.avatar} size={44} />
-                  {p.isHost && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
-                      <Crown className="h-2.5 w-2.5 fill-current" />
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 font-bold text-sm truncate">
-                    <span className="truncate">{p.name}</span>
-                    {p.id === currentUser.id && (
-                      <span className="text-[11px] text-purple-400">(Du)</span>
+          {/* Spieler-Karten dynamisch rendern (ohne TV-Screen) */}
+          {activePlayers.map((p, idx) => {
+            const isThisPlayerLeader = lobby.isTvMode ? idx === 0 : p.isHost;
+            return (
+              <div
+                key={p.id || idx}
+                className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="relative">
+                    <Avatar config={p.avatar} size={44} />
+                    {isThisPlayerLeader && (
+                      <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
+                        <Crown className="h-2.5 w-2.5 fill-current" />
+                      </span>
                     )}
                   </div>
-                  <div className="text-[11px] font-medium text-[#8E8E93]">
-                    {p.isHost ? 'Host' : 'Herausforderer'}
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5 font-bold text-sm truncate">
+                      <span className="truncate">{p.name}</span>
+                      {p.id === currentUser.id && (
+                        <span className="text-[11px] text-purple-400">(Du)</span>
+                      )}
+                    </div>
+                    <div className="text-[11px] font-medium text-[#8E8E93]">
+                      {lobby.isTvMode
+                        ? idx === 0
+                          ? 'Spieler 1 (Raumleiter)'
+                          : `Spieler ${idx + 1}`
+                        : p.isHost
+                        ? 'Host'
+                        : 'Herausforderer'}
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              <span
-                className={`text-xs font-extrabold px-3 py-1 rounded-full ring-1 ${
-                  p.isReady
-                    ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-500/30'
-                    : 'bg-white/10 text-white/60 ring-white/15'
-                }`}
-              >
-                {p.isReady ? 'Bereit ✓' : 'Nicht bereit'}
-              </span>
-            </div>
-          ))}
+                <span
+                  className={`text-xs font-extrabold px-3 py-1 rounded-full ring-1 ${
+                    p.isReady
+                      ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-500/30'
+                      : 'bg-white/10 text-white/60 ring-white/15'
+                  }`}
+                >
+                  {p.isReady ? 'Bereit ✓' : 'Nicht bereit'}
+                </span>
+              </div>
+            );
+          })}
 
           {/* Platzhalter falls Raum noch nicht voll */}
-          {lobby.players.length < lobby.maxPlayers && (
+          {activePlayers.length < lobby.maxPlayers && (
             <div className="flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed border-white/15 text-[#8E8E93] text-xs font-bold animate-pulse">
               <Users className="h-4 w-4" />
-              <span>Teile den Code {lobby.code}, damit Freunde beitreten können</span>
+              <span>
+                {lobby.isTvMode
+                  ? `QR-Code vom TV scannen oder Code ${lobby.code} eingeben`
+                  : `Teile den Code ${lobby.code}, damit Freunde beitreten können`}
+              </span>
             </div>
           )}
         </div>
@@ -230,7 +270,7 @@ export function InLobbyView({
           <span>{isReady ? 'Bereit! (Klicken zum Abbrechen)' : 'Ich bin bereit'}</span>
         </button>
 
-        {isHost && (
+        {canStartGame ? (
           <button
             type="button"
             disabled={!allReady || isStarting}
@@ -244,12 +284,20 @@ export function InLobbyView({
             <Play className="h-4 w-4 fill-current" />
             <span>
               {!allReady
-                ? lobby.players.length < lobby.minPlayers
+                ? activePlayers.length < lobby.minPlayers
                   ? `Warte auf ${lobby.minPlayers}. Spieler...`
                   : 'Warte bis alle bereit sind...'
                 : 'Spiel starten'}
             </span>
           </button>
+        ) : (
+          lobby.isTvMode && (
+            <div className="w-full py-2.5 px-4 rounded-full text-xs font-semibold text-center bg-white/[0.04] ring-1 ring-white/10 text-[#8E8E93]">
+              {activePlayers.length < lobby.minPlayers
+                ? `Warte auf ${lobby.minPlayers}. Spieler...`
+                : 'Warte bis alle Spieler bereit sind...'}
+            </div>
+          )
         )}
       </div>
     </div>

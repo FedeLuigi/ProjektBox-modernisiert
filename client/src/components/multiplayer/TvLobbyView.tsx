@@ -206,7 +206,7 @@ export function TvLobbyView({
                         : 'bg-amber-500/20 text-amber-300 ring-amber-500/30 animate-pulse'
                     }`}
                   >
-                    {player.isReady ? 'Bereit ✓' : 'Wählt Avatar...'}
+                    {player.isReady ? 'Bereit ✓' : 'Noch nicht bereit'}
                   </span>
                 </div>
               ))
@@ -242,7 +242,7 @@ export function TvLobbyView({
             </button>
 
             <p className="text-[11px] text-center text-[#8E8E93]">
-              Der Fernseher dient als Großbild-Anzeige. Eingaben erfolgen auf den Handys.
+              Der Fernseher dient als Großbild-Anzeige. Die Spieler steuern und starten mit dem Smartphone.
             </p>
           </div>
         </div>

@@ -111,7 +111,7 @@ export class LobbyManager {
       socketId,
       name: isTvMode ? '📺 Fernseher' : (userProfile.name.trim() || 'Spieler'),
       avatar: userProfile.avatar,
-      isReady: true,
+      isReady: isTvMode ? false : true,
       isHost: true,
       connected: true,
       isTvScreen: Boolean(isTvMode),
@@ -231,6 +231,11 @@ export class LobbyManager {
     const player = lobby.players.find((p) => p.socketId === socketId);
     if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
 
+    // TV-Bildschirm ist kein Mitspieler und muss nicht bereit klicken
+    if (player.isTvScreen) {
+      return { lobby: null, error: 'Der Fernseher ist kein Mitspieler und muss nicht bereit klicken.' };
+    }
+
     player.isReady = !player.isReady;
     return { lobby };
   }
@@ -246,17 +251,16 @@ export class LobbyManager {
     const player = lobby.players.find((p) => p.socketId === socketId);
     if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
 
-    const firstActive = lobby.isTvMode
-      ? lobby.players.find((p) => !p.isTvScreen)
-      : null;
-
-    if (!player.isHost && (!firstActive || firstActive.id !== player.id)) {
-      return { lobby: null, error: 'Nur der Host kann das Spiel starten.' };
-    }
-
     const activePlayers = lobby.isTvMode
       ? lobby.players.filter((p) => !p.isTvScreen)
       : lobby.players;
+
+    // Start-Berechtigung:
+    // Im TV-Modus darf der Host (Fernseher) ODER jeder Smartphone-Spieler starten, wenn alle bereit sind
+    // Im normalen Modus nur der Host
+    if (!lobby.isTvMode && !player.isHost) {
+      return { lobby: null, error: 'Nur der Host kann das Spiel starten.' };
+    }
 
     if (activePlayers.length < lobby.minPlayers) {
       return { lobby: null, error: `Es werden mindestens ${lobby.minPlayers} Spieler benötigt.` };
@@ -264,7 +268,7 @@ export class LobbyManager {
 
     const notReady = activePlayers.filter((p) => !p.isReady);
     if (notReady.length > 0) {
-      return { lobby: null, error: 'Noch nicht alle Spieler sind bereit.' };
+      return { lobby: null, error: 'Noch nicht alle Smartphone-Spieler sind bereit.' };
     }
 
     const gameDef = gameRegistry.get(lobby.gameId);
@@ -394,6 +398,12 @@ export class LobbyManager {
 
     const leavingPlayer = lobby.players[leavingPlayerIndex];
     const wasHost = leavingPlayer.isHost;
+
+    // Wenn der Fernseher im TV-Modus die Lobby verlässt, wird die TV-Lobby geschlossen
+    if (leavingPlayer.isTvScreen) {
+      this.lobbies.delete(lobbyId);
+      return { lobbyId, lobby: null, wasHost: true, deleted: true };
+    }
 
     // Spieler entfernen
     lobby.players.splice(leavingPlayerIndex, 1);
