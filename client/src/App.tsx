@@ -387,7 +387,7 @@ export function App() {
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
         {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">

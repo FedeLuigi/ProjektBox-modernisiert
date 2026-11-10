@@ -10,6 +10,8 @@ interface ScreenComet {
   size: number;
   alpha: number;
   decay: number;
+  hasEntered: boolean;
+  age: number;
 }
 
 interface ScreenSpark {
@@ -62,12 +64,78 @@ export function BackgroundCometCanvas({
     const spawnComet = () => {
       if (width === 0 || height === 0) return;
 
-      // Startet oben/links über den gesamten Bildschirm verteilt
-      const startX = Math.random() * (width + 120) - 80;
-      const startY = Math.random() * (height * 0.65) - 30;
+      // 4 Ränder zur zufälligen Auswahl: top (40%), left (25%), right (25%), bottom (10%)
+      const edgeRoll = Math.random();
+      let edge: 'top' | 'left' | 'right' | 'bottom';
+      if (edgeRoll < 0.4) {
+        edge = 'top';
+      } else if (edgeRoll < 0.65) {
+        edge = 'left';
+      } else if (edgeRoll < 0.9) {
+        edge = 'right';
+      } else {
+        edge = 'bottom';
+      }
 
-      const angle = (Math.PI * (20 + Math.random() * 15)) / 180; // ~20° - 35°
-      const speed = 3.2 + Math.random() * 2.4;
+      let startX = 0;
+      let startY = 0;
+      let angle = 0; // im Bogenmaß (Radians)
+
+      // Kometen starten IMMER 120px außerhalb des sichtbaren Fensters
+      const margin = 120;
+
+      switch (edge) {
+        case 'top': {
+          // Startet vollständig oberhalb des Bildschirms
+          startX = Math.random() * (width + margin * 2) - margin;
+          startY = -margin;
+          // Fliegt schräg nach unten ins Bild
+          if (startX < width * 0.5) {
+            angle = ((30 + Math.random() * 45) * Math.PI) / 180; // 30° bis 75° nach unten-rechts
+          } else {
+            angle = ((105 + Math.random() * 45) * Math.PI) / 180; // 105° bis 150° nach unten-links
+          }
+          break;
+        }
+        case 'left': {
+          // Startet vollständig links außerhalb des Bildschirms
+          startX = -margin;
+          startY = Math.random() * (height + margin * 2) - margin;
+          // Fliegt nach rechts ins Bild
+          if (startY < height * 0.5) {
+            angle = ((15 + Math.random() * 45) * Math.PI) / 180; // 15° bis 60° nach unten-rechts
+          } else {
+            angle = ((-15 - Math.random() * 45) * Math.PI) / 180; // -15° bis -60° nach oben-rechts
+          }
+          break;
+        }
+        case 'right': {
+          // Startet vollständig rechts außerhalb des Bildschirms
+          startX = width + margin;
+          startY = Math.random() * (height + margin * 2) - margin;
+          // Fliegt nach links ins Bild
+          if (startY < height * 0.5) {
+            angle = ((120 + Math.random() * 45) * Math.PI) / 180; // 120° bis 165° nach unten-links
+          } else {
+            angle = ((-120 - Math.random() * 45) * Math.PI) / 180; // -120° bis -165° nach oben-links
+          }
+          break;
+        }
+        case 'bottom': {
+          // Startet vollständig unterhalb des Bildschirms
+          startX = Math.random() * (width + margin * 2) - margin;
+          startY = height + margin;
+          // Fliegt nach oben ins Bild
+          if (startX < width * 0.5) {
+            angle = ((-35 - Math.random() * 40) * Math.PI) / 180; // -35° bis -75° nach oben-rechts
+          } else {
+            angle = ((-105 - Math.random() * 40) * Math.PI) / 180; // -105° bis -145° nach oben-links
+          }
+          break;
+        }
+      }
+
+      const speed = 3.6 + Math.random() * 2.4;
 
       comets.push({
         x: startX,
@@ -75,10 +143,12 @@ export function BackgroundCometCanvas({
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         speed,
-        length: 48 + Math.random() * 38,
-        size: 2.2 + Math.random() * 1.3,
-        alpha: 0.75 + Math.random() * 0.2,
+        length: 50 + Math.random() * 38,
+        size: 2.0 + Math.random() * 1.3,
+        alpha: 0.8 + Math.random() * 0.2,
         decay: 0.001,
+        hasEntered: false,
+        age: 0,
       });
     };
 
@@ -90,7 +160,7 @@ export function BackgroundCometCanvas({
 
       ctx.clearRect(0, 0, width, height);
 
-      // Regelmäßiges Spawnen über den gesamten Bildschirm
+      // Regelmäßiges Spawnen neuer Kometen von den Rändern
       cooldown--;
       if (cooldown <= 0) {
         spawnComet();
@@ -102,8 +172,24 @@ export function BackgroundCometCanvas({
         const c = comets[i];
         c.x += c.vx;
         c.y += c.vy;
+        c.age++;
 
-        if (c.x > width + 100 || c.y > height + 60) {
+        // Sobald der Komet den sichtbaren Bildschirm berührt hat, Status festhalten
+        if (
+          !c.hasEntered &&
+          c.x >= 0 &&
+          c.x <= width &&
+          c.y >= 0 &&
+          c.y <= height
+        ) {
+          c.hasEntered = true;
+        }
+
+        // Erst despawnen, wenn der Komet den Bildschirm überquert hat und auf der Gegenseite 140px draußen ist
+        const isOffscreen =
+          c.x < -140 || c.x > width + 140 || c.y < -140 || c.y > height + 140;
+
+        if ((c.hasEntered && isOffscreen) || c.age > 800) {
           comets.splice(i, 1);
           continue;
         }
@@ -111,8 +197,14 @@ export function BackgroundCometCanvas({
         const normX = -c.vx / c.speed;
         const normY = -c.vy / c.speed;
 
-        // Funken abwerfen
-        if (Math.random() > 0.4) {
+        // Funken abwerfen (nur wenn der Komet sichtbar ist oder kurz davor)
+        if (
+          Math.random() > 0.4 &&
+          c.x >= -30 &&
+          c.x <= width + 30 &&
+          c.y >= -30 &&
+          c.y <= height + 30
+        ) {
           sparks.push({
             x: c.x + (Math.random() - 0.5) * 4,
             y: c.y + (Math.random() - 0.5) * 4,
@@ -212,7 +304,8 @@ export function BackgroundCometCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 h-full w-full pointer-events-none -z-10 ${className}`}
+      className={`fixed inset-0 h-full w-full pointer-events-none z-0 ${className}`}
+      style={{ zIndex: 0 }}
       aria-hidden="true"
     />
   );
