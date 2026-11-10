@@ -92,6 +92,23 @@
 .gamer-p2 { animation: gamerBounce2 1.4s infinite ease-in-out; }
 .gamer-p3 { animation: gamerBounce3 1.9s infinite ease-in-out; }
 
+/* Dynamic Ambilight Rim Lights synchronized with TV cars */
+.ambi-rim-cyan {
+  opacity: var(--ambi-cyan, 0.75);
+  transition: opacity 0.1s ease-out;
+  filter: drop-shadow(0 0 6px #38bdf8);
+}
+.ambi-rim-pink {
+  opacity: var(--ambi-pink, 0.85);
+  transition: opacity 0.1s ease-out;
+  filter: drop-shadow(0 0 8px #f43f5e);
+}
+.ambi-rim-orange {
+  opacity: var(--ambi-orange, 0.75);
+  transition: opacity 0.1s ease-out;
+  filter: drop-shadow(0 0 6px #fb923c);
+}
+
 /* Phone screen bloom glow */
 .phone-screen-cyan {
   filter: drop-shadow(0 0 8px #38bdf8) drop-shadow(0 0 15px #0284c7);
