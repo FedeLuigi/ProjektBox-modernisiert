@@ -104,9 +104,6 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
                   <Clock3 className="h-3.5 w-3.5" />
                   {game.duration}
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/75 dark:bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-md">
-                  Tempo: {game.difficulty}
-                </span>
                 {isMultiplayer && (
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 text-purple-400 px-3.5 py-1.5 ring-1 ring-purple-500/25 backdrop-blur-md font-bold">
                     <Wifi className="h-3.5 w-3.5" />

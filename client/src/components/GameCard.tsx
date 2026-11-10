@@ -46,7 +46,7 @@ export function GameCard({
         <GameBackground gameId={game.id} />
 
         {/* Squircle App-Icon & Badges auf der Spiel-Vorschau */}
-        <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-between z-10">
+        <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-between z-10 pointer-events-none">
           <div className="flex items-center justify-between">
             {/* App Icon */}
             <div
@@ -60,13 +60,6 @@ export function GameCard({
               className={`rounded-full px-2.5 py-1 text-[clamp(9px,1.2vh,10.5px)] font-bold tracking-wide uppercase shadow-xs backdrop-blur-md ${style.badge}`}
             >
               {game.category}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            {/* Tempo Badge */}
-            <span className="inline-flex items-center gap-1 rounded-full bg-black/45 dark:bg-black/60 px-2 py-0.5 text-[clamp(9px,1.1vh,10px)] font-semibold text-white backdrop-blur-md">
-              ⚡ {game.difficulty}
             </span>
           </div>
         </div>

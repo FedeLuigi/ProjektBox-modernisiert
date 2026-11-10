@@ -28,19 +28,13 @@ export function CompactGameCard({ game, onSelect }: CompactGameCardProps) {
         className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-xl opacity-60 ${style.glow}`}
       />
 
-      {/* ─── Oben: Squircle App-Icon & Schwierigkeits-Pille ─── */}
+      {/* ─── Oben: Squircle App-Icon ─── */}
       <div className="relative z-10 flex items-center justify-between gap-1.5">
         <div
           className={`grid h-8 w-8 place-items-center rounded-[10px] bg-white/95 dark:bg-[#1C1C1E]/95 ${style.accentText} shadow-sm ring-1 ring-black/[0.05] dark:ring-white/[0.1] backdrop-blur-md transition-transform duration-200 group-hover:scale-105`}
         >
           <Icon className="h-4 w-4" strokeWidth={2.2} />
         </div>
-
-        <span
-          className="rounded-full px-2 py-0.5 text-[9px] font-bold tracking-wide uppercase text-white/90 bg-white/20 dark:bg-white/15 backdrop-blur-md"
-        >
-          {game.difficulty}
-        </span>
       </div>
 
       {/* ─── Unten: Subtitle, Titel & Spieleranzahl (kompakt ohne Textwüste) ─── */}

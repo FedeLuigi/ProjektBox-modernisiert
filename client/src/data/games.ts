@@ -36,7 +36,6 @@ export interface Game {
   category: Exclude<Category, 'Alle'>;
   players: string;
   duration: string;
-  difficulty: 'Leicht' | 'Mittel' | 'Schnell';
   icon: LucideIcon;
   tone: Tone;
 }
@@ -134,7 +133,6 @@ export const GAMES: Game[] = [
     category: 'Denken',
     players: '1 Spieler',
     duration: '5 Min.',
-    difficulty: 'Leicht',
     icon: Brain,
     tone: 'sunset',
   },
@@ -149,7 +147,6 @@ export const GAMES: Game[] = [
     category: 'Strategie',
     players: '2 Spieler',
     duration: '5 Min.',
-    difficulty: 'Mittel',
     icon: Grid2X2,
     tone: 'indigo',
   },
@@ -164,7 +161,6 @@ export const GAMES: Game[] = [
     category: 'Arcade',
     players: '1 Spieler',
     duration: '2 Min.',
-    difficulty: 'Schnell',
     icon: Zap,
     tone: 'emerald',
   },
@@ -179,7 +175,6 @@ export const GAMES: Game[] = [
     category: 'Strategie',
     players: '2 Spieler',
     duration: '3 Min.',
-    difficulty: 'Leicht',
     icon: Puzzle,
     tone: 'ocean',
   },
@@ -194,7 +189,6 @@ export const GAMES: Game[] = [
     category: 'Arcade',
     players: '1 Spieler',
     duration: '3 Min.',
-    difficulty: 'Mittel',
     icon: Flame,
     tone: 'emerald',
   },
@@ -209,7 +203,6 @@ export const GAMES: Game[] = [
     category: 'Denken',
     players: '1 Spieler',
     duration: '8 Min.',
-    difficulty: 'Mittel',
     icon: Gamepad2,
     tone: 'sunset',
   },
@@ -224,7 +217,6 @@ export const GAMES: Game[] = [
     category: 'Strategie',
     players: '1 Spieler',
     duration: '5 Min.',
-    difficulty: 'Mittel',
     icon: Bomb,
     tone: 'indigo',
   },
@@ -239,7 +231,6 @@ export const GAMES: Game[] = [
     category: 'Arcade',
     players: '1 Spieler',
     duration: '2 Min.',
-    difficulty: 'Schnell',
     icon: Rocket,
     tone: 'ocean',
   },
