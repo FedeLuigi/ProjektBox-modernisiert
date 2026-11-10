@@ -231,7 +231,7 @@ export function QrScannerModal({
       </header>
 
       {/* ─── MITTE: KAMERA-VIEWFINDER ODER FEHLERMELDUNG ─── */}
-      <main className="relative flex-1 w-full flex items-center justify-center p-4">
+      <main className="relative flex-1 w-full flex flex-col items-center justify-center p-4">
         {errorType !== 'none' ? (
           /* Fehlermeldung mit sauberer Alternative per Code-Eingabe */
           <div className="w-full max-w-sm rounded-3xl bg-[#161622]/95 p-6 ring-1 ring-rose-500/30 backdrop-blur-2xl text-center flex flex-col items-center shadow-2xl animate-fade-in">
@@ -252,43 +252,67 @@ export function QrScannerModal({
             </button>
           </div>
         ) : (
-          /* Aktiver Scanner mit Sucher-Rahmen */
-          <div className="relative w-full max-w-sm aspect-square rounded-3xl overflow-hidden ring-2 ring-white/20 bg-black flex items-center justify-center shadow-2xl">
-            {/* Live Video */}
-            <video
-              ref={videoRef}
-              className="absolute inset-0 h-full w-full object-cover"
-              muted
-              playsInline
-            />
-
-            {/* Viewfinder Overlay */}
-            <div className="relative z-10 w-64 h-64 border-2 border-white/50 rounded-2xl flex items-center justify-center overflow-hidden">
-              {/* Ecken-Highlights */}
-              <div className="absolute top-0 left-0 h-6 w-6 border-t-4 border-l-4 border-purple-400 rounded-tl-lg" />
-              <div className="absolute top-0 right-0 h-6 w-6 border-t-4 border-r-4 border-purple-400 rounded-tr-lg" />
-              <div className="absolute bottom-0 left-0 h-6 w-6 border-b-4 border-l-4 border-purple-400 rounded-bl-lg" />
-              <div className="absolute bottom-0 right-0 h-6 w-6 border-b-4 border-r-4 border-purple-400 rounded-br-lg" />
-
-              {/* Roter/Violetter Laser-Scan-Balken */}
-              <div
-                className={`absolute inset-x-0 h-1 bg-gradient-to-r from-transparent via-purple-400 to-transparent shadow-[0_0_15px_#a855f7] ${
-                  hasScanned ? 'bg-emerald-400 shadow-[0_0_20px_#34d399]' : 'animate-bounce'
-                }`}
+          /* Aktiver Scanner mit dezentem Fadenkreuz */
+          <div className="flex flex-col items-center">
+            <div className="relative w-full max-w-xs sm:max-w-sm aspect-square rounded-[32px] overflow-hidden ring-1 ring-white/15 bg-black flex items-center justify-center shadow-2xl">
+              {/* Live Video */}
+              <video
+                ref={videoRef}
+                className="absolute inset-0 h-full w-full object-cover"
+                muted
+                playsInline
               />
 
-              {hasScanned && (
-                <div className="absolute inset-0 bg-emerald-500/20 backdrop-blur-xs flex items-center justify-center text-emerald-300 font-black text-sm">
-                  Lobby gefunden! ✓
+              {/* Dezente Zielhilfe: Schlichte, elegante Eckwinkel im ProjektBox Neonstil */}
+              <div className="relative z-10 w-52 h-52 sm:w-60 sm:h-60 flex items-center justify-center pointer-events-none">
+                {/* 4 saubere Neon-Eckwinkel (keine Doppel-Linien, kein wandernder Laser) */}
+                <div
+                  className={`absolute top-0 left-0 w-7 h-7 sm:w-8 sm:h-8 border-t-2 border-l-2 rounded-tl-xl transition-colors duration-200 ${
+                    hasScanned
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
+                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
+                  }`}
+                />
+                <div
+                  className={`absolute top-0 right-0 w-7 h-7 sm:w-8 sm:h-8 border-t-2 border-r-2 rounded-tr-xl transition-colors duration-200 ${
+                    hasScanned
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
+                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
+                  }`}
+                />
+                <div
+                  className={`absolute bottom-0 left-0 w-7 h-7 sm:w-8 sm:h-8 border-b-2 border-l-2 rounded-bl-xl transition-colors duration-200 ${
+                    hasScanned
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
+                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
+                  }`}
+                />
+                <div
+                  className={`absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 border-b-2 border-r-2 rounded-br-xl transition-colors duration-200 ${
+                    hasScanned
+                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
+                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
+                  }`}
+                />
+
+                {hasScanned && (
+                  <div className="rounded-full px-4 py-2 bg-emerald-500/90 text-white font-bold text-xs sm:text-sm shadow-lg backdrop-blur-md flex items-center gap-1.5 animate-fade-in">
+                    <span>✓</span>
+                    <span>Lobby erkannt</span>
+                  </div>
+                )}
+              </div>
+
+              {isInitializing && (
+                <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-xs text-[#8E8E93] font-semibold">
+                  Kamera wird gestartet...
                 </div>
               )}
             </div>
 
-            {isInitializing && (
-              <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-xs text-[#8E8E93] font-semibold">
-                Kamera wird gestartet...
-              </div>
-            )}
+            <p className="mt-4 text-xs font-medium text-[#8E8E93] text-center">
+              QR-Code auf dem Fernseher anvisieren
+            </p>
           </div>
         )}
       </main>
