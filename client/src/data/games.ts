@@ -1,4 +1,14 @@
-import { Brain, Grid2X2, Zap, Puzzle, type LucideIcon } from 'lucide-react';
+import {
+  Brain,
+  Grid2X2,
+  Zap,
+  Puzzle,
+  Flame,
+  Gamepad2,
+  Bomb,
+  Rocket,
+  type LucideIcon,
+} from 'lucide-react';
 
 export type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
 
@@ -171,6 +181,66 @@ export const GAMES: Game[] = [
     duration: '3 Min.',
     difficulty: 'Leicht',
     icon: Puzzle,
+    tone: 'ocean',
+  },
+  {
+    id: 'snake',
+    title: 'Snake',
+    subtitle: 'Retro Wurm-Jagd',
+    description:
+      'Steuere die Schlange, schnappe dir Äpfel und wachse unaufhaltsam – ohne in die Wände zu crashen.',
+    howToPlay:
+      'Wische oder nutze die Pfeiltasten, um die Richtung zu wechseln und Äpfel einzusammeln.',
+    category: 'Arcade',
+    players: '1 Spieler',
+    duration: '3 Min.',
+    difficulty: 'Mittel',
+    icon: Flame,
+    tone: 'emerald',
+  },
+  {
+    id: '2048',
+    title: '2048',
+    subtitle: 'Zahlenrausch',
+    description:
+      'Kombiniere gleiche Zahlenblöcke durch geschicktes Wischen, bis die magische 2048 Kachel entsteht.',
+    howToPlay:
+      'Verschiebe alle Kacheln auf dem Spielfeld. Stoßen zwei gleiche Zahlen zusammen, verschmelzen sie.',
+    category: 'Denken',
+    players: '1 Spieler',
+    duration: '8 Min.',
+    difficulty: 'Mittel',
+    icon: Gamepad2,
+    tone: 'sunset',
+  },
+  {
+    id: 'minesweeper',
+    title: 'Minenfeld',
+    subtitle: 'Logik & Spürsinn',
+    description:
+      'Decke sichere Kacheln auf, markiere gefährliche Sprengsätze mit Flaggen und löse das Minenfeld.',
+    howToPlay:
+      'Tippe zum Aufdecken. Zahlen zeigen an, wie viele Minen an diese Kachel angrenzen.',
+    category: 'Strategie',
+    players: '1 Spieler',
+    duration: '5 Min.',
+    difficulty: 'Mittel',
+    icon: Bomb,
+    tone: 'indigo',
+  },
+  {
+    id: 'space-dodge',
+    title: 'Space Dodge',
+    subtitle: 'Galaxy Überleben',
+    description:
+      'Navigiere dein Raumschiff durch ein dichtes Asteroidenfeld und sammle leuchtende Raumkerne.',
+    howToPlay:
+      'Halte und ziehe dein Schiff nach links und rechts, um den anfliegenden Asteroiden auszuweichen.',
+    category: 'Arcade',
+    players: '1 Spieler',
+    duration: '2 Min.',
+    difficulty: 'Schnell',
+    icon: Rocket,
     tone: 'ocean',
   },
 ];

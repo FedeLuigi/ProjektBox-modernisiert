@@ -81,11 +81,12 @@ export default defineConfig({
     }),
   ],
   server: {
+    host: true,
     port: 5173,
-    // Proxy leitet /api Anfragen lokal an das Express-Backend (Port 5000) weiter
+    // Proxy leitet /api Anfragen lokal an das Express-Backend (Port 5001) weiter
     proxy: {
       '/api': {
-        target: 'http://localhost:5000',
+        target: 'http://localhost:5001',
         changeOrigin: true,
       },
     },

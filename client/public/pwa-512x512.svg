@@ -1,44 +1,164 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#2d2244" />
-      <stop offset="50%" stop-color="#1f1830" />
-      <stop offset="100%" stop-color="#120e1d" />
+    <!-- Hintergrund-Verlauf (Luxuriöses Dark Obsidian/Violett) -->
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1638" />
+      <stop offset="50%" stop-color="#120D24" />
+      <stop offset="100%" stop-color="#090614" />
     </linearGradient>
-    <linearGradient id="pad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#caa7fc" />
-      <stop offset="100%" stop-color="#9d76db" />
+
+    <!-- Sanfte Umgebungs-Lichtkegel -->
+    <radialGradient id="centerGlow" cx="50%" cy="45%" r="48%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.38" />
+      <stop offset="55%" stop-color="#EC4899" stop-opacity="0.12" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+
+    <radialGradient id="orangeGlow" cx="72%" cy="65%" r="35%">
+      <stop offset="0%" stop-color="#F97316" stop-opacity="0.25" />
+      <stop offset="100%" stop-color="#F97316" stop-opacity="0" />
+    </radialGradient>
+
+    <!-- 3D-Box Facetten Verläufe -->
+    <linearGradient id="boxTop" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="50%" stop-color="#8B5CF6" />
+      <stop offset="100%" stop-color="#A78BFA" />
     </linearGradient>
-    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
-      <feGaussianBlur stdDeviation="16" result="blur" />
+
+    <linearGradient id="boxLeft" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#2E1065" />
+    </linearGradient>
+
+    <linearGradient id="boxRight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="60%" stop-color="#EA580C" />
+      <stop offset="100%" stop-color="#9A3412" />
+    </linearGradient>
+
+    <linearGradient id="topEdge" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.9" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.1" />
+    </linearGradient>
+
+    <linearGradient id="gemGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="100%" stop-color="#059669" />
+    </linearGradient>
+
+    <linearGradient id="cyanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#38BDF8" />
+      <stop offset="100%" stop-color="#0284C7" />
+    </linearGradient>
+
+    <linearGradient id="rimGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFFFFF" stop-opacity="0.22" />
+      <stop offset="50%" stop-color="#FFFFFF" stop-opacity="0.05" />
+      <stop offset="100%" stop-color="#FFFFFF" stop-opacity="0.12" />
+    </linearGradient>
+
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="24" stdDeviation="28" flood-color="#000000" flood-opacity="0.65" />
+      <feDropShadow dx="0" dy="6" stdDeviation="12" flood-color="#4C1D95" flood-opacity="0.35" />
+    </filter>
+
+    <filter id="glowEffect" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur" />
       <feComposite in="SourceGraphic" in2="blur" operator="over" />
     </filter>
   </defs>
 
-  <!-- Background -->
-  <rect width="512" height="512" rx="112" fill="url(#bg)" />
-  <rect width="504" height="504" x="4" y="4" rx="108" fill="none" stroke="#684f8e" stroke-opacity="0.4" stroke-width="4" />
+  <!-- 1. Hintergrund für PWA Maskable (Volle 512x512 Abdeckung) -->
+  <rect width="512" height="512" fill="url(#bgGrad)" />
 
-  <!-- Soft glow behind controller -->
-  <circle cx="256" cy="256" r="140" fill="#a885e3" opacity="0.18" filter="url(#glow)" />
+  <!-- Umgebungs-Lichtkegel -->
+  <rect width="512" height="512" fill="url(#centerGlow)" />
+  <rect width="512" height="512" fill="url(#orangeGlow)" />
 
-  <!-- Gamepad Body -->
-  <g transform="translate(96, 126)" fill="none" stroke="url(#pad)" stroke-width="26" stroke-linecap="round" stroke-linejoin="round">
-    <!-- Controller outline -->
-    <path d="M48 92 C48 36, 92 16, 160 16 C228 16, 272 36, 272 92 L296 200 C306 244, 256 264, 224 220 L196 182 L124 182 L96 220 C64 264, 14 244, 24 200 Z" />
-    
-    <!-- D-Pad (Left) -->
-    <path d="M84 74 L84 114" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
-    <path d="M64 94 L104 94" stroke="#ffffff" stroke-width="20" stroke-linecap="round" />
-    
-    <!-- Action Buttons (Right) -->
-    <circle cx="216" cy="74" r="10" fill="#ffffff" stroke="none" />
-    <circle cx="236" cy="94" r="10" fill="#ffffff" stroke="none" />
-    <circle cx="196" cy="94" r="10" fill="#ffffff" stroke="none" />
-    <circle cx="216" cy="114" r="10" fill="#ffffff" stroke="none" />
+  <!-- Subtiler innerer Rand für edlen iOS-Look -->
+  <rect x="1.5" y="1.5" width="509" height="509" rx="112" fill="none" stroke="url(#rimGrad)" stroke-width="2" />
+
+  <!-- 2. Hauptkörper: Die moderne 3D ProjektBox (Im zentrierten Safe-Area-Bereich) -->
+  <g filter="url(#softShadow)">
+    <!-- Schatten unter der Box -->
+    <ellipse cx="256" cy="385" rx="118" ry="32" fill="#000000" opacity="0.45" />
+
+    <!-- Linke Facette (Indigo/Tiefviolett) -->
+    <path
+      d="M256 252 L146 194 V314 L256 372 Z"
+      fill="url(#boxLeft)"
+    />
+
+    <!-- D-Pad Steuerkreuz-Gravur auf der linken Facette -->
+    <g transform="translate(186, 260) skewY(28) scale(0.65)" opacity="0.85">
+      <rect x="14" y="0" width="12" height="40" rx="3" fill="#A78BFA" opacity="0.6" />
+      <rect x="0" y="14" width="40" height="12" rx="3" fill="#A78BFA" opacity="0.6" />
+      <circle cx="20" cy="20" r="3.5" fill="#FFFFFF" />
+    </g>
+
+    <!-- Rechte Facette (Sunset Orange/Koralle) -->
+    <path
+      d="M256 252 L366 194 V314 L256 372 Z"
+      fill="url(#boxRight)"
+    />
+
+    <!-- 4 Arcade-Aktionsknöpfe auf der rechten Facette -->
+    <g transform="translate(288, 260) skewY(-28) scale(0.7)" opacity="0.9">
+      <circle cx="20" cy="6" r="6" fill="#FEE2E2" />
+      <circle cx="6" cy="20" r="6" fill="#FEF08A" />
+      <circle cx="34" cy="20" r="6" fill="#BAE6FD" />
+      <circle cx="20" cy="34" r="6" fill="#BBF7D0" />
+    </g>
+
+    <!-- Obere Facette (Leuchtendes Violett/Lila mit Glanz) -->
+    <path
+      d="M256 136 L366 194 L256 252 L146 194 Z"
+      fill="url(#boxTop)"
+    />
+
+    <!-- Glanz-Kanten an der Oberseite -->
+    <path
+      d="M146 194 L256 136 L366 194"
+      fill="none"
+      stroke="url(#topEdge)"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    />
+    <path
+      d="M256 252 L256 372"
+      fill="none"
+      stroke="url(#topEdge)"
+      stroke-width="1.8"
+      opacity="0.4"
+    />
+
+    <!-- Play-Symbol / Game-Funke auf dem Deckel -->
+    <g transform="translate(256, 194)" filter="url(#glowEffect)">
+      <polygon
+        points="-10,-14 16,0 -10,14"
+        fill="#FFFFFF"
+        opacity="0.95"
+      />
+    </g>
   </g>
 
-  <!-- Subtle spark -->
-  <text x="390" y="110" font-size="42" fill="#caa7fc" opacity="0.8" font-family="sans-serif">✦</text>
-  <text x="90" y="430" font-size="32" fill="#caa7fc" opacity="0.5" font-family="sans-serif">✳</text>
+  <!-- 3. Verspielte, schwebende Spiel-Elemente rund um die Box -->
+  <g transform="translate(132, 134)" filter="url(#glowEffect)">
+    <polygon points="0,-16 12,0 0,16 -12,0" fill="url(#cyanGrad)" />
+    <polygon points="0,-16 12,0 0,0 -12,0" fill="#FFFFFF" opacity="0.4" />
+  </g>
+
+  <g transform="translate(378, 145)" filter="url(#glowEffect)">
+    <circle cx="0" cy="0" r="13" fill="url(#gemGrad)" />
+    <circle cx="-3" cy="-4" r="4" fill="#FFFFFF" opacity="0.6" />
+  </g>
+
+  <g transform="translate(395, 230)" opacity="0.8">
+    <path d="M0 -8 Q0 0 8 0 Q0 0 0 8 Q0 0 -8 0 Q0 0 0 -8Z" fill="#FDE047" />
+  </g>
+
+  <g transform="translate(120, 275)" opacity="0.75">
+    <path d="M0 -7 Q0 0 7 0 Q0 0 0 7 Q0 0 -7 0 Q0 0 0 -7Z" fill="#F472B6" />
+  </g>
 </svg>

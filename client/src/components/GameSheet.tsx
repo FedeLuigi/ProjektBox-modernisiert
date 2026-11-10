@@ -1,5 +1,7 @@
 import { ArrowLeft, Clock3, Play, Sparkles, Users } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../data/games';
+import { GameBackground } from './GameBackground';
+import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 
 interface GameSheetProps {
   game: Game | null;
@@ -19,6 +21,14 @@ export function GameSheet({ game, onClose }: GameSheetProps) {
       aria-labelledby="game-screen-title"
       className="fixed inset-0 z-50 flex h-dvh w-full flex-col overflow-hidden bg-[#F2F2F7] dark:bg-[#0B0B0F] text-[#1C1C1E] dark:text-white select-none animate-fade-in"
     >
+      {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details ─── */}
+      <BackgroundCometCanvas opacity={0.45} />
+
+      {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild) ─── */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-30 scale-125 transform-gpu">
+        <GameBackground gameId={game.id} />
+      </div>
+
       {/* ─── Sanftes Ambient-Hintergrundlicht passend zum Spielton ─── */}
       <div
         className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
