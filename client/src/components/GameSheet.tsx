@@ -1,4 +1,4 @@
-import { ArrowLeft, Clock3, Play, Sparkles, Users } from 'lucide-react';
+import { ArrowLeft, Clock3, Play, Sparkles, Users, Wifi } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../data/games';
 import { GameBackground } from './GameBackground';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
@@ -6,13 +6,31 @@ import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 interface GameSheetProps {
   game: Game | null;
   onClose: () => void;
+  onPlay?: (game: Game) => void;
 }
 
-export function GameSheet({ game, onClose }: GameSheetProps) {
+export function isMultiplayerGame(game: Game): boolean {
+  return (
+    game.id === 'connect' ||
+    game.id === 'tic-tac-toe' ||
+    game.players.includes('2')
+  );
+}
+
+export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
   if (!game) return null;
 
   const style = TONE_STYLES[game.tone];
   const Icon = game.icon;
+  const isMultiplayer = isMultiplayerGame(game);
+
+  const handlePlayClick = () => {
+    if (onPlay) {
+      onPlay(game);
+    } else {
+      onClose();
+    }
+  };
 
   return (
     <div
@@ -96,6 +114,12 @@ export function GameSheet({ game, onClose }: GameSheetProps) {
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/75 dark:bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-md">
                   Tempo: {game.difficulty}
                 </span>
+                {isMultiplayer && (
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 text-purple-400 px-3.5 py-1.5 ring-1 ring-purple-500/25 backdrop-blur-md font-bold">
+                    <Wifi className="h-3.5 w-3.5" />
+                    Online Multiplayer
+                  </span>
+                )}
               </div>
             </div>
 
@@ -111,11 +135,15 @@ export function GameSheet({ game, onClose }: GameSheetProps) {
 
               <button
                 type="button"
-                onClick={onClose}
-                className={`mt-6 landscape:mt-5 flex w-full sm:w-auto min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer ${style.playBtn}`}
+                onClick={handlePlayClick}
+                className={`mt-6 landscape:mt-5 flex w-full sm:w-auto min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer ${
+                  isMultiplayer
+                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110'
+                    : style.playBtn
+                }`}
               >
                 <Play className="h-4 w-4 fill-current" />
-                <span>Jetzt losspielen</span>
+                <span>{isMultiplayer ? 'Jetzt online spielen' : 'Jetzt losspielen'}</span>
               </button>
             </div>
           </div>
@@ -123,7 +151,7 @@ export function GameSheet({ game, onClose }: GameSheetProps) {
 
         {/* 3. UNTEN: Sanfter optischer Ausgleich für luftiges Vollbild-Gefühl */}
         <footer className="shrink-0 text-center text-[11px] font-medium text-[#8E8E93] dark:text-[#636366]">
-          Vollbild-Modus aktiv
+          {isMultiplayer ? 'Multiplayer-Lobby mit Socket.io' : 'Vollbild-Modus aktiv'}
         </footer>
       </div>
     </div>

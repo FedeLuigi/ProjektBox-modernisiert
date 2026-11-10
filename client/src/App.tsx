@@ -8,10 +8,12 @@ import {
 } from './data/games';
 import { CompactGameCard } from './components/CompactGameCard';
 import { QuickLaunchTile } from './components/QuickLaunchTile';
-import { GameSheet } from './components/GameSheet';
+import { GameSheet, isMultiplayerGame } from './components/GameSheet';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
+import { LobbyScreen } from './components/multiplayer/LobbyScreen';
+import { getUserProfile } from './utils/userProfile';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -22,6 +24,7 @@ export function App() {
   const [showSplash, setShowSplash] = useState(true);
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -141,12 +144,21 @@ export function App() {
     []
   );
 
+  // Beim Start Nutzerprofil (inkl. ID & Zufallsname) sicherstellen
+  useEffect(() => {
+    getUserProfile();
+  }, []);
+
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showSplash) {
         if (e.key === 'Escape') {
           handleSplashFinish();
         }
+        return;
+      }
+      if (multiplayerGame) {
+        if (e.key === 'Escape') setMultiplayerGame(null);
         return;
       }
       if (showSettings) {
@@ -170,7 +182,7 @@ export function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
-  }, [showSplash, showSettings, selectedGame]);
+  }, [showSplash, showSettings, selectedGame, multiplayerGame]);
 
   const showAll = category === 'Alle';
 
@@ -391,7 +403,26 @@ export function App() {
       </main>
 
       {/* ─── iOS Detail-Sheet beim Öffnen eines Spiels ─── */}
-      <GameSheet game={selectedGame} onClose={() => setSelectedGame(null)} />
+      <GameSheet
+        game={selectedGame}
+        onClose={() => setSelectedGame(null)}
+        onPlay={(game) => {
+          if (isMultiplayerGame(game)) {
+            setSelectedGame(null);
+            setMultiplayerGame(game);
+          } else {
+            setSelectedGame(null);
+          }
+        }}
+      />
+
+      {/* ─── Multiplayer Lobby- & Spielbildschirm (für 2+ Spieler) ─── */}
+      {multiplayerGame && (
+        <LobbyScreen
+          game={multiplayerGame}
+          onClose={() => setMultiplayerGame(null)}
+        />
+      )}
 
       {/* ─── Einstellungsseite im exakten Stil des Game-Detail-Screens ─── */}
       <SettingsSheet

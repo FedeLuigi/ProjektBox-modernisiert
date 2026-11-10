@@ -1,20 +1,31 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
+  Check,
+  Copy,
   Dices,
   Film,
   Palette,
   Pencil,
-  Settings,
+  RotateCcw,
   Smartphone,
   Sparkles,
   Trophy,
   Volume2,
   VolumeX,
+  Wifi,
 } from 'lucide-react';
-import { Avatar, type AvatarConfig, DEFAULT_AVATAR } from './Avatar';
+import { Avatar, type AvatarConfig } from './Avatar';
 import { AvatarCustomizerModal } from './AvatarCustomizerModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
+import {
+  getUserProfile,
+  saveUserProfile,
+  validatePlayerName,
+  type UserProfile,
+} from '../utils/userProfile';
+import { socketService } from '../services/socket';
+import { ConnectionStatusBadge } from './multiplayer/ConnectionStatusBadge';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 
 interface SettingsSheetProps {
@@ -106,76 +117,92 @@ export function SettingsSheet({
   onInstall,
   onReplaySplash,
 }: SettingsSheetProps) {
-  // 1. ZUFÄLLIGER EINZIGARTIGER SPIELERNAME
-  const [playerName, setPlayerName] = useState(() => {
-    try {
-      const saved = localStorage.getItem('projektbox_player_name');
-      if (saved && saved !== 'Spieler 1') return saved;
-      // Generiere einen neuen, nahezu unikalen Namen
-      const freshName = generateUniquePlayerName();
-      localStorage.setItem('projektbox_player_name', freshName);
-      return freshName;
-    } catch {
-      return generateUniquePlayerName();
-    }
-  });
-
-  // 2. AVATAR CONFIG MIT LOCALSTORAGE
-  const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() => {
-    try {
-      const saved = localStorage.getItem('projektbox_player_avatar');
-      if (saved) return JSON.parse(saved);
-      return DEFAULT_AVATAR;
-    } catch {
-      return DEFAULT_AVATAR;
-    }
-  });
-
+  const [profile, setProfile] = useState<UserProfile>(getUserProfile);
+  const [nameInput, setNameInput] = useState(profile.name);
+  const [nameError, setNameError] = useState<string | null>(null);
+  const [copiedId, setCopiedId] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
-  // Synchronisieren, falls Name extern geändert wurde
+  // Server-URL Konfiguration
+  const [serverUrlInput, setServerUrlInput] = useState(() => socketService.getSocketUrl());
+  const [showServerConfig, setShowServerConfig] = useState(false);
+
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('projektbox_player_name');
-      if (saved) setPlayerName(saved);
-    } catch {
-      // ignore
+    if (isOpen) {
+      const current = getUserProfile();
+      setProfile(current);
+      setNameInput(current.name);
+      setNameError(null);
+      setServerUrlInput(socketService.getSocketUrl());
     }
   }, [isOpen]);
 
   if (!isOpen) return null;
 
-  // Neuen zufälligen Namen generieren
+  // Neuen Namen würfeln
   const handleRollNewName = () => {
     const newName = generateUniquePlayerName();
-    setPlayerName(newName);
-    try {
-      localStorage.setItem('projektbox_player_name', newName);
-      if (vibrationEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-        navigator.vibrate(15);
-      }
-    } catch {
-      // ignore
+    setNameInput(newName);
+    setNameError(null);
+    const updated = saveUserProfile({ name: newName });
+    setProfile(updated);
+
+    if (vibrationEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      navigator.vibrate(15);
     }
   };
 
+  // Name eingeben und validieren
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const val = e.target.value.slice(0, 24);
-    setPlayerName(val);
-    try {
-      localStorage.setItem('projektbox_player_name', val);
-    } catch {
-      // ignore
+    const raw = e.target.value;
+    setNameInput(raw);
+
+    const validation = validatePlayerName(raw);
+    if (!validation.valid) {
+      setNameError(validation.error || 'Ungültiger Name');
+    } else {
+      setNameError(null);
+      const updated = saveUserProfile({ name: validation.cleaned });
+      setProfile(updated);
+    }
+  };
+
+  const handleNameBlur = () => {
+    const validation = validatePlayerName(nameInput);
+    if (!validation.valid) {
+      // Wenn ungültig, alten gültigen Namen zurücksetzen
+      setNameInput(profile.name);
+      setNameError(null);
+    } else {
+      setNameInput(validation.cleaned);
+      const updated = saveUserProfile({ name: validation.cleaned });
+      setProfile(updated);
     }
   };
 
   const handleSaveAvatar = (newConfig: AvatarConfig) => {
-    setAvatarConfig(newConfig);
+    const updated = saveUserProfile({ avatar: newConfig });
+    setProfile(updated);
+  };
+
+  const handleCopyId = async () => {
     try {
-      localStorage.setItem('projektbox_player_avatar', JSON.stringify(newConfig));
+      await navigator.clipboard.writeText(profile.id);
+      setCopiedId(true);
+      setTimeout(() => setCopiedId(false), 2000);
     } catch {
-      // ignore
+      // fallback
     }
+  };
+
+  const handleSaveServerUrl = (e: React.FormEvent) => {
+    e.preventDefault();
+    socketService.setSocketUrl(serverUrlInput);
+  };
+
+  const handleResetServerUrl = () => {
+    setServerUrlInput('');
+    socketService.setSocketUrl(null);
   };
 
   return (
@@ -206,154 +233,207 @@ export function SettingsSheet({
             <span>Zurück</span>
           </button>
 
-          <span className="rounded-full px-3.5 py-1.5 text-xs font-bold tracking-wide uppercase shadow-2xs bg-purple-500/15 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/30">
-            System
+          <span className="rounded-full bg-purple-500/10 px-3.5 py-1.5 text-xs font-bold tracking-wide uppercase text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/20">
+            Einstellungen
           </span>
         </header>
 
-        {/* 2. MITTE: Großes Zahnrad-Icon, Titel & Box mit Profil & Schaltern */}
-        <main className="my-auto mx-auto flex w-full max-w-4xl flex-1 items-center justify-center py-4 overflow-y-auto scrollbar-none">
-          <div className="grid w-full items-center gap-6 sm:gap-10 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.2fr] landscape:text-left">
-            {/* Linke / Obere Seite: Großes Zahnrad-Icon & Titel */}
-            <div className="flex flex-col portrait:items-center landscape:items-start">
-              <div className="grid h-20 w-20 sm:h-26 sm:w-26 landscape:h-18 landscape:w-18 landscape:sm:h-22 landscape:sm:w-22 place-items-center rounded-[26px] sm:rounded-[32px] shadow-md ring-1 ring-purple-500/30 bg-gradient-to-br from-purple-500/20 via-purple-600/25 to-indigo-500/20 text-purple-600 dark:text-purple-300 shadow-[0_0_25px_rgba(168,85,247,0.25)]">
-                <Settings
-                  className="h-10 w-10 sm:h-13 sm:w-13 landscape:h-9 landscape:w-9 landscape:sm:h-11 landscape:sm:w-11"
-                  strokeWidth={2.1}
-                />
-              </div>
-
-              <div className="mt-4 landscape:mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest text-purple-600 dark:text-purple-400">
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>App & Profil</span>
-              </div>
-
-              <h1
-                id="settings-screen-title"
-                className="mt-1 text-3xl sm:text-5xl landscape:text-3xl landscape:sm:text-4xl font-black tracking-tight leading-tight"
+        {/* 2. MITTE: Großzügige, moderne Einstellungen */}
+        <main className="my-auto mx-auto flex w-full max-w-lg flex-1 items-center justify-center py-4 overflow-y-auto">
+          <div className="w-full space-y-5">
+            {/* ─── A) SPIELER-PROFIL KARTE (AVATAR & NAME) ─── */}
+            <div className="flex flex-col items-center justify-center p-6 rounded-[28px] bg-white/70 dark:bg-[#18181C]/80 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-xl shadow-sm text-center">
+              {/* Runder Avatar mit leuchtender Kontur */}
+              <div
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="relative mb-3 group cursor-pointer active:scale-95 transition-transform"
+                title="Tippen zum Anpassen"
               >
-                Einstellungen
-              </h1>
+                <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#EC4899] to-[#F59E0B] opacity-75 blur-sm group-hover:opacity-100 transition-opacity" />
+                <div className="relative p-1 rounded-full bg-[#18181C] ring-2 ring-white/30">
+                  <Avatar config={profile.avatar} size={78} />
+                </div>
+                <div className="absolute bottom-0 right-0 p-1.5 rounded-full bg-[#7C3AED] text-white shadow-md ring-2 ring-white/30">
+                  <Pencil className="h-3 w-3" />
+                </div>
+              </div>
 
-              <p className="mt-2 text-xs sm:text-sm text-[#8E8E93] dark:text-[#98989D] max-w-xs">
-                Passe deinen Avatar, Spielernamen und Einstellungen an.
-              </p>
-            </div>
+              {/* Avatar anpassen Button */}
+              <button
+                type="button"
+                onClick={() => setIsAvatarModalOpen(true)}
+                className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 px-3 py-1 text-xs font-bold ring-1 ring-purple-500/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Palette className="h-3 w-3" />
+                <span>Avatar anpassen</span>
+              </button>
 
-            {/* Rechte / Untere Seite: Karte mit Profil & Schaltern */}
-            <div className="flex flex-col justify-center rounded-[28px] bg-white/70 dark:bg-[#18181C]/80 p-5 sm:p-7 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-xl shadow-sm w-full max-w-md mx-auto landscape:mx-0">
-              {/* ─── A) SPIELER-PROFIL SEKTION MIT ANPASSBAREM AVATAR ─── */}
-              <div className="flex flex-col items-center pb-5 mb-5 border-b border-black/[0.06] dark:border-white/[0.08]">
-                {/* Runder Spieler-Avatar mit leuchtender Kontur & Klick-zum-Anpassen */}
-                <div className="relative group mb-3 cursor-pointer" onClick={() => setIsAvatarModalOpen(true)}>
-                  <div className="relative rounded-full p-1 bg-gradient-to-tr from-[#7C3AED] via-[#EC4899] to-[#38BDF8] shadow-[0_0_26px_rgba(168,85,247,0.5)] transition-transform group-hover:scale-105 active:scale-95">
-                    <Avatar config={avatarConfig} size={84} />
-                    {/* Bearbeiten-Badge Overlay */}
-                    <div className="absolute inset-0 rounded-full bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity text-white text-xs font-bold gap-1">
-                      <Palette className="h-4 w-4" />
-                    </div>
-                  </div>
-                  {/* Status-Punkt */}
-                  <span className="absolute bottom-1 right-1 h-3.5 w-3.5 rounded-full bg-[#10B981] ring-2 ring-white dark:ring-[#18181C]" />
+              {/* Spielername mit Validierung & Würfeln */}
+              <div className="flex items-center justify-center gap-1.5 max-w-full">
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    value={nameInput}
+                    onChange={handleNameChange}
+                    onBlur={handleNameBlur}
+                    maxLength={20}
+                    placeholder="Spielername..."
+                    className="text-center text-base sm:text-lg font-black tracking-tight text-[#1C1C1E] dark:text-white bg-transparent border-b border-transparent hover:border-purple-500/40 focus:border-purple-500 focus:outline-none px-2 py-0.5 rounded transition-all max-w-[210px]"
+                    title="Name antippen zum Anpassen (2-20 Zeichen)"
+                  />
+                  <Pencil className="h-3 w-3 text-purple-400 opacity-60 pointer-events-none -ml-2" />
                 </div>
 
-                {/* Button zum Öffnen des Avatar-Customizers */}
+                {/* Würfel-Button */}
                 <button
                   type="button"
-                  onClick={() => setIsAvatarModalOpen(true)}
-                  className="mb-3 inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 px-3 py-1 text-xs font-bold ring-1 ring-purple-500/20 active:scale-95 transition-all cursor-pointer"
+                  onClick={handleRollNewName}
+                  title="Neuen einzigartigen Namen würfeln"
+                  className="grid h-8 w-8 place-items-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-purple-500/20 text-[#8E8E93] hover:text-[#7C3AED] dark:hover:text-purple-300 transition-colors active:scale-90 cursor-pointer shrink-0"
                 >
-                  <Palette className="h-3 w-3" />
-                  <span>Avatar anpassen</span>
+                  <Dices className="h-4 w-4" />
+                </button>
+              </div>
+
+              {/* Validierungs-Fehlermeldung */}
+              {nameError && (
+                <div className="mt-1 text-[11px] font-bold text-rose-400 animate-pulse">
+                  {nameError}
+                </div>
+              )}
+
+              {/* Eindeutige ID Badge */}
+              <div className="mt-2 flex items-center justify-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleCopyId}
+                  title="Eindeutige Spieler-ID kopieren"
+                  className="inline-flex items-center gap-1 rounded-full bg-white/[0.06] hover:bg-white/[0.1] px-2.5 py-0.5 text-[10px] font-mono text-[#8E8E93] hover:text-white transition-colors cursor-pointer ring-1 ring-white/10"
+                >
+                  <span>ID: {profile.id}</span>
+                  {copiedId ? (
+                    <Check className="h-3 w-3 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-2.5 w-2.5" />
+                  )}
                 </button>
 
-                {/* Einzigartiger Spielername mit Würfeln & Bearbeiten */}
-                <div className="flex items-center justify-center gap-1.5 max-w-full">
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      value={playerName}
-                      onChange={handleNameChange}
-                      maxLength={24}
-                      placeholder="Spielername..."
-                      className="text-center text-base sm:text-lg font-black tracking-tight text-[#1C1C1E] dark:text-white bg-transparent border-b border-transparent hover:border-purple-500/40 focus:border-purple-500 focus:outline-none px-2 py-0.5 rounded transition-all max-w-[210px]"
-                      title="Name antippen zum Anpassen"
-                    />
-                    <Pencil className="h-3 w-3 text-purple-400 opacity-60 pointer-events-none -ml-2" />
-                  </div>
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/15 px-2.5 py-0.5 text-[10px] font-bold text-purple-400 ring-1 ring-purple-500/30">
+                  <Trophy className="h-3 w-3 text-amber-400" />
+                  <span>Arcade Champion</span>
+                </div>
+              </div>
+            </div>
 
-                  {/* Würfel-Button für neuen einzigartigen Namen */}
+            {/* ─── B) DIE EIN/AUS-SCHALTER (TÖNE & VIBRATION) ─── */}
+            <div className="space-y-2.5">
+              <ToggleRow
+                label="Töne"
+                description="Soundeffekte im Spiel"
+                checked={soundEnabled}
+                onChange={onToggleSound}
+                icon={
+                  soundEnabled ? (
+                    <Volume2 className="h-4 w-4" />
+                  ) : (
+                    <VolumeX className="h-4 w-4" />
+                  )
+                }
+              />
+
+              <ToggleRow
+                label="Vibration"
+                description="Haptisches Feedback bei Berührung"
+                checked={vibrationEnabled}
+                onChange={onToggleVibration}
+                icon={<Smartphone className="h-4 w-4" />}
+              />
+            </div>
+
+            {/* ─── C) MULTIPLAYER STATUS & SERVER-URL KONFIGURATION ─── */}
+            <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20">
+                    <Wifi className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-bold text-white">Multiplayer Server</div>
+                    <div className="text-[10px] text-[#8E8E93]">Socket.io Echtzeit-Verbindung</div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <ConnectionStatusBadge />
                   <button
                     type="button"
-                    onClick={handleRollNewName}
-                    title="Neuen einzigartigen Namen würfeln"
-                    className="grid h-8 w-8 place-items-center rounded-full bg-black/5 dark:bg-white/10 hover:bg-purple-500/20 text-[#8E8E93] hover:text-[#7C3AED] dark:hover:text-purple-300 transition-colors active:scale-90 cursor-pointer shrink-0"
+                    onClick={() => setShowServerConfig(!showServerConfig)}
+                    className="text-[11px] font-bold text-purple-400 hover:text-purple-300 underline cursor-pointer"
                   >
-                    <Dices className="h-4 w-4" />
+                    {showServerConfig ? 'Schließen' : 'URL anpassen'}
                   </button>
                 </div>
-
-                {/* Level- / Status-Badge */}
-                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/15 px-3 py-1 text-xs font-bold text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/30">
-                  <Trophy className="h-3.5 w-3.5 text-amber-500 dark:text-amber-400" />
-                  <span>Level 5 &bull; Arcade Champ</span>
-                </div>
               </div>
 
-              {/* ─── B) DIE EIN/AUS-SCHALTER (TÖNE & VIBRATION) ─── */}
-              <div className="space-y-2.5">
-                {/* 1. Töne (An / Aus) */}
-                <ToggleRow
-                  label="Töne"
-                  description="Soundeffekte im Spiel"
-                  checked={soundEnabled}
-                  onChange={onToggleSound}
-                  icon={
-                    soundEnabled ? (
-                      <Volume2 className="h-4 w-4" />
-                    ) : (
-                      <VolumeX className="h-4 w-4" />
-                    )
-                  }
-                />
-
-                {/* 2. Vibration (An / Aus) */}
-                <ToggleRow
-                  label="Vibration"
-                  description="Haptisches Feedback bei Berührung"
-                  checked={vibrationEnabled}
-                  onChange={onToggleVibration}
-                  icon={<Smartphone className="h-4 w-4" />}
-                />
-              </div>
-
-              {/* Start-Animation erneut abspielen */}
-              {onReplaySplash && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    onReplaySplash();
-                  }}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-xs font-bold text-purple-600 dark:text-purple-300 transition-all ring-1 ring-purple-500/25 active:scale-95 cursor-pointer"
-                >
-                  <Film className="h-4 w-4" />
-                  <span>Start-Animation ansehen</span>
-                </button>
-              )}
-
-              {/* Optional: PWA Installieren Button */}
-              {onInstall && (
-                <button
-                  type="button"
-                  onClick={onInstall}
-                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.1] px-4 py-3 text-xs font-bold text-[#1C1C1E] dark:text-white transition-all ring-1 ring-black/5 dark:ring-white/10 active:scale-95 cursor-pointer"
-                >
-                  <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
-                  <span>App auf Startbildschirm installieren</span>
-                </button>
+              {/* Server-URL Eingabeformular */}
+              {showServerConfig && (
+                <form onSubmit={handleSaveServerUrl} className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
+                  <label className="text-[10px] font-bold text-[#8E8E93]">
+                    Server-URL (z. B. https://dein-tunnel.ngrok.app oder wss://...):
+                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={serverUrlInput}
+                      onChange={(e) => setServerUrlInput(e.target.value)}
+                      placeholder="Standard (gleicher Host)"
+                      className="flex-1 text-xs px-3 py-2 rounded-xl bg-black/40 ring-1 ring-white/15 focus:ring-1 focus:ring-purple-500 outline-none text-white placeholder:text-white/20"
+                    />
+                    <button
+                      type="submit"
+                      className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white cursor-pointer active:scale-95"
+                    >
+                      Speichern
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleResetServerUrl}
+                      title="Auf Standard zurücksetzen"
+                      className="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white cursor-pointer"
+                    >
+                      <RotateCcw className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                </form>
               )}
             </div>
+
+            {/* Start-Animation erneut abspielen */}
+            {onReplaySplash && (
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  onReplaySplash();
+                }}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-xs font-bold text-purple-600 dark:text-purple-300 transition-all ring-1 ring-purple-500/25 active:scale-95 cursor-pointer"
+              >
+                <Film className="h-4 w-4" />
+                <span>Start-Animation ansehen</span>
+              </button>
+            )}
+
+            {/* Optional: PWA Installieren Button */}
+            {onInstall && (
+              <button
+                type="button"
+                onClick={onInstall}
+                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.1] px-4 py-3 text-xs font-bold text-[#1C1C1E] dark:text-white transition-all ring-1 ring-black/5 dark:ring-white/10 active:scale-95 cursor-pointer"
+              >
+                <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
+                <span>App auf Startbildschirm installieren</span>
+              </button>
+            )}
           </div>
         </main>
 
@@ -367,7 +447,7 @@ export function SettingsSheet({
       <AvatarCustomizerModal
         isOpen={isAvatarModalOpen}
         onClose={() => setIsAvatarModalOpen(false)}
-        config={avatarConfig}
+        config={profile.avatar}
         onSave={handleSaveAvatar}
       />
     </div>

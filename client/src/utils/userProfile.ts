@@ -1,0 +1,117 @@
+import { type AvatarConfig, DEFAULT_AVATAR } from '../components/Avatar';
+import { generateUniquePlayerName } from './nameGenerator';
+
+export interface UserProfile {
+  id: string; // Eindeutige Nutzer-ID (z. B. usr_m3k9_x8y1)
+  name: string; // Anzeigename (z. B. CyberDragon#4812)
+  avatar: AvatarConfig;
+}
+
+export const STORAGE_KEYS = {
+  USER_ID: 'projektbox_user_id',
+  PLAYER_NAME: 'projektbox_player_name',
+  PLAYER_AVATAR: 'projektbox_player_avatar',
+  SOCKET_URL: 'projektbox_socket_url',
+} as const;
+
+export function generateUserId(): string {
+  const rand = Math.random().toString(36).substring(2, 8);
+  const time = Date.now().toString(36).slice(-5);
+  return `usr_${time}_${rand}`;
+}
+
+export function validatePlayerName(rawName: string): {
+  valid: boolean;
+  error?: string;
+  cleaned: string;
+} {
+  const cleaned = rawName.trim().replace(/[\r\n\t]/g, ' ');
+  if (cleaned.length < 2) {
+    return {
+      valid: false,
+      error: 'Name muss mindestens 2 Zeichen lang sein.',
+      cleaned,
+    };
+  }
+  if (cleaned.length > 20) {
+    return {
+      valid: false,
+      error: 'Name darf maximal 20 Zeichen lang sein.',
+      cleaned: cleaned.slice(0, 20),
+    };
+  }
+  return { valid: true, cleaned };
+}
+
+// Globaler Event-Bus für Profil-Updates
+type ProfileListener = (profile: UserProfile) => void;
+const listeners = new Set<ProfileListener>();
+
+export function subscribeUserProfile(listener: ProfileListener): () => void {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+}
+
+function notifyListeners(profile: UserProfile) {
+  for (const listener of listeners) {
+    try {
+      listener(profile);
+    } catch {
+      // ignore
+    }
+  }
+}
+
+export function getUserProfile(): UserProfile {
+  try {
+    let id = localStorage.getItem(STORAGE_KEYS.USER_ID);
+    if (!id) {
+      id = generateUserId();
+      localStorage.setItem(STORAGE_KEYS.USER_ID, id);
+    }
+
+    let name = localStorage.getItem(STORAGE_KEYS.PLAYER_NAME);
+    if (!name || name === 'Spieler 1') {
+      name = generateUniquePlayerName();
+      localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, name);
+    }
+
+    let avatar = DEFAULT_AVATAR;
+    const rawAvatar = localStorage.getItem(STORAGE_KEYS.PLAYER_AVATAR);
+    if (rawAvatar) {
+      try {
+        avatar = JSON.parse(rawAvatar);
+      } catch {
+        avatar = DEFAULT_AVATAR;
+      }
+    } else {
+      localStorage.setItem(STORAGE_KEYS.PLAYER_AVATAR, JSON.stringify(avatar));
+    }
+
+    return { id, name, avatar };
+  } catch {
+    return {
+      id: generateUserId(),
+      name: generateUniquePlayerName(),
+      avatar: DEFAULT_AVATAR,
+    };
+  }
+}
+
+export function saveUserProfile(updates: Partial<UserProfile>): UserProfile {
+  const current = getUserProfile();
+  const updated: UserProfile = { ...current, ...updates };
+
+  try {
+    if (updates.id) localStorage.setItem(STORAGE_KEYS.USER_ID, updated.id);
+    if (updates.name) localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, updated.name);
+    if (updates.avatar) localStorage.setItem(STORAGE_KEYS.PLAYER_AVATAR, JSON.stringify(updated.avatar));
+  } catch {
+    // LocalStorage fallback
+  }
+
+  notifyListeners(updated);
+  return updated;
+}

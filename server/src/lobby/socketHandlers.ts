@@ -1,0 +1,244 @@
+import { Server as SocketIOServer, Socket } from 'socket.io';
+import { lobbyManager } from './lobbyManager.js';
+import { checkRateLimit, cleanupSocketRateLimit } from '../utils/rateLimiter.js';
+import { MultiplayerGameId } from '../types/multiplayer.js';
+
+export function registerSocketHandlers(io: SocketIOServer) {
+  io.on('connection', (socket: Socket) => {
+    // 1. Liste offener Lobbys abrufen
+    socket.on(
+      'lobby:list',
+      (
+        data: { gameId: MultiplayerGameId },
+        callback?: (res: { success: boolean; lobbies?: any[]; error?: string }) => void
+      ) => {
+        if (!checkRateLimit(socket.id)) {
+          return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
+        }
+        try {
+          const list = lobbyManager.getPublicLobbies(data.gameId);
+          callback?.({ success: true, lobbies: list });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 2. Lobby erstellen
+    socket.on(
+      'lobby:create',
+      (
+        data: {
+          name: string;
+          isPrivate: boolean;
+          gameId: MultiplayerGameId;
+          userProfile: { id: string; name: string; avatar: any };
+        },
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        if (!checkRateLimit(socket.id)) {
+          return callback?.({ success: false, error: 'Zu viele Anfragen.' });
+        }
+        try {
+          const { lobby, error } = lobbyManager.createLobby({
+            name: data.name,
+            isPrivate: data.isPrivate,
+            gameId: data.gameId,
+            userProfile: data.userProfile,
+            socketId: socket.id,
+          });
+
+          if (error || !lobby) {
+            return callback?.({ success: false, error: error || 'Lobby konnte nicht erstellt werden.' });
+          }
+
+          socket.join(`lobby:${lobby.id}`);
+          callback?.({ success: true, lobby });
+
+          // Öffentliche Lobby-Listen für alle Clients aktualisieren
+          io.emit('lobby:list-updated', { gameId: lobby.gameId });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 3. Lobby beitreten per ID oder Code
+    socket.on(
+      'lobby:join',
+      (
+        data: {
+          lobbyIdOrCode: string;
+          userProfile: { id: string; name: string; avatar: any };
+        },
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        if (!checkRateLimit(socket.id)) {
+          return callback?.({ success: false, error: 'Zu viele Anfragen.' });
+        }
+        try {
+          const { lobby, error } = lobbyManager.joinLobby({
+            lobbyIdOrCode: data.lobbyIdOrCode,
+            userProfile: data.userProfile,
+            socketId: socket.id,
+          });
+
+          if (error || !lobby) {
+            return callback?.({ success: false, error: error || 'Beitritt fehlgeschlagen.' });
+          }
+
+          socket.join(`lobby:${lobby.id}`);
+          callback?.({ success: true, lobby });
+
+          // Alle Teilnehmer im Raum über den Beitritt informieren
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          io.emit('lobby:list-updated', { gameId: lobby.gameId });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 4. Bereit-Status umschalten
+    socket.on('lobby:ready', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      if (!checkRateLimit(socket.id)) {
+        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
+      }
+      try {
+        const { lobby, error } = lobbyManager.toggleReady(socket.id);
+        if (error || !lobby) {
+          return callback?.({ success: false, error: error || 'Fehler beim Ändern des Bereit-Status.' });
+        }
+
+        io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+        callback?.({ success: true, lobby });
+      } catch (err: any) {
+        callback?.({ success: false, error: err.message });
+      }
+    });
+
+    // 5. Spiel durch Host starten
+    socket.on('lobby:start', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      if (!checkRateLimit(socket.id)) {
+        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
+      }
+      try {
+        const { lobby, error } = lobbyManager.startGame(socket.id);
+        if (error || !lobby) {
+          return callback?.({ success: false, error: error || 'Spiel konnte nicht gestartet werden.' });
+        }
+
+        // Startsignal an alle Teilnehmer im Raum senden
+        io.to(`lobby:${lobby.id}`).emit('game:started', { lobby });
+        io.emit('lobby:list-updated', { gameId: lobby.gameId });
+        callback?.({ success: true, lobby });
+      } catch (err: any) {
+        callback?.({ success: false, error: err.message });
+      }
+    });
+
+    // 6. Spielzug ausführen
+    socket.on(
+      'game:move',
+      (moveData: any, callback?: (res: { success: boolean; error?: string; gameState?: any }) => void) => {
+        if (!checkRateLimit(socket.id)) {
+          return callback?.({ success: false, error: 'Zu schnell! Bitte einen Moment warten.' });
+        }
+        try {
+          const { lobby, error } = lobbyManager.makeMove(socket.id, moveData);
+          if (error || !lobby) {
+            return callback?.({ success: false, error: error || 'Ungültiger Zug.' });
+          }
+
+          // Neuen Spielstand an alle im Raum broadcasten
+          io.to(`lobby:${lobby.id}`).emit('game:state', {
+            gameState: lobby.gameState,
+            status: lobby.status,
+            lobby,
+          });
+
+          callback?.({ success: true, gameState: lobby.gameState });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 7. Revanche / Nochmal spielen
+    socket.on('game:rematch', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      if (!checkRateLimit(socket.id)) {
+        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
+      }
+      try {
+        const { lobby, restarted, error } = lobbyManager.requestRematch(socket.id);
+        if (error || !lobby) {
+          return callback?.({ success: false, error: error || 'Revanche nicht möglich.' });
+        }
+
+        if (restarted) {
+          io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby });
+        } else {
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+        }
+
+        callback?.({ success: true, lobby });
+      } catch (err: any) {
+        callback?.({ success: false, error: err.message });
+      }
+    });
+
+    // 8. Lobby verlassen
+    socket.on('lobby:leave', (callback?: (res: { success: boolean }) => void) => {
+      try {
+        const { lobbyId, lobby, wasHost, deleted } = lobbyManager.leaveCurrentLobby(socket.id);
+        if (lobbyId) {
+          socket.leave(`lobby:${lobbyId}`);
+          if (deleted) {
+            io.emit('lobby:list-updated', {});
+          } else if (lobby) {
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby, message: wasHost ? 'Neuer Host gewählt.' : 'Ein Spieler hat die Lobby verlassen.' });
+            io.emit('lobby:list-updated', { gameId: lobby.gameId });
+          }
+        }
+        callback?.({ success: true });
+      } catch (err: any) {
+        callback?.({ success: false });
+      }
+    });
+
+    // 9. Wiederverbinden nach Disconnect
+    socket.on(
+      'lobby:reconnect',
+      (data: { userId: string }, callback?: (res: { success: boolean; lobby?: any }) => void) => {
+        try {
+          const { lobby } = lobbyManager.reconnectPlayer({
+            userId: data.userId,
+            socketId: socket.id,
+          });
+
+          if (lobby) {
+            socket.join(`lobby:${lobby.id}`);
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby, message: 'Spieler ist wieder verbunden!' });
+            return callback?.({ success: true, lobby });
+          }
+          callback?.({ success: false });
+        } catch {
+          callback?.({ success: false });
+        }
+      }
+    );
+
+    // 10. Disconnect
+    socket.on('disconnect', () => {
+      cleanupSocketRateLimit(socket.id);
+      const { lobbyId, lobby, player } = lobbyManager.handleDisconnect(socket.id);
+      if (lobbyId && lobby && player) {
+        io.to(`lobby:${lobbyId}`).emit('lobby:player-disconnected', {
+          playerId: player.id,
+          playerName: player.name,
+          lobby,
+        });
+      }
+    });
+  });
+}
