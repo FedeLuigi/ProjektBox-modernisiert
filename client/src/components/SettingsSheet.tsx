@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Dices,
+  Film,
   Palette,
   Pencil,
   Settings,
@@ -24,6 +25,7 @@ interface SettingsSheetProps {
   vibrationEnabled: boolean;
   onToggleVibration: (enabled: boolean) => void;
   onInstall?: () => void;
+  onReplaySplash?: () => void;
 }
 
 interface ToggleRowProps {
@@ -102,6 +104,7 @@ export function SettingsSheet({
   vibrationEnabled,
   onToggleVibration,
   onInstall,
+  onReplaySplash,
 }: SettingsSheetProps) {
   // 1. ZUFÄLLIGER EINZIGARTIGER SPIELERNAME
   const [playerName, setPlayerName] = useState(() => {
@@ -323,6 +326,21 @@ export function SettingsSheet({
                   icon={<Smartphone className="h-4 w-4" />}
                 />
               </div>
+
+              {/* Start-Animation ansehen */}
+              {onReplaySplash && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    onClose();
+                    onReplaySplash();
+                  }}
+                  className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-xs font-bold text-purple-600 dark:text-purple-300 transition-all ring-1 ring-purple-500/25 active:scale-95 cursor-pointer"
+                >
+                  <Film className="h-4 w-4" />
+                  <span>3D Start-Animation ansehen</span>
+                </button>
+              )}
 
               {/* Optional: PWA Installieren Button */}
               {onInstall && (
