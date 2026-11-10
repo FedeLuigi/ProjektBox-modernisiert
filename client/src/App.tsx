@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Gamepad2, Trophy, Brain, Zap, Clock, Settings } from 'lucide-react';
+import { Gamepad2, Trophy, Brain, Zap, Clock, Settings, Tv } from 'lucide-react';
 import {
   CATEGORIES,
   type Category,
@@ -15,6 +15,7 @@ import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { getUserProfile } from './utils/userProfile';
 import { socketService } from './services/socket';
+import { parseLobbyCode } from './utils/qrCodeHelper';
 import type { Lobby } from './types/multiplayer';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -23,7 +24,31 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function App() {
-  const [showSplash, setShowSplash] = useState(true);
+  // Deep-Link Prüfung sofort beim ersten Render (verhindert Reload / Splash-Flackern)
+  const initialDeepLinkCode = useMemo(() => {
+    if (typeof window === 'undefined') return null;
+    return parseLobbyCode(window.location.href);
+  }, []);
+
+  const [showSplash, setShowSplash] = useState(() => {
+    if (typeof window !== 'undefined') {
+      // 1. Wenn per QR-Code / Deep-Link beigetreten wird: NIEMALS Splash-Screen zeigen
+      if (parseLobbyCode(window.location.href)) {
+        return false;
+      }
+      // 2. Wenn Splash-Screen in dieser Session bereits gesehen wurde: nicht erneut zeigen
+      try {
+        if (sessionStorage.getItem('projektbox_splash_seen') === 'true') {
+          return false;
+        }
+      } catch {
+        // ignore
+      }
+    }
+    return true;
+  });
+
+  const [isJoiningDeepLink, setIsJoiningDeepLink] = useState(Boolean(initialDeepLinkCode));
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
@@ -95,6 +120,11 @@ export function App() {
   const handleSplashFinish = () => {
     triggerHaptic();
     setShowSplash(false);
+    try {
+      sessionStorage.setItem('projektbox_splash_seen', 'true');
+    } catch {
+      // ignore
+    }
   };
 
   const handleInstall = async () => {
@@ -152,28 +182,23 @@ export function App() {
   useEffect(() => {
     getUserProfile();
 
-    // Deep-Link Prüfung: z. B. durch Scannen mit der iPhone/Android System-Kamera
-    const params = new URLSearchParams(window.location.search);
-    const joinCode = params.get('join') || params.get('code');
-
-    if (joinCode) {
-      const cleanCode = joinCode.trim().toUpperCase();
-      // Bei direktem Link sofort ins Spiel leiten (Splash-Screen überspringen)
-      setShowSplash(false);
-
+    if (initialDeepLinkCode) {
       socketService
-        .joinLobby(cleanCode)
+        .joinLobby(initialDeepLinkCode)
         .then((lobby) => {
           const matchedGame = GAMES.find((g) => g.id === lobby.gameId) || GAMES[0];
           setDeepLinkLobby(lobby);
           setMultiplayerGame(matchedGame);
+          setIsJoiningDeepLink(false);
           window.history.replaceState({}, document.title, window.location.pathname);
         })
         .catch((err) => {
           console.warn('Lobby-Beitritt per Deep-Link fehlgeschlagen:', err);
+          setIsJoiningDeepLink(false);
+          window.history.replaceState({}, document.title, window.location.pathname);
         });
     }
-  }, []);
+  }, [initialDeepLinkCode]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -233,6 +258,26 @@ export function App() {
 
       {/* ─── Animierter Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+
+      {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}
+      {isJoiningDeepLink && !multiplayerGame && (
+        <div className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col items-center justify-center bg-[#07070C] text-white select-none">
+          <BackgroundCometCanvas opacity={0.35} />
+          <div className="relative z-10 flex flex-col items-center p-6 text-center max-w-sm mx-auto animate-fade-in">
+            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-purple-600/25 text-purple-300 ring-2 ring-purple-500/40 mb-4 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-pulse">
+              <Tv className="h-8 w-8 text-purple-300" />
+            </div>
+            <h2 className="text-xl sm:text-2xl font-black text-white">Verbinde mit Fernseher...</h2>
+            <p className="mt-1.5 text-xs text-[#8E8E93]">
+              Lobby-Code: <strong className="text-purple-300 tracking-widest">{initialDeepLinkCode}</strong>
+            </p>
+            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/[0.08] px-4 py-1.5 text-xs font-bold text-white ring-1 ring-white/10">
+              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
+              <span>Tritt der TV-Lobby bei...</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ─── 1. OBERE LEISTE: Transparenter, ruhiger Header & iOS Kategorie-Filter ─── */}
       <header
@@ -459,7 +504,14 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={handleToggleVibration}
         onInstall={deferredPrompt ? handleInstall : undefined}
-        onReplaySplash={() => setShowSplash(true)}
+        onReplaySplash={() => {
+          try {
+            sessionStorage.removeItem('projektbox_splash_seen');
+          } catch {
+            // ignore
+          }
+          setShowSplash(true);
+        }}
       />
     </div>
   );
