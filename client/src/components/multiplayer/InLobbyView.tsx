@@ -16,11 +16,17 @@ import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 
 interface InLobbyViewProps {
   lobby: Lobby;
+  gameTitle?: string;
   onLeave: () => void;
   onGameStart: () => void;
 }
 
-export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLobbyViewProps) {
+export function InLobbyView({
+  lobby: initialLobby,
+  gameTitle,
+  onLeave,
+  onGameStart,
+}: InLobbyViewProps) {
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
   const [copiedCode, setCopiedCode] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -30,7 +36,10 @@ export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLob
   const myPlayer = lobby.players.find((p) => p.id === currentUser.id);
   const isHost = myPlayer?.isHost ?? false;
   const isReady = myPlayer?.isReady ?? false;
-  const allReady = lobby.players.length === lobby.maxPlayers && lobby.players.every((p) => p.isReady);
+  const allReady =
+    lobby.players.length >= lobby.minPlayers &&
+    lobby.players.length <= lobby.maxPlayers &&
+    lobby.players.every((p) => p.isReady);
 
   useEffect(() => {
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
@@ -117,7 +126,7 @@ export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLob
       <div className="flex flex-col items-center my-auto py-2">
         <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-purple-400 mb-1">
           <Sparkles className="h-3.5 w-3.5" />
-          <span>{lobby.gameId === 'connect' ? 'Vier gewinnt' : 'Tic Tac Toe'} Lobby</span>
+          <span>{gameTitle || 'Multiplayer'} Lobby</span>
         </div>
 
         <h2 className="text-2xl sm:text-3xl font-black text-center text-white tracking-tight">
@@ -145,22 +154,27 @@ export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLob
           </span>
         </div>
 
-        {/* ─── SPIELERLISTE (2 SLOTS) ─── */}
+        {/* ─── SPIELERLISTE ─── */}
         <div className="mt-7 w-full flex flex-col gap-3">
           <div className="flex items-center justify-between text-xs font-bold text-[#8E8E93] px-1">
-            <span>Spieler im Raum ({lobby.players.length}/{lobby.maxPlayers})</span>
+            <span>
+              Spieler im Raum ({lobby.players.length}/{lobby.maxPlayers})
+            </span>
             {lobby.players.length < lobby.maxPlayers && (
               <span className="text-amber-400 animate-pulse">Warte auf Mitspieler...</span>
             )}
           </div>
 
-          {/* Slot 1: Spieler 1 */}
-          {lobby.players[0] && (
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md">
+          {/* Spieler-Karten dynamisch rendern */}
+          {lobby.players.map((p, idx) => (
+            <div
+              key={p.id || idx}
+              className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md"
+            >
               <div className="flex items-center gap-3 min-w-0">
                 <div className="relative">
-                  <Avatar config={lobby.players[0].avatar} size={44} />
-                  {lobby.players[0].isHost && (
+                  <Avatar config={p.avatar} size={44} />
+                  {p.isHost && (
                     <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
                       <Crown className="h-2.5 w-2.5 fill-current" />
                     </span>
@@ -168,68 +182,34 @@ export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLob
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-1.5 font-bold text-sm truncate">
-                    <span className="truncate">{lobby.players[0].name}</span>
-                    {lobby.players[0].id === currentUser.id && (
+                    <span className="truncate">{p.name}</span>
+                    {p.id === currentUser.id && (
                       <span className="text-[11px] text-purple-400">(Du)</span>
                     )}
                   </div>
                   <div className="text-[11px] font-medium text-[#8E8E93]">
-                    {lobby.players[0].isHost ? 'Host' : 'Herausforderer'}
+                    {p.isHost ? 'Host' : 'Herausforderer'}
                   </div>
                 </div>
               </div>
 
               <span
                 className={`text-xs font-extrabold px-3 py-1 rounded-full ring-1 ${
-                  lobby.players[0].isReady
+                  p.isReady
                     ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-500/30'
                     : 'bg-white/10 text-white/60 ring-white/15'
                 }`}
               >
-                {lobby.players[0].isReady ? 'Bereit ✓' : 'Nicht bereit'}
+                {p.isReady ? 'Bereit ✓' : 'Nicht bereit'}
               </span>
             </div>
-          )}
+          ))}
 
-          {/* Slot 2: Spieler 2 oder Platzhalter */}
-          {lobby.players[1] ? (
-            <div className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md">
-              <div className="flex items-center gap-3 min-w-0">
-                <div className="relative">
-                  <Avatar config={lobby.players[1].avatar} size={44} />
-                  {lobby.players[1].isHost && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
-                      <Crown className="h-2.5 w-2.5 fill-current" />
-                    </span>
-                  )}
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5 font-bold text-sm truncate">
-                    <span className="truncate">{lobby.players[1].name}</span>
-                    {lobby.players[1].id === currentUser.id && (
-                      <span className="text-[11px] text-purple-400">(Du)</span>
-                    )}
-                  </div>
-                  <div className="text-[11px] font-medium text-[#8E8E93]">
-                    {lobby.players[1].isHost ? 'Host' : 'Herausforderer'}
-                  </div>
-                </div>
-              </div>
-
-              <span
-                className={`text-xs font-extrabold px-3 py-1 rounded-full ring-1 ${
-                  lobby.players[1].isReady
-                    ? 'bg-emerald-500/20 text-emerald-400 ring-emerald-500/30'
-                    : 'bg-white/10 text-white/60 ring-white/15'
-                }`}
-              >
-                {lobby.players[1].isReady ? 'Bereit ✓' : 'Nicht bereit'}
-              </span>
-            </div>
-          ) : (
+          {/* Platzhalter falls Raum noch nicht voll */}
+          {lobby.players.length < lobby.maxPlayers && (
             <div className="flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed border-white/15 text-[#8E8E93] text-xs font-bold animate-pulse">
               <Users className="h-4 w-4" />
-              <span>Teile den Code {lobby.code}, damit ein Freund beitreten kann</span>
+              <span>Teile den Code {lobby.code}, damit Freunde beitreten können</span>
             </div>
           )}
         </div>
@@ -264,8 +244,8 @@ export function InLobbyView({ lobby: initialLobby, onLeave, onGameStart }: InLob
             <Play className="h-4 w-4 fill-current" />
             <span>
               {!allReady
-                ? lobby.players.length < lobby.maxPlayers
-                  ? 'Warte auf 2. Spieler...'
+                ? lobby.players.length < lobby.minPlayers
+                  ? `Warte auf ${lobby.minPlayers}. Spieler...`
                   : 'Warte bis alle bereit sind...'
                 : 'Spiel starten'}
             </span>

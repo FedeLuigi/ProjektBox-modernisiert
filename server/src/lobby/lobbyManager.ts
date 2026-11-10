@@ -1,13 +1,11 @@
 import {
   Lobby,
   LobbySummary,
-  MultiplayerGameId,
   Player,
 } from '../types/multiplayer.js';
-import { applyTicTacToeMove, initTicTacToe } from '../games/ticTacToe.js';
-import { applyConnectFourMove, initConnectFour } from '../games/connectFour.js';
+import { gameRegistry } from '../games/registry.js';
 
-// Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code (ohne leicht verwechselbare Zeichen wie O, 0, I, 1)
+// Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 
 function generateLobbyCode(existingCodes: Set<string>): string {
@@ -36,7 +34,7 @@ export class LobbyManager {
   }
 
   // 1. Offene öffentliche Lobbys abrufen
-  public getPublicLobbies(gameId: MultiplayerGameId): LobbySummary[] {
+  public getPublicLobbies(gameId: string): LobbySummary[] {
     const list: LobbySummary[] = [];
     for (const lobby of this.lobbies.values()) {
       if (
@@ -52,6 +50,7 @@ export class LobbyManager {
           name: lobby.name,
           isPrivate: lobby.isPrivate,
           gameId: lobby.gameId,
+          minPlayers: lobby.minPlayers,
           maxPlayers: lobby.maxPlayers,
           playerCount: lobby.players.length,
           hostName: host ? host.name : 'Unbekannt',
@@ -63,17 +62,22 @@ export class LobbyManager {
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }
 
-  // 2. Lobby erstellen
+  // 2. Lobby erstellen (vollständig generisch)
   public createLobby(params: {
     name: string;
     isPrivate: boolean;
-    gameId: MultiplayerGameId;
+    gameId: string;
     userProfile: { id: string; name: string; avatar: any };
     socketId: string;
-  }): { lobby: Lobby; error?: string } {
+  }): { lobby: Lobby | null; error?: string } {
     const { name, isPrivate, gameId, userProfile, socketId } = params;
 
-    // Falls der Nutzer bereits in einer Lobby ist, vorher verlassen
+    const gameDef = gameRegistry.get(gameId);
+    if (!gameDef) {
+      return { lobby: null, error: `Spiel mit ID "${gameId}" ist nicht im System registriert.` };
+    }
+
+    // Vorherige Lobby verlassen
     this.leaveCurrentLobby(socketId);
 
     const lobbyId = `lob_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
@@ -95,7 +99,8 @@ export class LobbyManager {
       name: name.trim().slice(0, 30) || `${hostPlayer.name}s Runde`,
       isPrivate: Boolean(isPrivate),
       gameId,
-      maxPlayers: 2, // Standard für 2-Spieler-Duelle (Connect 4 / Tic Tac Toe)
+      minPlayers: gameDef.minPlayers,
+      maxPlayers: gameDef.maxPlayers,
       hostId: hostPlayer.id,
       players: [hostPlayer],
       status: 'waiting',
@@ -119,7 +124,6 @@ export class LobbyManager {
     const { lobbyIdOrCode, userProfile, socketId } = params;
     const cleanQuery = lobbyIdOrCode.trim().toUpperCase();
 
-    // Suchen nach lobby.id oder lobby.code
     let lobby: Lobby | undefined;
     for (const l of this.lobbies.values()) {
       if (l.id === lobbyIdOrCode || l.code.toUpperCase() === cleanQuery) {
@@ -132,7 +136,7 @@ export class LobbyManager {
       return { lobby: null, error: 'Lobby wurde nicht gefunden oder existiert nicht mehr.' };
     }
 
-    // Prüfen, ob der Spieler bereits in der Lobby ist (z. B. Reconnect / Refresh)
+    // Spieler-Reconnect / Refresh
     const existingPlayer = lobby.players.find((p) => p.id === userProfile.id);
     if (existingPlayer) {
       existingPlayer.socketId = socketId;
@@ -151,7 +155,6 @@ export class LobbyManager {
       return { lobby: null, error: 'Die Lobby ist bereits voll.' };
     }
 
-    // Spieler hinzufügen
     const newPlayer: Player = {
       id: userProfile.id,
       socketId,
@@ -183,7 +186,7 @@ export class LobbyManager {
     return { lobby };
   }
 
-  // 5. Spiel starten (nur durch Host)
+  // 5. Spiel starten (generisch über GameRegistry)
   public startGame(socketId: string): { lobby: Lobby | null; error?: string } {
     const lobbyId = this.socketToLobby.get(socketId);
     if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
@@ -196,8 +199,8 @@ export class LobbyManager {
       return { lobby: null, error: 'Nur der Host kann das Spiel starten.' };
     }
 
-    if (lobby.players.length < lobby.maxPlayers) {
-      return { lobby: null, error: `Es werden ${lobby.maxPlayers} Spieler benötigt.` };
+    if (lobby.players.length < lobby.minPlayers) {
+      return { lobby: null, error: `Es werden mindestens ${lobby.minPlayers} Spieler benötigt.` };
     }
 
     const notReady = lobby.players.filter((p) => !p.isReady);
@@ -205,22 +208,20 @@ export class LobbyManager {
       return { lobby: null, error: 'Noch nicht alle Spieler sind bereit.' };
     }
 
-    // Spielzustand initialisieren
-    if (lobby.gameId === 'tic-tac-toe') {
-      lobby.gameState = initTicTacToe(lobby.players);
-    } else if (lobby.gameId === 'connect') {
-      lobby.gameState = initConnectFour(lobby.players);
-    } else {
-      return { lobby: null, error: 'Unbekanntes Spiel.' };
+    const gameDef = gameRegistry.get(lobby.gameId);
+    if (!gameDef) {
+      return { lobby: null, error: `Spiellogik für "${lobby.gameId}" nicht gefunden.` };
     }
 
+    // Zentraler generischer Spielstart
+    lobby.gameState = gameDef.initGameState(lobby.players);
     lobby.status = 'in-game';
     lobby.rematchVotes = [];
 
     return { lobby };
   }
 
-  // 6. Spielzug ausführen
+  // 6. Spielzug ausführen (generisch über GameRegistry)
   public makeMove(
     socketId: string,
     moveData: any
@@ -236,36 +237,32 @@ export class LobbyManager {
     const player = lobby.players.find((p) => p.socketId === socketId);
     if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
 
-    if (lobby.gameId === 'tic-tac-toe') {
-      const res = applyTicTacToeMove(
-        lobby.gameState as any,
-        lobby.players,
-        player.id,
-        moveData.cellIndex
-      );
-      if (!res.valid) return { lobby: null, error: res.error };
-      lobby.gameState = res.state;
-      if (res.state.status !== 'playing') {
-        lobby.status = 'finished';
-      }
-    } else if (lobby.gameId === 'connect') {
-      const res = applyConnectFourMove(
-        lobby.gameState as any,
-        lobby.players,
-        player.id,
-        moveData.col
-      );
-      if (!res.valid) return { lobby: null, error: res.error };
-      lobby.gameState = res.state;
-      if (res.state.status !== 'playing') {
-        lobby.status = 'finished';
-      }
+    const gameDef = gameRegistry.get(lobby.gameId);
+    if (!gameDef) {
+      return { lobby: null, error: `Spiellogik für "${lobby.gameId}" nicht gefunden.` };
+    }
+
+    // Zentraler autoritativer Spielzug
+    const result = gameDef.validateAndApplyMove({
+      state: lobby.gameState,
+      players: lobby.players,
+      playerId: player.id,
+      move: moveData,
+    });
+
+    if (!result.valid) {
+      return { lobby: null, error: result.error || 'Ungültiger Spielzug.' };
+    }
+
+    lobby.gameState = result.state;
+    if (result.state.status !== 'playing') {
+      lobby.status = 'finished';
     }
 
     return { lobby };
   }
 
-  // 7. Rematch / Revanche anfordern
+  // 7. Rematch / Revanche anfordern (generisch)
   public requestRematch(socketId: string): { lobby: Lobby | null; restarted: boolean; error?: string } {
     const lobbyId = this.socketToLobby.get(socketId);
     if (!lobbyId) return { lobby: null, restarted: false, error: 'Keine aktive Lobby.' };
@@ -281,17 +278,17 @@ export class LobbyManager {
     }
 
     // Wenn alle Spieler zustimmen, Spiel neu starten
-    if (lobby.rematchVotes.length >= lobby.players.length && lobby.players.length === lobby.maxPlayers) {
-      // Starter rotieren (der bisherige Zweite fängt an)
+    if (lobby.rematchVotes.length >= lobby.players.length && lobby.players.length >= lobby.minPlayers) {
+      const gameDef = gameRegistry.get(lobby.gameId);
+      if (!gameDef) {
+        return { lobby: null, restarted: false, error: 'Spiellogik nicht gefunden.' };
+      }
+
+      // Starter wechseln
       const previousStarter = lobby.gameState?.currentTurn;
       const nextStarter = lobby.players.find((p) => p.id !== previousStarter)?.id;
 
-      if (lobby.gameId === 'tic-tac-toe') {
-        lobby.gameState = initTicTacToe(lobby.players, nextStarter);
-      } else if (lobby.gameId === 'connect') {
-        lobby.gameState = initConnectFour(lobby.players, nextStarter);
-      }
-
+      lobby.gameState = gameDef.initGameState(lobby.players, nextStarter);
       lobby.status = 'in-game';
       lobby.rematchVotes = [];
       return { lobby, restarted: true };
@@ -300,7 +297,7 @@ export class LobbyManager {
     return { lobby, restarted: false };
   }
 
-  // 8. Lobby verlassen
+  // 8. Lobby verlassen (generisch)
   public leaveCurrentLobby(socketId: string): {
     lobbyId: string | null;
     lobby: Lobby | null;
@@ -342,19 +339,22 @@ export class LobbyManager {
       lobby.hostId = lobby.players[0].id;
     }
 
-    // Wenn das Spiel lief und jemand geht, Spielzustand anpassen
-    if (lobby.status === 'in-game') {
-      lobby.status = 'finished';
-      if (lobby.gameState) {
+    // Wenn das Spiel lief, optionalen Game-Hook aufrufen oder Standard-Gewinn setzen
+    if (lobby.status === 'in-game' && lobby.gameState) {
+      const gameDef = gameRegistry.get(lobby.gameId);
+      if (gameDef?.onPlayerLeave) {
+        lobby.gameState = gameDef.onPlayerLeave(lobby.gameState, leavingPlayer.id, lobby.players);
+      } else {
         lobby.gameState.status = 'won';
-        lobby.gameState.winnerId = lobby.players[0].id; // Verbleibender Spieler gewinnt
+        lobby.gameState.winnerId = lobby.players[0].id;
       }
+      lobby.status = 'finished';
     }
 
     return { lobbyId, lobby, wasHost, deleted: false };
   }
 
-  // 9. Verbindung getrennt (Disconnect)
+  // 9. Verbindung getrennt
   public handleDisconnect(socketId: string): {
     lobbyId: string | null;
     lobby: Lobby | null;
@@ -371,10 +371,9 @@ export class LobbyManager {
 
     player.connected = false;
 
-    // Grace Period: 45 Sekunden Zeit zum Wiederverbinden
+    // Grace Period: 45 Sekunden zum Wiederverbinden
     const timer = setTimeout(() => {
       this.disconnectTimers.delete(player.id);
-      // Wenn immer noch nicht verbunden, endgültig entfernen
       if (!player.connected) {
         this.leaveCurrentLobby(socketId);
       }
@@ -385,14 +384,13 @@ export class LobbyManager {
     return { lobbyId, lobby, player };
   }
 
-  // 10. Wiederverbinden nach Verbindungsabbruch
+  // 10. Wiederverbinden
   public reconnectPlayer(params: {
     userId: string;
     socketId: string;
   }): { lobby: Lobby | null } {
     const { userId, socketId } = params;
 
-    // Laufenden Disconnect-Timer abbrechen
     const timer = this.disconnectTimers.get(userId);
     if (timer) {
       clearTimeout(timer);

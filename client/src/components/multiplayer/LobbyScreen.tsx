@@ -12,7 +12,6 @@ import type { Game } from '../../data/games';
 import type {
   Lobby,
   LobbySummary,
-  MultiplayerGameId,
 } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
@@ -47,7 +46,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
   const [joinCode, setJoinCode] = useState('');
   const [isJoiningCode, setIsJoiningCode] = useState(false);
 
-  const gameId = game.id as MultiplayerGameId;
+  const gameId = game.id;
 
   // Lobbys laden
   const loadLobbies = async () => {
@@ -140,6 +139,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     return (
       <MultiplayerGameView
         lobby={currentLobby}
+        gameTitle={game.title}
         onLeave={handleLeaveLobby}
       />
     );
@@ -162,6 +162,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
         >
           <InLobbyView
             lobby={currentLobby}
+            gameTitle={game.title}
             onLeave={handleLeaveLobby}
             onGameStart={() => setIsInGame(true)}
           />

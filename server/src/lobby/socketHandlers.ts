@@ -1,15 +1,14 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { lobbyManager } from './lobbyManager.js';
 import { checkRateLimit, cleanupSocketRateLimit } from '../utils/rateLimiter.js';
-import { MultiplayerGameId } from '../types/multiplayer.js';
 
 export function registerSocketHandlers(io: SocketIOServer) {
   io.on('connection', (socket: Socket) => {
-    // 1. Liste offener Lobbys abrufen
+    // 1. Liste offener Lobbys für ein beliebiges Spiel abrufen
     socket.on(
       'lobby:list',
       (
-        data: { gameId: MultiplayerGameId },
+        data: { gameId: string },
         callback?: (res: { success: boolean; lobbies?: any[]; error?: string }) => void
       ) => {
         if (!checkRateLimit(socket.id)) {
@@ -24,14 +23,14 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     );
 
-    // 2. Lobby erstellen
+    // 2. Lobby erstellen (generisch für alle Spiele)
     socket.on(
       'lobby:create',
       (
         data: {
           name: string;
           isPrivate: boolean;
-          gameId: MultiplayerGameId;
+          gameId: string;
           userProfile: { id: string; name: string; avatar: any };
         },
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
@@ -55,7 +54,6 @@ export function registerSocketHandlers(io: SocketIOServer) {
           socket.join(`lobby:${lobby.id}`);
           callback?.({ success: true, lobby });
 
-          // Öffentliche Lobby-Listen für alle Clients aktualisieren
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -90,7 +88,6 @@ export function registerSocketHandlers(io: SocketIOServer) {
           socket.join(`lobby:${lobby.id}`);
           callback?.({ success: true, lobby });
 
-          // Alle Teilnehmer im Raum über den Beitritt informieren
           io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
         } catch (err: any) {
@@ -128,7 +125,6 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: error || 'Spiel konnte nicht gestartet werden.' });
         }
 
-        // Startsignal an alle Teilnehmer im Raum senden
         io.to(`lobby:${lobby.id}`).emit('game:started', { lobby });
         io.emit('lobby:list-updated', { gameId: lobby.gameId });
         callback?.({ success: true, lobby });
@@ -137,7 +133,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     });
 
-    // 6. Spielzug ausführen
+    // 6. Spielzug ausführen (generisch)
     socket.on(
       'game:move',
       (moveData: any, callback?: (res: { success: boolean; error?: string; gameState?: any }) => void) => {
@@ -150,7 +146,6 @@ export function registerSocketHandlers(io: SocketIOServer) {
             return callback?.({ success: false, error: error || 'Ungültiger Zug.' });
           }
 
-          // Neuen Spielstand an alle im Raum broadcasten
           io.to(`lobby:${lobby.id}`).emit('game:state', {
             gameState: lobby.gameState,
             status: lobby.status,
@@ -196,7 +191,10 @@ export function registerSocketHandlers(io: SocketIOServer) {
           if (deleted) {
             io.emit('lobby:list-updated', {});
           } else if (lobby) {
-            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby, message: wasHost ? 'Neuer Host gewählt.' : 'Ein Spieler hat die Lobby verlassen.' });
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
+              lobby,
+              message: wasHost ? 'Neuer Host gewählt.' : 'Ein Spieler hat die Lobby verlassen.',
+            });
             io.emit('lobby:list-updated', { gameId: lobby.gameId });
           }
         }

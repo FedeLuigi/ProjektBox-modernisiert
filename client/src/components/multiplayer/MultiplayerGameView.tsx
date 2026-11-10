@@ -6,24 +6,25 @@ import {
   Users,
   WifiOff,
 } from 'lucide-react';
-import type {
-  ConnectFourState,
-  Lobby,
-  TicTacToeState,
-} from '../../types/multiplayer';
+import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
+import { clientGameRegistry } from '../../games/registry';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
+  gameTitle?: string;
   onLeave: () => void;
 }
 
-export function MultiplayerGameView({ lobby: initialLobby, onLeave }: MultiplayerGameViewProps) {
+export function MultiplayerGameView({
+  lobby: initialLobby,
+  gameTitle,
+  onLeave,
+}: MultiplayerGameViewProps) {
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
-  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
@@ -77,30 +78,13 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
     }
   }, [errorMsg]);
 
-  // Tic Tac Toe Zug ausführen
-  const handleTicTacToeCellClick = async (cellIndex: number) => {
+  // Zentraler generischer Spielzug-Handler (für alle Spiele)
+  const handleSendMove = async (moveData: any) => {
     if (!isMyTurn || isSubmitting) return;
-    const tttState = gameState as TicTacToeState;
-    if (tttState.board[cellIndex] !== null) return;
 
     setIsSubmitting(true);
     try {
-      await socketService.sendMove({ cellIndex });
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Ungültiger Zug.');
-      setIsSubmitting(false);
-    }
-  };
-
-  // Vier gewinnt Spalte werfen
-  const handleConnectFourColClick = async (col: number) => {
-    if (!isMyTurn || isSubmitting) return;
-    const c4State = gameState as ConnectFourState;
-    if (c4State.board[0][col] !== null) return; // Spalte voll
-
-    setIsSubmitting(true);
-    try {
-      await socketService.sendMove({ col });
+      await socketService.sendMove(moveData);
     } catch (err: any) {
       setErrorMsg(err.message || 'Ungültiger Zug.');
       setIsSubmitting(false);
@@ -121,6 +105,9 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
   const isWinner = gameState?.status === 'won' && gameState.winnerId === currentUser.id;
   const isLoser = gameState?.status === 'won' && gameState.winnerId !== currentUser.id;
   const isDraw = gameState?.status === 'draw';
+
+  // Dynamischer Game-Board Renderer aus der zentralen Registry
+  const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
     <div
@@ -155,7 +142,7 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
 
           <div className="flex flex-col items-center">
             <span className="text-[11px] font-extrabold uppercase tracking-widest text-purple-400">
-              {lobby.gameId === 'connect' ? 'Vier gewinnt' : 'Tic Tac Toe'}
+              {gameTitle || lobby.name}
             </span>
             <span className="text-[10px] font-semibold text-[#8E8E93]">
               Code: <strong className="text-white tracking-widest">{lobby.code}</strong>
@@ -164,7 +151,9 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
 
           <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-white/80 ring-1 ring-white/10">
             <Users className="h-3 w-3 text-purple-400" />
-            <span>2/2</span>
+            <span>
+              {lobby.players.length}/{lobby.maxPlayers}
+            </span>
           </div>
         </header>
 
@@ -188,7 +177,9 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
               {myPlayer?.color && (
                 <span
                   className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                    myPlayer.color === 'red' ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                    myPlayer.color === 'red'
+                      ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                      : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
                   }`}
                 />
               )}
@@ -226,7 +217,9 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
               {opponent?.color && (
                 <span
                   className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                    opponent.color === 'red' ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]' : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
+                    opponent.color === 'red'
+                      ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
+                      : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
                   }`}
                 />
               )}
@@ -259,114 +252,22 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
           </div>
         )}
 
-        {/* 3. MITTE: INTERAKTIVES SPIELFELD */}
+        {/* 3. MITTE: DYNAMISCHES SPIELFELD AUS DER REGISTRY */}
         <main className="my-auto mx-auto flex w-full max-w-md flex-1 items-center justify-center p-2">
-          {/* TIC TAC TOE BOARD */}
-          {lobby.gameId === 'tic-tac-toe' && gameState && (
-            <div className="grid grid-cols-3 gap-3 p-4 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-72 h-72 sm:w-84 sm:h-84">
-              {(gameState as TicTacToeState).board.map((cell, idx) => {
-                const isWinningCell = (gameState as TicTacToeState).winningLine?.includes(idx);
-                return (
-                  <button
-                    key={idx}
-                    type="button"
-                    disabled={!isMyTurn || cell !== null || isGameOver}
-                    onClick={() => handleTicTacToeCellClick(idx)}
-                    className={`relative flex items-center justify-center rounded-2xl text-4xl sm:text-5xl font-black transition-all ${
-                      cell === null
-                        ? isMyTurn && !isGameOver
-                          ? 'bg-white/5 hover:bg-white/10 active:scale-95 cursor-pointer ring-1 ring-white/10 hover:ring-purple-500/50'
-                          : 'bg-white/[0.03] cursor-not-allowed opacity-60'
-                        : isWinningCell
-                          ? 'bg-purple-600/40 text-purple-300 ring-2 ring-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.6)] animate-pulse'
-                          : cell === 'X'
-                            ? 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30'
-                            : 'bg-pink-500/15 text-pink-400 ring-1 ring-pink-500/30'
-                    }`}
-                  >
-                    {cell === 'X' && <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#a855f7]">X</span>}
-                    {cell === 'O' && <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#ec4899]">O</span>}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-
-          {/* VIER GEWINNT (CONNECT 4) BOARD */}
-          {lobby.gameId === 'connect' && gameState && (
-            <div className="flex flex-col items-center w-full max-w-sm">
-              {/* Spalten-Auswahl-Pfeile / Indikatoren */}
-              <div className="grid grid-cols-7 gap-1.5 w-full px-3 mb-1">
-                {Array.from({ length: 7 }).map((_, c) => {
-                  const isColFull = (gameState as ConnectFourState).board[0][c] !== null;
-                  const isHovered = hoveredCol === c;
-                  return (
-                    <button
-                      key={c}
-                      type="button"
-                      disabled={!isMyTurn || isColFull || isGameOver}
-                      onClick={() => handleConnectFourColClick(c)}
-                      onMouseEnter={() => setHoveredCol(c)}
-                      onMouseLeave={() => setHoveredCol(null)}
-                      className={`h-6 flex items-center justify-center rounded-t-lg transition-all ${
-                        isMyTurn && !isColFull && !isGameOver
-                          ? isHovered
-                            ? 'text-purple-400 scale-125'
-                            : 'text-white/40 hover:text-white'
-                          : 'opacity-0 pointer-events-none'
-                      }`}
-                    >
-                      ▼
-                    </button>
-                  );
-                })}
-              </div>
-
-              {/* 7 Spalten x 6 Zeilen Raster */}
-              <div className="p-3 rounded-3xl bg-[#141526] ring-2 ring-[#2A2B45] shadow-2xl backdrop-blur-xl w-full">
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
-                  {Array.from({ length: 7 }).map((_, colIdx) => (
-                    <div
-                      key={colIdx}
-                      onClick={() => handleConnectFourColClick(colIdx)}
-                      onMouseEnter={() => setHoveredCol(colIdx)}
-                      onMouseLeave={() => setHoveredCol(null)}
-                      className={`flex flex-col gap-1.5 sm:gap-2 p-0.5 rounded-xl transition-colors ${
-                        isMyTurn && hoveredCol === colIdx && !isGameOver ? 'bg-white/5 cursor-pointer' : ''
-                      }`}
-                    >
-                      {Array.from({ length: 6 }).map((_, rowIdx) => {
-                        const cellColor = (gameState as ConnectFourState).board[rowIdx][colIdx];
-                        const isWinningCell = (gameState as ConnectFourState).winningCoords?.some(
-                          (coord) => coord.row === rowIdx && coord.col === colIdx
-                        );
-
-                        return (
-                          <div
-                            key={rowIdx}
-                            className={`aspect-square w-full rounded-full transition-transform flex items-center justify-center ${
-                              cellColor === null
-                                ? 'bg-[#0B0B14] shadow-inner ring-1 ring-white/5'
-                                : cellColor === 'red'
-                                  ? isWinningCell
-                                    ? 'bg-rose-500 shadow-[0_0_16px_#f43f5e] ring-2 ring-white scale-105 animate-pulse'
-                                    : 'bg-gradient-to-br from-rose-400 to-rose-600 shadow-[0_2px_8px_rgba(244,63,94,0.4)] ring-1 ring-rose-400/50'
-                                  : isWinningCell
-                                    ? 'bg-amber-400 shadow-[0_0_16px_#fbbf24] ring-2 ring-white scale-105 animate-pulse'
-                                    : 'bg-gradient-to-br from-amber-300 to-amber-500 shadow-[0_2px_8px_rgba(251,191,36,0.4)] ring-1 ring-amber-300/50'
-                            }`}
-                          >
-                            {/* Glanzpunkt auf dem Spielstein */}
-                            {cellColor && (
-                              <div className="h-2 w-2 rounded-full bg-white/40 -translate-y-1.5 -translate-x-1.5" />
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  ))}
-                </div>
-              </div>
+          {BoardComponent && myPlayer ? (
+            <BoardComponent
+              gameState={gameState}
+              myPlayer={myPlayer}
+              opponent={opponent}
+              allPlayers={lobby.players}
+              isMyTurn={isMyTurn}
+              isGameOver={isGameOver}
+              onMove={handleSendMove}
+              disabled={isSubmitting}
+            />
+          ) : (
+            <div className="text-center p-8 rounded-2xl bg-white/5 ring-1 ring-white/10 text-xs text-[#8E8E93]">
+              Spielfeld wird initialisiert...
             </div>
           )}
         </main>
@@ -388,7 +289,7 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
 
             <p className="mt-1 text-xs text-[#8E8E93]">
               {lobby.rematchVotes.length > 0
-                ? `${lobby.rematchVotes.length}/2 Spieler möchten Revanche`
+                ? `${lobby.rematchVotes.length}/${lobby.players.length} Spieler möchten Revanche`
                 : 'Bereit für eine Revanche?'}
             </p>
 
@@ -419,7 +320,7 @@ export function MultiplayerGameView({ lobby: initialLobby, onLeave }: Multiplaye
         ) : (
           <footer className="shrink-0 text-center text-xs font-medium text-[#8E8E93] py-2">
             {isMyTurn ? (
-              <span className="text-purple-400 font-bold">Tippe auf das Feld, um deinen Zug zu machen.</span>
+              <span className="text-purple-400 font-bold">Du bist am Zug!</span>
             ) : (
               <span>Warte auf {opponent?.name || 'Gegner'}...</span>
             )}

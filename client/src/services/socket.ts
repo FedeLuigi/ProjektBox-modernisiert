@@ -2,7 +2,6 @@ import { io, Socket } from 'socket.io-client';
 import type {
   Lobby,
   LobbySummary,
-  MultiplayerGameId,
 } from '../types/multiplayer';
 import { getUserProfile, STORAGE_KEYS } from '../utils/userProfile';
 
@@ -61,7 +60,6 @@ class SocketService {
     } catch {
       // ignore
     }
-    // Neu verbinden mit neuer URL
     this.disconnect();
     this.connect();
   }
@@ -86,7 +84,6 @@ class SocketService {
 
     this.socket.on('connect', () => {
       this.setStatus('connected');
-      // Automatisch in bestehende Lobby reconnecten falls aktiv
       const profile = getUserProfile();
       if (profile && this.activeLobbyId) {
         this.socket?.emit('lobby:reconnect', { userId: profile.id });
@@ -96,7 +93,6 @@ class SocketService {
     this.socket.on('disconnect', (reason) => {
       this.setStatus('disconnected');
       if (reason === 'io server disconnect') {
-        // Server hat Verbindung getrennt, manuell wiederverbinden
         this.socket?.connect();
       }
     });
@@ -123,7 +119,7 @@ class SocketService {
 
   // ─── API METHODEN ───
 
-  public async fetchLobbies(gameId: MultiplayerGameId): Promise<LobbySummary[]> {
+  public async fetchLobbies(gameId: string): Promise<LobbySummary[]> {
     const s = this.connect();
     return new Promise((resolve, reject) => {
       s.emit(
@@ -143,7 +139,7 @@ class SocketService {
   public async createLobby(
     name: string,
     isPrivate: boolean,
-    gameId: MultiplayerGameId
+    gameId: string
   ): Promise<Lobby> {
     const s = this.connect();
     const userProfile = getUserProfile();

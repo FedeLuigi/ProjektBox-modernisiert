@@ -2,6 +2,7 @@ import { ArrowLeft, Clock3, Play, Sparkles, Users, Wifi } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../data/games';
 import { GameBackground } from './GameBackground';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
+import { clientGameRegistry } from '../games/registry';
 
 interface GameSheetProps {
   game: Game | null;
@@ -11,9 +12,8 @@ interface GameSheetProps {
 
 export function isMultiplayerGame(game: Game): boolean {
   return (
-    game.id === 'connect' ||
-    game.id === 'tic-tac-toe' ||
-    game.players.includes('2')
+    clientGameRegistry.has(game.id) ||
+    !game.players.includes('1')
   );
 }
 
