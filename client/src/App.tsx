@@ -311,7 +311,7 @@ export function App() {
       {/* ─── 1. OBERE LEISTE: Transparenter, ruhiger Header & iOS Kategorie-Filter ─── */}
       <header
         style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
-        className="relative z-30 shrink-0 bg-transparent px-4 sm:px-6 pt-[max(1rem,env(safe-area-inset-top))] pb-2"
+        className="relative z-30 shrink-0 bg-transparent px-4 sm:px-6 lg:px-12 xl:px-16 max-w-7xl mx-auto w-full pt-[max(1rem,env(safe-area-inset-top))] pb-2"
       >
         <div className="flex items-center justify-between mb-2.5">
           {/* Logo & Titel: ruhig, dezent, mit dem Hintergrund verschmolzen */}
@@ -387,11 +387,11 @@ export function App() {
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
         {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">
-            <div className="flex items-center justify-between px-4 sm:px-6 mb-2">
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-[#EA580C] dark:text-[#FB923C]" />
                 <h2
@@ -407,7 +407,7 @@ export function App() {
             </div>
 
             {/* Horizontale Wischleiste mit flachen Kacheln (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 scroll-px-4 sm:scroll-px-6 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
               {quickLaunchGames.map((game) => (
                 <QuickLaunchTile
                   key={`quick-${game.id}`}
@@ -423,7 +423,7 @@ export function App() {
         {/* ── Sektion 2: Beliebt & Strategie (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Strategie') && (
           <section aria-labelledby="heading-strategy">
-            <div className="flex items-center justify-between px-4 sm:px-6 mb-2">
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
               <div className="flex items-center gap-1.5">
                 <Trophy className="h-4 w-4 text-[#7C3AED] dark:text-[#A78BFA]" />
                 <h2
@@ -439,7 +439,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 scroll-px-4 sm:scroll-px-6 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
               {strategyGames.map((game) => (
                 <CompactGameCard
                   key={`strat-${game.id}`}
@@ -455,7 +455,7 @@ export function App() {
         {/* ── Sektion 3: Denkspiele & Rätsel (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Denken') && (
           <section aria-labelledby="heading-puzzle">
-            <div className="flex items-center justify-between px-4 sm:px-6 mb-2">
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
               <div className="flex items-center gap-1.5">
                 <Brain className="h-4 w-4 text-[#EA580C] dark:text-[#FB923C]" />
                 <h2
@@ -471,7 +471,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 scroll-px-4 sm:scroll-px-6 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
               {puzzleGames.map((game) => (
                 <CompactGameCard
                   key={`puzzle-${game.id}`}
@@ -487,7 +487,7 @@ export function App() {
         {/* ── Sektion 4: Arcade & Reflexe (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-arcade">
-            <div className="flex items-center justify-between px-4 sm:px-6 mb-2">
+            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
               <div className="flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-[#059669] dark:text-[#34D399]" />
                 <h2
@@ -503,7 +503,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 scroll-px-4 sm:scroll-px-6 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
               {arcadeGames.map((game) => (
                 <CompactGameCard
                   key={`arcade-${game.id}`}

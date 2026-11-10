@@ -83,7 +83,7 @@ export function TvLobbyView({
   };
 
   return (
-    <div className="relative flex flex-col justify-between h-full w-full max-w-6xl mx-auto py-4 sm:py-6 text-white select-none">
+    <div className="relative flex flex-col justify-between h-full w-full max-w-6xl 2xl:max-w-7xl mx-auto py-2 lg:py-6 text-white select-none">
       {/* ─── 1. KOPFZEILE: Fernseher-Modus & Beenden ─── */}
       <header className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">

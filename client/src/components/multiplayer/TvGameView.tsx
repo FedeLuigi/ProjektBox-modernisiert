@@ -98,13 +98,13 @@ export function TvGameView({
       <div className="pointer-events-none absolute -top-24 -left-24 h-[500px] w-[500px] rounded-full blur-3xl opacity-35 bg-purple-600/30" />
       <div className="pointer-events-none absolute -bottom-24 -right-24 h-[500px] w-[500px] rounded-full blur-3xl opacity-35 bg-pink-600/25" />
 
-      {/* ─── Großbild-Container ─── */}
+      {/* ─── Großbild-Container mit sicherem Abstand zu den Bildschirmrändern ─── */}
       <div
         style={{
-          paddingTop: 'max(16px, env(safe-area-inset-top))',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          paddingTop: 'max(24px, env(safe-area-inset-top))',
+          paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
         }}
-        className="relative z-10 flex h-full w-full flex-col justify-between px-6 sm:px-10 max-w-7xl mx-auto"
+        className="relative z-10 flex h-full w-full flex-col justify-between px-6 sm:px-12 lg:px-16 xl:px-24 2xl:px-32 max-w-[1600px] mx-auto py-2 lg:py-6"
       >
         {/* 1. KOPFZEILE */}
         <header className="flex shrink-0 items-center justify-between pb-3 border-b border-white/10">
@@ -166,7 +166,7 @@ export function TvGameView({
 
         {/* 2. MITTE: 3-SPALTEN-LAYOUT FÜR ZEICHNEN & RATEN ODER STANDARD-DUELL */}
         {isDrawAndGuess ? (
-          <main className="my-auto flex flex-1 items-center justify-between gap-6 py-2 w-full overflow-visible">
+          <main className="my-auto flex flex-1 items-center justify-between gap-6 lg:gap-10 xl:gap-14 py-2 w-full overflow-visible">
             {/* Linke Spalte: Spieler & Rangliste (Einheitliche Höhe mit rechter Spalte) */}
             <div className="w-64 lg:w-72 shrink-0 flex flex-col h-[52vh] sm:h-[56vh] rounded-3xl bg-white/[0.03] ring-1 ring-white/10 p-4 backdrop-blur-md shadow-xl">
               <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] pb-2.5 mb-1 border-b border-white/10 shrink-0">
@@ -274,7 +274,7 @@ export function TvGameView({
           </main>
         ) : (
           /* Standard Duell-Layout (Tic-Tac-Toe, 4 Gewinnt) */
-          <main className="my-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-10 py-4">
+          <main className="my-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-12 xl:gap-16 py-4 w-full">
             {/* Spieler 1 (Links) */}
             <div
               className={`flex flex-col items-center p-6 rounded-3xl transition-all ${

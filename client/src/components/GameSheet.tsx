@@ -49,8 +49,8 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
         className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
       />
 
-      {/* ─── Vollbild-Container mit sicherem Abstand zur iPhone Notch ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+      {/* ─── Vollbild-Container mit sicherem Abstand zu den Rändern ─── */}
+      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-16 xl:px-24 py-3 lg:py-8 max-w-7xl mx-auto">
         {/* 1. OBERE LEISTE: Zurück-Pille & Kategorie-Badge (wie im Hauptmenü) */}
         <header className="flex shrink-0 items-center justify-between">
           <button

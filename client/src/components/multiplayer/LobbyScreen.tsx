@@ -223,10 +223,18 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
         <BackgroundCometCanvas opacity={0.4} />
         <div
           style={{
-            paddingTop: 'max(16px, env(safe-area-inset-top))',
-            paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+            paddingTop: isTvScreenHost
+              ? 'max(24px, env(safe-area-inset-top))'
+              : 'max(16px, env(safe-area-inset-top))',
+            paddingBottom: isTvScreenHost
+              ? 'max(24px, env(safe-area-inset-bottom))'
+              : 'max(16px, env(safe-area-inset-bottom))',
           }}
-          className="relative z-10 flex h-full w-full flex-col px-4 sm:px-6"
+          className={`relative z-10 flex h-full w-full flex-col ${
+            isTvScreenHost
+              ? 'px-6 sm:px-12 lg:px-16 xl:px-24 2xl:px-32 py-2 lg:py-6 max-w-[1600px] mx-auto'
+              : 'px-4 sm:px-6'
+          }`}
         >
           {isTvScreenHost ? (
             <TvLobbyView
