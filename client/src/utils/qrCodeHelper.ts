@@ -1,5 +1,28 @@
 import QRCode from 'qrcode';
 
+let cachedServerOrigin: string | null = null;
+
+// Server-Info asynchron abrufen (meldet Render.com URL oder lokale Netzwerk-IP)
+if (typeof window !== 'undefined') {
+  fetch('/api/server-info')
+    .then((r) => r.json())
+    .then((data) => {
+      if (data?.renderUrl) {
+        cachedServerOrigin = data.renderUrl;
+      } else if (
+        (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') &&
+        data?.localIps &&
+        data.localIps.length > 0
+      ) {
+        const port = window.location.port ? `:${window.location.port}` : '';
+        cachedServerOrigin = `http://${data.localIps[0]}${port}`;
+      }
+    })
+    .catch(() => {
+      // Offline oder stiller Fehler
+    });
+}
+
 /**
  * Erzeugt einen sauberen, gut scannbaren QR-Code auf einem Canvas-Element
  */
@@ -21,10 +44,36 @@ export async function renderQrCodeToCanvas(
 
 /**
  * Baut den vollständigen Beitritts-Link für die aktuelle Domain & Lobby
+ * Funktioniert nahtlos auf Render.com, im lokalen Netzwerk (WLAN) und bei Custom-Domains
  */
 export function getLobbyJoinUrl(code: string): string {
+  const cleanCode = code.toUpperCase();
+
+  // 1. Manuell in den Einstellungen hinterlegte Server-URL
+  try {
+    const customSocket = localStorage.getItem('projektbox_custom_socket_url');
+    if (customSocket && customSocket.startsWith('http')) {
+      const url = new URL(customSocket);
+      return `${url.origin}/?join=${cleanCode}`;
+    }
+  } catch {
+    // ignore
+  }
+
+  // 2. Build-Zeit Umgebungsvariable (z. B. VITE_PUBLIC_URL)
+  const envUrl = (import.meta as any).env?.VITE_PUBLIC_URL || (import.meta as any).env?.VITE_APP_URL;
+  if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http')) {
+    return `${envUrl.replace(/\/$/, '')}/?join=${cleanCode}`;
+  }
+
+  // 3. Vom Backend ermittelte Render-URL oder LAN-IP (für Handy-Zugriff im WLAN)
+  if (cachedServerOrigin) {
+    return `${cachedServerOrigin.replace(/\/$/, '')}/?join=${cleanCode}`;
+  }
+
+  // 4. Standard Browser-Origin (auf Render.com automatisch https://<app>.onrender.com)
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
-  return `${origin}/?join=${code.toUpperCase()}`;
+  return `${origin}/?join=${cleanCode}`;
 }
 
 /**

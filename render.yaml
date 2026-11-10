@@ -1,10 +1,11 @@
 services:
   - type: web
-    name: fullstack-socketio-app
+    name: projektbox
     env: node
     plan: free
     buildCommand: npm run build
     startCommand: npm start
+    healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production

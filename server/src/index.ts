@@ -24,17 +24,34 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// Healthcheck für Cloud Provider (z. B. Render.com)
+app.get('/healthz', (_req, res) => {
+  res.status(200).send('OK');
+});
+
 // REST API Routen
 app.use('/api', apiRouter);
 
-// Statische Bereitstellung des Frontends (PWA)
-const clientDistPath = path.resolve(__dirname, '../../client/dist');
+// Statische Bereitstellung des Frontends (PWA) mit robustem Pfad-Fallback
+const possibleClientPaths = [
+  path.resolve(__dirname, '../../client/dist'),
+  path.resolve(__dirname, '../client/dist'),
+  path.resolve(process.cwd(), 'client/dist'),
+  path.resolve(process.cwd(), 'dist'),
+];
+
+const clientDistPath = possibleClientPaths.find((p) => fs.existsSync(p)) || possibleClientPaths[0];
 
 if (fs.existsSync(clientDistPath)) {
+  console.log(`📦 Statisches Frontend gefunden unter: ${clientDistPath}`);
   app.use(express.static(clientDistPath));
 
   app.get('*', (req, res, next) => {
-    if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+    if (
+      req.path.startsWith('/api') ||
+      req.path.startsWith('/socket.io') ||
+      req.path.startsWith('/healthz')
+    ) {
       return next();
     }
     const indexPath = path.join(clientDistPath, 'index.html');
@@ -44,8 +61,12 @@ if (fs.existsSync(clientDistPath)) {
     next();
   });
 } else {
+  console.warn(`⚠️ client/dist nicht gefunden! Pfade geprüft:`, possibleClientPaths);
   app.get('/', (_req, res) => {
-    res.json({ status: 'ok', message: 'ProjektBox Server aktiv' });
+    res.json({
+      status: 'ok',
+      message: 'ProjektBox Server aktiv (Frontend-Build client/dist noch nicht erstellt).',
+    });
   });
 }
 
@@ -63,7 +84,7 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
   server = http.createServer(app);
 }
 
-// Socket.io Server initialisieren
+// Socket.io Server initialisieren (CORS für beliebige Domains/Render aktiv)
 const io = new SocketIOServer(server, {
   cors: {
     origin: '*',
@@ -78,5 +99,8 @@ const io = new SocketIOServer(server, {
 registerSocketHandlers(io);
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT}`);
+  console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT} (0.0.0.0)`);
+  if (process.env.RENDER_EXTERNAL_URL) {
+    console.log(`🌐 Render.com URL: ${process.env.RENDER_EXTERNAL_URL}`);
+  }
 });
