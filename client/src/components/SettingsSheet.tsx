@@ -327,7 +327,7 @@ export function SettingsSheet({
                 />
               </div>
 
-              {/* Start-Animation ansehen */}
+              {/* Start-Animation erneut abspielen */}
               {onReplaySplash && (
                 <button
                   type="button"
@@ -338,7 +338,7 @@ export function SettingsSheet({
                   className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-xs font-bold text-purple-600 dark:text-purple-300 transition-all ring-1 ring-purple-500/25 active:scale-95 cursor-pointer"
                 >
                   <Film className="h-4 w-4" />
-                  <span>3D Start-Animation ansehen</span>
+                  <span>Start-Animation ansehen</span>
                 </button>
               )}
 

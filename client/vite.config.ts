@@ -66,9 +66,9 @@ export default defineConfig({
               request.destination === 'image',
             handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'projektbox-static-cache-v3',
+              cacheName: 'projektbox-static-cache',
               expiration: {
-                maxEntries: 80,
+                maxEntries: 60,
                 maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Tage
               },
             },
