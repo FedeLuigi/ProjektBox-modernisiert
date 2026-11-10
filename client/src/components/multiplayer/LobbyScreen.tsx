@@ -8,7 +8,7 @@ import {
   Search,
   Tv,
 } from 'lucide-react';
-import type { Game } from '../../data/games';
+import { GAMES, type Game } from '../../data/games';
 import type {
   Lobby,
   LobbySummary,
@@ -27,13 +27,24 @@ interface LobbyScreenProps {
   game: Game;
   onClose: () => void;
   initialLobby?: Lobby | null;
+  onGameChange?: (game: Game) => void;
 }
 
 type TabType = 'browse' | 'code' | 'create';
 
-export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
+export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
-  const [isInGame, setIsInGame] = useState(false);
+  const [isInGame, setIsInGame] = useState(Boolean(initialLobby?.status === 'in-game'));
+
+  // Synchronisiere initialLobby sofort in den internen Zustand
+  useEffect(() => {
+    if (initialLobby) {
+      setCurrentLobby(initialLobby);
+      if (initialLobby.status === 'in-game') {
+        setIsInGame(true);
+      }
+    }
+  }, [initialLobby]);
 
   const [activeTab, setActiveTab] = useState<TabType>('browse');
   const [lobbies, setLobbies] = useState<LobbySummary[]>([]);
@@ -128,6 +139,12 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     try {
       const joined = await socketService.joinLobby(lobbyId);
       setCurrentLobby(joined);
+      if (joined.gameId !== game.id) {
+        const targetGame = GAMES.find((g) => g.id === joined.gameId);
+        if (targetGame && onGameChange) {
+          onGameChange(targetGame);
+        }
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Beitritt fehlgeschlagen.');
     }
@@ -145,6 +162,14 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
       const joined = await socketService.joinLobby(cleanCode);
       setCurrentLobby(joined);
       setShowScanner(false);
+
+      // Falls die beigetretene Lobby zu einem anderen Spiel gehört:
+      if (joined.gameId !== game.id) {
+        const targetGame = GAMES.find((g) => g.id === joined.gameId);
+        if (targetGame && onGameChange) {
+          onGameChange(targetGame);
+        }
+      }
     } catch (err: any) {
       setErrorMsg(err.message || 'Lobby mit diesem Code nicht gefunden.');
     } finally {

@@ -183,10 +183,15 @@ class SocketService {
     const userProfile = getUserProfile();
 
     return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(new Error('Zeitüberschreitung: Lobby konnte nicht erreicht werden.'));
+      }, 8000);
+
       s.emit(
         'lobby:join',
         { lobbyIdOrCode, userProfile },
         (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          clearTimeout(timer);
           if (res.success && res.lobby) {
             this.activeLobbyId = res.lobby.id;
             resolve(res.lobby);

@@ -13,6 +13,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
+import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import { getUserProfile } from './utils/userProfile';
 import { socketService } from './services/socket';
 import { parseLobbyCode } from './utils/qrCodeHelper';
@@ -49,6 +50,9 @@ export function App() {
   });
 
   const [isJoiningDeepLink, setIsJoiningDeepLink] = useState(Boolean(initialDeepLinkCode));
+  const [showTvJoinModal, setShowTvJoinModal] = useState(false);
+  const [tvJoinError, setTvJoinError] = useState<string | null>(null);
+  const [isJoiningLobby, setIsJoiningLobby] = useState(false);
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
@@ -178,27 +182,48 @@ export function App() {
     []
   );
 
+  // Zentraler Beitritt per Code / QR-Code: leitet sofort in die Lobby des jeweiligen Spiels weiter
+  const joinByCode = async (code: string) => {
+    const cleanCode = code.trim().toUpperCase();
+    if (!cleanCode) return;
+
+    setIsJoiningLobby(true);
+    setTvJoinError(null);
+    try {
+      const lobby = await socketService.joinLobby(cleanCode);
+      const matchedGame = GAMES.find((g) => g.id === lobby.gameId) || GAMES[0];
+      setDeepLinkLobby(lobby);
+      setMultiplayerGame(matchedGame);
+      setSelectedGame(null);
+      setShowTvJoinModal(false);
+      setIsJoiningDeepLink(false);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } catch (err: any) {
+      console.warn('Lobby-Beitritt fehlgeschlagen:', err);
+      setTvJoinError(err.message || 'Lobby konnte nicht gefunden werden.');
+      setIsJoiningDeepLink(false);
+      setShowTvJoinModal(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } finally {
+      setIsJoiningLobby(false);
+    }
+  };
+
   // Beim Start Nutzerprofil sicherstellen und Deep-Link (?join=CODE) prüfen
   useEffect(() => {
     getUserProfile();
 
-    if (initialDeepLinkCode) {
-      socketService
-        .joinLobby(initialDeepLinkCode)
-        .then((lobby) => {
-          const matchedGame = GAMES.find((g) => g.id === lobby.gameId) || GAMES[0];
-          setDeepLinkLobby(lobby);
-          setMultiplayerGame(matchedGame);
-          setIsJoiningDeepLink(false);
-          window.history.replaceState({}, document.title, window.location.pathname);
-        })
-        .catch((err) => {
-          console.warn('Lobby-Beitritt per Deep-Link fehlgeschlagen:', err);
-          setIsJoiningDeepLink(false);
-          window.history.replaceState({}, document.title, window.location.pathname);
-        });
-    }
-  }, [initialDeepLinkCode]);
+    const checkDeepLink = () => {
+      const code = parseLobbyCode(window.location.href);
+      if (code && !multiplayerGame) {
+        joinByCode(code);
+      }
+    };
+
+    checkDeepLink();
+    window.addEventListener('popstate', checkDeepLink);
+    return () => window.removeEventListener('popstate', checkDeepLink);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -214,6 +239,10 @@ export function App() {
       }
       if (showSettings) {
         if (e.key === 'Escape') setShowSettings(false);
+        return;
+      }
+      if (showTvJoinModal) {
+        if (e.key === 'Escape') setShowTvJoinModal(false);
         return;
       }
       if (selectedGame) {
@@ -297,8 +326,23 @@ export function App() {
             </h1>
           </div>
 
-          {/* Rechte Seite: Als einziger Button das Einstellungs-Icon (Zahnrad) */}
+          {/* Rechte Seite: TV beitreten & Einstellungen */}
           <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                triggerHaptic();
+                setTvJoinError(null);
+                setShowTvJoinModal(true);
+              }}
+              aria-label="Fernseher beitreten"
+              title="Fernseher beitreten"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-black text-xs shadow-md shadow-purple-500/25 transition-transform active:scale-95 hover:brightness-110 cursor-pointer"
+            >
+              <Tv className="h-3.5 w-3.5 text-purple-200" />
+              <span>TV beitreten</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {
@@ -488,12 +532,22 @@ export function App() {
         <LobbyScreen
           game={multiplayerGame}
           initialLobby={deepLinkLobby}
+          onGameChange={(newGame) => setMultiplayerGame(newGame)}
           onClose={() => {
             setMultiplayerGame(null);
             setDeepLinkLobby(null);
           }}
         />
       )}
+
+      {/* ─── Modal für TV-Beitritt (QR-Code Scan & Code-Eingabe direkt aus dem Hauptmenü) ─── */}
+      <TvJoinModal
+        isOpen={showTvJoinModal}
+        onClose={() => setShowTvJoinModal(false)}
+        onJoin={joinByCode}
+        isJoining={isJoiningLobby}
+        errorMessage={tvJoinError}
+      />
 
       {/* ─── Einstellungsseite im exakten Stil des Game-Detail-Screens ─── */}
       <SettingsSheet
