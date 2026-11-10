@@ -23,7 +23,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     );
 
-    // 2. Lobby erstellen (generisch für alle Spiele)
+    // 2. Lobby erstellen (generisch für alle Spiele, inkl. TV-Modus)
     socket.on(
       'lobby:create',
       (
@@ -32,6 +32,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
           isPrivate: boolean;
           gameId: string;
           userProfile: { id: string; name: string; avatar: any };
+          isTvMode?: boolean;
         },
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
@@ -45,6 +46,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
             gameId: data.gameId,
             userProfile: data.userProfile,
             socketId: socket.id,
+            isTvMode: data.isTvMode,
           });
 
           if (error || !lobby) {
@@ -55,6 +57,25 @@ export function registerSocketHandlers(io: SocketIOServer) {
           callback?.({ success: true, lobby });
 
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 2b. Lobby per Code prüfen
+    socket.on(
+      'lobby:getByCode',
+      (
+        data: { code: string },
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        try {
+          const lobby = lobbyManager.findLobbyByCode(data.code);
+          if (!lobby) {
+            return callback?.({ success: false, error: 'Lobby wurde nicht gefunden oder ist abgelaufen.' });
+          }
+          callback?.({ success: true, lobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }

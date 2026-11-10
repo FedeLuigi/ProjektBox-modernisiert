@@ -7,6 +7,7 @@ import { gameRegistry } from '../games/registry.js';
 
 // Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
+const LOBBY_EXPIRE_MS = 2 * 60 * 60 * 1000; // 2 Stunden Gültigkeit
 
 function generateLobbyCode(existingCodes: Set<string>): string {
   let code = '';
@@ -33,15 +34,33 @@ export class LobbyManager {
     return codes;
   }
 
+  // Abgelaufene Lobbys bereinigen
+  public cleanupExpiredLobbies(): void {
+    const now = Date.now();
+    for (const [id, lobby] of this.lobbies.entries()) {
+      if (lobby.expiresAt && now > lobby.expiresAt) {
+        this.lobbies.delete(id);
+      }
+    }
+  }
+
   // 1. Offene öffentliche Lobbys abrufen
   public getPublicLobbies(gameId: string): LobbySummary[] {
+    this.cleanupExpiredLobbies();
     const list: LobbySummary[] = [];
+    const now = Date.now();
+
     for (const lobby of this.lobbies.values()) {
+      const activePlayers = lobby.isTvMode
+        ? lobby.players.filter((p) => !p.isTvScreen)
+        : lobby.players;
+
       if (
         lobby.gameId === gameId &&
         !lobby.isPrivate &&
         lobby.status === 'waiting' &&
-        lobby.players.length < lobby.maxPlayers
+        activePlayers.length < lobby.maxPlayers &&
+        (!lobby.expiresAt || now <= lobby.expiresAt)
       ) {
         const host = lobby.players.find((p) => p.isHost);
         list.push({
@@ -52,25 +71,28 @@ export class LobbyManager {
           gameId: lobby.gameId,
           minPlayers: lobby.minPlayers,
           maxPlayers: lobby.maxPlayers,
-          playerCount: lobby.players.length,
+          playerCount: activePlayers.length,
           hostName: host ? host.name : 'Unbekannt',
           status: lobby.status,
           createdAt: lobby.createdAt,
+          expiresAt: lobby.expiresAt,
+          isTvMode: lobby.isTvMode,
         });
       }
     }
     return list.sort((a, b) => b.createdAt - a.createdAt);
   }
 
-  // 2. Lobby erstellen (vollständig generisch)
+  // 2. Lobby erstellen (inkl. TV-Modus mit QR-Code)
   public createLobby(params: {
     name: string;
     isPrivate: boolean;
     gameId: string;
     userProfile: { id: string; name: string; avatar: any };
     socketId: string;
+    isTvMode?: boolean;
   }): { lobby: Lobby | null; error?: string } {
-    const { name, isPrivate, gameId, userProfile, socketId } = params;
+    const { name, isPrivate, gameId, userProfile, socketId, isTvMode } = params;
 
     const gameDef = gameRegistry.get(gameId);
     if (!gameDef) {
@@ -82,21 +104,23 @@ export class LobbyManager {
 
     const lobbyId = `lob_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
     const code = generateLobbyCode(this.getExistingCodes());
+    const now = Date.now();
 
     const hostPlayer: Player = {
       id: userProfile.id,
       socketId,
-      name: userProfile.name.trim() || 'Spieler',
+      name: isTvMode ? '📺 Fernseher' : (userProfile.name.trim() || 'Spieler'),
       avatar: userProfile.avatar,
       isReady: true,
       isHost: true,
       connected: true,
+      isTvScreen: Boolean(isTvMode),
     };
 
     const lobby: Lobby = {
       id: lobbyId,
       code,
-      name: name.trim().slice(0, 30) || `${hostPlayer.name}s Runde`,
+      name: name.trim().slice(0, 30) || (isTvMode ? '📺 TV-Runde' : `${hostPlayer.name}s Runde`),
       isPrivate: Boolean(isPrivate),
       gameId,
       minPlayers: gameDef.minPlayers,
@@ -104,7 +128,9 @@ export class LobbyManager {
       hostId: hostPlayer.id,
       players: [hostPlayer],
       status: 'waiting',
-      createdAt: Date.now(),
+      createdAt: now,
+      expiresAt: now + LOBBY_EXPIRE_MS,
+      isTvMode: Boolean(isTvMode),
       gameState: null,
       rematchVotes: [],
     };
@@ -115,12 +141,25 @@ export class LobbyManager {
     return { lobby };
   }
 
+  // Schnelle Code-Prüfung / Suche
+  public findLobbyByCode(code: string): Lobby | undefined {
+    this.cleanupExpiredLobbies();
+    const cleanQuery = code.trim().toUpperCase();
+    for (const l of this.lobbies.values()) {
+      if (l.code.toUpperCase() === cleanQuery || l.id === code) {
+        return l;
+      }
+    }
+    return undefined;
+  }
+
   // 3. Lobby beitreten per ID oder Code
   public joinLobby(params: {
     lobbyIdOrCode: string;
     userProfile: { id: string; name: string; avatar: any };
     socketId: string;
   }): { lobby: Lobby | null; error?: string } {
+    this.cleanupExpiredLobbies();
     const { lobbyIdOrCode, userProfile, socketId } = params;
     const cleanQuery = lobbyIdOrCode.trim().toUpperCase();
 
@@ -134,6 +173,11 @@ export class LobbyManager {
 
     if (!lobby) {
       return { lobby: null, error: 'Lobby wurde nicht gefunden oder existiert nicht mehr.' };
+    }
+
+    if (lobby.expiresAt && Date.now() > lobby.expiresAt) {
+      this.lobbies.delete(lobby.id);
+      return { lobby: null, error: 'Diese Lobby ist abgelaufen.' };
     }
 
     // Spieler-Reconnect / Refresh
@@ -151,7 +195,11 @@ export class LobbyManager {
       return { lobby: null, error: 'Dieses Spiel läuft bereits.' };
     }
 
-    if (lobby.players.length >= lobby.maxPlayers) {
+    const activePlayers = lobby.isTvMode
+      ? lobby.players.filter((p) => !p.isTvScreen)
+      : lobby.players;
+
+    if (activePlayers.length >= lobby.maxPlayers) {
       return { lobby: null, error: 'Die Lobby ist bereits voll.' };
     }
 
@@ -163,6 +211,7 @@ export class LobbyManager {
       isReady: false,
       isHost: false,
       connected: true,
+      isTvScreen: false,
     };
 
     lobby.players.push(newPlayer);
@@ -195,15 +244,25 @@ export class LobbyManager {
     if (!lobby) return { lobby: null, error: 'Lobby nicht gefunden.' };
 
     const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player || !player.isHost) {
+    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
+
+    const firstActive = lobby.isTvMode
+      ? lobby.players.find((p) => !p.isTvScreen)
+      : null;
+
+    if (!player.isHost && (!firstActive || firstActive.id !== player.id)) {
       return { lobby: null, error: 'Nur der Host kann das Spiel starten.' };
     }
 
-    if (lobby.players.length < lobby.minPlayers) {
+    const activePlayers = lobby.isTvMode
+      ? lobby.players.filter((p) => !p.isTvScreen)
+      : lobby.players;
+
+    if (activePlayers.length < lobby.minPlayers) {
       return { lobby: null, error: `Es werden mindestens ${lobby.minPlayers} Spieler benötigt.` };
     }
 
-    const notReady = lobby.players.filter((p) => !p.isReady);
+    const notReady = activePlayers.filter((p) => !p.isReady);
     if (notReady.length > 0) {
       return { lobby: null, error: 'Noch nicht alle Spieler sind bereit.' };
     }
@@ -214,7 +273,7 @@ export class LobbyManager {
     }
 
     // Zentraler generischer Spielstart
-    lobby.gameState = gameDef.initGameState(lobby.players);
+    lobby.gameState = gameDef.initGameState(activePlayers);
     lobby.status = 'in-game';
     lobby.rematchVotes = [];
 
@@ -237,15 +296,24 @@ export class LobbyManager {
     const player = lobby.players.find((p) => p.socketId === socketId);
     if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
 
+    // TV-Bildschirm darf keine Spielzüge ausführen (nur Anzeige)
+    if (player.isTvScreen) {
+      return { lobby: null, error: 'Der TV-Bildschirm ist nur eine Anzeige.' };
+    }
+
     const gameDef = gameRegistry.get(lobby.gameId);
     if (!gameDef) {
       return { lobby: null, error: `Spiellogik für "${lobby.gameId}" nicht gefunden.` };
     }
 
+    const activePlayers = lobby.isTvMode
+      ? lobby.players.filter((p) => !p.isTvScreen)
+      : lobby.players;
+
     // Zentraler autoritativer Spielzug
     const result = gameDef.validateAndApplyMove({
       state: lobby.gameState,
-      players: lobby.players,
+      players: activePlayers,
       playerId: player.id,
       move: moveData,
     });
@@ -277,8 +345,12 @@ export class LobbyManager {
       lobby.rematchVotes.push(player.id);
     }
 
-    // Wenn alle Spieler zustimmen, Spiel neu starten
-    if (lobby.rematchVotes.length >= lobby.players.length && lobby.players.length >= lobby.minPlayers) {
+    const activePlayers = lobby.isTvMode
+      ? lobby.players.filter((p) => !p.isTvScreen)
+      : lobby.players;
+
+    // Wenn alle aktiven Spieler zustimmen, Spiel neu starten
+    if (lobby.rematchVotes.length >= activePlayers.length && activePlayers.length >= lobby.minPlayers) {
       const gameDef = gameRegistry.get(lobby.gameId);
       if (!gameDef) {
         return { lobby: null, restarted: false, error: 'Spiellogik nicht gefunden.' };
@@ -286,9 +358,9 @@ export class LobbyManager {
 
       // Starter wechseln
       const previousStarter = lobby.gameState?.currentTurn;
-      const nextStarter = lobby.players.find((p) => p.id !== previousStarter)?.id;
+      const nextStarter = activePlayers.find((p) => p.id !== previousStarter)?.id;
 
-      lobby.gameState = gameDef.initGameState(lobby.players, nextStarter);
+      lobby.gameState = gameDef.initGameState(activePlayers, nextStarter);
       lobby.status = 'in-game';
       lobby.rematchVotes = [];
       return { lobby, restarted: true };
@@ -341,20 +413,23 @@ export class LobbyManager {
 
     // Wenn das Spiel lief, optionalen Game-Hook aufrufen oder Standard-Gewinn setzen
     if (lobby.status === 'in-game' && lobby.gameState) {
+      const activePlayers = lobby.isTvMode
+        ? lobby.players.filter((p) => !p.isTvScreen)
+        : lobby.players;
+
       const gameDef = gameRegistry.get(lobby.gameId);
       if (gameDef?.onPlayerLeave) {
-        lobby.gameState = gameDef.onPlayerLeave(lobby.gameState, leavingPlayer.id, lobby.players);
-      } else {
+        lobby.gameState = gameDef.onPlayerLeave(lobby.gameState, leavingPlayer.id, activePlayers);
+      } else if (activePlayers.length > 0) {
         lobby.gameState.status = 'won';
-        lobby.gameState.winnerId = lobby.players[0].id;
+        lobby.gameState.winnerId = activePlayers[0].id;
       }
-      lobby.status = 'finished';
     }
 
     return { lobbyId, lobby, wasHost, deleted: false };
   }
 
-  // 9. Verbindung getrennt
+  // 9. Verbindungsabbruch behandeln (Grace Period für Wiederverbindung)
   public handleDisconnect(socketId: string): {
     lobbyId: string | null;
     lobby: Lobby | null;
@@ -410,9 +485,8 @@ export class LobbyManager {
     return { lobby: null };
   }
 
-  public getLobbyBySocket(socketId: string): Lobby | null {
-    const lobbyId = this.socketToLobby.get(socketId);
-    return lobbyId ? this.lobbies.get(lobbyId) || null : null;
+  public getLobbyById(lobbyId: string): Lobby | undefined {
+    return this.lobbies.get(lobbyId);
   }
 }
 

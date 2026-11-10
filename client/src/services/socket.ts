@@ -139,7 +139,8 @@ class SocketService {
   public async createLobby(
     name: string,
     isPrivate: boolean,
-    gameId: string
+    gameId: string,
+    isTvMode = false
   ): Promise<Lobby> {
     const s = this.connect();
     const userProfile = getUserProfile();
@@ -147,13 +148,30 @@ class SocketService {
     return new Promise((resolve, reject) => {
       s.emit(
         'lobby:create',
-        { name, isPrivate, gameId, userProfile },
+        { name, isPrivate, gameId, userProfile, isTvMode },
         (res: { success: boolean; lobby?: Lobby; error?: string }) => {
           if (res.success && res.lobby) {
             this.activeLobbyId = res.lobby.id;
             resolve(res.lobby);
           } else {
             reject(new Error(res.error || 'Lobby konnte nicht erstellt werden.'));
+          }
+        }
+      );
+    });
+  }
+
+  public async getLobbyByCode(code: string): Promise<Lobby> {
+    const s = this.connect();
+    return new Promise((resolve, reject) => {
+      s.emit(
+        'lobby:getByCode',
+        { code },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res.success && res.lobby) {
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res.error || 'Lobby nicht gefunden.'));
           }
         }
       );

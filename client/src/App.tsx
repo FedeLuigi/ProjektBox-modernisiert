@@ -14,6 +14,8 @@ import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { getUserProfile } from './utils/userProfile';
+import { socketService } from './services/socket';
+import type { Lobby } from './types/multiplayer';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -25,6 +27,7 @@ export function App() {
   const [category, setCategory] = useState<Category>('Alle');
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
+  const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [deferredPrompt, setDeferredPrompt] =
     useState<BeforeInstallPromptEvent | null>(null);
@@ -144,9 +147,31 @@ export function App() {
     []
   );
 
-  // Beim Start Nutzerprofil (inkl. ID & Zufallsname) sicherstellen
+  // Beim Start Nutzerprofil sicherstellen und Deep-Link (?join=CODE) prüfen
   useEffect(() => {
     getUserProfile();
+
+    // Deep-Link Prüfung: z. B. durch Scannen mit der iPhone/Android System-Kamera
+    const params = new URLSearchParams(window.location.search);
+    const joinCode = params.get('join') || params.get('code');
+
+    if (joinCode) {
+      const cleanCode = joinCode.trim().toUpperCase();
+      // Bei direktem Link sofort ins Spiel leiten (Splash-Screen überspringen)
+      setShowSplash(false);
+
+      socketService
+        .joinLobby(cleanCode)
+        .then((lobby) => {
+          const matchedGame = GAMES.find((g) => g.id === lobby.gameId) || GAMES[0];
+          setDeepLinkLobby(lobby);
+          setMultiplayerGame(matchedGame);
+          window.history.replaceState({}, document.title, window.location.pathname);
+        })
+        .catch((err) => {
+          console.warn('Lobby-Beitritt per Deep-Link fehlgeschlagen:', err);
+        });
+    }
   }, []);
 
   useEffect(() => {
@@ -416,7 +441,11 @@ export function App() {
       {multiplayerGame && (
         <LobbyScreen
           game={multiplayerGame}
-          onClose={() => setMultiplayerGame(null)}
+          initialLobby={deepLinkLobby}
+          onClose={() => {
+            setMultiplayerGame(null);
+            setDeepLinkLobby(null);
+          }}
         />
       )}
 

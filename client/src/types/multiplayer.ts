@@ -10,6 +10,7 @@ export interface Player {
   connected: boolean;
   color?: string;
   symbol?: string;
+  isTvScreen?: boolean;
   meta?: Record<string, any>;
 }
 
@@ -34,6 +35,8 @@ export interface Lobby {
   players: Player[];
   status: 'waiting' | 'in-game' | 'finished';
   createdAt: number;
+  expiresAt: number;
+  isTvMode?: boolean;
   gameState: BaseGameState | null;
   rematchVotes: string[];
 }
@@ -50,4 +53,6 @@ export interface LobbySummary {
   hostName: string;
   status: 'waiting' | 'in-game' | 'finished';
   createdAt: number;
+  expiresAt: number;
+  isTvMode?: boolean;
 }

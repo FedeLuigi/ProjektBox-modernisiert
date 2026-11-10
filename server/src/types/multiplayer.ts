@@ -8,6 +8,7 @@ export interface Player {
   connected: boolean;
   color?: string;
   symbol?: string;
+  isTvScreen?: boolean; // Kennzeichnung für Großbild-Fernseher
   meta?: Record<string, any>;
 }
 
@@ -54,6 +55,8 @@ export interface Lobby {
   players: Player[];
   status: 'waiting' | 'in-game' | 'finished';
   createdAt: number;
+  expiresAt: number; // Ablaufzeitpunkt der Lobby
+  isTvMode?: boolean; // TV-Modus mit QR-Code
   gameState: BaseGameState | null;
   rematchVotes: string[];
 }
@@ -70,4 +73,6 @@ export interface LobbySummary {
   hostName: string;
   status: 'waiting' | 'in-game' | 'finished';
   createdAt: number;
+  expiresAt: number;
+  isTvMode?: boolean;
 }

@@ -3,10 +3,10 @@ import {
   ArrowLeft,
   KeyRound,
   Lock,
-  Plus,
+  QrCode,
   RefreshCw,
   Search,
-  Users,
+  Tv,
 } from 'lucide-react';
 import type { Game } from '../../data/games';
 import type {
@@ -17,18 +17,22 @@ import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { InLobbyView } from './InLobbyView';
+import { TvLobbyView } from './TvLobbyView';
 import { MultiplayerGameView } from './MultiplayerGameView';
+import { TvGameView } from './TvGameView';
+import { QrScannerModal } from './QrScannerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 
 interface LobbyScreenProps {
   game: Game;
   onClose: () => void;
+  initialLobby?: Lobby | null;
 }
 
 type TabType = 'browse' | 'code' | 'create';
 
-export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
-  const [currentLobby, setCurrentLobby] = useState<Lobby | null>(null);
+export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
+  const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
   const [isInGame, setIsInGame] = useState(false);
 
   const [activeTab, setActiveTab] = useState<TabType>('browse');
@@ -36,10 +40,14 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
   const [isLoadingLobbies, setIsLoadingLobbies] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
+  // QR-Scanner Modal
+  const [showScanner, setShowScanner] = useState(false);
+
   // Formular "Lobby erstellen"
   const currentUser = getUserProfile();
   const [createName, setCreateName] = useState(`${currentUser.name}s Runde`);
   const [isPrivate, setIsPrivate] = useState(false);
+  const [isTvMode, setIsTvMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
   // Formular "Mit Code beitreten"
@@ -80,7 +88,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     }
   }, [errorMsg]);
 
-  // Lobby erstellen
+  // Lobby erstellen (inkl. Option TV-Modus)
   const handleCreateLobby = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isCreating) return;
@@ -88,7 +96,12 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     setErrorMsg(null);
 
     try {
-      const created = await socketService.createLobby(createName, isPrivate, gameId);
+      const created = await socketService.createLobby(
+        createName,
+        isPrivate,
+        gameId,
+        isTvMode
+      );
       setCurrentLobby(created);
     } catch (err: any) {
       setErrorMsg(err.message || 'Lobby konnte nicht erstellt werden.');
@@ -108,10 +121,9 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     }
   };
 
-  // Mit Code beitreten
-  const handleJoinByCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCode = joinCode.trim().toUpperCase();
+  // Mit Code beitreten (über Formular oder QR-Scan)
+  const joinWithCode = async (codeToJoin: string) => {
+    const cleanCode = codeToJoin.trim().toUpperCase();
     if (!cleanCode || cleanCode.length < 3 || isJoiningCode) return;
 
     setIsJoiningCode(true);
@@ -120,11 +132,17 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     try {
       const joined = await socketService.joinLobby(cleanCode);
       setCurrentLobby(joined);
+      setShowScanner(false);
     } catch (err: any) {
       setErrorMsg(err.message || 'Lobby mit diesem Code nicht gefunden.');
     } finally {
       setIsJoiningCode(false);
     }
+  };
+
+  const handleJoinByCodeForm = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await joinWithCode(joinCode);
   };
 
   const handleLeaveLobby = async () => {
@@ -134,8 +152,21 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     loadLobbies();
   };
 
-  // 1. Wenn ein Spiel läuft -> Vollbild Multiplayer Game View
+  const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
+  const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
+
+  // 1. Wenn ein Spiel läuft -> Vollbild TV oder Multiplayer Game View
   if (isInGame && currentLobby) {
+    if (isTvScreenHost) {
+      return (
+        <TvGameView
+          lobby={currentLobby}
+          gameTitle={game.title}
+          onLeave={handleLeaveLobby}
+        />
+      );
+    }
+
     return (
       <MultiplayerGameView
         lobby={currentLobby}
@@ -145,7 +176,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
     );
   }
 
-  // 2. Wenn in einer Lobby -> InLobbyView
+  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView
   if (currentLobby) {
     return (
       <div
@@ -160,12 +191,21 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
           }}
           className="relative z-10 flex h-full w-full flex-col px-4 sm:px-6"
         >
-          <InLobbyView
-            lobby={currentLobby}
-            gameTitle={game.title}
-            onLeave={handleLeaveLobby}
-            onGameStart={() => setIsInGame(true)}
-          />
+          {isTvScreenHost ? (
+            <TvLobbyView
+              lobby={currentLobby}
+              gameTitle={game.title}
+              onLeave={handleLeaveLobby}
+              onGameStart={() => setIsInGame(true)}
+            />
+          ) : (
+            <InLobbyView
+              lobby={currentLobby}
+              gameTitle={game.title}
+              onLeave={handleLeaveLobby}
+              onGameStart={() => setIsInGame(true)}
+            />
+          )}
         </div>
       </div>
     );
@@ -224,6 +264,16 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
           </div>
         )}
 
+        {/* ─── PROMINENTER QR-CODE SCAN BUTTON ─── */}
+        <button
+          type="button"
+          onClick={() => setShowScanner(true)}
+          className="w-full py-3.5 px-4 mb-3.5 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-extrabold text-xs sm:text-sm tracking-wide shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2.5 transition-all active:scale-98 hover:brightness-110 cursor-pointer"
+        >
+          <QrCode className="h-4 w-4" />
+          <span>Jetzt scannen (TV QR-Code)</span>
+        </button>
+
         {/* 2. TAB-NAVIGATION (Offene Lobbys / Code / Erstellen) */}
         <div className="grid grid-cols-3 gap-1.5 p-1 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-xl mb-4 shrink-0">
           <button
@@ -261,120 +311,132 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
           </button>
         </div>
 
-        {/* 3. TAB-INHALTE */}
-        <main className="my-auto flex-1 overflow-y-auto px-1 py-1">
+        {/* 3. HAUPTBEREICH (JE NACH TAB) */}
+        <main className="my-auto flex-1 overflow-y-auto overscroll-y-contain scrollbar-none py-1">
           {/* TAB 1: OFFENE LOBBYS */}
           {activeTab === 'browse' && (
-            <div className="flex flex-col gap-3 animate-fade-in">
-              <div className="flex items-center justify-between text-xs font-bold text-[#8E8E93] px-1">
-                <span>Öffentliche Räume ({lobbies.length})</span>
+            <div className="flex flex-col gap-2.5">
+              <div className="flex items-center justify-between px-1 mb-1 text-xs text-[#8E8E93] font-bold">
+                <span>Räume in der Nähe</span>
                 <button
                   type="button"
                   onClick={loadLobbies}
                   disabled={isLoadingLobbies}
-                  className="inline-flex items-center gap-1.5 text-purple-400 hover:text-purple-300 cursor-pointer active:scale-95"
+                  className="inline-flex items-center gap-1.5 hover:text-white transition-colors cursor-pointer"
                 >
-                  <RefreshCw className={`h-3.5 w-3.5 ${isLoadingLobbies ? 'animate-spin' : ''}`} />
+                  <RefreshCw className={`h-3 w-3 ${isLoadingLobbies ? 'animate-spin' : ''}`} />
                   <span>Aktualisieren</span>
                 </button>
               </div>
 
-              {lobbies.length === 0 ? (
-                <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-white/[0.04] ring-1 ring-white/10 text-center my-4">
-                  <Search className="h-10 w-10 text-[#8E8E93] mb-3 opacity-60" />
-                  <h3 className="text-base font-bold text-white">Keine offenen Lobbys</h3>
+              {isLoadingLobbies && lobbies.length === 0 ? (
+                <div className="p-8 text-center text-xs text-[#8E8E93]">Lobbys werden geladen...</div>
+              ) : lobbies.length === 0 ? (
+                <div className="flex flex-col items-center justify-center p-8 rounded-3xl bg-white/[0.03] ring-1 ring-white/10 text-center my-4">
+                  <Search className="h-8 w-8 text-[#8E8E93] mb-2 opacity-50" />
+                  <p className="text-sm font-bold text-white">Keine offenen Lobbys gefunden</p>
                   <p className="mt-1 text-xs text-[#8E8E93] max-w-xs">
-                    Aktuell wartet niemand auf ein Spiel. Erstelle einfach selbst eine Lobby oder lade Freunde per Code ein!
+                    Erstelle jetzt deine eigene Runde oder scanne den QR-Code auf deinem Fernseher!
                   </p>
                   <button
                     type="button"
                     onClick={() => setActiveTab('create')}
-                    className="mt-4 inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-5 py-2.5 text-xs font-bold text-white shadow-md transition-all active:scale-95 cursor-pointer"
+                    className="mt-4 px-5 py-2 rounded-full bg-white/10 hover:bg-white/15 text-xs font-bold text-white ring-1 ring-white/15 transition-all active:scale-95 cursor-pointer"
                   >
-                    <Plus className="h-4 w-4" />
-                    <span>Lobby erstellen</span>
+                    + Neue Lobby erstellen
                   </button>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2.5">
-                  {lobbies.map((lob) => (
-                    <div
-                      key={lob.id}
-                      className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.05] hover:bg-white/[0.08] ring-1 ring-white/10 backdrop-blur-md transition-all"
-                    >
-                      <div className="min-w-0 pr-3">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-white truncate">{lob.name}</span>
-                          <span className="text-[10px] font-mono font-bold text-purple-400 bg-purple-500/10 px-2 py-0.5 rounded-md ring-1 ring-purple-500/20">
-                            {lob.code}
+                lobbies.map((lob) => (
+                  <div
+                    key={lob.id}
+                    className="flex items-center justify-between p-3.5 rounded-2xl bg-white/[0.04] hover:bg-white/[0.07] ring-1 ring-white/10 backdrop-blur-md transition-all"
+                  >
+                    <div className="min-w-0 pr-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-extrabold text-sm text-white truncate">{lob.name}</span>
+                        {lob.isTvMode && (
+                          <span className="inline-flex items-center gap-1 rounded-md bg-purple-500/20 text-purple-300 px-1.5 py-0.5 text-[10px] font-black uppercase ring-1 ring-purple-500/30">
+                            <Tv className="h-2.5 w-2.5" />
+                            TV
                           </span>
-                        </div>
-                        <div className="text-[11px] text-[#8E8E93] mt-0.5">
-                          Host: <strong className="text-white/80">{lob.hostName}</strong>
-                        </div>
+                        )}
                       </div>
-
-                      <div className="flex items-center gap-3 shrink-0">
-                        <span className="inline-flex items-center gap-1 text-xs font-bold text-[#8E8E93]">
-                          <Users className="h-3.5 w-3.5 text-purple-400" />
-                          <span>{lob.playerCount}/{lob.maxPlayers}</span>
+                      <div className="mt-0.5 text-[11px] text-[#8E8E93] flex items-center gap-2">
+                        <span>Host: {lob.hostName}</span>
+                        <span>•</span>
+                        <span>
+                          {lob.playerCount}/{lob.maxPlayers} Spieler
                         </span>
-
-                        <button
-                          type="button"
-                          onClick={() => handleJoinLobby(lob.id)}
-                          className="rounded-full bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 text-xs font-bold text-white shadow-sm transition-transform active:scale-95 cursor-pointer hover:brightness-110"
-                        >
-                          Beitreten
-                        </button>
                       </div>
                     </div>
-                  ))}
-                </div>
+
+                    <button
+                      type="button"
+                      onClick={() => handleJoinLobby(lob.id)}
+                      className="shrink-0 px-4 py-2 rounded-full bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white shadow-sm transition-all active:scale-95 cursor-pointer"
+                    >
+                      Beitreten
+                    </button>
+                  </div>
+                ))
               )}
             </div>
           )}
 
           {/* TAB 2: MIT CODE BEITRETEN */}
           {activeTab === 'code' && (
-            <form onSubmit={handleJoinByCode} className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in my-2">
-              <div className="grid h-12 w-12 place-items-center rounded-2xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 mb-3">
-                <KeyRound className="h-6 w-6" />
-              </div>
+            <div className="flex flex-col gap-3 my-2">
+              <form onSubmit={handleJoinByCodeForm} className="flex flex-col items-center justify-center p-6 rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
+                <div className="grid h-12 w-12 place-items-center rounded-2xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 mb-3">
+                  <KeyRound className="h-6 w-6" />
+                </div>
 
-              <h3 className="text-lg font-black text-white">Privatem Raum beitreten</h3>
-              <p className="mt-1 text-xs text-[#8E8E93] text-center max-w-xs">
-                Gib den 5-stelligen Code ein, den du von deinem Freund erhalten hast.
-              </p>
+                <h3 className="text-lg font-black text-white">Privatem Raum beitreten</h3>
+                <p className="mt-1 text-xs text-[#8E8E93] text-center max-w-xs">
+                  Gib den 5-stelligen Code ein oder scanne den QR-Code vom Fernseher.
+                </p>
 
-              <div className="my-5 w-full max-w-xs">
-                <input
-                  type="text"
-                  maxLength={6}
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="z. B. 7K9P2"
-                  className="w-full text-center text-2xl font-mono font-black tracking-[0.25em] px-4 py-3 rounded-2xl bg-black/40 ring-1 ring-white/20 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/20"
-                />
-              </div>
+                <div className="my-5 w-full max-w-xs">
+                  <input
+                    type="text"
+                    maxLength={6}
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="z. B. 7K9P2"
+                    className="w-full text-center text-2xl font-mono font-black tracking-[0.25em] px-4 py-3 rounded-2xl bg-black/40 ring-1 ring-white/20 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/20"
+                  />
+                </div>
 
-              <button
-                type="submit"
-                disabled={joinCode.trim().length < 3 || isJoiningCode}
-                className={`w-full max-w-xs py-3.5 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
-                  joinCode.trim().length >= 3 && !isJoiningCode
-                    ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'
-                    : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
-                }`}
-              >
-                {isJoiningCode ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Raum beitreten</span>}
-              </button>
-            </form>
+                <div className="w-full max-w-xs flex flex-col gap-2">
+                  <button
+                    type="submit"
+                    disabled={joinCode.trim().length < 3 || isJoiningCode}
+                    className={`w-full py-3.5 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
+                      joinCode.trim().length >= 3 && !isJoiningCode
+                        ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'
+                        : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+                    }`}
+                  >
+                    {isJoiningCode ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Mit Code beitreten</span>}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowScanner(true)}
+                    className="w-full py-3 rounded-full bg-white/10 hover:bg-white/15 text-xs font-bold text-purple-300 ring-1 ring-purple-500/25 active:scale-95 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <QrCode className="h-3.5 w-3.5" />
+                    <span>Kamera öffnen & QR scannen</span>
+                  </button>
+                </div>
+              </form>
+            </div>
           )}
 
           {/* TAB 3: LOBBY ERSTELLEN */}
           {activeTab === 'create' && (
-            <form onSubmit={handleCreateLobby} className="flex flex-col gap-4 p-5 rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in my-2">
+            <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 p-5 rounded-3xl bg-white/[0.04] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in my-2">
               <div>
                 <label className="text-xs font-bold text-white/80 block mb-1.5">
                   Lobby-Name
@@ -387,6 +449,53 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
                   placeholder="Gib deiner Lobby einen Namen..."
                   className="w-full text-sm font-semibold px-4 py-3 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
                 />
+              </div>
+
+              {/* OPTION: ICH BIN AUF DEM FERNSEHER (TV-MODUS) */}
+              <div
+                onClick={() => setIsTvMode(!isTvMode)}
+                role="switch"
+                aria-checked={isTvMode}
+                className={`flex items-center justify-between p-3.5 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                  isTvMode
+                    ? 'bg-purple-600/15 ring-purple-500/40 shadow-sm'
+                    : 'bg-white/[0.03] hover:bg-white/[0.05] ring-white/10'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`grid h-9 w-9 place-items-center rounded-xl transition-colors ${
+                      isTvMode
+                        ? 'bg-purple-500/30 text-purple-300 ring-1 ring-purple-500/40'
+                        : 'bg-white/5 text-[#8E8E93]'
+                    }`}
+                  >
+                    <Tv className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-white flex items-center gap-2">
+                      <span>Ich bin auf dem Fernseher</span>
+                      <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                        TV
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-[#8E8E93]">
+                      Zeigt großen QR-Code & Anzeigebildschirm. Spieler steuern per Handy.
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                    isTvMode ? 'bg-purple-600' : 'bg-white/20'
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isTvMode ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
               </div>
 
               {/* Sichtbarkeit: Öffentlich vs Privat */}
@@ -403,7 +512,7 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
                   <div>
                     <div className="text-sm font-bold text-white">Privater Raum</div>
                     <div className="text-[11px] text-[#8E8E93]">
-                      {isPrivate ? 'Nur über Einladungscode beitretbar' : 'In der öffentlichen Liste sichtbar'}
+                      {isPrivate ? 'Nur über QR-Code oder Einladungscode' : 'In der öffentlichen Liste sichtbar'}
                     </div>
                   </div>
                 </div>
@@ -424,13 +533,17 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
               <button
                 type="submit"
                 disabled={!createName.trim() || isCreating}
-                className={`mt-2 w-full py-3.5 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
+                className={`mt-1 w-full py-3.5 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
                   createName.trim() && !isCreating
                     ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25'
                     : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
                 }`}
               >
-                {isCreating ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Lobby jetzt eröffnen</span>}
+                {isCreating ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <span>{isTvMode ? '📺 TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
+                )}
               </button>
             </form>
           )}
@@ -438,9 +551,20 @@ export function LobbyScreen({ game, onClose }: LobbyScreenProps) {
 
         {/* 4. UNTERER FUSSBEREICH */}
         <footer className="shrink-0 text-center text-[11px] text-[#8E8E93] pt-2">
-          Echtzeit-Duelle mit serverseitiger Spielzug-Prüfung
+          Echtzeit-Duelle • TV-Modus & QR-Code-Beitritt aktiv
         </footer>
       </div>
+
+      {/* ─── KAMERA-SCANNER OVERLAY MODAL ─── */}
+      <QrScannerModal
+        isOpen={showScanner}
+        onClose={() => setShowScanner(false)}
+        onScanSuccess={(code) => joinWithCode(code)}
+        onSwitchToCodeEntry={() => {
+          setShowScanner(false);
+          setActiveTab('code');
+        }}
+      />
     </div>
   );
 }
