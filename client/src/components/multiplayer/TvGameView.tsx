@@ -146,7 +146,15 @@ export function TvGameView({
               <div className="mb-4 px-6 py-2 rounded-full bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md text-xs sm:text-sm font-extrabold text-white flex items-center gap-2">
                 <Wifi className="h-4 w-4 text-purple-400 animate-pulse" />
                 <span>
-                  Zug von <strong className="text-purple-300">{currentTurnPlayer?.name || 'Spieler'}</strong> auf Smartphone
+                  {lobby.gameId === 'draw-and-guess' ? (
+                    <>
+                      🎨 <strong className="text-amber-400">{currentTurnPlayer?.name || 'Zeichner'}</strong> malt gerade auf dem Smartphone...
+                    </>
+                  ) : (
+                    <>
+                      Zug von <strong className="text-purple-300">{currentTurnPlayer?.name || 'Spieler'}</strong> auf Smartphone
+                    </>
+                  )}
                 </span>
               </div>
             )}
@@ -156,7 +164,7 @@ export function TvGameView({
               {BoardComponent ? (
                 <BoardComponent
                   gameState={gameState}
-                  myPlayer={player1 || ({} as any)}
+                  myPlayer={{ id: 'tv_screen', name: 'Fernseher', isTvScreen: true } as any}
                   opponent={player2}
                   allPlayers={activePlayers}
                   isMyTurn={false}

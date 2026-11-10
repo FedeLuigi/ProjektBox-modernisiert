@@ -506,6 +506,65 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         </svg>
       );
 
+    case 'draw-and-guess':
+      return (
+        <svg
+          className="absolute inset-0 h-full w-full pointer-events-none"
+          viewBox="0 0 240 300"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          {/* Maler-Staffelei, Palette und Pinselstriche */}
+          <g opacity="0.35" className="dark:opacity-35">
+            {/* Staffelei-Beine */}
+            <line x1="80" y1="60" x2="50" y2="240" stroke="currentColor" strokeWidth="3" className="text-amber-500/40" />
+            <line x1="160" y1="60" x2="190" y2="240" stroke="currentColor" strokeWidth="3" className="text-amber-500/40" />
+            <line x1="120" y1="40" x2="120" y2="230" stroke="currentColor" strokeWidth="3" className="text-amber-500/30" />
+
+            {/* Leinwand */}
+            <rect
+              x="60"
+              y="70"
+              width="120"
+              height="95"
+              rx="8"
+              fill="currentColor"
+              className="text-white/80 dark:text-white/10"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+
+            {/* Bunte Pinsel-Kurve auf Leinwand */}
+            <path
+              d="M75 135 C 95 90, 140 160, 165 105"
+              stroke="currentColor"
+              strokeWidth="6"
+              strokeLinecap="round"
+              className="text-pink-500/70"
+            />
+            <path
+              d="M85 110 C 110 140, 135 90, 155 125"
+              stroke="currentColor"
+              strokeWidth="4"
+              strokeLinecap="round"
+              className="text-purple-500/70"
+            />
+
+            {/* Maler-Palette */}
+            <path
+              d="M130 180 C 130 165, 175 160, 195 180 C 215 200, 205 235, 175 235 C 150 235, 130 215, 130 180 Z"
+              fill="currentColor"
+              className="text-amber-600/30 dark:text-amber-400/20"
+              stroke="currentColor"
+              strokeWidth="2"
+            />
+            <circle cx="160" cy="185" r="4" fill="currentColor" className="text-rose-500/80" />
+            <circle cx="180" cy="190" r="4" fill="currentColor" className="text-sky-500/80" />
+            <circle cx="170" cy="210" r="4" fill="currentColor" className="text-emerald-500/80" />
+          </g>
+        </svg>
+      );
+
     default:
       return null;
   }

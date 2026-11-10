@@ -1,6 +1,7 @@
 import { MultiplayerGameDefinition, Player } from '../types/multiplayer.js';
 import { ticTacToeGame } from './definitions/ticTacToe.js';
 import { connectFourGame } from './definitions/connectFour.js';
+import { drawAndGuessGame } from './definitions/drawAndGuess.js';
 
 function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlayers = 2): MultiplayerGameDefinition {
   return {
@@ -50,6 +51,7 @@ export class GameRegistry {
     // Spezialisierte Multiplayer-Spiele
     this.register(ticTacToeGame);
     this.register(connectFourGame);
+    this.register(drawAndGuessGame);
 
     // Standard-Registrierungen für alle weiteren Spiele der ProjektBox
     this.register(createStandardGame('memory', 'Memory'));

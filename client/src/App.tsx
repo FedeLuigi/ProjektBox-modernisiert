@@ -106,7 +106,7 @@ export function App() {
 
   // Spiele-Gruppen für die thematischen Sektionen
   const quickLaunchGames = useMemo(() => {
-    const ids = ['reaction', 'tic-tac-toe', 'snake', 'memory', 'connect'];
+    const ids = ['draw-and-guess', 'reaction', 'tic-tac-toe', 'snake', 'memory', 'connect'];
     return ids
       .map((id) => GAMES.find((g) => g.id === id))
       .filter((g): g is Game => Boolean(g));
@@ -129,6 +129,7 @@ export function App() {
       GAMES.filter(
         (g) =>
           g.category === 'Denken' ||
+          g.id === 'draw-and-guess' ||
           g.id === 'memory' ||
           g.id === '2048'
       ),

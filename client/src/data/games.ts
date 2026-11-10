@@ -7,6 +7,7 @@ import {
   Gamepad2,
   Bomb,
   Rocket,
+  Palette,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -233,5 +234,19 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Rocket,
     tone: 'ocean',
+  },
+  {
+    id: 'draw-and-guess',
+    title: 'Zeichnen & Raten',
+    subtitle: 'Kreatives Montagsmaler',
+    description:
+      'Male das geheime Wort auf deinem Smartphone, während deine Freunde auf dem Bildschirm oder Fernseher mitraten!',
+    howToPlay:
+      'Der Zeichner malt das geheime Wort. Alle anderen tippen ihre Vermutungen ein, um blitzschnell Punkte zu sammeln.',
+    category: 'Denken',
+    players: '2-8 Spieler',
+    duration: '5 Min.',
+    icon: Palette,
+    tone: 'sunset',
   },
 ];
