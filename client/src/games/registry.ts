@@ -25,3 +25,7 @@ export class ClientGameRegistry {
 }
 
 export const clientGameRegistry = new ClientGameRegistry();
+
+export function isMultiplayerGame(game: { id: string; players: string }): boolean {
+  return clientGameRegistry.has(game.id) || !game.players.includes('1');
+}

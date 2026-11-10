@@ -8,7 +8,8 @@ import {
 } from './data/games';
 import { CompactGameCard } from './components/CompactGameCard';
 import { QuickLaunchTile } from './components/QuickLaunchTile';
-import { GameSheet, isMultiplayerGame } from './components/GameSheet';
+import { GameSheet } from './components/GameSheet';
+import { isMultiplayerGame } from './games/registry';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';

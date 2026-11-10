@@ -2,19 +2,12 @@ import { ArrowLeft, Clock3, Play, Sparkles, Users, Wifi } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../data/games';
 import { GameBackground } from './GameBackground';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
-import { clientGameRegistry } from '../games/registry';
+import { isMultiplayerGame } from '../games/registry';
 
 interface GameSheetProps {
   game: Game | null;
   onClose: () => void;
   onPlay?: (game: Game) => void;
-}
-
-export function isMultiplayerGame(game: Game): boolean {
-  return (
-    clientGameRegistry.has(game.id) ||
-    !game.players.includes('1')
-  );
 }
 
 export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
