@@ -113,14 +113,16 @@ export function DrawAndGuessBoard({
       const remaining = Math.max(0, Math.ceil((gameState.roundEndsAt! - Date.now()) / 1000));
       setTimeLeft(remaining);
       if (remaining <= 0) {
-        onMove({ type: 'time_up' });
+        if (isDrawer) {
+          onMove({ type: 'time_up' });
+        }
       }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 500);
     return () => clearInterval(interval);
-  }, [gameState?.roundEndsAt, gameState?.roundStatus, onMove]);
+  }, [gameState?.roundEndsAt, gameState?.roundStatus, isDrawer, onMove]);
 
   // 2. Automatischer Rollen-Wechsel nach Runden-Ende (3 Sekunden Countdown)
   const [transitionCountdown, setTransitionCountdown] = useState(3);
@@ -132,8 +134,8 @@ export function DrawAndGuessBoard({
       setTransitionCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          // Der Zeichner oder TV triggert die nächste Runde
-          if (isDrawer || isTv) {
+          // Nur der aktive Zeichner triggert den Rundenwechsel (verhindert Mehrfachaufrufe)
+          if (isDrawer) {
             onMove({ type: 'next_round' });
           }
           return 0;
@@ -143,7 +145,7 @@ export function DrawAndGuessBoard({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState?.roundStatus, isDrawer, isTv, onMove]);
+  }, [gameState?.roundStatus, isDrawer, onMove]);
 
   // 3. Live-Strokes vom Socket sofort auf die Leinwand zeichnen (für Fernseher & Zuschauer)
   useEffect(() => {
@@ -345,103 +347,43 @@ export function DrawAndGuessBoard({
   const latestGuess = gameState?.guesses?.[0];
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // A) FERNSEHER-ANSICHT: GROSSES BILD + WAS ERRATEN WURDE (KEINE EINGABEN)
+  // A) FERNSEHER-ANSICHT: OPTIMIERTE LEINWAND (PASST SICH PERFEKT AN)
   // ═════════════════════════════════════════════════════════════════════════════
   if (isTv) {
     return (
-      <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none">
-        {/* Kopfbereich: Kategorie, Wort-Hinweis & Countdown */}
-        <div className="w-full flex items-center justify-between px-5 py-2.5 mb-3 rounded-2xl bg-white/[0.08] ring-1 ring-white/15 backdrop-blur-xl">
-          <div className="flex items-center gap-2.5">
-            <span className="px-3 py-1 rounded-full bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 text-xs font-black uppercase tracking-wider">
-              {gameState?.categoryName || 'Allgemein'}
-            </span>
-            <div className="font-mono text-xl font-black tracking-[0.25em] text-white">
-              {gameState?.wordHint || '_ _ _ _'}
-            </div>
-          </div>
+      <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] rounded-3xl overflow-hidden ring-4 ring-purple-500/30 shadow-[0_0_50px_rgba(168,85,247,0.25)] bg-white mx-auto flex items-center justify-center select-none">
+        <canvas
+          ref={canvasRef}
+          width={640}
+          height={480}
+          className="w-full h-full block cursor-default"
+        />
 
-          <div className="flex items-center gap-4">
-            <span className="text-xs font-semibold text-[#8E8E93]">
-              Runde {gameState?.round} / {gameState?.maxRounds}
-            </span>
-            <div
-              className={`flex items-center gap-1.5 px-3.5 py-1 rounded-full font-mono font-black text-sm ring-1 ${
-                timeLeft <= 10
-                  ? 'bg-rose-500/30 text-rose-300 ring-rose-500/50 animate-pulse'
-                  : 'bg-white/10 text-white ring-white/20'
-              }`}
-            >
-              <Clock className="h-4 w-4" />
-              <span>{timeLeft}s</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Riesige TV-Leinwand (4:3) */}
-        <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden ring-4 ring-white/25 shadow-[0_0_50px_rgba(168,85,247,0.3)] bg-white">
-          <canvas
-            ref={canvasRef}
-            width={480}
-            height={360}
-            className="w-full h-full block cursor-default"
-          />
-
-          {/* Runden-Ende Overlay auf Fernseher */}
-          {isRoundOver && (
-            <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
-              <Trophy className="h-14 w-14 text-amber-400 mb-3 animate-bounce" />
-              <h3 className="text-2xl sm:text-3xl font-black text-white">Runde beendet!</h3>
-              <p className="mt-2 text-sm text-[#AEAEB2]">
-                Das gesuchte Wort war:{' '}
-                <strong className="text-amber-400 text-xl uppercase tracking-wider block mt-1">
-                  {gameState.secretWord}
-                </strong>
+        {/* Runden-Ende Overlay auf Fernseher */}
+        {isRoundOver && (
+          <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
+            <Trophy className="h-12 w-12 text-amber-400 mb-2 animate-bounce" />
+            <h3 className="text-xl sm:text-2xl font-black text-white">Runde beendet!</h3>
+            <p className="mt-1 text-xs sm:text-sm text-[#AEAEB2]">
+              Das gesuchte Wort war:{' '}
+              <strong className="text-amber-400 text-lg uppercase tracking-wider block mt-0.5">
+                {gameState.secretWord}
+              </strong>
+            </p>
+            {gameState.roundWinnerName ? (
+              <p className="mt-2 text-xs sm:text-sm text-emerald-400 font-extrabold">
+                🎉 {gameState.roundWinnerName} hat das Wort erraten! (+100 Punkte)
               </p>
-              {gameState.roundWinnerName ? (
-                <p className="mt-2 text-sm text-emerald-400 font-extrabold">
-                  🎉 {gameState.roundWinnerName} hat das Wort erraten! (+100 Punkte)
-                </p>
-              ) : (
-                <p className="mt-2 text-sm text-amber-300 font-bold">
-                  ⏱️ Zeit abgelaufen! Niemand hat das Wort erraten.
-                </p>
-              )}
-              <div className="mt-4 inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/10 text-xs text-purple-300 font-bold ring-1 ring-white/15">
-                <span>Rollenwechsel in {transitionCountdown}s...</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Live-Feed: Was erraten wurde */}
-        <div className="w-full mt-3 p-3 rounded-2xl bg-black/50 ring-1 ring-white/10 flex flex-col gap-1.5">
-          <div className="flex items-center justify-between text-xs font-bold text-[#8E8E93] px-1">
-            <span>Was erraten wurde (Live-Tipps)</span>
-            <span>{gameState?.guesses?.length || 0} Tipps</span>
-          </div>
-          <div className="flex flex-wrap gap-2 max-h-20 overflow-y-auto overscroll-contain">
-            {gameState?.guesses && gameState.guesses.length > 0 ? (
-              gameState.guesses.slice(0, 10).map((g) => (
-                <span
-                  key={g.id}
-                  className={`text-xs px-3 py-1 rounded-full font-bold flex items-center gap-1.5 ${
-                    g.isCorrect
-                      ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/40'
-                      : 'bg-white/[0.06] text-[#AEAEB2] ring-1 ring-white/10'
-                  }`}
-                >
-                  <strong>{g.playerName}:</strong> &quot;{g.text}&quot;
-                  {g.isCorrect && <span>✅</span>}
-                </span>
-              ))
             ) : (
-              <span className="text-xs text-[#636366] italic py-1 px-1">
-                Noch keine Tipps abgegeben. Die Spieler raten auf ihren Handys...
-              </span>
+              <p className="mt-2 text-xs sm:text-sm text-amber-300 font-bold">
+                ⏱️ Zeit abgelaufen! Niemand hat das Wort erraten.
+              </p>
             )}
+            <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-xs text-purple-300 font-bold ring-1 ring-white/15">
+              <span>Rollenwechsel in {transitionCountdown}s...</span>
+            </div>
           </div>
-        </div>
+        )}
       </div>
     );
   }

@@ -292,6 +292,11 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     // 4. ZUG: NÄCHSTE RUNDE (WECHSEL DES ZEICHNERS)
     if (move.type === 'next_round') {
+      // Nächste Runde darf nur eingeleitet werden, wenn die vorherige Runde auch abgeschlossen ist
+      if (state.roundStatus !== 'round_over') {
+        return { valid: false, error: 'Die Runde ist noch nicht abgeschlossen.', state };
+      }
+
       const currentDrawerIndex = players.findIndex((p) => p.id === state.currentDrawerId);
       const nextDrawerIndex = (currentDrawerIndex + 1) % players.length;
       const nextDrawer = players[nextDrawerIndex];
@@ -300,22 +305,29 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       const isGameOver = nextRoundNum > state.maxRounds;
 
       if (isGameOver) {
-        // Höchste Punktzahl ermitteln
+        // Höchste Punktzahl ermitteln & Unentschieden prüfen
         let topScore = -1;
         let overallWinnerId: string | null = null;
+        let isTie = false;
+
         for (const [pid, score] of Object.entries(state.scores)) {
           if (score > topScore) {
             topScore = score;
             overallWinnerId = pid;
+            isTie = false;
+          } else if (score === topScore && score > 0) {
+            isTie = true;
           }
         }
+
+        const isDraw = isTie || topScore <= 0;
 
         return {
           valid: true,
           state: {
             ...state,
-            status: 'won',
-            winnerId: overallWinnerId,
+            status: isDraw ? 'draw' : 'won',
+            winnerId: isDraw ? null : overallWinnerId,
             roundStatus: 'game_over',
           },
         };
