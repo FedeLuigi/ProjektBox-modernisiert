@@ -8,7 +8,6 @@ import {
 } from './data/games';
 import { CompactGameCard } from './components/CompactGameCard';
 import { QuickLaunchTile } from './components/QuickLaunchTile';
-import { GameSheet } from './components/GameSheet';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
 import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
@@ -54,7 +53,6 @@ export function App() {
   const [tvJoinError, setTvJoinError] = useState<string | null>(null);
   const [isJoiningLobby, setIsJoiningLobby] = useState(false);
   const [category, setCategory] = useState<Category>('Alle');
-  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
   const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
@@ -113,7 +111,7 @@ export function App() {
 
   const handleSelectGame = (game: Game) => {
     triggerHaptic();
-    setSelectedGame(game);
+    setMultiplayerGame(game);
   };
 
   const handleSelectCategory = (cat: Category) => {
@@ -194,7 +192,6 @@ export function App() {
       const matchedGame = GAMES.find((g) => g.id === lobby.gameId) || GAMES[0];
       setDeepLinkLobby(lobby);
       setMultiplayerGame(matchedGame);
-      setSelectedGame(null);
       setShowTvJoinModal(false);
       setIsJoiningDeepLink(false);
       window.history.replaceState({}, document.title, window.location.pathname);
@@ -245,8 +242,11 @@ export function App() {
         if (e.key === 'Escape') setShowTvJoinModal(false);
         return;
       }
-      if (selectedGame) {
-        if (e.key === 'Escape') setSelectedGame(null);
+      if (multiplayerGame) {
+        if (e.key === 'Escape') {
+          setMultiplayerGame(null);
+          setDeepLinkLobby(null);
+        }
       }
     };
 
@@ -262,7 +262,7 @@ export function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
-  }, [showSplash, showSettings, selectedGame, multiplayerGame]);
+  }, [showSplash, showSettings, multiplayerGame]);
 
   const showAll = category === 'Alle';
 
@@ -516,16 +516,6 @@ export function App() {
           </section>
         )}
       </main>
-
-      {/* ─── iOS Detail-Sheet beim Öffnen eines Spiels ─── */}
-      <GameSheet
-        game={selectedGame}
-        onClose={() => setSelectedGame(null)}
-        onPlay={(game) => {
-          setSelectedGame(null);
-          setMultiplayerGame(game);
-        }}
-      />
 
       {/* ─── Multiplayer Lobby- & Spielbildschirm (für alle Spiele) ─── */}
       {multiplayerGame && (
