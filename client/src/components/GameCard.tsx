@@ -16,7 +16,6 @@ export function GameCard({
   onPlay,
 }: GameCardProps) {
   const style = TONE_STYLES[game.tone];
-  const Icon = game.icon;
 
   return (
     <article
@@ -45,16 +44,9 @@ export function GameCard({
         {/* Spezifisches Spiel-Vorschau Artwork */}
         <GameBackground gameId={game.id} />
 
-        {/* Squircle App-Icon & Badges auf der Spiel-Vorschau */}
+        {/* Badges auf der Spiel-Vorschau */}
         <div className="absolute inset-0 p-2.5 sm:p-3 flex flex-col justify-between z-10 pointer-events-none">
-          <div className="flex items-center justify-between">
-            {/* App Icon */}
-            <div
-              className={`grid h-[clamp(2.3rem,5vh,2.8rem)] w-[clamp(2.3rem,5vh,2.8rem)] place-items-center rounded-[clamp(12px,1.8vh,16px)] bg-white/95 dark:bg-[#1C1C1E]/95 ${style.accentText} shadow-md ring-1 ring-black/[0.05] dark:ring-white/[0.1] backdrop-blur-md`}
-            >
-              <Icon className="h-[clamp(1.15rem,2.4vh,1.4rem)] w-[clamp(1.15rem,2.4vh,1.4rem)]" strokeWidth={2.2} />
-            </div>
-
+          <div className="flex items-center justify-end">
             {/* Kategorie Badge */}
             <span
               className={`rounded-full px-2.5 py-1 text-[clamp(9px,1.2vh,10.5px)] font-bold tracking-wide uppercase shadow-xs backdrop-blur-md ${style.badge}`}

@@ -8,14 +8,13 @@ interface CompactGameCardProps {
 
 export function CompactGameCard({ game, onSelect }: CompactGameCardProps) {
   const style = TONE_STYLES[game.tone];
-  const Icon = game.icon;
 
   return (
     <article
       onClick={onSelect}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-[20px] p-3 w-[155px] sm:w-[175px] h-[135px] sm:h-[150px] shrink-0 snap-start transition-all duration-200 active:scale-95 cursor-pointer select-none shadow-sm hover:shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl ${style.cardBg}`}
+      className={`group relative flex flex-col justify-end overflow-hidden rounded-[20px] p-3 w-[155px] sm:w-[175px] h-[135px] sm:h-[150px] shrink-0 snap-start transition-all duration-200 active:scale-95 cursor-pointer select-none shadow-sm hover:shadow-md ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl ${style.cardBg}`}
     >
-      {/* ─── Spezifisches Spiel-Vorschau Artwork ─── */}
+      {/* ─── Spezifisches Spiel-Vorschau Artwork (bleibt vollständig erhalten) ─── */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden scale-105">
         <GameBackground gameId={game.id} />
       </div>
@@ -28,16 +27,7 @@ export function CompactGameCard({ game, onSelect }: CompactGameCardProps) {
         className={`pointer-events-none absolute -right-6 -top-6 h-24 w-24 rounded-full blur-xl opacity-60 ${style.glow}`}
       />
 
-      {/* ─── Oben: Squircle App-Icon ─── */}
-      <div className="relative z-10 flex items-center justify-between gap-1.5">
-        <div
-          className={`grid h-8 w-8 place-items-center rounded-[10px] bg-white/95 dark:bg-[#1C1C1E]/95 ${style.accentText} shadow-sm ring-1 ring-black/[0.05] dark:ring-white/[0.1] backdrop-blur-md transition-transform duration-200 group-hover:scale-105`}
-        >
-          <Icon className="h-4 w-4" strokeWidth={2.2} />
-        </div>
-      </div>
-
-      {/* ─── Unten: Subtitle, Titel & Spieleranzahl (kompakt ohne Textwüste) ─── */}
+      {/* ─── Unten: Subtitle, Titel & Spieleranzahl ─── */}
       <div className="relative z-10">
         <p className={`text-[9px] font-bold uppercase tracking-wider ${style.accentText}`}>
           {game.subtitle}
