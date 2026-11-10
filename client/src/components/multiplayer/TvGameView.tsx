@@ -27,6 +27,7 @@ export function TvGameView({
 
   const currentTurnPlayer = activePlayers.find((p) => p.id === gameState?.currentTurn);
   const isGameOver = gameState?.status === 'won' || gameState?.status === 'draw';
+  const isRoundOver = gameState?.roundStatus === 'round_over';
   const winner = activePlayers.find((p) => p.id === gameState?.winnerId);
   const isDraw = gameState?.status === 'draw';
 
@@ -121,14 +122,16 @@ export function TvGameView({
               <span className="px-3.5 py-1 rounded-full bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 text-xs font-black uppercase tracking-wider">
                 {gameState?.categoryName || 'Allgemein'}
               </span>
-              <div className="font-mono text-xl sm:text-2xl font-black tracking-[0.25em] text-white">
-                {gameState?.wordHint || '_ _ _ _'}
-              </div>
+              {!isRoundOver && (
+                <div className="font-mono text-xl sm:text-2xl font-black tracking-[0.25em] text-white">
+                  {gameState?.wordHint || '_ _ _ _'}
+                </div>
+              )}
             </div>
           )}
 
           <div className="flex items-center gap-4">
-            {isDrawAndGuess && !isGameOver && (
+            {isDrawAndGuess && !isGameOver && !isRoundOver && (
               <>
                 <span className="text-xs font-semibold text-[#8E8E93]">
                   Runde {gameState?.round || 1} / {gameState?.maxRounds || 4}
@@ -164,13 +167,13 @@ export function TvGameView({
         {/* 2. MITTE: 3-SPALTEN-LAYOUT FÜR ZEICHNEN & RATEN ODER STANDARD-DUELL */}
         {isDrawAndGuess ? (
           <main className="my-auto flex flex-1 items-center justify-between gap-6 py-2 w-full overflow-visible">
-            {/* Linke Spalte: Spieler & Rangliste */}
-            <div className="w-64 shrink-0 flex flex-col gap-2 max-h-[68vh] h-full">
-              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1.5 border-b border-white/10 shrink-0">
+            {/* Linke Spalte: Spieler & Rangliste (Einheitliche Höhe mit rechter Spalte) */}
+            <div className="w-64 lg:w-72 shrink-0 flex flex-col h-[52vh] sm:h-[56vh] rounded-3xl bg-white/[0.03] ring-1 ring-white/10 p-4 backdrop-blur-md shadow-xl">
+              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] pb-2.5 mb-1 border-b border-white/10 shrink-0">
                 <span>SPIELER & PUNKTE</span>
                 <span className="font-mono text-purple-400">{activePlayers.length}</span>
               </div>
-              <div className="flex-1 overflow-y-auto flex flex-col gap-2.5 p-1.5 pb-8 overscroll-contain">
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-1 pb-4 overscroll-contain scrollbar-none">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
                   const hasGuessed = gameState?.correctGuesserIds?.includes(p.id);
@@ -187,7 +190,7 @@ export function TvGameView({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Avatar config={p.avatar} size={38} />
                         <div className="min-w-0">
-                          <div className="text-xs font-bold text-white truncate max-w-[100px]">{p.name}</div>
+                          <div className="text-xs font-bold text-white truncate max-w-[105px]">{p.name}</div>
                           <div className="text-[10px] font-semibold">
                             {isCurrentDrawer ? (
                               <span className="text-amber-400 font-black">🎨 Zeichnet</span>
@@ -209,15 +212,18 @@ export function TvGameView({
             </div>
 
             {/* Mittlere Spalte: TV-Leinwand (Hero) */}
-            <div className="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto h-full min-w-0">
-              <div className="mb-2.5 px-4 py-1 rounded-full bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md text-xs font-bold text-white flex items-center gap-2 shrink-0">
-                <Wifi className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
-                <span>
-                  🎨 <strong className="text-amber-400">{currentTurnPlayer?.name || 'Zeichner'}</strong> malt gerade auf dem Smartphone...
-                </span>
-              </div>
+            <div className="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto h-[52vh] sm:h-[56vh] min-w-0">
+              {/* Status-Pille: Sofort ausblenden, sobald die Runde vorbei ist! */}
+              {!isRoundOver && !isGameOver && (
+                <div className="mb-2.5 px-4 py-1.5 rounded-full bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md text-xs font-bold text-white flex items-center gap-2 shrink-0 animate-fade-in">
+                  <Wifi className="h-3.5 w-3.5 text-purple-400 animate-pulse" />
+                  <span>
+                    🎨 <strong className="text-amber-400">{currentTurnPlayer?.name || 'Zeichner'}</strong> malt gerade auf dem Smartphone...
+                  </span>
+                </div>
+              )}
 
-              <div className="w-full pointer-events-none flex items-center justify-center">
+              <div className="w-full flex-1 flex items-center justify-center pointer-events-none">
                 {BoardComponent ? (
                   <BoardComponent
                     gameState={gameState}
@@ -235,18 +241,18 @@ export function TvGameView({
               </div>
             </div>
 
-            {/* Rechte Spalte: Live-Tipps Feed */}
-            <div className="w-64 shrink-0 flex flex-col gap-2 max-h-[68vh] h-full">
-              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] px-1 pb-1.5 border-b border-white/10 shrink-0">
+            {/* Rechte Spalte: Live-Tipps Feed (Einheitliche Höhe mit linker Spalte) */}
+            <div className="w-64 lg:w-72 shrink-0 flex flex-col h-[52vh] sm:h-[56vh] rounded-3xl bg-white/[0.03] ring-1 ring-white/10 p-4 backdrop-blur-md shadow-xl">
+              <div className="flex items-center justify-between text-xs font-extrabold text-[#8E8E93] pb-2.5 mb-1 border-b border-white/10 shrink-0">
                 <span>WAS ERRATEN WURDE</span>
                 <span className="font-mono text-purple-400">{gameState?.guesses?.length || 0} Tipps</span>
               </div>
-              <div className="flex-1 overflow-y-auto flex flex-col gap-1.5 p-1.5 pb-8 overscroll-contain">
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-1 pb-4 overscroll-contain scrollbar-none">
                 {gameState?.guesses && gameState.guesses.length > 0 ? (
                   gameState.guesses.map((g: any) => (
                     <div
                       key={g.id}
-                      className={`text-xs p-2 rounded-xl flex items-center justify-between animate-fade-in ${
+                      className={`text-xs p-2.5 rounded-xl flex items-center justify-between animate-fade-in ${
                         g.isCorrect
                           ? 'bg-emerald-500/25 text-emerald-300 ring-1 ring-emerald-500/40 font-black'
                           : 'bg-white/[0.04] text-[#AEAEB2] ring-1 ring-white/5'

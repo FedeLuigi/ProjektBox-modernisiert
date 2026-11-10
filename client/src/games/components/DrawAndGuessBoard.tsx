@@ -387,28 +387,42 @@ export function DrawAndGuessBoard({
           className="w-full h-full block cursor-default"
         />
 
-        {/* Runden-Ende Overlay auf Fernseher */}
+        {/* Runden-Ende Overlay auf Fernseher: zentriert, aufgeräumt, auf das Wesentliche reduziert */}
         {isRoundOver && (
-          <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
-            <Trophy className="h-12 w-12 text-amber-400 mb-2 animate-bounce" />
-            <h3 className="text-xl sm:text-2xl font-black text-white">Runde beendet!</h3>
-            <p className="mt-1 text-xs sm:text-sm text-[#AEAEB2]">
-              Das gesuchte Wort war:{' '}
-              <strong className="text-amber-400 text-lg uppercase tracking-wider block mt-0.5">
-                {gameState.secretWord}
-              </strong>
+          <div className="absolute inset-0 bg-black/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
+            <span className="text-[11px] sm:text-xs font-black uppercase tracking-widest text-[#8E8E93]">
+              Gesuchtes Wort
+            </span>
+
+            {/* Großes Wort als Highlight (gelb leuchtend) */}
+            <div className="text-4xl sm:text-5xl lg:text-6xl font-black uppercase tracking-[0.2em] text-amber-300 drop-shadow-[0_0_35px_rgba(252,211,77,0.7)] animate-pulse my-2">
+              {gameState.secretWord}
+            </div>
+
+            {/* In einem klaren Satz: wer es erraten hat und wer gezeichnet hat */}
+            <p className="mt-1 text-xs sm:text-sm text-zinc-300 font-medium max-w-md leading-relaxed">
+              {gameState.roundWinnerName ? (
+                <span>
+                  🎉 <strong className="text-emerald-400 font-black">{gameState.roundWinnerName}</strong> hat das Wort erraten • Gezeichnet von <strong className="text-white font-black">{drawerPlayer?.name || 'Zeichner'}</strong>
+                </span>
+              ) : (
+                <span>
+                  ⏱️ Niemand hat das Wort erraten • Gezeichnet von <strong className="text-white font-black">{drawerPlayer?.name || 'Zeichner'}</strong>
+                </span>
+              )}
             </p>
-            {gameState.roundWinnerName ? (
-              <p className="mt-2 text-xs sm:text-sm text-emerald-400 font-extrabold">
-                🎉 {gameState.roundWinnerName} hat das Wort erraten! (+100 Punkte)
-              </p>
-            ) : (
-              <p className="mt-2 text-xs sm:text-sm text-amber-300 font-bold">
-                ⏱️ Zeit abgelaufen! Niemand hat das Wort erraten.
-              </p>
-            )}
-            <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-white/10 text-xs text-purple-300 font-bold ring-1 ring-white/15">
-              <span>Rollenwechsel in {transitionCountdown}s...</span>
+
+            {/* Dezenter Countdown-Balken für die nächste Runde */}
+            <div className="mt-6 flex flex-col items-center gap-1.5 w-full max-w-xs">
+              <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden ring-1 ring-white/15">
+                <div
+                  className="h-full bg-gradient-to-r from-purple-500 via-indigo-500 to-amber-400 rounded-full transition-all duration-1000 ease-linear"
+                  style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-semibold text-purple-300">
+                Nächste Runde in {transitionCountdown}s...
+              </span>
             </div>
           </div>
         )}
