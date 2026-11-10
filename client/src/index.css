@@ -150,3 +150,50 @@
 .animate-fade-in {
   animation: screenFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
+
+/* ─── Keyframe Animationen für den 3D-Gamebox Ladebildschirm ─── */
+@keyframes splashFloat {
+  0%, 100% {
+    transform: translateY(0px) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-8px) rotate(-1.5deg);
+  }
+}
+
+@keyframes splashPulseRing {
+  0% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.18);
+    opacity: 0.15;
+  }
+  100% {
+    transform: scale(0.9);
+    opacity: 0.6;
+  }
+}
+
+@keyframes splashShine {
+  0% {
+    transform: translateX(-120%) rotate(25deg);
+  }
+  100% {
+    transform: translateX(220%) rotate(25deg);
+  }
+}
+
+.animate-splash-float {
+  animation: splashFloat 3.2s ease-in-out infinite;
+}
+
+.animate-splash-pulse-ring {
+  animation: splashPulseRing 2.4s ease-in-out infinite;
+}
+
+.animate-splash-shine {
+  animation: splashShine 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
