@@ -29,6 +29,10 @@ export function TvGameView({
   const winner = activePlayers.find((p) => p.id === gameState?.winnerId);
   const isDraw = gameState?.status === 'draw';
 
+  useEffect(() => {
+    setLobby(initialLobby);
+  }, [initialLobby]);
+
   // Socket Events für Live-Spielzug-Updates
   useEffect(() => {
     const unsubState = socketService.onGameState(({ gameState: newState, status, lobby: updatedLobby }) => {
@@ -40,16 +44,21 @@ export function TvGameView({
       }));
     });
 
+    const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
+      setLobby(updatedLobby);
+    });
+
     const unsubRestart = socketService.onGameRestarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
     });
 
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby }) => {
-      setLobby(updatedLobby);
+      setLobby((prev) => ({ ...prev, ...updatedLobby }));
     });
 
     return () => {
       unsubState();
+      unsubStarted();
       unsubRestart();
       unsubUpdated();
     };

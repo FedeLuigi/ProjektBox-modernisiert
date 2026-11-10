@@ -17,7 +17,7 @@ interface TvLobbyViewProps {
   lobby: Lobby;
   gameTitle?: string;
   onLeave: () => void;
-  onGameStart: () => void;
+  onGameStart: (lobby?: Lobby) => void;
 }
 
 export function TvLobbyView({
@@ -53,7 +53,7 @@ export function TvLobbyView({
 
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
-      onGameStart();
+      onGameStart(updatedLobby);
     });
 
     return () => {

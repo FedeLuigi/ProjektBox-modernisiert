@@ -180,6 +180,46 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     );
 
+    // 6b. Live-Drawing für Zeichnen & Raten (Echtzeit-Synchronisation zum Fernseher)
+    socket.on('draw:strokes', (data: { strokes: any[] }) => {
+      try {
+        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        if (lobby.gameId !== 'draw-and-guess') return;
+
+        const player = lobby.players.find((p) => p.socketId === socket.id);
+        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+
+        if (!Array.isArray(data?.strokes) || data.strokes.length === 0) return;
+
+        const currentStrokes = (lobby.gameState as any).strokes || [];
+        (lobby.gameState as any).strokes = [...currentStrokes, ...data.strokes].slice(-3000);
+
+        // Sofort live an den Fernseher und alle anderen Spieler streamen
+        socket.to(`lobby:${lobby.id}`).emit('draw:live-strokes', {
+          strokes: data.strokes,
+        });
+      } catch (err) {
+        console.error('Fehler bei draw:strokes:', err);
+      }
+    });
+
+    socket.on('draw:clear', () => {
+      try {
+        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        if (lobby.gameId !== 'draw-and-guess') return;
+
+        const player = lobby.players.find((p) => p.socketId === socket.id);
+        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+
+        (lobby.gameState as any).strokes = [];
+        socket.to(`lobby:${lobby.id}`).emit('draw:live-clear');
+      } catch (err) {
+        console.error('Fehler bei draw:clear:', err);
+      }
+    });
+
     // 7. Revanche / Nochmal spielen
     socket.on('game:rematch', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
       if (!checkRateLimit(socket.id)) {

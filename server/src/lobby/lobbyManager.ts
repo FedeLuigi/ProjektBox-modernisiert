@@ -498,6 +498,12 @@ export class LobbyManager {
   public getLobbyById(lobbyId: string): Lobby | undefined {
     return this.lobbies.get(lobbyId);
   }
+
+  public getLobbyBySocketId(socketId: string): Lobby | undefined {
+    const lobbyId = this.socketToLobby.get(socketId);
+    if (!lobbyId) return undefined;
+    return this.lobbies.get(lobbyId);
+  }
 }
 
 export const lobbyManager = new LobbyManager();

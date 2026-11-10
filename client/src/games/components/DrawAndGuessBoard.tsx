@@ -11,6 +11,7 @@ import {
   Tv,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
+import { socketService } from '../../services/socket';
 
 export interface StrokeSegment {
   x0: number;
@@ -73,11 +74,15 @@ export function DrawAndGuessBoard({
   opponent,
   allPlayers,
   onMove,
-  disabled,
+  disabled: _disabled,
 }: GameRendererProps<DrawAndGuessState>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const strokeBufferRef = useRef<StrokeSegment[]>([]);
+  const flushTimeoutRef = useRef<any>(null);
+  const renderedRoundRef = useRef<number | null>(null);
+  const renderedCountRef = useRef<number>(0);
 
   const [currentColor, setCurrentColor] = useState('#000000');
   const [currentSize, setCurrentSize] = useState(5);
@@ -140,7 +145,50 @@ export function DrawAndGuessBoard({
     return () => clearInterval(timer);
   }, [gameState?.roundStatus, isDrawer, isTv, onMove]);
 
-  // 3. Leinwand bei neuen Strokes synchronisieren
+  // 3. Live-Strokes vom Socket sofort auf die Leinwand zeichnen (für Fernseher & Zuschauer)
+  useEffect(() => {
+    const unsubStrokes = socketService.onLiveStrokes(({ strokes }) => {
+      if (isDrawer) return; // Zeichner hat bereits lokal gerendert
+
+      const canvas = canvasRef.current;
+      if (!canvas || !strokes || strokes.length === 0) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      for (const stroke of strokes) {
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
+        ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
+        ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
+        ctx.stroke();
+      }
+      renderedCountRef.current += strokes.length;
+    });
+
+    const unsubClear = socketService.onLiveClear(() => {
+      if (isDrawer) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      renderedCountRef.current = 0;
+    });
+
+    return () => {
+      unsubStrokes();
+      unsubClear();
+    };
+  }, [isDrawer]);
+
+  // 4. Leinwand bei neuem Runden-Start oder Spielstand-Initialisierung abgleichen
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -151,26 +199,46 @@ export function DrawAndGuessBoard({
     const width = canvas.width;
     const height = canvas.height;
 
-    // Hintergrund weiß zeichnen
-    ctx.fillStyle = '#FFFFFF';
-    ctx.fillRect(0, 0, width, height);
+    const currentRound = gameState?.round ?? 1;
+    const isRoundChanged = renderedRoundRef.current !== currentRound;
+
+    if (isRoundChanged || !gameState?.strokes || gameState.strokes.length === 0) {
+      renderedRoundRef.current = currentRound;
+      renderedCountRef.current = 0;
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+    }
 
     if (!gameState?.strokes || gameState.strokes.length === 0) return;
 
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+    // Nur Striche nachzeichnen, die noch nicht auf der Leinwand sind
+    if (isRoundChanged || renderedCountRef.current < gameState.strokes.length) {
+      const startIndex = isRoundChanged ? 0 : renderedCountRef.current;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
 
-    for (const stroke of gameState.strokes) {
-      ctx.beginPath();
-      ctx.strokeStyle = stroke.color;
-      ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
-      ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
-      ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
-      ctx.stroke();
+      for (let i = startIndex; i < gameState.strokes.length; i++) {
+        const stroke = gameState.strokes[i];
+        ctx.beginPath();
+        ctx.strokeStyle = stroke.color;
+        ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
+        ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
+        ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
+        ctx.stroke();
+      }
+      renderedCountRef.current = gameState.strokes.length;
     }
-  }, [gameState?.strokes]);
+  }, [gameState?.round, gameState?.strokes]);
 
-  // 4. Zeichnen-Event-Handler für den Zeichner (Pointer/Touch)
+  // 5. Flushen des Echtzeit-Puffers für geschmeidiges Streamen zum Fernseher
+  const flushStrokes = () => {
+    if (strokeBufferRef.current.length === 0) return;
+    const batch = [...strokeBufferRef.current];
+    strokeBufferRef.current = [];
+    socketService.emitStrokes(batch);
+  };
+
+  // 6. Zeichnen-Event-Handler für den Zeichner (Pointer/Touch)
   const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
@@ -184,7 +252,7 @@ export function DrawAndGuessBoard({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawer || disabled || isRoundOver) return;
+    if (!isDrawer || isRoundOver) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     isDrawingRef.current = true;
     const coords = getCanvasCoords(e);
@@ -192,7 +260,7 @@ export function DrawAndGuessBoard({
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawingRef.current || !lastPointRef.current || !isDrawer || disabled || isRoundOver) {
+    if (!isDrawingRef.current || !lastPointRef.current || !isDrawer || isRoundOver) {
       return;
     }
 
@@ -208,7 +276,7 @@ export function DrawAndGuessBoard({
 
     lastPointRef.current = currentCoords;
 
-    // Direktes lokales Rendern für latenzfreies Zeichnen
+    // Direktes lokales Rendern für 0ms latenzfreies Zeichnen auf dem Handy
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -224,7 +292,14 @@ export function DrawAndGuessBoard({
       }
     }
 
-    onMove({ type: 'stroke', stroke });
+    // In Echtzeit puffern und flushen (~35 FPS zum Fernseher)
+    strokeBufferRef.current.push(stroke);
+    if (!flushTimeoutRef.current) {
+      flushTimeoutRef.current = setTimeout(() => {
+        flushTimeoutRef.current = null;
+        flushStrokes();
+      }, 25);
+    }
   };
 
   const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -237,10 +312,16 @@ export function DrawAndGuessBoard({
     }
     isDrawingRef.current = false;
     lastPointRef.current = null;
+
+    if (flushTimeoutRef.current) {
+      clearTimeout(flushTimeoutRef.current);
+      flushTimeoutRef.current = null;
+    }
+    flushStrokes();
   };
 
   const handleClear = () => {
-    if (!isDrawer || disabled) return;
+    if (!isDrawer || isRoundOver) return;
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -249,6 +330,7 @@ export function DrawAndGuessBoard({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
+    socketService.emitClearCanvas();
     onMove({ type: 'clear' });
   };
 

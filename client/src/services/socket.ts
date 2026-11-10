@@ -237,6 +237,16 @@ class SocketService {
     });
   }
 
+  public emitStrokes(strokes: any[]): void {
+    const s = this.connect();
+    s.emit('draw:strokes', { strokes });
+  }
+
+  public emitClearCanvas(): void {
+    const s = this.connect();
+    s.emit('draw:clear');
+  }
+
   public async requestRematch(): Promise<void> {
     const s = this.connect();
     return new Promise((resolve, reject) => {
@@ -296,6 +306,18 @@ class SocketService {
     const s = this.connect();
     s.on('lobby:list-updated', cb);
     return () => s.off('lobby:list-updated', cb);
+  }
+
+  public onLiveStrokes(cb: (data: { strokes: any[] }) => void): () => void {
+    const s = this.connect();
+    s.on('draw:live-strokes', cb);
+    return () => s.off('draw:live-strokes', cb);
+  }
+
+  public onLiveClear(cb: () => void): () => void {
+    const s = this.connect();
+    s.on('draw:live-clear', cb);
+    return () => s.off('draw:live-clear', cb);
   }
 }
 

@@ -19,7 +19,7 @@ interface InLobbyViewProps {
   lobby: Lobby;
   gameTitle?: string;
   onLeave: () => void;
-  onGameStart: () => void;
+  onGameStart: (lobby?: Lobby) => void;
 }
 
 export function InLobbyView({
@@ -68,7 +68,7 @@ export function InLobbyView({
 
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
-      onGameStart();
+      onGameStart(updatedLobby);
     });
 
     const unsubDiscon = socketService.onPlayerDisconnected(({ playerName }) => {

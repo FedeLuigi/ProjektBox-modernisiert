@@ -75,8 +75,20 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     const unsubList = socketService.onListUpdated(() => {
       loadLobbies();
     });
+
+    const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
+      setCurrentLobby(updatedLobby);
+      setIsInGame(true);
+    });
+
+    const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby }) => {
+      setCurrentLobby((prev) => (prev ? { ...prev, ...updatedLobby } : updatedLobby));
+    });
+
     return () => {
       unsubList();
+      unsubStarted();
+      unsubUpdated();
     };
   }, [gameId]);
 
@@ -196,14 +208,20 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
               lobby={currentLobby}
               gameTitle={game.title}
               onLeave={handleLeaveLobby}
-              onGameStart={() => setIsInGame(true)}
+              onGameStart={(startedLobby) => {
+                if (startedLobby) setCurrentLobby(startedLobby);
+                setIsInGame(true);
+              }}
             />
           ) : (
             <InLobbyView
               lobby={currentLobby}
               gameTitle={game.title}
               onLeave={handleLeaveLobby}
-              onGameStart={() => setIsInGame(true)}
+              onGameStart={(startedLobby) => {
+                if (startedLobby) setCurrentLobby(startedLobby);
+                setIsInGame(true);
+              }}
             />
           )}
         </div>

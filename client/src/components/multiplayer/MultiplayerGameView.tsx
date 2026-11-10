@@ -39,7 +39,14 @@ export function MultiplayerGameView({
   const opponent = activePlayers.find((p) => p.id !== currentUser.id);
 
   const gameState = lobby.gameState;
-  const isMyTurn = gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
+  const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
+  const isMyTurn = isDrawAndGuess
+    ? (gameState?.status === 'playing')
+    : (gameState?.status === 'playing' && gameState.currentTurn === currentUser.id);
+
+  useEffect(() => {
+    setLobby(initialLobby);
+  }, [initialLobby]);
 
   // Socket Events für Live-Spielzug-Updates
   useEffect(() => {
@@ -53,6 +60,11 @@ export function MultiplayerGameView({
       setIsSubmitting(false);
     });
 
+    const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
+      setLobby(updatedLobby);
+      setIsSubmitting(false);
+    });
+
     const unsubRestart = socketService.onGameRestarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
       setIsSubmitting(false);
@@ -60,7 +72,7 @@ export function MultiplayerGameView({
     });
 
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby }) => {
-      setLobby(updatedLobby);
+      setLobby((prev) => ({ ...prev, ...updatedLobby }));
     });
 
     const unsubDiscon = socketService.onPlayerDisconnected(({ playerName }) => {
@@ -69,6 +81,7 @@ export function MultiplayerGameView({
 
     return () => {
       unsubState();
+      unsubStarted();
       unsubRestart();
       unsubUpdated();
       unsubDiscon();
@@ -92,6 +105,7 @@ export function MultiplayerGameView({
       await socketService.sendMove(moveData);
     } catch (err: any) {
       setErrorMsg(err.message || 'Ungültiger Zug.');
+    } finally {
       setIsSubmitting(false);
     }
   };
