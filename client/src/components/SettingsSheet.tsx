@@ -224,14 +224,24 @@ export function SettingsSheet({
               {/* Runder Avatar mit leuchtender Kontur */}
               <div
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="relative mb-3 group cursor-pointer active:scale-95 transition-transform"
+                className="relative mb-3 inline-flex items-center justify-center rounded-full group cursor-pointer active:scale-95 transition-transform"
                 title="Tippen zum Anpassen"
               >
-                <div className="absolute -inset-1.5 rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#EC4899] to-[#F59E0B] opacity-75 blur-sm group-hover:opacity-100 transition-opacity" />
-                <div className="relative p-1 rounded-full bg-[#18181C] ring-2 ring-white/30">
-                  <Avatar config={profile.avatar} size={78} />
+                {/* Rein kreisrunder Radial-Glow ohne filter:blur-Rechteckartefakte */}
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -inset-5 rounded-full opacity-85 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    background:
+                      'radial-gradient(circle closest-side, rgba(124, 58, 237, 0.62) 60%, rgba(236, 72, 153, 0.36) 74%, rgba(245, 158, 11, 0.12) 87%, rgba(236, 72, 153, 0) 99%)',
+                  }}
+                />
+                <div className="relative inline-flex items-center justify-center p-[3px] rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#EC4899] to-[#F59E0B]">
+                  <div className="inline-flex items-center justify-center p-1 rounded-full bg-[#18181C]">
+                    <Avatar config={profile.avatar} size={78} />
+                  </div>
                 </div>
-                <div className="absolute bottom-0 right-0 p-1.5 rounded-full bg-[#7C3AED] text-white shadow-md ring-2 ring-white/30">
+                <div className="absolute bottom-0 right-0 z-10 p-1.5 rounded-full bg-[#7C3AED] text-white shadow-md ring-2 ring-[#18181C]">
                   <Pencil className="h-3 w-3" />
                 </div>
               </div>

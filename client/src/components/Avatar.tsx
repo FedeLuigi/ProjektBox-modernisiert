@@ -106,7 +106,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
       width={size}
       height={size}
       viewBox="0 0 100 100"
-      className={`rounded-full overflow-hidden select-none ${className}`}
+      className={`block shrink-0 rounded-full overflow-hidden select-none ${className}`}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
@@ -137,10 +137,10 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
           <stop offset="100%" stopColor="#1E293B" />
         </linearGradient>
 
-        <filter id="avatar-glow" x="-20%" y="-20%" width="140%" height="140%">
+        <filter id="avatar-glow" filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
           <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#A855F7" floodOpacity="0.8" />
         </filter>
-        <filter id="laser-glow" x="-30%" y="-30%" width="160%" height="160%">
+        <filter id="laser-glow" filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
           <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#EF4444" floodOpacity="0.9" />
         </filter>
       </defs>

@@ -84,9 +84,17 @@ export function AvatarCustomizerModal({
         </div>
 
         {/* ─── LIVE VORSCHAU DES AVATARS ─── */}
-        <div className="my-4 flex flex-col items-center justify-center">
-          <div className="relative">
-            <div className="rounded-full p-1 bg-gradient-to-tr from-[#8B5CF6] via-[#EC4899] to-[#38BDF8] shadow-[0_0_30px_rgba(168,85,247,0.5)]">
+        <div className="my-5 flex flex-col items-center justify-center">
+          <div className="relative inline-flex items-center justify-center rounded-full">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -inset-5 rounded-full"
+              style={{
+                background:
+                  'radial-gradient(circle closest-side, rgba(139, 92, 246, 0.55) 62%, rgba(236, 72, 153, 0.3) 78%, rgba(56, 189, 248, 0.1) 90%, rgba(168, 85, 247, 0) 99%)',
+              }}
+            />
+            <div className="relative inline-flex items-center justify-center rounded-full p-1 bg-gradient-to-tr from-[#8B5CF6] via-[#EC4899] to-[#38BDF8]">
               <Avatar config={current} size={110} />
             </div>
             {/* Würfeln-Button */}
