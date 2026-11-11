@@ -9,6 +9,19 @@ import { gameRegistry } from '../games/registry.js';
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const LOBBY_EXPIRE_MS = 2 * 60 * 60 * 1000; // 2 Stunden Gültigkeit
 
+const SIMPLE_LOBBY_NAMES = [
+  'Spielrunde',
+  'Wohnzimmer',
+  'Sofa-Runde',
+  'Spieleabend',
+  'Freundesrunde',
+  'Partyraum',
+  'Heimspiel',
+  'Spielzimmer',
+  'Treffpunkt',
+  'Blitzrunde',
+];
+
 function generateLobbyCode(existingCodes: Set<string>): string {
   let code = '';
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -83,10 +96,14 @@ export class LobbyManager {
       isTvScreen: Boolean(isTvMode),
     };
 
+    const fallbackName = isTvMode
+      ? 'TV-Runde'
+      : SIMPLE_LOBBY_NAMES[Math.floor(Math.random() * SIMPLE_LOBBY_NAMES.length)];
+
     const lobby: Lobby = {
       id: lobbyId,
       code,
-      name: name.trim().slice(0, 30) || (isTvMode ? '📺 TV-Runde' : `${hostPlayer.name}s Runde`),
+      name: name.trim().slice(0, 30) || fallbackName,
       isPrivate: true, // Lobbys sind ausnahmslos privat
       gameId,
       minPlayers: gameDef.minPlayers,

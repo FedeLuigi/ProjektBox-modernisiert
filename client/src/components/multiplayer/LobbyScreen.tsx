@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Clock3,
+  Dices,
   KeyRound,
   QrCode,
   RefreshCw,
@@ -14,6 +15,7 @@ import { GAMES, type Game, TONE_STYLES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
+import { generateSimpleLobbyName } from '../../utils/nameGenerator';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { InLobbyView } from './InLobbyView';
 import { TvLobbyView } from './TvLobbyView';
@@ -54,7 +56,8 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
 
   // Formular "Lobby erstellen"
   const currentUser = getUserProfile();
-  const [createName, setCreateName] = useState(`${currentUser.name}s Runde`);
+  const [createName, setCreateName] = useState(() => generateSimpleLobbyName(false));
+  const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
   const [isTvMode, setIsTvMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
 
@@ -88,6 +91,19 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     }
   }, [errorMsg]);
 
+  const handleRollLobbyName = () => {
+    setCreateName(generateSimpleLobbyName(isTvMode, createName));
+    setHasCustomLobbyName(false);
+  };
+
+  const handleToggleTvMode = () => {
+    const nextIsTv = !isTvMode;
+    setIsTvMode(nextIsTv);
+    if (!hasCustomLobbyName) {
+      setCreateName(generateSimpleLobbyName(nextIsTv));
+    }
+  };
+
   // Lobby erstellen (immer privat, Zugriff nur via Code oder TV QR-Code)
   const handleCreateLobby = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,9 +111,11 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     setIsCreating(true);
     setErrorMsg(null);
 
+    const finalLobbyName = createName.trim() || generateSimpleLobbyName(isTvMode);
+
     try {
       const created = await socketService.createLobby(
-        createName,
+        finalLobbyName,
         true, // Immer privat
         gameId,
         isTvMode
@@ -422,19 +440,33 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                       <label className="text-xs font-bold text-white/80 block mb-1">
                         Lobby-Name
                       </label>
-                      <input
-                        type="text"
-                        maxLength={30}
-                        value={createName}
-                        onChange={(e) => setCreateName(e.target.value)}
-                        placeholder="Gib deiner Lobby einen Namen..."
-                        className="w-full text-xs sm:text-sm font-semibold px-3.5 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
-                      />
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          maxLength={30}
+                          value={createName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCreateName(val);
+                            setHasCustomLobbyName(val.trim().length > 0);
+                          }}
+                          placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
+                          className="w-full text-xs sm:text-sm font-semibold pl-3.5 pr-11 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleRollLobbyName}
+                          title="Anderen einfachen Namen vorschlagen"
+                          className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-purple-500/30 text-white/70 hover:text-white transition-colors active:scale-90 cursor-pointer"
+                        >
+                          <Dices className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* OPTION: ICH BIN AUF DEM FERNSEHER (TV-MODUS) */}
                     <div
-                      onClick={() => setIsTvMode(!isTvMode)}
+                      onClick={handleToggleTvMode}
                       role="switch"
                       aria-checked={isTvMode}
                       className={`flex items-center justify-between p-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
@@ -481,9 +513,9 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
 
                     <button
                       type="submit"
-                      disabled={!createName.trim() || isCreating}
+                      disabled={isCreating}
                       className={`w-full py-3 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
-                        createName.trim() && !isCreating
+                        !isCreating
                           ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25 hover:brightness-110'
                           : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
                       }`}

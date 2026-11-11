@@ -21,3 +21,35 @@ export function generateUniquePlayerName(): string {
   const num = Math.floor(1000 + Math.random() * 9000);
   return `${adj}${noun}#${num}`;
 }
+
+// ─── Generator für einfache, freundliche Lobbynamen ───
+const SIMPLE_LOBBY_NAMES = [
+  'Spielrunde',
+  'Wohnzimmer',
+  'Sofa-Runde',
+  'Spieleabend',
+  'Freundesrunde',
+  'Partyraum',
+  'Heimspiel',
+  'Spielzimmer',
+  'Treffpunkt',
+  'Blitzrunde',
+  'Couch-Runde',
+  'Lounge',
+];
+
+const SIMPLE_TV_LOBBY_NAMES = [
+  'TV-Runde',
+  'Wohnzimmer',
+  'Heimkino',
+  'Sofa-Runde',
+  'Spieleabend',
+  'Partyraum',
+];
+
+export function generateSimpleLobbyName(isTvMode = false, excludeName?: string): string {
+  const pool = isTvMode ? SIMPLE_TV_LOBBY_NAMES : SIMPLE_LOBBY_NAMES;
+  const candidates = excludeName ? pool.filter((n) => n !== excludeName) : pool;
+  const activePool = candidates.length > 0 ? candidates : pool;
+  return activePool[Math.floor(Math.random() * activePool.length)];
+}
