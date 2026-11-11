@@ -70,25 +70,32 @@ export function AvatarCustomizerModal({
     onClose();
   };
 
+  const optionCardClass = (isSelected: boolean) =>
+    `min-w-0 w-full flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
+      isSelected
+        ? 'bg-purple-500/18 ring-2 ring-[#8B5CF6] shadow-sm'
+        : 'bg-white/[0.05] hover:bg-white/[0.09] ring-1 ring-white/[0.06]'
+    }`;
+
   return (
     <div
       role="dialog"
       aria-modal="true"
       className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none"
     >
-      <div className="relative w-full max-w-lg rounded-[32px] bg-[#F2F2F7] dark:bg-[#15151A] p-6 shadow-2xl ring-1 ring-black/10 dark:ring-white/10 flex flex-col max-h-[90dvh] overflow-hidden">
+      <div className="relative w-full max-w-lg rounded-[32px] bg-[#16161C] text-white p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header mit Schließen-Button */}
-        <div className="flex items-center justify-between pb-3 border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
-            <h2 className="text-base sm:text-lg font-black tracking-tight text-[#1C1C1E] dark:text-white">
+            <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
               Avatar anpassen
             </h2>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="grid h-8 w-8 place-items-center rounded-full bg-black/5 dark:bg-white/10 text-[#8E8E93] hover:text-[#1C1C1E] dark:hover:text-white transition-colors cursor-pointer"
+            className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[#98989D] hover:text-white ring-1 ring-white/10 transition-colors cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
@@ -126,7 +133,7 @@ export function AvatarCustomizerModal({
         </div>
 
         {/* ─── KATEGORIE-TABS ─── */}
-        <div className="flex gap-1 overflow-x-auto scrollbar-none pb-2 pt-1 border-b border-black/[0.06] dark:border-white/[0.08]">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-0.5 pb-2.5 pt-1 border-b border-white/[0.08]">
           {(
             [
               { id: 'base', label: 'Figur' },
@@ -142,8 +149,8 @@ export function AvatarCustomizerModal({
               onClick={() => setActiveTab(tab.id)}
               className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 activeTab === tab.id
-                  ? 'bg-[#1C1C1E] text-white dark:bg-white dark:text-[#1C1C1E] shadow-xs'
-                  : 'text-[#6C6C70] dark:text-[#98989D] hover:bg-black/5 dark:hover:bg-white/5'
+                  ? 'bg-white/[0.15] text-white ring-1 ring-white/20 shadow-xs'
+                  : 'text-[#98989D] hover:bg-white/[0.06] hover:text-white'
               }`}
             >
               {tab.label}
@@ -151,8 +158,8 @@ export function AvatarCustomizerModal({
           ))}
         </div>
 
-        {/* ─── AUSWAHL-OPTIONEN ─── */}
-        <div className="flex-1 overflow-y-auto py-3 scrollbar-none min-h-[160px]">
+        {/* ─── AUSWAHL-OPTIONEN (Seitlicher Puffer gegen Ring-/Schatten-Clipping) ─── */}
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1.5 -mx-1.5 py-3 scrollbar-none">
           {/* TAB 1: BASIS-FIGUR */}
           {activeTab === 'base' && (
             <div className="grid grid-cols-3 gap-2.5">
@@ -163,17 +170,13 @@ export function AvatarCustomizerModal({
                     key={b.id}
                     type="button"
                     onClick={() => setCurrent({ ...current, base: b.id })}
-                    className={`flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-500/15 ring-2 ring-[#8B5CF6] shadow-sm'
-                        : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
-                    }`}
+                    className={optionCardClass(isSelected)}
                   >
                     <Avatar
                       config={{ ...current, base: b.id }}
                       size={48}
                     />
-                    <span className="mt-1.5 text-xs font-bold text-[#1C1C1E] dark:text-white">
+                    <span className="mt-1.5 w-full truncate text-center text-xs font-bold text-white">
                       {b.label}
                     </span>
                   </button>
@@ -184,7 +187,7 @@ export function AvatarCustomizerModal({
 
           {/* TAB 2: HAUT- / GRUNDFARBE */}
           {activeTab === 'skin' && (
-            <div className="grid grid-cols-4 gap-2.5">
+            <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5">
               {AVATAR_SKIN_COLORS.map((s) => {
                 const isSelected = current.skinColor === s.id;
                 return (
@@ -192,19 +195,15 @@ export function AvatarCustomizerModal({
                     key={s.id}
                     type="button"
                     onClick={() => setCurrent({ ...current, skinColor: s.id })}
-                    className={`flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-500/15 ring-2 ring-[#8B5CF6] shadow-sm'
-                        : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
-                    }`}
+                    className={optionCardClass(isSelected)}
                   >
                     <div
-                      className="h-10 w-10 rounded-full shadow-inner ring-1 ring-black/10 dark:ring-white/20 flex items-center justify-center"
+                      className="h-10 w-10 shrink-0 rounded-full shadow-inner ring-1 ring-white/20 flex items-center justify-center"
                       style={{ backgroundColor: s.id }}
                     >
                       {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                     </div>
-                    <span className="mt-1.5 text-[11px] font-bold text-[#1C1C1E] dark:text-white">
+                    <span className="mt-1.5 w-full truncate text-center text-[11px] font-bold text-white">
                       {s.label}
                     </span>
                   </button>
@@ -223,17 +222,13 @@ export function AvatarCustomizerModal({
                     key={h.id}
                     type="button"
                     onClick={() => setCurrent({ ...current, hat: h.id })}
-                    className={`flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-500/15 ring-2 ring-[#8B5CF6] shadow-sm'
-                        : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
-                    }`}
+                    className={optionCardClass(isSelected)}
                   >
                     <Avatar
                       config={{ ...current, hat: h.id }}
                       size={46}
                     />
-                    <span className="mt-1.5 text-[11px] font-bold text-[#1C1C1E] dark:text-white truncate max-w-full">
+                    <span className="mt-1.5 w-full truncate text-center text-[11px] font-bold text-white">
                       {h.label}
                     </span>
                   </button>
@@ -252,17 +247,13 @@ export function AvatarCustomizerModal({
                     key={acc.id}
                     type="button"
                     onClick={() => setCurrent({ ...current, accessory: acc.id })}
-                    className={`flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-500/15 ring-2 ring-[#8B5CF6] shadow-sm'
-                        : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
-                    }`}
+                    className={optionCardClass(isSelected)}
                   >
                     <Avatar
                       config={{ ...current, accessory: acc.id }}
                       size={46}
                     />
-                    <span className="mt-1.5 text-[11px] font-bold text-[#1C1C1E] dark:text-white truncate max-w-full">
+                    <span className="mt-1.5 w-full truncate text-center text-[11px] font-bold text-white">
                       {acc.label}
                     </span>
                   </button>
@@ -281,21 +272,17 @@ export function AvatarCustomizerModal({
                     key={bg.id}
                     type="button"
                     onClick={() => setCurrent({ ...current, bg: bg.id })}
-                    className={`flex flex-col items-center p-2.5 rounded-2xl transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-purple-500/15 ring-2 ring-[#8B5CF6] shadow-sm'
-                        : 'bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
-                    }`}
+                    className={optionCardClass(isSelected)}
                   >
                     <div
-                      className={`h-10 w-10 rounded-full bg-gradient-to-tr ${bg.gradient} ring-1 ring-white/20 flex items-center justify-center`}
+                      className={`h-10 w-10 shrink-0 rounded-full bg-gradient-to-tr ${bg.gradient} ring-1 ring-white/20 flex items-center justify-center`}
                       style={{
                         backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
                       }}
                     >
                       {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                     </div>
-                    <span className="mt-1.5 text-[11px] font-bold text-[#1C1C1E] dark:text-white truncate max-w-full">
+                    <span className="mt-1.5 w-full truncate text-center text-[11px] font-bold text-white">
                       {bg.label}
                     </span>
                   </button>
@@ -306,7 +293,7 @@ export function AvatarCustomizerModal({
         </div>
 
         {/* ─── SPEICHERN BUTTON ─── */}
-        <div className="pt-3 border-t border-black/[0.06] dark:border-white/[0.08]">
+        <div className="pt-3 border-t border-white/[0.08]">
           <button
             type="button"
             onClick={handleSave}
