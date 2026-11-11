@@ -7,7 +7,6 @@ import {
   Play,
   Sparkles,
   Tv,
-  Users,
 } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
@@ -274,12 +273,6 @@ export function InLobbyView({
                 </span>
               </div>
             ))}
-
-            {activePlayers.length < lobby.maxPlayers && (
-              <div className="py-2.5 px-3 text-center border border-dashed border-white/10 rounded-2xl text-[11px] font-medium text-[#8E8E93]">
-                Weitere Mitspieler können den QR-Code vom Fernseher scannen
-              </div>
-            )}
           </div>
         </div>
 
@@ -399,14 +392,6 @@ export function InLobbyView({
               </span>
             </div>
           ))}
-
-          {/* Platzhalter falls Raum noch nicht voll */}
-          {activePlayers.length < lobby.maxPlayers && (
-            <div className="flex items-center justify-center gap-3 p-4 rounded-2xl border-2 border-dashed border-white/15 text-[#8E8E93] text-xs font-bold animate-pulse">
-              <Users className="h-4 w-4" />
-              <span>Teile den Code {lobby.code}, damit Freunde beitreten können</span>
-            </div>
-          )}
         </div>
       </div>
 

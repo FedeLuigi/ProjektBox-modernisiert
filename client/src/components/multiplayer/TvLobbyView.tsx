@@ -211,12 +211,6 @@ export function TvLobbyView({
                 </div>
               ))
             )}
-
-            {activePlayers.length > 0 && activePlayers.length < lobby.maxPlayers && (
-              <div className="py-4 text-center border-2 border-dashed border-white/10 rounded-2xl text-xs font-semibold text-[#8E8E93] animate-pulse">
-                Warte auf Spieler {activePlayers.length + 1}... (QR-Code scannen)
-              </div>
-            )}
           </div>
 
           {/* Start-Button auf Fernseher */}
