@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
+import { BTN_PRIMARY_DISABLED, BTN_PRIMARY_ENABLED } from '../../styles/uiTokens';
 
 export interface StrokeSegment {
   x0: number;
@@ -741,10 +742,8 @@ export function DrawAndGuessBoard({
             <button
               type="submit"
               disabled={!guessInput.trim()}
-              className={`flex-1 py-3 px-5 rounded-2xl font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
-                guessInput.trim()
-                  ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110 cursor-pointer'
-                  : 'bg-white/10 text-white/30 ring-1 ring-white/10 cursor-not-allowed'
+              className={`flex-1 py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+                guessInput.trim() ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
               }`}
             >
               <Send className="h-3.5 w-3.5" />

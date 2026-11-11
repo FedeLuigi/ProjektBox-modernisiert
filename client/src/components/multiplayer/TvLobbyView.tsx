@@ -13,12 +13,12 @@ import { socketService } from '../../services/socket';
 import { Avatar } from '../Avatar';
 import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
 import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_DISABLED,
+  BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  PRIMARY_BTN_BASE,
-  PRIMARY_BTN_DISABLED,
-  PRIMARY_BTN_ENABLED,
   SURFACE_CARD,
 } from '../../styles/uiTokens';
 
@@ -231,8 +231,8 @@ export function TvLobbyView({
               type="button"
               disabled={!allReady || isStarting}
               onClick={handleStartGame}
-              className={`${PRIMARY_BTN_BASE} ${
-                allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
+              className={`${BTN_PRIMARY_BASE} ${
+                allReady && !isStarting ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
               }`}
             >
               <Play className="h-5 w-5 fill-current" />

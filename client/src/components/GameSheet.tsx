@@ -4,11 +4,11 @@ import { GameBackground } from './GameBackground';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 import { isMultiplayerGame } from '../games/registry';
 import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  PRIMARY_BTN_BASE,
-  PRIMARY_BTN_ENABLED,
   STAGE_TWO_COL,
   SURFACE_CARD,
 } from '../styles/uiTokens';
@@ -135,7 +135,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
               <button
                 type="button"
                 onClick={handlePlayClick}
-                className={`mt-6 landscape:mt-5 ${PRIMARY_BTN_BASE} ${PRIMARY_BTN_ENABLED} sm:w-auto sm:min-w-[220px]`}
+                className={`mt-6 landscape:mt-5 ${BTN_PRIMARY_BASE} ${BTN_PRIMARY_ENABLED} sm:w-auto sm:min-w-[220px]`}
               >
                 <Play className="h-4 w-4 fill-current" />
                 <span>Jetzt losspielen</span>

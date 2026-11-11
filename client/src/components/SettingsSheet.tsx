@@ -23,12 +23,15 @@ import {
 } from '../utils/userProfile';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 import {
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  SECONDARY_BTN_BASE,
   STAGE_SINGLE_COL,
   SURFACE_CARD,
+  SWITCH_TRACK_OFF,
+  SWITCH_TRACK_ON,
 } from '../styles/uiTokens';
 
 interface SettingsSheetProps {
@@ -61,23 +64,23 @@ function ToggleRow({
       onClick={() => onChange(!checked)}
       role="switch"
       aria-checked={checked}
-      className="flex items-center justify-between p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] hover:bg-black/[0.05] dark:hover:bg-white/[0.07] transition-all cursor-pointer ring-1 ring-black/[0.04] dark:ring-white/[0.06] select-none active:scale-[0.99]"
+      className="flex items-center justify-between p-3.5 rounded-2xl bg-[#18181C]/80 hover:bg-[#202026]/90 transition-all cursor-pointer ring-1 ring-white/[0.08] select-none active:scale-[0.99]"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
           className={`grid h-10 w-10 shrink-0 place-items-center rounded-xl transition-colors ${
             checked
-              ? 'bg-purple-500/15 text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/25'
-              : 'bg-black/5 dark:bg-white/5 text-[#8E8E93]'
+              ? 'bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/25'
+              : 'bg-white/5 text-[#8E8E93]'
           }`}
         >
           {icon}
         </div>
         <div className="min-w-0">
-          <div className="text-sm font-bold text-[#1C1C1E] dark:text-white leading-tight">
+          <div className="text-sm font-bold text-white leading-tight">
             {label}
           </div>
-          <div className="text-[11px] font-medium text-[#8E8E93] dark:text-[#98989D] truncate">
+          <div className="text-[11px] font-medium text-[#98989D] truncate">
             {description}
           </div>
         </div>
@@ -86,16 +89,14 @@ function ToggleRow({
       <div className="flex items-center gap-2 pl-3 shrink-0">
         <span
           className={`text-xs font-bold transition-colors ${
-            checked ? 'text-purple-600 dark:text-purple-400' : 'text-[#8E8E93]'
+            checked ? 'text-purple-400' : 'text-[#8E8E93]'
           }`}
         >
           {checked ? 'An' : 'Aus'}
         </span>
         <div
           className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full transition-colors duration-200 ease-in-out ${
-            checked
-              ? 'bg-gradient-to-r from-[#7C3AED] to-[#8B5CF6] shadow-[0_0_12px_rgba(139,92,246,0.4)]'
-              : 'bg-black/20 dark:bg-white/20'
+            checked ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
           }`}
         >
           <span
@@ -347,14 +348,14 @@ export function SettingsSheet({
               />
             </div>
 
-            {/* Optional: PWA Installieren Button */}
+            {/* Optional: PWA Installieren Button (Stufe 2 Neutral Secondary) */}
             {onInstall && (
               <button
                 type="button"
                 onClick={onInstall}
-                className={`${SECONDARY_BTN_BASE} bg-white/[0.06] hover:bg-white/[0.1] text-white ring-1 ring-white/10`}
+                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
               >
-                <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
+                <Sparkles className="h-4 w-4 text-purple-300" />
                 <span>App auf Startbildschirm installieren</span>
               </button>
             )}

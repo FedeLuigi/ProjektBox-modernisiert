@@ -334,9 +334,9 @@ export function App() {
               }}
               aria-label="Fernseher beitreten"
               title="Fernseher beitreten"
-              className="inline-flex h-9 sm:h-10 items-center justify-center gap-2 px-4 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-500/25 transition-transform active:scale-95 hover:brightness-110 cursor-pointer shrink-0"
+              className="inline-flex h-9 sm:h-10 items-center justify-center gap-2 px-4 rounded-full bg-purple-500/16 hover:bg-purple-500/24 text-purple-100 ring-1 ring-purple-400/35 font-bold text-xs sm:text-sm backdrop-blur-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
             >
-              <Tv className="h-4 w-4 text-purple-100" />
+              <Tv className="h-4 w-4 text-purple-300" />
               <span>TV beitreten</span>
             </button>
 

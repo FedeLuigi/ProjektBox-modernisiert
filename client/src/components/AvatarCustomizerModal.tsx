@@ -9,6 +9,7 @@ import {
   AVATAR_HATS,
   AVATAR_SKIN_COLORS,
 } from './Avatar';
+import { BTN_PRIMARY_BASE, BTN_PRIMARY_ENABLED } from '../styles/uiTokens';
 
 interface AvatarCustomizerModalProps {
   isOpen: boolean;
@@ -97,14 +98,14 @@ export function AvatarCustomizerModal({
             <div className="relative inline-flex items-center justify-center rounded-full p-1 bg-gradient-to-tr from-[#8B5CF6] via-[#EC4899] to-[#38BDF8]">
               <Avatar config={current} size={110} />
             </div>
-            {/* Würfeln-Button */}
+            {/* Würfeln-Button (Stufe 2/3 Utility-Pille statt grellem Pink) */}
             <button
               type="button"
               onClick={handleRandomize}
               title="Zufälligen Avatar würfeln"
-              className="absolute -bottom-1 -right-1 flex items-center gap-1.5 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#EC4899] px-3 py-1.5 text-xs font-bold text-white shadow-lg ring-2 ring-white dark:ring-[#15151A] active:scale-95 transition-transform cursor-pointer"
+              className="absolute -bottom-1 -right-1 flex items-center gap-1.5 rounded-full bg-[#23232B] hover:bg-[#2E2E38] px-3 py-1.5 text-xs font-bold text-white shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer"
             >
-              <Dices className="h-3.5 w-3.5" />
+              <Dices className="h-3.5 w-3.5 text-purple-300" />
               <span>Würfeln</span>
             </button>
           </div>
@@ -292,7 +293,7 @@ export function AvatarCustomizerModal({
           <button
             type="button"
             onClick={handleSave}
-            className="flex w-full items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[#7C3AED] to-[#6366F1] py-3 text-sm font-bold text-white shadow-md shadow-purple-500/25 active:scale-95 transition-all cursor-pointer"
+            className={`${BTN_PRIMARY_BASE} ${BTN_PRIMARY_ENABLED}`}
           >
             <Check className="h-4 w-4" />
             <span>Avatar speichern</span>

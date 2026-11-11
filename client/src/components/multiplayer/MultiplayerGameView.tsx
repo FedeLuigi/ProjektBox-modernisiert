@@ -12,6 +12,13 @@ import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
+import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_DISABLED,
+  BTN_PRIMARY_ENABLED,
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
+} from '../../styles/uiTokens';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -332,25 +339,23 @@ export function MultiplayerGameView({
                 : 'Bereit für eine Revanche?'}
             </p>
 
-            <div className="mt-4 flex flex-col gap-2">
+            <div className="mt-4 flex flex-col gap-2.5">
               <button
                 type="button"
                 onClick={handleRematch}
                 disabled={hasVotedRematch}
-                className={`w-full py-3 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
-                  hasVotedRematch
-                    ? 'bg-white/10 text-white/50 cursor-not-allowed'
-                    : 'bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white shadow-purple-500/25'
+                className={`${BTN_PRIMARY_BASE} ${
+                  hasVotedRematch ? BTN_PRIMARY_DISABLED : BTN_PRIMARY_ENABLED
                 }`}
               >
-                <RotateCcw className="h-3.5 w-3.5" />
+                <RotateCcw className="h-4 w-4" />
                 <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Nochmal spielen (Revanche)'}</span>
               </button>
 
               <button
                 type="button"
                 onClick={onLeave}
-                className="w-full py-2.5 rounded-full text-xs font-bold text-[#8E8E93] hover:text-white bg-white/[0.05] hover:bg-white/[0.08] transition-all cursor-pointer"
+                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
               >
                 Zurück zur Lobby
               </button>

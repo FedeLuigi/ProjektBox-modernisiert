@@ -14,12 +14,15 @@ import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_DISABLED,
+  BTN_PRIMARY_ENABLED,
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
+  BTN_SUCCESS_CONFIRMED,
+  BTN_SUCCESS_READY,
   HEADER_BACK_BTN,
   HEADER_ROW,
-  PRIMARY_BTN_BASE,
-  PRIMARY_BTN_DISABLED,
-  PRIMARY_BTN_ENABLED,
-  SECONDARY_BTN_BASE,
 } from '../../styles/uiTokens';
 
 interface InLobbyViewProps {
@@ -205,10 +208,12 @@ export function InLobbyView({
             <button
               type="button"
               onClick={handleToggleReady}
-              className={`${SECONDARY_BTN_BASE} shadow-md ${
+              className={`${BTN_SECONDARY_BASE} ${
                 isReady
-                  ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-500/50 hover:bg-emerald-600/40'
-                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30 hover:brightness-110'
+                  ? BTN_SUCCESS_CONFIRMED
+                  : canStartGame
+                    ? BTN_SECONDARY_NEUTRAL
+                    : BTN_SUCCESS_READY
               }`}
             >
               <Check className="h-4 w-4 stroke-[2.5]" />
@@ -221,8 +226,8 @@ export function InLobbyView({
                 type="button"
                 disabled={!allReady || isStarting}
                 onClick={handleStartGame}
-                className={`${PRIMARY_BTN_BASE} ${
-                  allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
+                className={`${BTN_PRIMARY_BASE} ${
+                  allReady && !isStarting ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
                 }`}
               >
                 <Play className="h-4 w-4 fill-current" />
@@ -406,15 +411,17 @@ export function InLobbyView({
         </div>
       </div>
 
-      {/* 3. UNTERE AKTIONEN (BEREIT / STARTEN) */}
+      {/* 3. UNTERE AKTIONEN (STUFE 2 SEKUNDÄR / STUFE 3 BESTÄTIGT & STUFE 1 PRIMARY) */}
       <div className="shrink-0 pt-4 flex flex-col gap-2.5">
         <button
           type="button"
           onClick={handleToggleReady}
-          className={`${SECONDARY_BTN_BASE} shadow-md ${
+          className={`${BTN_SECONDARY_BASE} ${
             isReady
-              ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-500/50 hover:bg-emerald-600/40'
-              : 'bg-white/15 text-white hover:bg-white/20 ring-1 ring-white/20'
+              ? BTN_SUCCESS_CONFIRMED
+              : isHost
+                ? BTN_SECONDARY_NEUTRAL
+                : BTN_SUCCESS_READY
           }`}
         >
           <Check className="h-4 w-4" />
@@ -426,8 +433,8 @@ export function InLobbyView({
             type="button"
             disabled={!allReady || isStarting}
             onClick={handleStartGame}
-            className={`${PRIMARY_BTN_BASE} ${
-              allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
+            className={`${BTN_PRIMARY_BASE} ${
+              allReady && !isStarting ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
             }`}
           >
             <Play className="h-4 w-4 fill-current" />

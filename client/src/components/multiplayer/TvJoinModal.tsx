@@ -1,6 +1,14 @@
 import { useState } from 'react';
 import { KeyRound, QrCode, RefreshCw, Tv, X } from 'lucide-react';
 import { QrScannerModal } from './QrScannerModal';
+import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_DISABLED,
+  BTN_PRIMARY_ENABLED,
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
+  SURFACE_CARD,
+} from '../../styles/uiTokens';
 
 interface TvJoinModalProps {
   isOpen: boolean;
@@ -44,7 +52,7 @@ export function TvJoinModal({
         style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
         className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col items-center justify-center p-4 bg-black/80 backdrop-blur-xl text-white select-none animate-fade-in"
       >
-        <div className="relative w-full max-w-sm rounded-[32px] bg-[#161622]/95 p-6 ring-1 ring-white/15 shadow-2xl border border-white/10 flex flex-col items-center text-center">
+        <div className={`relative w-full max-w-sm ${SURFACE_CARD} flex flex-col items-center text-center`}>
           {/* Schließen Button */}
           <button
             type="button"
@@ -55,7 +63,7 @@ export function TvJoinModal({
           </button>
 
           {/* Icon Badge */}
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-gradient-to-br from-purple-500/25 to-pink-500/20 text-purple-300 ring-1 ring-purple-500/35 mb-3 shadow-[0_0_24px_rgba(168,85,247,0.25)]">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/30 mb-3 shadow-xs">
             <Tv className="h-7 w-7 text-purple-300" />
           </div>
 
@@ -71,12 +79,14 @@ export function TvJoinModal({
             </div>
           )}
 
-          {/* Großer Scanner-Button */}
+          {/* Stufe 1 (Primary): QR-Scanner */}
           <button
             type="button"
             onClick={() => setShowScanner(true)}
             disabled={isJoining}
-            className="mt-5 w-full py-3.5 px-4 rounded-2xl bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-extrabold text-sm tracking-wide shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2.5 transition-all active:scale-95 hover:brightness-110 cursor-pointer"
+            className={`mt-5 ${BTN_PRIMARY_BASE} ${
+              !isJoining ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+            }`}
           >
             <QrCode className="h-4 w-4" />
             <span>Jetzt TV QR-Code scannen</span>
@@ -89,7 +99,7 @@ export function TvJoinModal({
             <div className="h-px flex-1 bg-white/10" />
           </div>
 
-          {/* Manuelle Code-Eingabe */}
+          {/* Manuelle Code-Eingabe + Stufe 2 (Secondary) */}
           <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2.5">
             <input
               type="text"
@@ -103,20 +113,20 @@ export function TvJoinModal({
             <button
               type="submit"
               disabled={code.trim().length < 3 || isJoining}
-              className={`w-full py-3 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer flex items-center justify-center gap-2 ${
+              className={`${BTN_SECONDARY_BASE} ${
                 code.trim().length >= 3 && !isJoining
-                  ? 'bg-white/15 hover:bg-white/20 text-white ring-1 ring-white/20 shadow-md'
-                  : 'bg-white/[0.06] text-white/30 ring-1 ring-white/10 cursor-not-allowed'
+                  ? BTN_SECONDARY_NEUTRAL
+                  : BTN_PRIMARY_DISABLED
               }`}
             >
               {isJoining ? (
                 <>
-                  <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                  <RefreshCw className="h-4 w-4 animate-spin" />
                   <span>Verbinde mit Lobby...</span>
                 </>
               ) : (
                 <>
-                  <KeyRound className="h-3.5 w-3.5" />
+                  <KeyRound className="h-4 w-4" />
                   <span>Mit Code beitreten</span>
                 </>
               )}

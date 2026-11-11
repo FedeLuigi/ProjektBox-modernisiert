@@ -2,6 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera, CameraOff, KeyRound, X } from 'lucide-react';
 import jsQR from 'jsqr';
 import { parseLobbyCode } from '../../utils/qrCodeHelper';
+import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_ENABLED,
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
+} from '../../styles/uiTokens';
 
 interface QrScannerModalProps {
   isOpen: boolean;
@@ -245,7 +251,7 @@ export function QrScannerModal({
             <button
               type="button"
               onClick={onSwitchToCodeEntry}
-              className="mt-6 w-full py-3.5 px-4 rounded-full bg-gradient-to-r from-purple-600 to-pink-600 text-white font-extrabold text-xs sm:text-sm tracking-wide shadow-lg shadow-purple-500/25 flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              className={`mt-6 ${BTN_PRIMARY_BASE} ${BTN_PRIMARY_ENABLED}`}
             >
               <KeyRound className="h-4 w-4" />
               <span>Stattdessen Code manuell eingeben</span>
@@ -325,9 +331,9 @@ export function QrScannerModal({
         <button
           type="button"
           onClick={onSwitchToCodeEntry}
-          className="w-full py-3 rounded-full bg-white/10 hover:bg-white/15 text-white font-bold text-xs ring-1 ring-white/15 active:scale-95 cursor-pointer backdrop-blur-md flex items-center justify-center gap-2"
+          className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
         >
-          <KeyRound className="h-3.5 w-3.5" />
+          <KeyRound className="h-4 w-4" />
           <span>Lieber 5-stelligen Code eingeben</span>
         </button>
       </footer>

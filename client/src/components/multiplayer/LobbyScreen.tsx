@@ -25,14 +25,22 @@ import { QrScannerModal } from './QrScannerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { GameBackground } from '../GameBackground';
 import {
+  BTN_PRIMARY_BASE,
+  BTN_PRIMARY_DISABLED,
+  BTN_PRIMARY_ENABLED,
+  BTN_SECONDARY_ACCENT,
+  BTN_SECONDARY_BASE,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  PRIMARY_BTN_BASE,
-  PRIMARY_BTN_DISABLED,
-  PRIMARY_BTN_ENABLED,
+  SEGMENT_CONTAINER,
+  SEGMENT_TAB_ACTIVE,
+  SEGMENT_TAB_BASE,
+  SEGMENT_TAB_INACTIVE,
   STAGE_TWO_COL,
   SURFACE_CARD,
+  SWITCH_TRACK_OFF,
+  SWITCH_TRACK_ON,
 } from '../../styles/uiTokens';
 
 interface LobbyScreenProps {
@@ -340,13 +348,13 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 </div>
               )}
 
-              {/* ─── PRIMÄRE AKTION: TV QR-Code Scannen ─── */}
+              {/* ─── SEKUNDÄRE SCHNELLAKTION (STUFE 2 ACCENT): TV QR-Code scannen ─── */}
               <button
                 type="button"
                 onClick={() => setShowScanner(true)}
-                className={`${PRIMARY_BTN_BASE} ${PRIMARY_BTN_ENABLED} mb-3.5`}
+                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_ACCENT} mb-3.5`}
               >
-                <QrCode className="h-4 w-4" />
+                <QrCode className="h-4 w-4 text-purple-300" />
                 <span>Jetzt scannen (TV QR-Code)</span>
               </button>
 
@@ -360,15 +368,13 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 </span>
               </div>
 
-              {/* ─── TAB-NAVIGATION (2 TABS: Mit Code / Lobby erstellen) ─── */}
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-black/40 ring-1 ring-white/10 backdrop-blur-md mb-3.5 shrink-0">
+              {/* ─── TAB-NAVIGATION (STUFE 4 SEGMENTED: Neutrales Dark-Glass) ─── */}
+              <div className={`${SEGMENT_CONTAINER} grid-cols-2 mb-3.5 shrink-0`}>
                 <button
                   type="button"
                   onClick={() => setActiveTab('code')}
-                  className={`py-2.5 px-2 text-center rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                    activeTab === 'code'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/25'
-                      : 'text-[#8E8E93] hover:text-white'
+                  className={`${SEGMENT_TAB_BASE} ${
+                    activeTab === 'code' ? SEGMENT_TAB_ACTIVE : SEGMENT_TAB_INACTIVE
                   }`}
                 >
                   Mit Code beitreten
@@ -376,10 +382,8 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 <button
                   type="button"
                   onClick={() => setActiveTab('create')}
-                  className={`py-2.5 px-2 text-center rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
-                    activeTab === 'create'
-                      ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/25'
-                      : 'text-[#8E8E93] hover:text-white'
+                  className={`${SEGMENT_TAB_BASE} ${
+                    activeTab === 'create' ? SEGMENT_TAB_ACTIVE : SEGMENT_TAB_INACTIVE
                   }`}
                 >
                   Lobby erstellen
@@ -411,13 +415,14 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                       />
                     </div>
 
+                    {/* STUFE 1 (PRIMARY): Genau eine Hauptaktion im Formular */}
                     <button
                       type="submit"
                       disabled={joinCode.trim().length < 3 || isJoiningCode}
-                      className={`${PRIMARY_BTN_BASE} ${
+                      className={`${BTN_PRIMARY_BASE} ${
                         joinCode.trim().length >= 3 && !isJoiningCode
-                          ? PRIMARY_BTN_ENABLED
-                          : PRIMARY_BTN_DISABLED
+                          ? BTN_PRIMARY_ENABLED
+                          : BTN_PRIMARY_DISABLED
                       }`}
                     >
                       {isJoiningCode ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Mit Code beitreten</span>}
@@ -449,21 +454,21 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                           type="button"
                           onClick={handleRollLobbyName}
                           title="Anderen einfachen Namen vorschlagen"
-                          className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-purple-500/30 text-white/70 hover:text-white transition-colors active:scale-90 cursor-pointer"
+                          className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
                         >
                           <Dices className="h-3.5 w-3.5" />
                         </button>
                       </div>
                     </div>
 
-                    {/* OPTION: ICH BIN AUF DEM FERNSEHER (TV-MODUS) */}
+                    {/* OPTION: ICH BIN AUF DEM FERNSEHER (STUFE 4 SWITCH) */}
                     <div
                       onClick={handleToggleTvMode}
                       role="switch"
                       aria-checked={isTvMode}
                       className={`flex items-center justify-between p-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
                         isTvMode
-                          ? 'bg-purple-600/15 ring-purple-500/35 shadow-xs'
+                          ? 'bg-purple-500/[0.1] ring-purple-400/35 shadow-xs'
                           : 'bg-white/[0.03] hover:bg-white/[0.05] ring-white/10'
                       }`}
                     >
@@ -471,7 +476,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                         <div
                           className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
                             isTvMode
-                              ? 'bg-purple-500/30 text-purple-300 ring-1 ring-purple-500/40'
+                              ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30'
                               : 'bg-white/5 text-[#8E8E93]'
                           }`}
                         >
@@ -492,7 +497,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
 
                       <div
                         className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                          isTvMode ? 'bg-gradient-to-r from-purple-600 to-pink-600' : 'bg-white/20'
+                          isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
                         }`}
                       >
                         <span
@@ -503,17 +508,21 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                       </div>
                     </div>
 
+                    {/* STUFE 1 (PRIMARY): Lobby starten */}
                     <button
                       type="submit"
                       disabled={isCreating}
-                      className={`${PRIMARY_BTN_BASE} ${
-                        !isCreating ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
+                      className={`${BTN_PRIMARY_BASE} ${
+                        !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
                       }`}
                     >
                       {isCreating ? (
                         <RefreshCw className="h-4 w-4 animate-spin" />
                       ) : (
-                        <span>{isTvMode ? '📺 TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
+                        <>
+                          {isTvMode && <Tv className="h-4 w-4" />}
+                          <span>{isTvMode ? 'TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
+                        </>
                       )}
                     </button>
                   </form>
