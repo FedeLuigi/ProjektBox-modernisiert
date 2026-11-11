@@ -548,14 +548,6 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={handleToggleVibration}
         onInstall={deferredPrompt ? handleInstall : undefined}
-        onReplaySplash={() => {
-          try {
-            localStorage.removeItem('projektbox_splash_seen_v1');
-          } catch {
-            // ignore
-          }
-          setShowSplash(true);
-        }}
       />
     </div>
   );

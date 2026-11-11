@@ -4,16 +4,13 @@ import {
   Check,
   Copy,
   Dices,
-  Film,
   Palette,
   Pencil,
-  RotateCcw,
   Smartphone,
   Sparkles,
   Trophy,
   Volume2,
   VolumeX,
-  Wifi,
 } from 'lucide-react';
 import { Avatar, type AvatarConfig } from './Avatar';
 import { AvatarCustomizerModal } from './AvatarCustomizerModal';
@@ -24,8 +21,6 @@ import {
   validatePlayerName,
   type UserProfile,
 } from '../utils/userProfile';
-import { socketService } from '../services/socket';
-import { ConnectionStatusBadge } from './multiplayer/ConnectionStatusBadge';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 
 interface SettingsSheetProps {
@@ -36,7 +31,6 @@ interface SettingsSheetProps {
   vibrationEnabled: boolean;
   onToggleVibration: (enabled: boolean) => void;
   onInstall?: () => void;
-  onReplaySplash?: () => void;
 }
 
 interface ToggleRowProps {
@@ -115,7 +109,6 @@ export function SettingsSheet({
   vibrationEnabled,
   onToggleVibration,
   onInstall,
-  onReplaySplash,
 }: SettingsSheetProps) {
   const [profile, setProfile] = useState<UserProfile>(getUserProfile);
   const [nameInput, setNameInput] = useState(profile.name);
@@ -123,17 +116,12 @@ export function SettingsSheet({
   const [copiedId, setCopiedId] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
-  // Server-URL Konfiguration
-  const [serverUrlInput, setServerUrlInput] = useState(() => socketService.getSocketUrl());
-  const [showServerConfig, setShowServerConfig] = useState(false);
-
   useEffect(() => {
     if (isOpen) {
       const current = getUserProfile();
       setProfile(current);
       setNameInput(current.name);
       setNameError(null);
-      setServerUrlInput(socketService.getSocketUrl());
     }
   }, [isOpen]);
 
@@ -193,16 +181,6 @@ export function SettingsSheet({
     } catch {
       // fallback
     }
-  };
-
-  const handleSaveServerUrl = (e: React.FormEvent) => {
-    e.preventDefault();
-    socketService.setSocketUrl(serverUrlInput);
-  };
-
-  const handleResetServerUrl = () => {
-    setServerUrlInput('');
-    socketService.setSocketUrl(null);
   };
 
   return (
@@ -349,79 +327,6 @@ export function SettingsSheet({
                 icon={<Smartphone className="h-4 w-4" />}
               />
             </div>
-
-            {/* ─── C) MULTIPLAYER STATUS & SERVER-URL KONFIGURATION ─── */}
-            <div className="p-3.5 rounded-2xl bg-black/[0.03] dark:bg-white/[0.04] ring-1 ring-black/[0.04] dark:ring-white/[0.06]">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/20">
-                    <Wifi className="h-4 w-4" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-bold text-white">Multiplayer Server</div>
-                    <div className="text-[10px] text-[#8E8E93]">Socket.io Echtzeit-Verbindung</div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <ConnectionStatusBadge />
-                  <button
-                    type="button"
-                    onClick={() => setShowServerConfig(!showServerConfig)}
-                    className="text-[11px] font-bold text-purple-400 hover:text-purple-300 underline cursor-pointer"
-                  >
-                    {showServerConfig ? 'Schließen' : 'URL anpassen'}
-                  </button>
-                </div>
-              </div>
-
-              {/* Server-URL Eingabeformular */}
-              {showServerConfig && (
-                <form onSubmit={handleSaveServerUrl} className="mt-3 pt-3 border-t border-white/10 flex flex-col gap-2">
-                  <label className="text-[10px] font-bold text-[#8E8E93]">
-                    Server-URL (z. B. https://dein-tunnel.ngrok.app oder wss://...):
-                  </label>
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="text"
-                      value={serverUrlInput}
-                      onChange={(e) => setServerUrlInput(e.target.value)}
-                      placeholder="Standard (gleicher Host)"
-                      className="flex-1 text-xs px-3 py-2 rounded-xl bg-black/40 ring-1 ring-white/15 focus:ring-1 focus:ring-purple-500 outline-none text-white placeholder:text-white/20"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-xs font-bold text-white cursor-pointer active:scale-95"
-                    >
-                      Speichern
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleResetServerUrl}
-                      title="Auf Standard zurücksetzen"
-                      className="p-2 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white cursor-pointer"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </form>
-              )}
-            </div>
-
-            {/* Start-Animation erneut abspielen */}
-            {onReplaySplash && (
-              <button
-                type="button"
-                onClick={() => {
-                  onClose();
-                  onReplaySplash();
-                }}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-purple-500/10 hover:bg-purple-500/20 px-4 py-3 text-xs font-bold text-purple-600 dark:text-purple-300 transition-all ring-1 ring-purple-500/25 active:scale-95 cursor-pointer"
-              >
-                <Film className="h-4 w-4" />
-                <span>Start-Animation ansehen</span>
-              </button>
-            )}
 
             {/* Optional: PWA Installieren Button */}
             {onInstall && (
