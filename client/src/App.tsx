@@ -519,7 +519,6 @@ export function App() {
         <LobbyScreen
           game={multiplayerGame}
           initialLobby={deepLinkLobby}
-          onGameChange={(newGame) => setMultiplayerGame(newGame)}
           onClose={() => {
             setMultiplayerGame(null);
             setDeepLinkLobby(null);

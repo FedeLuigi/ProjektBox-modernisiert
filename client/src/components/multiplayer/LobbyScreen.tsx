@@ -3,15 +3,13 @@ import {
   ArrowLeft,
   Clock3,
   Dices,
-  KeyRound,
-  QrCode,
   RefreshCw,
   Sparkles,
   Tv,
   Users,
   Wifi,
 } from 'lucide-react';
-import { GAMES, type Game, TONE_STYLES } from '../../data/games';
+import { type Game, TONE_STYLES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
@@ -21,22 +19,15 @@ import { InLobbyView } from './InLobbyView';
 import { TvLobbyView } from './TvLobbyView';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
-import { QrScannerModal } from './QrScannerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { GameBackground } from '../GameBackground';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
   BTN_PRIMARY_ENABLED,
-  BTN_SECONDARY_ACCENT,
-  BTN_SECONDARY_BASE,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  SEGMENT_CONTAINER,
-  SEGMENT_TAB_ACTIVE,
-  SEGMENT_TAB_BASE,
-  SEGMENT_TAB_INACTIVE,
   STAGE_TWO_COL,
   SURFACE_CARD,
   SWITCH_TRACK_OFF,
@@ -47,12 +38,9 @@ interface LobbyScreenProps {
   game: Game;
   onClose: () => void;
   initialLobby?: Lobby | null;
-  onGameChange?: (game: Game) => void;
 }
 
-type TabType = 'code' | 'create';
-
-export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: LobbyScreenProps) {
+export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
   const [isInGame, setIsInGame] = useState(Boolean(initialLobby?.status === 'in-game'));
 
@@ -66,11 +54,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     }
   }, [initialLobby]);
 
-  const [activeTab, setActiveTab] = useState<TabType>('code');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-
-  // QR-Scanner Modal
-  const [showScanner, setShowScanner] = useState(false);
 
   // Formular "Lobby erstellen"
   const currentUser = getUserProfile();
@@ -78,10 +62,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
   const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
   const [isTvMode, setIsTvMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
-
-  // Formular "Mit Code beitreten"
-  const [joinCode, setJoinCode] = useState('');
-  const [isJoiningCode, setIsJoiningCode] = useState(false);
 
   const gameId = game.id;
 
@@ -144,38 +124,6 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     } finally {
       setIsCreating(false);
     }
-  };
-
-  // Mit Code beitreten (über Formular oder QR-Scan)
-  const joinWithCode = async (codeToJoin: string) => {
-    const cleanCode = codeToJoin.trim().toUpperCase();
-    if (!cleanCode || cleanCode.length < 3 || isJoiningCode) return;
-
-    setIsJoiningCode(true);
-    setErrorMsg(null);
-
-    try {
-      const joined = await socketService.joinLobby(cleanCode);
-      setCurrentLobby(joined);
-      setShowScanner(false);
-
-      // Falls die beigetretene Lobby zu einem anderen Spiel gehört:
-      if (joined.gameId !== game.id) {
-        const targetGame = GAMES.find((g) => g.id === joined.gameId);
-        if (targetGame && onGameChange) {
-          onGameChange(targetGame);
-        }
-      }
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lobby mit diesem Code nicht gefunden.');
-    } finally {
-      setIsJoiningCode(false);
-    }
-  };
-
-  const handleJoinByCodeForm = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await joinWithCode(joinCode);
   };
 
   const handleLeaveLobby = async () => {
@@ -335,213 +283,126 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
               </div>
 
               <p className="hidden landscape:block lg:block mt-4 text-xs sm:text-sm leading-relaxed text-[#8E8E93] max-w-sm">
-                Tritt einer bestehenden Runde bei, verbinde dich mit dem TV per QR-Code oder erstelle deine eigene Spiel-Lobby.
+                Erstelle eine private Spiel-Lobby für Freunde oder starte direkt eine TV-Runde für das Wohnzimmer.
               </p>
             </div>
 
-            {/* Rechte Seite: Konsistente Lobby-Card */}
+            {/* Rechte Seite: Konsistente Lobby-Card (nur Lobby erstellen) */}
             <div className={`flex flex-col w-full text-left ${SURFACE_CARD}`}>
+              <div className="mb-4">
+                <h2 className="text-base sm:text-lg font-extrabold text-white">
+                  Lobby erstellen
+                </h2>
+                <p className="mt-0.5 text-xs text-[#8E8E93]">
+                  Starte eine private Runde – Mitspieler treten per Code oder QR-Code bei.
+                </p>
+              </div>
+
               {/* Fehlermeldung */}
               {errorMsg && (
-                <div className="mb-3 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+                <div className="mb-4 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
                   {errorMsg}
                 </div>
               )}
 
-              {/* ─── SEKUNDÄRE SCHNELLAKTION (STUFE 2 ACCENT): TV QR-Code scannen ─── */}
-              <button
-                type="button"
-                onClick={() => setShowScanner(true)}
-                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_ACCENT} mb-3.5`}
-              >
-                <QrCode className="h-4 w-4 text-purple-300" />
-                <span>Jetzt scannen (TV QR-Code)</span>
-              </button>
-
-              {/* Dezenter Trenner */}
-              <div className="relative my-1 mb-3.5 flex items-center justify-center">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/[0.08]" />
+              <form onSubmit={handleCreateLobby} className="flex flex-col gap-4">
+                <div>
+                  <label className="text-xs font-bold text-white/80 block mb-1.5">
+                    Lobby-Name
+                  </label>
+                  <div className="relative flex items-center">
+                    <input
+                      type="text"
+                      maxLength={30}
+                      value={createName}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCreateName(val);
+                        setHasCustomLobbyName(val.trim().length > 0);
+                      }}
+                      placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
+                      className="w-full text-xs sm:text-sm font-semibold pl-3.5 pr-11 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRollLobbyName}
+                      title="Anderen einfachen Namen vorschlagen"
+                      className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
+                    >
+                      <Dices className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
                 </div>
-                <span className="relative bg-[#18181C] px-3 text-[11px] font-medium text-[#8E8E93]">
-                  oder manuell beitreten
-                </span>
-              </div>
 
-              {/* ─── TAB-NAVIGATION (STUFE 4 SEGMENTED: Neutrales Dark-Glass) ─── */}
-              <div className={`${SEGMENT_CONTAINER} grid-cols-2 mb-3.5 shrink-0`}>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('code')}
-                  className={`${SEGMENT_TAB_BASE} ${
-                    activeTab === 'code' ? SEGMENT_TAB_ACTIVE : SEGMENT_TAB_INACTIVE
+                {/* OPTION: ICH BIN AUF DEM FERNSEHER (STUFE 4 SWITCH) */}
+                <div
+                  onClick={handleToggleTvMode}
+                  role="switch"
+                  aria-checked={isTvMode}
+                  className={`flex items-center justify-between p-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                    isTvMode
+                      ? 'bg-purple-500/[0.1] ring-purple-400/35 shadow-xs'
+                      : 'bg-white/[0.03] hover:bg-white/[0.05] ring-white/10'
                   }`}
                 >
-                  Mit Code beitreten
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTab('create')}
-                  className={`${SEGMENT_TAB_BASE} ${
-                    activeTab === 'create' ? SEGMENT_TAB_ACTIVE : SEGMENT_TAB_INACTIVE
-                  }`}
-                >
-                  Lobby erstellen
-                </button>
-              </div>
-
-              {/* ─── TAB-INHALTE ─── */}
-              <div className="min-h-[232px] flex flex-col justify-center">
-                {/* TAB 1: MIT CODE BEITRETEN */}
-                {activeTab === 'code' && (
-                  <form onSubmit={handleJoinByCodeForm} className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
-                    <div className="grid h-10 w-10 place-items-center rounded-xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 mb-2">
-                      <KeyRound className="h-5 w-5" />
-                    </div>
-
-                    <h3 className="text-sm sm:text-base font-extrabold text-white">Privatem Raum beitreten</h3>
-                    <p className="mt-0.5 text-xs text-[#8E8E93] text-center max-w-xs">
-                      Gib den 5-stelligen Code ein oder scanne den QR-Code vom Fernseher.
-                    </p>
-
-                    <div className="my-3.5 w-full">
-                      <input
-                        type="text"
-                        maxLength={6}
-                        value={joinCode}
-                        onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                        placeholder="z. B. 7K9P2"
-                        className="w-full text-center text-xl sm:text-2xl font-mono font-black tracking-[0.25em] px-4 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/20"
-                      />
-                    </div>
-
-                    {/* STUFE 1 (PRIMARY): Genau eine Hauptaktion im Formular */}
-                    <button
-                      type="submit"
-                      disabled={joinCode.trim().length < 3 || isJoiningCode}
-                      className={`${BTN_PRIMARY_BASE} ${
-                        joinCode.trim().length >= 3 && !isJoiningCode
-                          ? BTN_PRIMARY_ENABLED
-                          : BTN_PRIMARY_DISABLED
-                      }`}
-                    >
-                      {isJoiningCode ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Mit Code beitreten</span>}
-                    </button>
-                  </form>
-                )}
-
-                {/* TAB 2: LOBBY ERSTELLEN */}
-                {activeTab === 'create' && (
-                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 p-4 sm:p-5 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
-                    <div>
-                      <label className="text-xs font-bold text-white/80 block mb-1.5">
-                        Lobby-Name
-                      </label>
-                      <div className="relative flex items-center">
-                        <input
-                          type="text"
-                          maxLength={30}
-                          value={createName}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setCreateName(val);
-                            setHasCustomLobbyName(val.trim().length > 0);
-                          }}
-                          placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                          className="w-full text-xs sm:text-sm font-semibold pl-3.5 pr-11 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleRollLobbyName}
-                          title="Anderen einfachen Namen vorschlagen"
-                          className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
-                        >
-                          <Dices className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {/* OPTION: ICH BIN AUF DEM FERNSEHER (STUFE 4 SWITCH) */}
+                  <div className="flex items-center gap-2.5">
                     <div
-                      onClick={handleToggleTvMode}
-                      role="switch"
-                      aria-checked={isTvMode}
-                      className={`flex items-center justify-between p-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                      className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
                         isTvMode
-                          ? 'bg-purple-500/[0.1] ring-purple-400/35 shadow-xs'
-                          : 'bg-white/[0.03] hover:bg-white/[0.05] ring-white/10'
+                          ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30'
+                          : 'bg-white/5 text-[#8E8E93]'
                       }`}
                     >
-                      <div className="flex items-center gap-2.5">
-                        <div
-                          className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
-                            isTvMode
-                              ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30'
-                              : 'bg-white/5 text-[#8E8E93]'
-                          }`}
-                        >
-                          <Tv className="h-4 w-4" />
-                        </div>
-                        <div>
-                          <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                            <span>Ich bin auf dem Fernseher</span>
-                            <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
-                              TV
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-[#8E8E93]">
-                            Zeigt großen TV-Screen. Spieler steuern per Smartphone.
-                          </div>
-                        </div>
+                      <Tv className="h-4 w-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
+                        <span>Ich bin auf dem Fernseher</span>
+                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+                          TV
+                        </span>
                       </div>
-
-                      <div
-                        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                          isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                            isTvMode ? 'translate-x-6' : 'translate-x-1'
-                          }`}
-                        />
+                      <div className="text-[11px] text-[#8E8E93]">
+                        Zeigt großen TV-Screen. Spieler steuern per Smartphone.
                       </div>
                     </div>
+                  </div>
 
-                    {/* STUFE 1 (PRIMARY): Lobby starten */}
-                    <button
-                      type="submit"
-                      disabled={isCreating}
-                      className={`${BTN_PRIMARY_BASE} ${
-                        !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                  <div
+                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                      isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        isTvMode ? 'translate-x-6' : 'translate-x-1'
                       }`}
-                    >
-                      {isCreating ? (
-                        <RefreshCw className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <>
-                          {isTvMode && <Tv className="h-4 w-4" />}
-                          <span>{isTvMode ? 'TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
-                        </>
-                      )}
-                    </button>
-                  </form>
-                )}
-              </div>
+                    />
+                  </div>
+                </div>
+
+                {/* STUFE 1 (PRIMARY): Lobby starten */}
+                <button
+                  type="submit"
+                  disabled={isCreating}
+                  className={`${BTN_PRIMARY_BASE} ${
+                    !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                  }`}
+                >
+                  {isCreating ? (
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <>
+                      {isTvMode && <Tv className="h-4 w-4" />}
+                      <span>{isTvMode ? 'TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
+                    </>
+                  )}
+                </button>
+              </form>
             </div>
           </div>
         </main>
       </div>
-      {/* ─── KAMERA-SCANNER OVERLAY MODAL ─── */}
-      <QrScannerModal
-        isOpen={showScanner}
-        onClose={() => setShowScanner(false)}
-        onScanSuccess={(code) => joinWithCode(code)}
-        onSwitchToCodeEntry={() => {
-          setShowScanner(false);
-          setActiveTab('code');
-        }}
-      />
     </div>
   );
 }
