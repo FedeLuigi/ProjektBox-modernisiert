@@ -27,20 +27,72 @@
   }
 }
 
-/* ─── iPhone Notch / Lautsprecher Schutzabstand (Portrait & Landscape) ─── */
-.safe-screen {
-  padding-top: max(1.75rem, calc(env(safe-area-inset-top, 0px) + 0.5rem));
-  padding-bottom: max(1rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem));
-  padding-left: max(0.75rem, calc(env(safe-area-inset-left, 0px) + 0.35rem));
-  padding-right: max(0.75rem, calc(env(safe-area-inset-right, 0px) + 0.35rem));
-}
+/* ─── Einheitliches Layout-Grundgerüst & Safe-Area Schutzabstand ─── */
+@layer components {
+  .app-shell {
+    width: 100%;
+    max-width: 80rem;
+    margin-left: auto;
+    margin-right: auto;
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
 
-@media (orientation: landscape) {
+  .app-shell-x {
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    scroll-padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    scroll-padding-right: max(1rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .app-shell,
+    .app-shell-x {
+      padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+    .app-shell-x {
+      scroll-padding-left: max(1.5rem, env(safe-area-inset-left, 0px));
+      scroll-padding-right: max(1.5rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .app-shell {
+      padding-top: 1.5rem;
+      padding-bottom: 1.5rem;
+    }
+    .app-shell,
+    .app-shell-x {
+      padding-left: max(3rem, env(safe-area-inset-left, 0px));
+      padding-right: max(3rem, env(safe-area-inset-right, 0px));
+    }
+    .app-shell-x {
+      scroll-padding-left: max(3rem, env(safe-area-inset-left, 0px));
+      scroll-padding-right: max(3rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  @media (min-width: 1280px) {
+    .app-shell,
+    .app-shell-x {
+      padding-left: max(4rem, env(safe-area-inset-left, 0px));
+      padding-right: max(4rem, env(safe-area-inset-right, 0px));
+    }
+    .app-shell-x {
+      scroll-padding-left: max(4rem, env(safe-area-inset-left, 0px));
+      scroll-padding-right: max(4rem, env(safe-area-inset-right, 0px));
+    }
+  }
+
+  /* Legacy-Alias innerhalb @layer components, überschreibt keine Utilities */
   .safe-screen {
-    padding-top: max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.25rem));
-    padding-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.25rem));
-    padding-left: max(2.5rem, calc(env(safe-area-inset-left, 0px) + 0.5rem));
-    padding-right: max(2.5rem, calc(env(safe-area-inset-right, 0px) + 0.5rem));
+    padding-top: max(1rem, env(safe-area-inset-top, 0px));
+    padding-bottom: max(1rem, env(safe-area-inset-bottom, 0px));
+    padding-left: max(1rem, env(safe-area-inset-left, 0px));
+    padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
 }
 

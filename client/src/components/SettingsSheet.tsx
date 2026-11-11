@@ -22,6 +22,14 @@ import {
   type UserProfile,
 } from '../utils/userProfile';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
+import {
+  HEADER_BACK_BTN,
+  HEADER_BADGE_PILL,
+  HEADER_ROW,
+  SECONDARY_BTN_BASE,
+  STAGE_SINGLE_COL,
+  SURFACE_CARD,
+} from '../styles/uiTokens';
 
 interface SettingsSheetProps {
   isOpen: boolean;
@@ -188,8 +196,7 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F]/95 backdrop-blur-2xl text-white select-none animate-fade-in pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F]/95 backdrop-blur-2xl text-white select-none animate-fade-in"
     >
       {/* ─── VOLLBILD-KOMETEN-ANIMATION HINTER DER GESAMTEN EINSTELLUNGSSEITE ─── */}
       <BackgroundCometCanvas opacity={0.6} />
@@ -198,29 +205,31 @@ export function SettingsSheet({
       <div className="pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/25" />
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 bg-indigo-600/20" />
 
-      {/* ─── Vollbild-Container mit sicherem iPhone Notch Schutzabstand ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+      {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
+      <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
         {/* 1. OBERE LEISTE: Gewohnter Zurück-Button & Status-Badge */}
-        <header className="flex shrink-0 items-center justify-between">
+        <header className={HEADER_ROW}>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-full bg-white/85 dark:bg-[#1C1C1E]/90 px-4 py-2 text-xs sm:text-sm font-bold text-[#1C1C1E] dark:text-white shadow-xs ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer"
+            className={HEADER_BACK_BTN}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Zurück</span>
           </button>
 
-          <span className="rounded-full bg-purple-500/10 px-3.5 py-1.5 text-xs font-bold tracking-wide uppercase text-purple-600 dark:text-purple-300 ring-1 ring-purple-500/20">
+          <span
+            className={`${HEADER_BADGE_PILL} uppercase bg-purple-500/15 text-purple-300 ring-1 ring-purple-500/25`}
+          >
             Einstellungen
           </span>
         </header>
 
         {/* 2. MITTE: Großzügige, moderne Einstellungen */}
-        <main className="my-auto mx-auto flex w-full max-w-lg flex-1 items-center justify-center py-4 overflow-y-auto">
-          <div className="w-full space-y-5">
+        <main className={`${STAGE_SINGLE_COL} overflow-y-auto scrollbar-none`}>
+          <div className="my-auto w-full space-y-5">
             {/* ─── A) SPIELER-PROFIL KARTE (AVATAR & NAME) ─── */}
-            <div className="flex flex-col items-center justify-center p-6 rounded-[28px] bg-white/70 dark:bg-[#18181C]/80 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-xl shadow-sm text-center">
+            <div className={`flex flex-col items-center justify-center text-center ${SURFACE_CARD}`}>
               {/* Runder Avatar mit leuchtender Kontur */}
               <div
                 onClick={() => setIsAvatarModalOpen(true)}
@@ -343,7 +352,7 @@ export function SettingsSheet({
               <button
                 type="button"
                 onClick={onInstall}
-                className="flex w-full items-center justify-center gap-2 rounded-2xl bg-black/[0.04] dark:bg-white/[0.06] hover:bg-black/[0.07] dark:hover:bg-white/[0.1] px-4 py-3 text-xs font-bold text-[#1C1C1E] dark:text-white transition-all ring-1 ring-black/5 dark:ring-white/10 active:scale-95 cursor-pointer"
+                className={`${SECONDARY_BTN_BASE} bg-white/[0.06] hover:bg-white/[0.1] text-white ring-1 ring-white/10`}
               >
                 <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
                 <span>App auf Startbildschirm installieren</span>

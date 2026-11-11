@@ -24,6 +24,16 @@ import { TvGameView } from './TvGameView';
 import { QrScannerModal } from './QrScannerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { GameBackground } from '../GameBackground';
+import {
+  HEADER_BACK_BTN,
+  HEADER_BADGE_PILL,
+  HEADER_ROW,
+  PRIMARY_BTN_BASE,
+  PRIMARY_BTN_DISABLED,
+  PRIMARY_BTN_ENABLED,
+  STAGE_TWO_COL,
+  SURFACE_CARD,
+} from '../../styles/uiTokens';
 
 interface LobbyScreenProps {
   game: Game;
@@ -190,29 +200,12 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
     );
   }
 
-  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView
+  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell wie Hauptmenü & Spiel-Vorbereitung)
   if (currentLobby) {
     return (
-      <div
-        style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-        className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#07070C] text-white select-none animate-fade-in"
-      >
+      <div className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
         <BackgroundCometCanvas opacity={0.4} />
-        <div
-          style={{
-            paddingTop: isTvScreenHost
-              ? 'max(24px, env(safe-area-inset-top))'
-              : 'max(16px, env(safe-area-inset-top))',
-            paddingBottom: isTvScreenHost
-              ? 'max(24px, env(safe-area-inset-bottom))'
-              : 'max(16px, env(safe-area-inset-bottom))',
-          }}
-          className={`relative z-10 flex h-full w-full flex-col ${
-            isTvScreenHost
-              ? 'px-6 sm:px-12 lg:px-16 xl:px-24 2xl:px-32 py-2 lg:py-6 max-w-[1600px] mx-auto'
-              : 'px-4 sm:px-6'
-          }`}
-        >
+        <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
           {isTvScreenHost ? (
             <TvLobbyView
               lobby={currentLobby}
@@ -248,14 +241,13 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
       role="dialog"
       aria-modal="true"
       aria-labelledby="lobby-screen-title"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in pb-[env(safe-area-inset-bottom)]"
+      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details (exakt wie in GameSheet) ─── */}
       <BackgroundCometCanvas opacity={0.45} />
 
       {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild) ─── */}
-      <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-30 scale-125 transform-gpu">
+      <div className="absolute inset-0 pointer-events-none opacity-30 scale-125 transform-gpu">
         <GameBackground gameId={game.id} />
       </div>
 
@@ -267,14 +259,14 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
         className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
       />
 
-      {/* ─── Vollbild-Container mit sicherem Abstand zu den Rändern (exakt wie in GameSheet) ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-16 xl:px-24 py-3 lg:py-8 max-w-7xl mx-auto">
-        {/* 1. OBERE LEISTE: Zurück-Pille links, Status & Kategorie-Badge rechts (exakt gleiche Stelle & Stil wie GameSheet) */}
-        <header className="flex shrink-0 items-center justify-between">
+      {/* ─── Vollbild-Container mit einheitlichem Raster (.app-shell) ─── */}
+      <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+        {/* 1. OBERE LEISTE: Zurück-Pille links, Status & Kategorie-Badge rechts */}
+        <header className={HEADER_ROW}>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-full bg-white/85 dark:bg-[#1C1C1E]/90 px-4 py-2 text-xs sm:text-sm font-bold text-[#1C1C1E] dark:text-white shadow-xs ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer"
+            className={HEADER_BACK_BTN}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Zurück</span>
@@ -283,7 +275,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
           <div className="flex items-center gap-2.5">
             <ConnectionStatusBadge />
             <span
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold tracking-wide uppercase shadow-2xs ${style.badge}`}
+              className={`${HEADER_BADGE_PILL} uppercase shadow-2xs ${style.badge}`}
             >
               {game.category}
             </span>
@@ -291,12 +283,12 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
         </header>
 
         {/* 2. MITTE: Zweigeteilte Bühne (Links: Icon & Meta, Rechts: Lobby-Option Card) */}
-        <main className="my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center py-2 sm:py-4 overflow-y-auto overscroll-y-contain scrollbar-none">
-          <div className="grid w-full items-center gap-6 sm:gap-8 lg:gap-12 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.35fr] landscape:text-left lg:grid-cols-[1fr_1.35fr] lg:text-left">
+        <main className={`${STAGE_TWO_COL} overflow-y-auto overscroll-y-contain scrollbar-none`}>
+          <div className="grid w-full items-center gap-6 sm:gap-8 lg:gap-12 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.3fr] landscape:text-left lg:grid-cols-[1fr_1.3fr] lg:text-left">
             {/* Linke Seite: Großes Squircle-Icon & Spiel-Präsentation */}
             <div className="flex flex-col portrait:items-center landscape:items-start lg:items-start">
               <div
-                className={`grid h-20 w-20 sm:h-26 sm:w-26 landscape:h-18 landscape:w-18 place-items-center rounded-[26px] sm:rounded-[32px] shadow-md ring-1 ring-black/[0.05] dark:ring-white/[0.12] ${style.artBg} ${style.accentText}`}
+                className={`grid h-20 w-20 sm:h-26 sm:w-26 landscape:h-18 landscape:w-18 place-items-center rounded-[26px] sm:rounded-[32px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
               >
                 <Icon
                   className="h-10 w-10 sm:h-13 sm:w-13 landscape:h-9 landscape:w-9"
@@ -319,12 +311,12 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
               </h1>
 
               {/* Luftige Info-Pillen (Spieleranzahl, Dauer, Online Multiplayer) */}
-              <div className="mt-3.5 sm:mt-4 flex flex-wrap items-center portrait:justify-center landscape:justify-start lg:justify-start gap-2.5 text-xs font-semibold text-[#6C6C70] dark:text-[#AEAEB2]">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/75 dark:bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-md text-white">
+              <div className="mt-3.5 sm:mt-4 flex flex-wrap items-center portrait:justify-center landscape:justify-start lg:justify-start gap-2.5 text-xs font-semibold text-[#AEAEB2]">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-white/[0.08] backdrop-blur-md text-white">
                   <Users className="h-3.5 w-3.5 text-purple-300" />
                   <span>{game.players}</span>
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/75 dark:bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-md text-white">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-white/[0.08] backdrop-blur-md text-white">
                   <Clock3 className="h-3.5 w-3.5 text-purple-300" />
                   <span>{game.duration}</span>
                 </span>
@@ -334,13 +326,13 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 </span>
               </div>
 
-              <p className="hidden landscape:block lg:block mt-4 text-xs leading-relaxed text-[#8E8E93] max-w-sm">
+              <p className="hidden landscape:block lg:block mt-4 text-xs sm:text-sm leading-relaxed text-[#8E8E93] max-w-sm">
                 Tritt einer bestehenden Runde bei, verbinde dich mit dem TV per QR-Code oder erstelle deine eigene Spiel-Lobby.
               </p>
             </div>
 
-            {/* Rechte Seite: Konsistente Lobby-Card (wie die Erklärungsbox in GameSheet) */}
-            <div className="flex flex-col w-full rounded-[28px] bg-white/75 dark:bg-[#18181C]/80 p-5 sm:p-7 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-xl shadow-lg text-left">
+            {/* Rechte Seite: Konsistente Lobby-Card */}
+            <div className={`flex flex-col w-full text-left ${SURFACE_CARD}`}>
               {/* Fehlermeldung */}
               {errorMsg && (
                 <div className="mb-3 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
@@ -348,32 +340,32 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 </div>
               )}
 
-              {/* ─── PRIMÄRE AKTION: Harmonisch integrierter TV QR-Code Scannen Button ─── */}
+              {/* ─── PRIMÄRE AKTION: TV QR-Code Scannen ─── */}
               <button
                 type="button"
                 onClick={() => setShowScanner(true)}
-                className="flex w-full items-center justify-center gap-2.5 rounded-full px-6 py-3.5 text-xs sm:text-sm font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110 mb-3"
+                className={`${PRIMARY_BTN_BASE} ${PRIMARY_BTN_ENABLED} mb-3.5`}
               >
                 <QrCode className="h-4 w-4" />
                 <span>Jetzt scannen (TV QR-Code)</span>
               </button>
 
               {/* Dezenter Trenner */}
-              <div className="relative my-1 mb-3 flex items-center justify-center">
+              <div className="relative my-1 mb-3.5 flex items-center justify-center">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-white/[0.08]" />
                 </div>
-                <span className="relative bg-[#18181C] px-3 text-[10.5px] font-medium text-[#8E8E93]">
+                <span className="relative bg-[#18181C] px-3 text-[11px] font-medium text-[#8E8E93]">
                   oder manuell beitreten
                 </span>
               </div>
 
               {/* ─── TAB-NAVIGATION (2 TABS: Mit Code / Lobby erstellen) ─── */}
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-black/30 dark:bg-black/40 ring-1 ring-white/10 backdrop-blur-md mb-3 shrink-0">
+              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-full bg-black/40 ring-1 ring-white/10 backdrop-blur-md mb-3.5 shrink-0">
                 <button
                   type="button"
                   onClick={() => setActiveTab('code')}
-                  className={`py-2 px-1 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`py-2.5 px-2 text-center rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                     activeTab === 'code'
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/25'
                       : 'text-[#8E8E93] hover:text-white'
@@ -384,7 +376,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                 <button
                   type="button"
                   onClick={() => setActiveTab('create')}
-                  className={`py-2 px-1 text-center rounded-full text-xs font-bold transition-all cursor-pointer ${
+                  className={`py-2.5 px-2 text-center rounded-full text-xs sm:text-sm font-bold transition-all cursor-pointer ${
                     activeTab === 'create'
                       ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-md shadow-purple-500/25'
                       : 'text-[#8E8E93] hover:text-white'
@@ -395,20 +387,20 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
               </div>
 
               {/* ─── TAB-INHALTE ─── */}
-              <div className="min-h-[220px] flex flex-col justify-center">
+              <div className="min-h-[232px] flex flex-col justify-center">
                 {/* TAB 1: MIT CODE BEITRETEN */}
                 {activeTab === 'code' && (
-                  <form onSubmit={handleJoinByCodeForm} className="flex flex-col items-center justify-center p-4 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
+                  <form onSubmit={handleJoinByCodeForm} className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
                     <div className="grid h-10 w-10 place-items-center rounded-xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30 mb-2">
                       <KeyRound className="h-5 w-5" />
                     </div>
 
                     <h3 className="text-sm sm:text-base font-extrabold text-white">Privatem Raum beitreten</h3>
-                    <p className="mt-0.5 text-[11px] text-[#8E8E93] text-center max-w-xs">
+                    <p className="mt-0.5 text-xs text-[#8E8E93] text-center max-w-xs">
                       Gib den 5-stelligen Code ein oder scanne den QR-Code vom Fernseher.
                     </p>
 
-                    <div className="my-3 w-full max-w-xs">
+                    <div className="my-3.5 w-full">
                       <input
                         type="text"
                         maxLength={6}
@@ -422,10 +414,10 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                     <button
                       type="submit"
                       disabled={joinCode.trim().length < 3 || isJoiningCode}
-                      className={`w-full max-w-xs py-3 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
+                      className={`${PRIMARY_BTN_BASE} ${
                         joinCode.trim().length >= 3 && !isJoiningCode
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25 hover:brightness-110'
-                          : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+                          ? PRIMARY_BTN_ENABLED
+                          : PRIMARY_BTN_DISABLED
                       }`}
                     >
                       {isJoiningCode ? <RefreshCw className="h-4 w-4 animate-spin" /> : <span>Mit Code beitreten</span>}
@@ -435,9 +427,9 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
 
                 {/* TAB 2: LOBBY ERSTELLEN */}
                 {activeTab === 'create' && (
-                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 p-4 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
+                  <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 p-4 sm:p-5 rounded-2xl bg-white/[0.03] ring-1 ring-white/10 backdrop-blur-xl animate-fade-in">
                     <div>
-                      <label className="text-xs font-bold text-white/80 block mb-1">
+                      <label className="text-xs font-bold text-white/80 block mb-1.5">
                         Lobby-Name
                       </label>
                       <div className="relative flex items-center">
@@ -492,7 +484,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                               TV
                             </span>
                           </div>
-                          <div className="text-[10px] text-[#8E8E93]">
+                          <div className="text-[11px] text-[#8E8E93]">
                             Zeigt großen TV-Screen. Spieler steuern per Smartphone.
                           </div>
                         </div>
@@ -514,10 +506,8 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
                     <button
                       type="submit"
                       disabled={isCreating}
-                      className={`w-full py-3 rounded-full text-xs font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
-                        !isCreating
-                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/25 hover:brightness-110'
-                          : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+                      className={`${PRIMARY_BTN_BASE} ${
+                        !isCreating ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
                       }`}
                     >
                       {isCreating ? (
@@ -532,8 +522,7 @@ export function LobbyScreen({ game, onClose, initialLobby, onGameChange }: Lobby
             </div>
           </div>
         </main>
-
-        </div>
+      </div>
       {/* ─── KAMERA-SCANNER OVERLAY MODAL ─── */}
       <QrScannerModal
         isOpen={showScanner}

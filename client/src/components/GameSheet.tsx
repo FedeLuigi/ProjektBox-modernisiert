@@ -3,6 +3,15 @@ import { type Game, TONE_STYLES } from '../data/games';
 import { GameBackground } from './GameBackground';
 import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 import { isMultiplayerGame } from '../games/registry';
+import {
+  HEADER_BACK_BTN,
+  HEADER_BADGE_PILL,
+  HEADER_ROW,
+  PRIMARY_BTN_BASE,
+  PRIMARY_BTN_ENABLED,
+  STAGE_TWO_COL,
+  SURFACE_CARD,
+} from '../styles/uiTokens';
 
 interface GameSheetProps {
   game: Game | null;
@@ -49,28 +58,28 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
         className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
       />
 
-      {/* ─── Vollbild-Container mit sicherem Abstand zu den Rändern ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden px-4 sm:px-8 lg:px-16 xl:px-24 py-3 lg:py-8 max-w-7xl mx-auto">
-        {/* 1. OBERE LEISTE: Zurück-Pille & Kategorie-Badge (wie im Hauptmenü) */}
-        <header className="flex shrink-0 items-center justify-between">
+      {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
+      <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+        {/* 1. OBERE LEISTE: Zurück-Pille & Kategorie-Badge */}
+        <header className={HEADER_ROW}>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex items-center gap-2 rounded-full bg-white/85 dark:bg-[#1C1C1E]/90 px-4 py-2 text-xs sm:text-sm font-bold text-[#1C1C1E] dark:text-white shadow-xs ring-1 ring-black/[0.06] dark:ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer"
+            className={HEADER_BACK_BTN}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Zurück</span>
           </button>
 
           <span
-            className={`rounded-full px-3.5 py-1.5 text-xs font-bold tracking-wide uppercase shadow-2xs ${style.badge}`}
+            className={`${HEADER_BADGE_PILL} uppercase shadow-2xs ${style.badge}`}
           >
             {game.category}
           </span>
         </header>
 
         {/* 2. MITTE: Großzügige, luftige Spiel-Präsentation über den ganzen Bildschirm */}
-        <main className="my-auto mx-auto flex w-full max-w-4xl flex-1 items-center justify-center py-4">
+        <main className={STAGE_TWO_COL}>
           <div className="grid w-full items-center gap-6 sm:gap-10 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.2fr] landscape:text-left">
             {/* Linke / Obere Seite: Großes Squircle-Icon & Titel */}
             <div className="flex flex-col portrait:items-center landscape:items-start">
@@ -114,19 +123,19 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
             </div>
 
             {/* Rechte / Untere Seite: Luftige Beschreibung & Start-Aktion */}
-            <div className="flex flex-col portrait:items-center landscape:items-start justify-center rounded-[28px] bg-white/70 dark:bg-[#18181C]/80 p-6 sm:p-8 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-xl shadow-sm">
-              <p className="text-sm sm:text-base leading-relaxed text-[#3A3A3C] dark:text-[#E5E5EA]">
+            <div className={`flex flex-col portrait:items-center landscape:items-start justify-center ${SURFACE_CARD}`}>
+              <p className="text-sm sm:text-base leading-relaxed text-[#E5E5EA]">
                 {game.description}
               </p>
 
-              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#8E8E93] dark:text-[#98989D]">
+              <p className="mt-3 text-xs sm:text-sm leading-relaxed text-[#98989D]">
                 {game.howToPlay}
               </p>
 
               <button
                 type="button"
                 onClick={handlePlayClick}
-                className="mt-6 landscape:mt-5 flex w-full sm:w-auto min-w-[200px] items-center justify-center gap-2.5 rounded-full px-8 py-3.5 sm:py-4 text-sm sm:text-base font-bold tracking-wide shadow-md transition-all duration-150 active:scale-95 cursor-pointer bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110"
+                className={`mt-6 landscape:mt-5 ${PRIMARY_BTN_BASE} ${PRIMARY_BTN_ENABLED} sm:w-auto sm:min-w-[220px]`}
               >
                 <Play className="h-4 w-4 fill-current" />
                 <span>Jetzt losspielen</span>

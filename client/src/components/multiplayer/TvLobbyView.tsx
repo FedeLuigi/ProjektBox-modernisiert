@@ -12,6 +12,15 @@ import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { Avatar } from '../Avatar';
 import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
+import {
+  HEADER_BACK_BTN,
+  HEADER_BADGE_PILL,
+  HEADER_ROW,
+  PRIMARY_BTN_BASE,
+  PRIMARY_BTN_DISABLED,
+  PRIMARY_BTN_ENABLED,
+  SURFACE_CARD,
+} from '../../styles/uiTokens';
 
 interface TvLobbyViewProps {
   lobby: Lobby;
@@ -83,16 +92,19 @@ export function TvLobbyView({
   };
 
   return (
-    <div className="relative flex flex-col justify-between h-full w-full max-w-6xl 2xl:max-w-7xl mx-auto py-2 lg:py-6 text-white select-none">
+    <div className="relative flex h-full w-full flex-col justify-between text-white select-none">
       {/* ─── 1. KOPFZEILE: Fernseher-Modus & Beenden ─── */}
-      <header className="flex items-center justify-between pb-4 border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 rounded-full bg-purple-600/30 text-purple-300 px-4 py-1.5 text-xs font-black tracking-wider uppercase ring-1 ring-purple-500/40 backdrop-blur-md">
+      <header className={`${HEADER_ROW} border-b border-white/10`}>
+        <div className="flex min-w-0 items-center gap-3">
+          <div
+            className={`${HEADER_BADGE_PILL} shrink-0 bg-purple-600/25 text-purple-300 uppercase ring-1 ring-purple-500/35 backdrop-blur-md`}
+          >
             <Tv className="h-4 w-4" />
-            <span>Fernseher-Modus (TV)</span>
+            <span className="hidden sm:inline">Fernseher-Modus (TV)</span>
+            <span className="sm:hidden">TV-Modus</span>
           </div>
 
-          <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white">
+          <h1 className="truncate text-lg sm:text-2xl font-black tracking-tight text-white">
             {gameTitle || lobby.name}
           </h1>
         </div>
@@ -100,7 +112,7 @@ export function TvLobbyView({
         <button
           type="button"
           onClick={onLeave}
-          className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-4 py-2 text-xs font-bold text-[#AEAEB2] hover:text-white ring-1 ring-white/10 transition-all cursor-pointer"
+          className={HEADER_BACK_BTN}
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Lobby beenden</span>
@@ -108,7 +120,7 @@ export function TvLobbyView({
       </header>
 
       {/* ─── 2. GROSSBILD-ZENTRALE: QR-Code links, Spielerliste rechts ─── */}
-      <main className="my-auto grid grid-cols-1 md:grid-cols-[1.1fr_1.3fr] gap-8 lg:gap-12 items-center py-6">
+      <main className="my-auto mx-auto grid w-full max-w-5xl flex-1 grid-cols-1 md:grid-cols-[1fr_1.25fr] gap-8 lg:gap-12 items-center py-4 overflow-y-auto scrollbar-none">
         {/* Linke Seite: Großer QR-Code mit Rand & leuchtendem Schein */}
         <div className="flex flex-col items-center text-center">
           <div className="p-4 sm:p-5 bg-white rounded-[32px] shadow-[0_0_60px_rgba(168,85,247,0.35)] ring-8 ring-white/20 transition-transform transform-gpu hover:scale-[1.02]">
@@ -143,7 +155,7 @@ export function TvLobbyView({
         </div>
 
         {/* Rechte Seite: Spielerliste & TV-Status */}
-        <div className="flex flex-col justify-center rounded-[32px] bg-[#14141F]/80 p-6 sm:p-8 ring-1 ring-white/10 backdrop-blur-2xl shadow-2xl">
+        <div className={`flex flex-col justify-center ${SURFACE_CARD}`}>
           <div className="flex items-center justify-between pb-4 border-b border-white/10">
             <div>
               <h2 className="text-lg font-black text-white">Mitspieler im Raum</h2>
@@ -219,10 +231,8 @@ export function TvLobbyView({
               type="button"
               disabled={!allReady || isStarting}
               onClick={handleStartGame}
-              className={`w-full py-4 rounded-full text-base font-black tracking-wide transition-all shadow-xl flex items-center justify-center gap-2.5 ${
-                allReady && !isStarting
-                  ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110 active:scale-98 cursor-pointer'
-                  : 'bg-white/10 text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+              className={`${PRIMARY_BTN_BASE} ${
+                allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
               }`}
             >
               <Play className="h-5 w-5 fill-current" />

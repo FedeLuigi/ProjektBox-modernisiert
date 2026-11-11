@@ -13,6 +13,14 @@ import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
+import {
+  HEADER_BACK_BTN,
+  HEADER_ROW,
+  PRIMARY_BTN_BASE,
+  PRIMARY_BTN_DISABLED,
+  PRIMARY_BTN_ENABLED,
+  SECONDARY_BTN_BASE,
+} from '../../styles/uiTokens';
 
 interface InLobbyViewProps {
   lobby: Lobby;
@@ -122,20 +130,22 @@ export function InLobbyView({
   // ═════════════════════════════════════════════════════════════════════════════
   if (lobby.isTvMode) {
     return (
-      <div className="flex flex-col h-full justify-between max-w-md mx-auto w-full py-2 animate-fade-in select-none">
+      <div className="flex h-full w-full flex-col justify-between animate-fade-in select-none">
         {/* 1. Header: Zurück & Verbindungs-Status */}
-        <div className="flex items-center justify-between pb-2 shrink-0">
+        <header className={HEADER_ROW}>
           <button
             type="button"
             onClick={onLeave}
-            className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className={HEADER_BACK_BTN}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>Lobby verlassen</span>
           </button>
 
           <ConnectionStatusBadge />
-        </div>
+        </header>
+
+        <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-between min-h-0 overflow-y-auto overscroll-y-contain py-2 scrollbar-none">
 
         {/* ─── Fehlermeldung ─── */}
         {errorMsg && (
@@ -161,7 +171,7 @@ export function InLobbyView({
           </p>
 
           {/* Dein Spieler-Profil */}
-          <div className="mt-5 flex items-center gap-3.5 p-3.5 rounded-3xl bg-white/[0.06] ring-1 ring-white/15 backdrop-blur-xl w-full">
+          <div className="mt-5 flex items-center gap-3.5 p-4 rounded-[24px] bg-[#18181C]/80 ring-1 ring-white/[0.08] backdrop-blur-xl shadow-lg w-full">
             <div className="relative shrink-0">
               <Avatar config={myPlayer?.avatar || currentUser.avatar} size={52} />
               {isRoomLeader && (
@@ -190,18 +200,18 @@ export function InLobbyView({
             </span>
           </div>
 
-          {/* ─── DER GROSSE, PROMINENTE BEREIT-BUTTON (DIREKT IM ZENTRUM) ─── */}
+          {/* ─── DER BEREIT-BUTTON (IM ZENTRUM) ─── */}
           <div className="mt-6 w-full flex flex-col gap-3">
             <button
               type="button"
               onClick={handleToggleReady}
-              className={`w-full py-5 px-6 rounded-3xl font-black text-lg sm:text-xl tracking-wide transition-all active:scale-95 cursor-pointer shadow-2xl flex items-center justify-center gap-3 ${
+              className={`${SECONDARY_BTN_BASE} shadow-md ${
                 isReady
-                  ? 'bg-emerald-600/30 text-emerald-300 ring-2 ring-emerald-500/60 shadow-[0_0_30px_rgba(16,185,129,0.3)] hover:bg-emerald-600/40'
-                  : 'bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-600 text-white shadow-[0_0_35px_rgba(16,185,129,0.45)] hover:brightness-110 animate-pulse'
+                  ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-500/50 hover:bg-emerald-600/40'
+                  : 'bg-gradient-to-r from-emerald-500 to-teal-500 text-white shadow-emerald-500/30 hover:brightness-110'
               }`}
             >
-              <Check className="h-6 w-6 stroke-[3]" />
+              <Check className="h-4 w-4 stroke-[2.5]" />
               <span>{isReady ? 'Bereit ✓ (Tippen zum Abbrechen)' : 'Ich bin bereit!'}</span>
             </button>
 
@@ -211,23 +221,21 @@ export function InLobbyView({
                 type="button"
                 disabled={!allReady || isStarting}
                 onClick={handleStartGame}
-                className={`w-full py-4 px-6 rounded-3xl font-black text-base tracking-wide transition-all active:scale-95 cursor-pointer shadow-xl flex items-center justify-center gap-2.5 ${
-                  allReady && !isStarting
-                    ? 'bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white shadow-[0_0_35px_rgba(168,85,247,0.45)] hover:brightness-110 animate-bounce'
-                    : 'bg-white/[0.08] text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+                className={`${PRIMARY_BTN_BASE} ${
+                  allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
                 }`}
               >
-                <Play className="h-5 w-5 fill-current" />
+                <Play className="h-4 w-4 fill-current" />
                 <span>
                   {!allReady
                     ? activePlayers.length < lobby.minPlayers
                       ? `Warte auf ${lobby.minPlayers}. Spieler...`
                       : `Warte bis alle bereit sind (${activePlayers.filter((p) => p.isReady).length}/${activePlayers.length})`
-                    : '🚀 Spiel jetzt starten'}
+                    : 'Spiel jetzt starten'}
                 </span>
               </button>
             ) : (
-              <div className="w-full py-3.5 px-4 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 text-center text-xs font-semibold text-[#8E8E93]">
+              <div className="flex h-12 w-full items-center justify-center rounded-full bg-white/[0.06] px-5 ring-1 ring-white/10 text-center text-xs font-semibold text-[#AEAEB2]">
                 {activePlayers.length < lobby.minPlayers
                   ? `Warte auf ${lobby.minPlayers}. Spieler am Fernseher...`
                   : `Warte bis alle Mitspieler bereit sind (${activePlayers.filter((p) => p.isReady).length}/${activePlayers.length})`}
@@ -280,6 +288,7 @@ export function InLobbyView({
         <div className="shrink-0 text-center text-[11px] text-[#8E8E93] pt-2">
           📱 Dein Smartphone dient als Controller. Das Spiel läuft auf dem Fernseher.
         </div>
+        </div>
       </div>
     );
   }
@@ -288,20 +297,22 @@ export function InLobbyView({
   // B) STANDARD MULTIPLAYER LOBBY (OHNE FERNSEHER)
   // ═════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex flex-col h-full justify-between max-w-lg mx-auto w-full py-2 animate-fade-in">
+    <div className="flex h-full w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: Zurück-Pille & Status */}
-      <div className="flex items-center justify-between pb-4">
+      <header className={HEADER_ROW}>
         <button
           type="button"
           onClick={onLeave}
-          className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+          className={HEADER_BACK_BTN}
         >
           <ArrowLeft className="h-4 w-4" />
           <span>Lobby verlassen</span>
         </button>
 
         <ConnectionStatusBadge />
-      </div>
+      </header>
+
+      <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-between min-h-0">
 
       {/* ─── Fehlermeldung / Info-Banner ─── */}
       {errorMsg && (
@@ -400,7 +411,7 @@ export function InLobbyView({
         <button
           type="button"
           onClick={handleToggleReady}
-          className={`w-full py-3.5 rounded-full text-sm font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-md flex items-center justify-center gap-2 ${
+          className={`${SECONDARY_BTN_BASE} shadow-md ${
             isReady
               ? 'bg-emerald-600/30 text-emerald-300 ring-1 ring-emerald-500/50 hover:bg-emerald-600/40'
               : 'bg-white/15 text-white hover:bg-white/20 ring-1 ring-white/20'
@@ -415,10 +426,8 @@ export function InLobbyView({
             type="button"
             disabled={!allReady || isStarting}
             onClick={handleStartGame}
-            className={`w-full py-3.5 rounded-full text-sm font-bold tracking-wide transition-all active:scale-95 cursor-pointer shadow-lg flex items-center justify-center gap-2 ${
-              allReady && !isStarting
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-purple-500/30 hover:brightness-110'
-                : 'bg-white/[0.08] text-white/40 ring-1 ring-white/10 cursor-not-allowed'
+            className={`${PRIMARY_BTN_BASE} ${
+              allReady && !isStarting ? PRIMARY_BTN_ENABLED : PRIMARY_BTN_DISABLED
             }`}
           >
             <Play className="h-4 w-4 fill-current" />
@@ -431,6 +440,7 @@ export function InLobbyView({
             </span>
           </button>
         )}
+      </div>
       </div>
     </div>
   );

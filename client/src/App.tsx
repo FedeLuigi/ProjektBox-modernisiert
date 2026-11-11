@@ -309,24 +309,21 @@ export function App() {
       )}
 
       {/* ─── 1. OBERE LEISTE: Transparenter, ruhiger Header & iOS Kategorie-Filter ─── */}
-      <header
-        style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
-        className="relative z-30 shrink-0 bg-transparent px-4 sm:px-6 lg:px-12 xl:px-16 max-w-7xl mx-auto w-full pt-[max(1rem,env(safe-area-inset-top))] pb-2"
-      >
-        <div className="flex items-center justify-between mb-2.5">
+      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[max(1rem,env(safe-area-inset-top))] lg:pt-6 pb-2.5">
+        <div className="flex items-center justify-between gap-3 mb-3">
           {/* Logo & Titel: ruhig, dezent, mit dem Hintergrund verschmolzen */}
           <div className="flex items-center gap-2.5">
             <div
-              className="grid h-8 w-8 place-items-center rounded-xl bg-gradient-to-br from-purple-500/15 via-violet-500/10 to-indigo-500/10 text-purple-300/85 ring-1 ring-white/[0.08] shadow-[0_2px_16px_rgba(139,92,246,0.18)] transition-transform active:scale-95"
+              className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-gradient-to-br from-purple-500/15 via-violet-500/10 to-indigo-500/10 text-purple-300/85 ring-1 ring-white/[0.08] shadow-[0_2px_16px_rgba(139,92,246,0.18)] transition-transform active:scale-95"
             >
-              <Gamepad2 className="h-4 w-4 text-purple-300/85" strokeWidth={1.8} />
+              <Gamepad2 className="h-4.5 w-4.5 text-purple-300/85" strokeWidth={1.8} />
             </div>
-            <h1 className="text-sm sm:text-base font-bold tracking-wide text-zinc-200/90 leading-none">
+            <h1 className="text-sm sm:text-base font-bold tracking-wide text-zinc-100 leading-none">
               ProjektBox
             </h1>
           </div>
 
-          {/* Rechte Seite: TV beitreten & Einstellungen */}
+          {/* Rechte Seite: TV beitreten & Einstellungen (gleiche Pillen-Höhe wie Zurück) */}
           <div className="flex items-center gap-2">
             <button
               type="button"
@@ -337,9 +334,9 @@ export function App() {
               }}
               aria-label="Fernseher beitreten"
               title="Fernseher beitreten"
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-black text-xs shadow-md shadow-purple-500/25 transition-transform active:scale-95 hover:brightness-110 cursor-pointer"
+              className="inline-flex h-9 sm:h-10 items-center justify-center gap-2 px-4 rounded-full bg-gradient-to-r from-purple-600 via-indigo-600 to-pink-600 text-white font-bold text-xs sm:text-sm shadow-md shadow-purple-500/25 transition-transform active:scale-95 hover:brightness-110 cursor-pointer shrink-0"
             >
-              <Tv className="h-3.5 w-3.5 text-purple-200" />
+              <Tv className="h-4 w-4 text-purple-100" />
               <span>TV beitreten</span>
             </button>
 
@@ -351,9 +348,9 @@ export function App() {
               }}
               aria-label="Einstellungen öffnen"
               title="Einstellungen"
-              className="grid h-8.5 w-8.5 place-items-center rounded-full bg-white/[0.06] hover:bg-white/[0.1] text-zinc-300 ring-1 ring-white/[0.06] transition-transform active:scale-95 cursor-pointer shadow-xs"
+              className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] text-zinc-200 ring-1 ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer shadow-xs shrink-0"
             >
-              <Settings className="h-4.5 w-4.5 text-zinc-300" />
+              <Settings className="h-4.5 w-4.5 text-zinc-200" />
             </button>
           </div>
         </div>
@@ -362,7 +359,7 @@ export function App() {
         <nav
           role="tablist"
           aria-label="Kategorien"
-          className="flex items-center gap-1.5 overflow-x-auto scrollbar-none py-0.5"
+          className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5"
         >
           {CATEGORIES.map((cat) => {
             const isSelected = category === cat;
@@ -373,7 +370,7 @@ export function App() {
                 aria-selected={isSelected}
                 type="button"
                 onClick={() => handleSelectCategory(cat)}
-                className={`rounded-full px-3.5 py-1 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                className={`inline-flex h-8 items-center justify-center rounded-full px-3.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
                   isSelected
                     ? 'bg-white text-[#1C1C1E] shadow-xs'
                     : 'bg-white/[0.08] text-[#98989D] hover:text-white'
@@ -387,27 +384,27 @@ export function App() {
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-3 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-2 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
         {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">
-            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
+            <div className="flex items-center justify-between app-shell-x mb-2.5">
               <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-[#EA580C] dark:text-[#FB923C]" />
+                <Clock className="h-4 w-4 text-[#FB923C]" />
                 <h2
                   id="heading-quick-launch"
-                  className="text-sm font-extrabold tracking-tight text-[#1C1C1E] dark:text-white"
+                  className="text-sm font-extrabold tracking-tight text-white"
                 >
                   Zuletzt gespielt / Schnellstart
                 </h2>
               </div>
-              <span className="text-[10px] font-semibold text-[#8E8E93] dark:text-[#98989D]">
+              <span className="text-[11px] font-semibold text-[#98989D]">
                 Direkt loslegen
               </span>
             </div>
 
             {/* Horizontale Wischleiste mit flachen Kacheln (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
               {quickLaunchGames.map((game) => (
                 <QuickLaunchTile
                   key={`quick-${game.id}`}
@@ -423,23 +420,23 @@ export function App() {
         {/* ── Sektion 2: Beliebt & Strategie (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Strategie') && (
           <section aria-labelledby="heading-strategy">
-            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
+            <div className="flex items-center justify-between app-shell-x mb-2.5">
               <div className="flex items-center gap-1.5">
-                <Trophy className="h-4 w-4 text-[#7C3AED] dark:text-[#A78BFA]" />
+                <Trophy className="h-4 w-4 text-[#A78BFA]" />
                 <h2
                   id="heading-strategy"
-                  className="text-sm font-extrabold tracking-tight text-[#1C1C1E] dark:text-white"
+                  className="text-sm font-extrabold tracking-tight text-white"
                 >
                   Beliebt & Strategie
                 </h2>
               </div>
-              <span className="text-[10px] font-semibold text-[#8E8E93] dark:text-[#98989D]">
+              <span className="text-[11px] font-semibold text-[#98989D]">
                 {strategyGames.length} Spiele
               </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
               {strategyGames.map((game) => (
                 <CompactGameCard
                   key={`strat-${game.id}`}
@@ -455,23 +452,23 @@ export function App() {
         {/* ── Sektion 3: Denkspiele & Rätsel (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Denken') && (
           <section aria-labelledby="heading-puzzle">
-            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
+            <div className="flex items-center justify-between app-shell-x mb-2.5">
               <div className="flex items-center gap-1.5">
-                <Brain className="h-4 w-4 text-[#EA580C] dark:text-[#FB923C]" />
+                <Brain className="h-4 w-4 text-[#FB923C]" />
                 <h2
                   id="heading-puzzle"
-                  className="text-sm font-extrabold tracking-tight text-[#1C1C1E] dark:text-white"
+                  className="text-sm font-extrabold tracking-tight text-white"
                 >
                   Denkspiele & Rätsel
                 </h2>
               </div>
-              <span className="text-[10px] font-semibold text-[#8E8E93] dark:text-[#98989D]">
+              <span className="text-[11px] font-semibold text-[#98989D]">
                 {puzzleGames.length} Spiele
               </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
               {puzzleGames.map((game) => (
                 <CompactGameCard
                   key={`puzzle-${game.id}`}
@@ -487,23 +484,23 @@ export function App() {
         {/* ── Sektion 4: Arcade & Reflexe (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-arcade">
-            <div className="flex items-center justify-between px-4 sm:px-6 lg:px-12 xl:px-16 mb-2">
+            <div className="flex items-center justify-between app-shell-x mb-2.5">
               <div className="flex items-center gap-1.5">
-                <Zap className="h-4 w-4 text-[#059669] dark:text-[#34D399]" />
+                <Zap className="h-4 w-4 text-[#34D399]" />
                 <h2
                   id="heading-arcade"
-                  className="text-sm font-extrabold tracking-tight text-[#1C1C1E] dark:text-white"
+                  className="text-sm font-extrabold tracking-tight text-white"
                 >
                   Arcade & Reflexe
                 </h2>
               </div>
-              <span className="text-[10px] font-semibold text-[#8E8E93] dark:text-[#98989D]">
+              <span className="text-[11px] font-semibold text-[#98989D]">
                 {arcadeGames.length} Spiele
               </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory px-4 sm:px-6 lg:px-12 xl:px-16 scroll-px-4 sm:scroll-px-6 lg:scroll-px-12 xl:scroll-px-16 pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
               {arcadeGames.map((game) => (
                 <CompactGameCard
                   key={`arcade-${game.id}`}
