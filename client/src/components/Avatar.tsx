@@ -1,3 +1,5 @@
+import { useId } from 'react';
+
 export type AvatarBase = 'human' | 'bot' | 'cat' | 'alien' | 'skull' | 'ninja';
 export type AvatarHat =
   | 'none'
@@ -81,14 +83,90 @@ export const AVATAR_ACCESSORIES: { id: AvatarAccessory; label: string }[] = [
   { id: 'eyepatch', label: 'Augenklappe' },
 ];
 
-export const AVATAR_BGS: { id: AvatarBg; label: string; gradient: string }[] = [
-  { id: 'purple', label: 'Deep Purple', gradient: 'from-[#2E1065] to-[#7C3AED]' },
-  { id: 'cyan', label: 'Neon Cyan', gradient: 'from-[#082F49] to-[#0284C7]' },
-  { id: 'sunset', label: 'Synthwave Sunset', gradient: 'from-[#831843] to-[#F97316]' },
-  { id: 'emerald', label: 'Matrix Grün', gradient: 'from-[#064E3B] to-[#059669]' },
-  { id: 'gold', label: 'Champion Gold', gradient: 'from-[#78350F] to-[#D97706]' },
-  { id: 'dark', label: 'Stealth Dark', gradient: 'from-[#090A14] to-[#1E293B]' },
+export interface AvatarBgMeta {
+  id: AvatarBg;
+  label: string;
+  gradient: string;
+  from: string;
+  to: string;
+  accent: string;
+  glowRgba: string;
+  haloMidRgba: string;
+  haloEdgeRgba: string;
+}
+
+export const AVATAR_BGS: AvatarBgMeta[] = [
+  {
+    id: 'purple',
+    label: 'Deep Purple',
+    gradient: 'from-[#2E1065] to-[#7C3AED]',
+    from: '#2E1065',
+    to: '#7C3AED',
+    accent: '#A855F7',
+    glowRgba: 'rgba(139, 92, 246, 0.58)',
+    haloMidRgba: 'rgba(236, 72, 153, 0.30)',
+    haloEdgeRgba: 'rgba(168, 85, 247, 0.12)',
+  },
+  {
+    id: 'cyan',
+    label: 'Neon Cyan',
+    gradient: 'from-[#082F49] to-[#0284C7]',
+    from: '#082F49',
+    to: '#0284C7',
+    accent: '#38BDF8',
+    glowRgba: 'rgba(56, 189, 248, 0.58)',
+    haloMidRgba: 'rgba(2, 132, 199, 0.34)',
+    haloEdgeRgba: 'rgba(56, 189, 248, 0.12)',
+  },
+  {
+    id: 'sunset',
+    label: 'Synthwave Sunset',
+    gradient: 'from-[#831843] to-[#F97316]',
+    from: '#831843',
+    to: '#F97316',
+    accent: '#FB923C',
+    glowRgba: 'rgba(249, 115, 22, 0.58)',
+    haloMidRgba: 'rgba(236, 72, 153, 0.34)',
+    haloEdgeRgba: 'rgba(249, 115, 22, 0.12)',
+  },
+  {
+    id: 'emerald',
+    label: 'Matrix Grün',
+    gradient: 'from-[#064E3B] to-[#059669]',
+    from: '#064E3B',
+    to: '#059669',
+    accent: '#34D399',
+    glowRgba: 'rgba(16, 185, 129, 0.58)',
+    haloMidRgba: 'rgba(5, 150, 105, 0.34)',
+    haloEdgeRgba: 'rgba(52, 211, 153, 0.12)',
+  },
+  {
+    id: 'gold',
+    label: 'Champion Gold',
+    gradient: 'from-[#78350F] to-[#D97706]',
+    from: '#78350F',
+    to: '#D97706',
+    accent: '#FBBF24',
+    glowRgba: 'rgba(245, 158, 11, 0.58)',
+    haloMidRgba: 'rgba(217, 119, 6, 0.34)',
+    haloEdgeRgba: 'rgba(251, 191, 36, 0.12)',
+  },
+  {
+    id: 'dark',
+    label: 'Stealth Dark',
+    gradient: 'from-[#090A14] to-[#1E293B]',
+    from: '#090A14',
+    to: '#1E293B',
+    accent: '#64748B',
+    glowRgba: 'rgba(100, 116, 139, 0.45)',
+    haloMidRgba: 'rgba(71, 85, 105, 0.28)',
+    haloEdgeRgba: 'rgba(148, 163, 184, 0.10)',
+  },
 ];
+
+export function getAvatarBgMeta(bg?: AvatarBg | string): AvatarBgMeta {
+  return AVATAR_BGS.find((item) => item.id === bg) ?? AVATAR_BGS[0];
+}
 
 interface AvatarProps {
   config?: AvatarConfig;
@@ -97,9 +175,16 @@ interface AvatarProps {
 }
 
 export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: AvatarProps) {
-  const { base, skinColor, hat, accessory, bg } = config;
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  const base = config?.base ?? DEFAULT_AVATAR.base;
+  const skinColor = config?.skinColor ?? DEFAULT_AVATAR.skinColor;
+  const hat = config?.hat ?? DEFAULT_AVATAR.hat;
+  const accessory = config?.accessory ?? DEFAULT_AVATAR.accessory;
+  const bgMeta = getAvatarBgMeta(config?.bg);
 
-  const bgGradientId = `avatar-bg-${bg}`;
+  const bgGradientId = `${uid}-bg-${bgMeta.id}`;
+  const glowFilterId = `${uid}-glow`;
+  const laserFilterId = `${uid}-laser`;
 
   return (
     <svg
@@ -107,46 +192,31 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
       height={size}
       viewBox="0 0 100 100"
       className={`block shrink-0 rounded-full overflow-hidden select-none ${className}`}
+      style={{
+        backgroundImage: `linear-gradient(135deg, ${bgMeta.from}, ${bgMeta.to})`,
+      }}
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        {/* Hintergründe */}
-        <linearGradient id="avatar-bg-purple" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#2E1065" />
-          <stop offset="100%" stopColor="#7C3AED" />
-        </linearGradient>
-        <linearGradient id="avatar-bg-cyan" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#082F49" />
-          <stop offset="100%" stopColor="#0284C7" />
-        </linearGradient>
-        <linearGradient id="avatar-bg-sunset" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#831843" />
-          <stop offset="100%" stopColor="#F97316" />
-        </linearGradient>
-        <linearGradient id="avatar-bg-emerald" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#064E3B" />
-          <stop offset="100%" stopColor="#059669" />
-        </linearGradient>
-        <linearGradient id="avatar-bg-gold" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#78350F" />
-          <stop offset="100%" stopColor="#D97706" />
-        </linearGradient>
-        <linearGradient id="avatar-bg-dark" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#090A14" />
-          <stop offset="100%" stopColor="#1E293B" />
-        </linearGradient>
+        {/* Eindeutige Gradient-ID pro SVG-Instanz gegen WebKit/DOM-ID-Kollisionen */}
+        {AVATAR_BGS.map((item) => (
+          <linearGradient key={item.id} id={`${uid}-bg-${item.id}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor={item.from} />
+            <stop offset="100%" stopColor={item.to} />
+          </linearGradient>
+        ))}
 
-        <filter id="avatar-glow" filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
+        <filter id={glowFilterId} filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
           <feDropShadow dx="0" dy="0" stdDeviation="3" floodColor="#A855F7" floodOpacity="0.8" />
         </filter>
-        <filter id="laser-glow" filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
+        <filter id={laserFilterId} filterUnits="userSpaceOnUse" x="-10" y="-10" width="120" height="120">
           <feDropShadow dx="0" dy="0" stdDeviation="4" floodColor="#EF4444" floodOpacity="0.9" />
         </filter>
       </defs>
 
-      {/* 1. HINTERGRUND-KREIS */}
-      <circle cx="50" cy="50" r="48" fill={`url(#${bgGradientId})`} />
+      {/* 1. HINTERGRUND-KREIS (Key erzwingt sauberes Repaint bei Farbwechsel) */}
+      <circle key={bgMeta.id} cx="50" cy="50" r="49" fill={`url(#${bgGradientId})`} />
       <circle cx="50" cy="50" r="36" fill="#FFFFFF" opacity="0.06" />
 
       {/* 2. KÖRPER / SCHULTERN */}
@@ -186,7 +256,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
         <g>
           {/* Antenne */}
           <line x1="50" y1="26" x2="50" y2="15" stroke="#38BDF8" strokeWidth="2" />
-          <circle cx="50" cy="14" r="3.5" fill="#38BDF8" filter="url(#avatar-glow)" />
+          <circle cx="50" cy="14" r="3.5" fill="#38BDF8" filter={`url(#${glowFilterId})`} />
           {/* Kopf */}
           <rect
             x="29"
@@ -240,7 +310,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
         <g>
           {/* Antenne */}
           <path d="M50 24 Q46 14 50 11" stroke="#A855F7" strokeWidth="2.5" strokeLinecap="round" />
-          <circle cx="50" cy="9" r="4" fill="#C084FC" filter="url(#avatar-glow)" />
+          <circle cx="50" cy="9" r="4" fill="#C084FC" filter={`url(#${glowFilterId})`} />
           {/* Kopf */}
           <path
             d="M50 24 C34 24 28 36 32 54 C36 64 45 70 50 70 C55 70 64 64 68 54 C72 36 66 24 50 24 Z"
@@ -324,7 +394,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
       )}
 
       {accessory === 'laser_eyes' && (
-        <g filter="url(#laser-glow)">
+        <g filter={`url(#${laserFilterId})`}>
           <circle cx="41" cy="46" r="3.5" fill="#EF4444" />
           <circle cx="59" cy="46" r="3.5" fill="#EF4444" />
           <line x1="41" y1="46" x2="15" y2="46" stroke="#EF4444" strokeWidth="2.5" strokeLinecap="round" />
@@ -361,7 +431,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
           <rect x="71" y="38" width="8" height="18" rx="4" fill="#0F172A" stroke="#A855F7" strokeWidth="1.6" />
           {/* Mikrofonarm & Leuchtspitze */}
           <path d="M26 50 Q26 64 42 63" stroke="#8B5CF6" strokeWidth="2.2" strokeLinecap="round" fill="none" />
-          <circle cx="43" cy="63" r="2.5" fill="#38BDF8" filter="url(#avatar-glow)" />
+          <circle cx="43" cy="63" r="2.5" fill="#38BDF8" filter={`url(#${glowFilterId})`} />
         </g>
       )}
 
@@ -404,7 +474,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
             strokeWidth="1.8"
           />
           {/* Leuchtender Visor-Spiegel */}
-          <rect x="33" y="43" width="34" height="4" rx="2" fill="#38BDF8" filter="url(#avatar-glow)" />
+          <rect x="33" y="43" width="34" height="4" rx="2" fill="#38BDF8" filter={`url(#${glowFilterId})`} />
           {/* Riemen um den Kopf */}
           <line x1="28" y1="45" x2="25" y2="45" stroke="#38BDF8" strokeWidth="2.5" />
           <line x1="72" y1="45" x2="75" y2="45" stroke="#38BDF8" strokeWidth="2.5" />
@@ -427,12 +497,12 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
           <path
             d="M34 32 C33 22 28 15 22 15 C24 23 29 28 34 34 Z"
             fill="#EF4444"
-            filter="url(#laser-glow)"
+            filter={`url(#${laserFilterId})`}
           />
           <path
             d="M66 32 C67 22 72 15 78 15 C76 23 71 28 66 34 Z"
             fill="#EF4444"
-            filter="url(#laser-glow)"
+            filter={`url(#${laserFilterId})`}
           />
         </g>
       )}
@@ -447,7 +517,7 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
             fill="none"
             stroke="#FBBF24"
             strokeWidth="3.2"
-            filter="url(#avatar-glow)"
+            filter={`url(#${glowFilterId})`}
           />
         </g>
       )}
@@ -463,15 +533,15 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
         </g>
       )}
 
-      {/* 6. GLÜHENDE AUSSENKONTUR */}
+      {/* 6. GLÜHENDE AUSSENKONTUR PASSEND ZUR HINTERGRUND-AURA */}
       <circle
         cx="50"
         cy="50"
-        r="48"
+        r="49"
         fill="none"
-        stroke="#A855F7"
-        strokeWidth="2.5"
-        strokeOpacity="0.75"
+        stroke={bgMeta.accent}
+        strokeWidth="2"
+        strokeOpacity="0.85"
       />
     </svg>
   );

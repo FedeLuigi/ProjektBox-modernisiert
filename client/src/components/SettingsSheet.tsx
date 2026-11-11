@@ -12,7 +12,7 @@ import {
   Volume2,
   VolumeX,
 } from 'lucide-react';
-import { Avatar, type AvatarConfig } from './Avatar';
+import { Avatar, type AvatarConfig, getAvatarBgMeta } from './Avatar';
 import { AvatarCustomizerModal } from './AvatarCustomizerModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
 import {
@@ -237,20 +237,31 @@ export function SettingsSheet({
                 className="relative mb-3 inline-flex items-center justify-center rounded-full group cursor-pointer active:scale-95 transition-transform"
                 title="Tippen zum Anpassen"
               >
-                {/* Rein kreisrunder Radial-Glow ohne filter:blur-Rechteckartefakte */}
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -inset-5 rounded-full opacity-85 group-hover:opacity-100 transition-opacity"
-                  style={{
-                    background:
-                      'radial-gradient(circle closest-side, rgba(124, 58, 237, 0.62) 60%, rgba(236, 72, 153, 0.36) 74%, rgba(245, 158, 11, 0.12) 87%, rgba(236, 72, 153, 0) 99%)',
-                  }}
-                />
-                <div className="relative inline-flex items-center justify-center p-[3px] rounded-full bg-gradient-to-tr from-[#7C3AED] via-[#EC4899] to-[#F59E0B]">
-                  <div className="inline-flex items-center justify-center p-1 rounded-full bg-[#18181C]">
-                    <Avatar config={profile.avatar} size={78} />
-                  </div>
-                </div>
+                {/* Rein kreisrunder Radial-Glow passend zur gewählten Avatar-Aura */}
+                {(() => {
+                  const bgMeta = getAvatarBgMeta(profile.avatar?.bg);
+                  return (
+                    <>
+                      <div
+                        aria-hidden="true"
+                        className="pointer-events-none absolute -inset-5 rounded-full opacity-85 group-hover:opacity-100 transition-opacity"
+                        style={{
+                          background: `radial-gradient(circle closest-side, ${bgMeta.glowRgba} 60%, ${bgMeta.haloMidRgba} 74%, ${bgMeta.haloEdgeRgba} 87%, rgba(0, 0, 0, 0) 99%)`,
+                        }}
+                      />
+                      <div
+                        className="relative inline-flex items-center justify-center p-[3px] rounded-full"
+                        style={{
+                          backgroundImage: `linear-gradient(to top right, ${bgMeta.from}, ${bgMeta.accent}, ${bgMeta.to})`,
+                        }}
+                      >
+                        <div className="inline-flex items-center justify-center p-1 rounded-full bg-[#18181C]">
+                          <Avatar config={profile.avatar} size={78} />
+                        </div>
+                      </div>
+                    </>
+                  );
+                })()}
                 <div className="absolute bottom-0 right-0 z-10 p-1.5 rounded-full bg-[#7C3AED] text-white shadow-md ring-2 ring-[#18181C]">
                   <Pencil className="h-3 w-3" />
                 </div>

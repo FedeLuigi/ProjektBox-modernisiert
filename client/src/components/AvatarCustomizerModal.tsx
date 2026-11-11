@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Check, Dices, Sparkles, X } from 'lucide-react';
 import {
   Avatar,
@@ -8,6 +8,8 @@ import {
   AVATAR_BGS,
   AVATAR_HATS,
   AVATAR_SKIN_COLORS,
+  DEFAULT_AVATAR,
+  getAvatarBgMeta,
 } from './Avatar';
 import { BTN_PRIMARY_BASE, BTN_PRIMARY_ENABLED } from '../styles/uiTokens';
 
@@ -26,10 +28,18 @@ export function AvatarCustomizerModal({
   config,
   onSave,
 }: AvatarCustomizerModalProps) {
-  const [current, setCurrent] = useState<AvatarConfig>(config);
+  const [current, setCurrent] = useState<AvatarConfig>(() => ({ ...DEFAULT_AVATAR, ...config }));
   const [activeTab, setActiveTab] = useState<TabType>('base');
 
+  useEffect(() => {
+    if (isOpen) {
+      setCurrent({ ...DEFAULT_AVATAR, ...config });
+    }
+  }, [isOpen, config]);
+
   if (!isOpen) return null;
+
+  const previewBgMeta = getAvatarBgMeta(current.bg);
 
   // Zufällige lustige Kombination würfeln
   const handleRandomize = () => {
@@ -89,13 +99,17 @@ export function AvatarCustomizerModal({
           <div className="relative inline-flex items-center justify-center rounded-full">
             <div
               aria-hidden="true"
-              className="pointer-events-none absolute -inset-5 rounded-full"
+              className="pointer-events-none absolute -inset-5 rounded-full transition-all duration-300"
               style={{
-                background:
-                  'radial-gradient(circle closest-side, rgba(139, 92, 246, 0.55) 62%, rgba(236, 72, 153, 0.3) 78%, rgba(56, 189, 248, 0.1) 90%, rgba(168, 85, 247, 0) 99%)',
+                background: `radial-gradient(circle closest-side, ${previewBgMeta.glowRgba} 62%, ${previewBgMeta.haloMidRgba} 78%, ${previewBgMeta.haloEdgeRgba} 90%, rgba(0, 0, 0, 0) 99%)`,
               }}
             />
-            <div className="relative inline-flex items-center justify-center rounded-full p-1 bg-gradient-to-tr from-[#8B5CF6] via-[#EC4899] to-[#38BDF8]">
+            <div
+              className="relative inline-flex items-center justify-center rounded-full p-1 transition-all duration-300"
+              style={{
+                backgroundImage: `linear-gradient(to top right, ${previewBgMeta.from}, ${previewBgMeta.accent}, ${previewBgMeta.to})`,
+              }}
+            >
               <Avatar config={current} size={110} />
             </div>
             {/* Würfeln-Button (Stufe 2/3 Utility-Pille statt grellem Pink) */}
@@ -275,6 +289,9 @@ export function AvatarCustomizerModal({
                   >
                     <div
                       className={`h-10 w-10 rounded-full bg-gradient-to-tr ${bg.gradient} ring-1 ring-white/20 flex items-center justify-center`}
+                      style={{
+                        backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
+                      }}
                     >
                       {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                     </div>
