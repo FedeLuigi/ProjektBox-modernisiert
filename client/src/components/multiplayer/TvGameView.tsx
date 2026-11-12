@@ -88,10 +88,7 @@ export function TvGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col justify-between overflow-hidden bg-[#07070C] text-white select-none animate-fade-in"
-    >
+    <div className="fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden bg-[#07070C] text-white select-none animate-fade-in">
       <BackgroundCometCanvas opacity={0.35} />
 
       {/* ─── Ambient Glow ─── */}
@@ -101,10 +98,10 @@ export function TvGameView({
       {/* ─── Großbild-Container mit sicherem Abstand zu den Bildschirmrändern ─── */}
       <div
         style={{
-          paddingTop: 'max(24px, env(safe-area-inset-top))',
-          paddingBottom: 'max(24px, env(safe-area-inset-bottom))',
+          paddingTop: 'calc(24px + env(safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(24px + env(safe-area-inset-bottom, 0px))',
         }}
-        className="relative z-10 flex h-full w-full flex-col justify-between px-6 sm:px-12 lg:px-16 xl:px-24 2xl:px-32 max-w-[1600px] mx-auto py-2 lg:py-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-6 sm:px-12 lg:px-16 xl:px-24 2xl:px-32 max-w-[1600px] mx-auto"
       >
         {/* 1. KOPFZEILE */}
         <header className="flex shrink-0 items-center justify-between pb-3 border-b border-white/10">

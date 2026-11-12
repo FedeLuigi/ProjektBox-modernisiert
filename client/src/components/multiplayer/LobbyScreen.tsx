@@ -160,7 +160,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell & Hintergrund wie GameSheet)
   if (currentLobby) {
     return (
-      <div className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
+      <div className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
         <BackgroundCometCanvas opacity={0.45} />
 
         <div className="pointer-events-none absolute inset-0 opacity-30 scale-125 transform-gpu">
@@ -174,7 +174,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
           className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
         />
 
-        <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+        <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
           {isTvScreenHost ? (
             <TvLobbyView
               lobby={currentLobby}
@@ -211,7 +211,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="lobby-screen-title"
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details (exakt wie in GameSheet) ─── */}
       <BackgroundCometCanvas opacity={0.45} />
@@ -230,7 +230,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
       />
 
       {/* ─── Vollbild-Container mit einheitlichem Raster (.app-shell) ─── */}
-      <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
         {/* 1. OBERE LEISTE: Zurück-Pille links, Status & Kategorie-Badge rechts */}
         <header className={HEADER_ROW}>
           <button

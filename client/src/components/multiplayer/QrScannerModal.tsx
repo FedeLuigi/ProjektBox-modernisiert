@@ -209,13 +209,12 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col items-center justify-between overflow-hidden bg-black/95 text-white select-none animate-fade-in"
+      className="fixed inset-0 z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-black/95 text-white select-none animate-fade-in"
     >
       {/* ─── KOPFZEILE MIT SCHLIESSEN-BUTTON ─── */}
       <header
-        style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
-        className="w-full flex items-center justify-between px-5 pt-4 z-20"
+        style={{ paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}
+        className="w-full flex items-center justify-between px-5 z-20"
       >
         <div className="flex items-center gap-2">
           <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30">
@@ -325,8 +324,8 @@ export function QrScannerModal({
 
       {/* ─── FUSSZEILE MIT ALTERNATIVE PER CODE ─── */}
       <footer
-        style={{ paddingBottom: 'max(16px, env(safe-area-inset-bottom))' }}
-        className="w-full max-w-sm px-6 pb-4 z-20 flex flex-col items-center gap-2"
+        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
+        className="w-full max-w-sm px-6 z-20 flex flex-col items-center gap-2"
       >
         <button
           type="button"

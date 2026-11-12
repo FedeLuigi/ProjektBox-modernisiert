@@ -133,7 +133,7 @@ export function InLobbyView({
   // ═════════════════════════════════════════════════════════════════════════════
   if (lobby.isTvMode) {
     return (
-      <div className="flex h-full w-full flex-col justify-between animate-fade-in select-none">
+      <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
         {/* 1. Header: Zurück & Verbindungs-Status */}
         <header className={HEADER_ROW}>
           <button
@@ -302,7 +302,7 @@ export function InLobbyView({
   // B) STANDARD MULTIPLAYER LOBBY (OHNE FERNSEHER)
   // ═════════════════════════════════════════════════════════════════════════════
   return (
-    <div className="flex h-full w-full flex-col justify-between animate-fade-in select-none">
+    <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: Zurück-Pille & Status */}
       <header className={HEADER_ROW}>
         <button
@@ -318,16 +318,17 @@ export function InLobbyView({
       </header>
 
       <div className="mx-auto flex w-full max-w-lg flex-1 flex-col justify-between min-h-0">
+        {/* Scrollbarer Mittelbereich, damit untere Buttons auf kleinen iOS-Screens niemals abgeschnitten werden */}
+        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain py-1 scrollbar-none">
+          {/* ─── Fehlermeldung / Info-Banner ─── */}
+          {errorMsg && (
+            <div className="my-2 rounded-2xl bg-purple-500/15 p-3 text-center text-xs font-bold text-purple-200 ring-1 ring-purple-500/25 animate-fade-in shrink-0">
+              {errorMsg}
+            </div>
+          )}
 
-      {/* ─── Fehlermeldung / Info-Banner ─── */}
-      {errorMsg && (
-        <div className="my-2 rounded-2xl bg-purple-500/15 p-3 text-center text-xs font-bold text-purple-200 ring-1 ring-purple-500/25 animate-fade-in">
-          {errorMsg}
-        </div>
-      )}
-
-      {/* 2. ZENTRUM: LOBBY DETAILS & RAUM-CODE */}
-      <div className="flex flex-col items-center my-auto py-2">
+          {/* 2. ZENTRUM: LOBBY DETAILS & RAUM-CODE */}
+          <div className="flex flex-col items-center my-auto py-2">
         <div className="inline-flex items-center gap-1.5 text-xs font-extrabold uppercase tracking-widest text-purple-400 mb-1">
           <Sparkles className="h-3.5 w-3.5" />
           <span>{gameTitle || 'Multiplayer'} Lobby</span>
@@ -408,11 +409,12 @@ export function InLobbyView({
               </span>
             </div>
           ))}
+          </div>
         </div>
-      </div>
+        </div>
 
       {/* 3. UNTERE AKTIONEN (STUFE 2 SEKUNDÄR / STUFE 3 BESTÄTIGT & STUFE 1 PRIMARY) */}
-      <div className="shrink-0 pt-4 flex flex-col gap-2.5">
+      <div className="shrink-0 pt-3 flex flex-col gap-2.5">
         <button
           type="button"
           onClick={handleToggleReady}
