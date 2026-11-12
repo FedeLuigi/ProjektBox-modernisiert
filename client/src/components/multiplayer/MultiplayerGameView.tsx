@@ -136,10 +136,7 @@ export function MultiplayerGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#07070C] text-white select-none animate-fade-in"
-    >
+    <div className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#07070C] text-white select-none animate-fade-in">
       {/* ─── Dynamischer Hintergrund ─── */}
       <BackgroundCometCanvas opacity={0.35} />
 
@@ -150,13 +147,13 @@ export function MultiplayerGameView({
       {/* ─── Vollbild-Container mit Safe-Area ─── */}
       <div
         style={{
-          paddingTop: 'max(16px, env(safe-area-inset-top))',
-          paddingBottom: 'max(16px, env(safe-area-inset-bottom))',
+          paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
         }}
-        className="relative z-10 flex h-full w-full flex-col justify-between px-4 sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-3 sm:px-6"
       >
         {/* 1. KOPFZEILE: Aufgeben/Verlassen, Spielname & Raumcode */}
-        <header className="flex shrink-0 items-center justify-between pb-2">
+        <header className="flex shrink-0 items-center justify-between pb-2 landscape:pb-1">
           <button
             type="button"
             onClick={onLeave}
@@ -185,7 +182,7 @@ export function MultiplayerGameView({
 
         {/* 2. SPIELER-HUD (KOMPAKT FÜR ZEICHNEN & RATEN, STANDARD FÜR DUELLE) */}
         {lobby.gameId === 'draw-and-guess' ? (
-          <section className="shrink-0 flex items-center justify-between px-3.5 py-1.5 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 max-w-lg mx-auto w-full my-1 text-xs">
+          <section className="shrink-0 flex items-center justify-between px-3.5 py-1.5 landscape:py-1 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 max-w-2xl mx-auto w-full my-1 landscape:my-0.5 text-xs">
             <div className="flex items-center gap-2 min-w-0">
               <Avatar config={currentUser.avatar} size={28} />
               <span className="font-bold text-white truncate max-w-[100px]">{currentUser.name}</span>
@@ -299,7 +296,11 @@ export function MultiplayerGameView({
         )}
 
         {/* 3. MITTE: DYNAMISCHES SPIELFELD AUS DER REGISTRY */}
-        <main className="my-auto mx-auto flex w-full max-w-md flex-1 items-center justify-center p-2">
+        <main
+          className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
+            lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1 sm:p-2' : 'max-w-md p-2'
+          }`}
+        >
           {BoardComponent && myPlayer ? (
             <BoardComponent
               gameState={gameState}

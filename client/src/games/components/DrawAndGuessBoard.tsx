@@ -79,6 +79,7 @@ export function DrawAndGuessBoard({
   disabled: _disabled,
 }: GameRendererProps<DrawAndGuessState>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const canvasStageRef = useRef<HTMLDivElement | null>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const strokeBufferRef = useRef<StrokeSegment[]>([]);
@@ -86,6 +87,7 @@ export function DrawAndGuessBoard({
   const renderedRoundRef = useRef<number | null>(null);
   const renderedCountRef = useRef<number>(0);
 
+  const [canvasSize, setCanvasSize] = useState<{ width: number; height: number } | null>(null);
   const [currentColor, setCurrentColor] = useState('#000000');
   const [currentSize, setCurrentSize] = useState(5);
   const [guessInput, setGuessInput] = useState('');
@@ -245,11 +247,73 @@ export function DrawAndGuessBoard({
     socketService.emitStrokes(batch);
   };
 
+  // 5b. Zeichenfläche im Hoch- und Querformat exakt 4:3 an den verfügbaren Platz anpassen
+  useEffect(() => {
+    if (!isDrawer) return;
+    const stageEl = canvasStageRef.current;
+    if (!stageEl) return;
+
+    let rotateTimer: number | null = null;
+    let rafId: number | null = null;
+
+    const measure = () => {
+      const target = canvasStageRef.current;
+      if (!target) return;
+      const rect = target.getBoundingClientRect();
+      const usableW = Math.max(120, Math.min(520, Math.floor(rect.width) - 8));
+      const usableH = Math.max(90, Math.floor(rect.height) - 8);
+
+      let width = Math.min(usableW, Math.floor(usableH * (4 / 3)));
+      let height = Math.floor(width * (3 / 4));
+      if (height > usableH) {
+        height = usableH;
+        width = Math.floor(height * (4 / 3));
+      }
+
+      setCanvasSize((prev) =>
+        prev && prev.width === width && prev.height === height ? prev : { width, height }
+      );
+    };
+
+    const scheduleMeasure = () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(measure);
+    };
+
+    const handleOrientationChange = () => {
+      scheduleMeasure();
+      if (rotateTimer !== null) window.clearTimeout(rotateTimer);
+      rotateTimer = window.setTimeout(scheduleMeasure, 120);
+    };
+
+    scheduleMeasure();
+
+    const observer =
+      typeof ResizeObserver !== 'undefined'
+        ? new ResizeObserver(() => scheduleMeasure())
+        : null;
+    observer?.observe(stageEl);
+
+    window.addEventListener('resize', scheduleMeasure);
+    window.addEventListener('orientationchange', handleOrientationChange);
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', scheduleMeasure);
+      window.removeEventListener('orientationchange', handleOrientationChange);
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      if (rotateTimer !== null) window.clearTimeout(rotateTimer);
+    };
+  }, [isDrawer, isRoundOver]);
+
   // 6. Zeichnen-Event-Handler für den Zeichner (Pointer/Touch)
   const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return { x: 0, y: 0 };
     const rect = canvas.getBoundingClientRect();
+    if (!rect.width || !rect.height) {
+      return lastPointRef.current ?? { x: 0, y: 0 };
+    }
     const x = (e.clientX - rect.left) / rect.width;
     const y = (e.clientY - rect.top) / rect.height;
     return {
@@ -436,21 +500,21 @@ export function DrawAndGuessBoard({
   // ═════════════════════════════════════════════════════════════════════════════
   if (isDrawer) {
     return (
-      <div className="flex flex-col items-center w-full max-w-md mx-auto select-none h-full justify-between">
+      <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
         {/* Kopfzeile: Geheimes Wort & Timer */}
-        <div className="w-full flex items-center justify-between px-3.5 py-2 mb-2 rounded-2xl bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1 text-xs font-black uppercase text-amber-400">
+        <div className="w-full flex items-center justify-between px-3.5 py-2 landscape:py-1 mb-1.5 landscape:mb-1 rounded-2xl bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-2 min-w-0">
+            <div className="flex items-center gap-1 text-xs font-black uppercase text-amber-400 shrink-0">
               <Paintbrush className="h-4 w-4" />
               <span>Du zeichnest:</span>
             </div>
-            <strong className="text-white text-base font-black underline underline-offset-4 tracking-wide">
+            <strong className="text-white text-sm sm:text-base font-black underline underline-offset-4 tracking-wide truncate">
               {gameState?.secretWord}
             </strong>
           </div>
 
           <div
-            className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono font-black text-xs ring-1 ${
+            className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
               timeLeft <= 10
                 ? 'bg-rose-500/30 text-rose-300 ring-rose-500/50 animate-pulse'
                 : 'bg-white/10 text-white ring-white/20'
@@ -461,61 +525,76 @@ export function DrawAndGuessBoard({
           </div>
         </div>
 
-        {/* Große Zeichnen-Leinwand (Maximale Höhe auf Smartphone) */}
-        <div className="relative w-full aspect-[4/3] rounded-3xl overflow-hidden ring-4 ring-amber-400/40 shadow-2xl bg-white touch-none flex-1 max-h-[380px]">
-          <canvas
-            ref={canvasRef}
-            width={400}
-            height={300}
-            onPointerDown={handlePointerDown}
-            onPointerMove={handlePointerMove}
-            onPointerUp={handlePointerUp}
-            onPointerCancel={handlePointerUp}
-            className="w-full h-full block cursor-crosshair"
-          />
+        {/* Dynamisch skalierende 4:3 Zeichenfläche (passt sich im Hoch- & Querformat an die Höhe an) */}
+        <div
+          ref={canvasStageRef}
+          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5"
+        >
+          <div
+            style={
+              canvasSize
+                ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
+                : undefined
+            }
+            className={`relative rounded-2xl sm:rounded-3xl overflow-hidden ring-4 ring-amber-400/40 shadow-2xl bg-white touch-none ${
+              canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
+            }`}
+          >
+            <canvas
+              ref={canvasRef}
+              width={400}
+              height={300}
+              onPointerDown={handlePointerDown}
+              onPointerMove={handlePointerMove}
+              onPointerUp={handlePointerUp}
+              onPointerCancel={handlePointerUp}
+              className="w-full h-full block touch-none cursor-crosshair"
+            />
 
-          {/* Toast wenn Mitspieler rät */}
-          {latestGuess && (
-            <div className="absolute top-2.5 right-2.5 max-w-[220px] truncate px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold ring-1 ring-white/20 animate-fade-in">
-              {latestGuess.playerName}: &quot;{latestGuess.text}&quot; {latestGuess.isCorrect ? '✅' : '❌'}
-            </div>
-          )}
-
-          {/* Runden-Ende Overlay */}
-          {isRoundOver && (
-            <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center animate-fade-in z-20">
-              <Trophy className="h-10 w-10 text-amber-400 mb-2 animate-bounce" />
-              <h3 className="text-xl font-black text-white">Runde vorbei!</h3>
-              <p className="mt-1 text-xs text-[#AEAEB2]">
-                Das Wort war: <strong className="text-amber-400 text-sm uppercase">{gameState.secretWord}</strong>
-              </p>
-              {gameState.roundWinnerName && (
-                <p className="mt-1 text-xs text-emerald-400 font-extrabold">
-                  🎉 {gameState.roundWinnerName} hat es erraten!
-                </p>
-              )}
-              <div className="mt-3 text-xs font-bold text-purple-300">
-                Rollenwechsel in {transitionCountdown}s... (Du bist gleich Rater!)
+            {/* Toast wenn Mitspieler rät */}
+            {latestGuess && (
+              <div className="pointer-events-none absolute top-2.5 right-2.5 max-w-[220px] truncate px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold ring-1 ring-white/20 animate-fade-in">
+                {latestGuess.playerName}: &quot;{latestGuess.text}&quot; {latestGuess.isCorrect ? '✅' : '❌'}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* Runden-Ende Overlay */}
+            {isRoundOver && (
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center animate-fade-in z-20">
+                <Trophy className="h-10 w-10 text-amber-400 mb-2 animate-bounce" />
+                <h3 className="text-xl font-black text-white">Runde vorbei!</h3>
+                <p className="mt-1 text-xs text-[#AEAEB2]">
+                  Das Wort war: <strong className="text-amber-400 text-sm uppercase">{gameState.secretWord}</strong>
+                </p>
+                {gameState.roundWinnerName && (
+                  <p className="mt-1 text-xs text-emerald-400 font-extrabold">
+                    🎉 {gameState.roundWinnerName} hat es erraten!
+                  </p>
+                )}
+                <div className="mt-3 text-xs font-bold text-purple-300">
+                  Rollenwechsel in {transitionCountdown}s... (Du bist gleich Rater!)
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Mal-Werkzeuge (Kompakt unter der Leinwand) */}
+        {/* Mal-Werkzeuge (Genug Innenabstand damit der aktive weiße Auswahlrahmen nicht abgeschnitten wird) */}
         {!isRoundOver && (
-          <div className="w-full mt-2.5 p-2.5 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md flex flex-col gap-2 shrink-0">
-            <div className="flex items-center justify-between gap-1">
-              {/* Farb-Palette */}
-              <div className="flex items-center gap-1.5 overflow-x-auto">
+          <div className="w-full mt-1.5 landscape:mt-1 px-2.5 py-1.5 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible">
+            <div className="flex items-center justify-between gap-2">
+              {/* Farb-Palette mit vertikalem & horizontalem Schutzabstand für ring-2 + scale-110 */}
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-2 py-2">
                 {COLORS.map((col) => (
                   <button
                     key={col}
                     type="button"
                     onClick={() => setCurrentColor(col)}
-                    className={`h-7 w-7 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                    aria-label={col === '#FFFFFF' ? 'Radierer' : `Farbe ${col}`}
+                    className={`h-7 w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
                       currentColor === col
                         ? 'ring-2 ring-white scale-110 shadow-md'
-                        : 'ring-1 ring-black/20 hover:scale-105'
+                        : 'ring-1 ring-black/25 hover:scale-105'
                     }`}
                     style={{ backgroundColor: col }}
                   >
