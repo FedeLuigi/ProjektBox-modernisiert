@@ -332,12 +332,12 @@ export function App() {
                 setTvJoinError(null);
                 setShowTvJoinModal(true);
               }}
-              aria-label="Fernseher beitreten"
-              title="Fernseher beitreten"
+              aria-label="Mit Code oder QR beitreten"
+              title="Mit Code beitreten"
               className="inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-full bg-purple-500/16 hover:bg-purple-500/24 text-purple-100 ring-1 ring-purple-400/35 font-bold text-xs sm:text-sm backdrop-blur-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
             >
               <Tv className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-300" />
-              <span>TV beitreten</span>
+              <span>Mit Code</span>
             </button>
 
             <button
@@ -358,22 +358,19 @@ export function App() {
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
       <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-1 space-y-4 sm:space-y-5 scrollbar-none max-w-7xl mx-auto w-full">
-        {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
+        {/* ── Sektion 1: Schnellstart ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">
-            <div className="flex items-center justify-between app-shell-x mb-1">
+            <div className="flex items-center app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-[#FB923C]" />
                 <h2
                   id="heading-quick-launch"
                   className="text-sm font-extrabold tracking-tight text-white"
                 >
-                  Zuletzt gespielt / Schnellstart
+                  Schnellstart
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#98989D]">
-                Direkt loslegen
-              </span>
             </div>
 
             {/* Horizontale Wischleiste mit genug vertikalem Padding gegen abgeschnittene Borders/Schatten */}
@@ -390,22 +387,19 @@ export function App() {
           </section>
         )}
 
-        {/* ── Sektion 2: Beliebt & Strategie (horizontales Karussell kompakter 4:3-Karten) ── */}
+        {/* ── Sektion 2: Strategie ── */}
         {(showAll || category === 'Strategie') && (
           <section aria-labelledby="heading-strategy">
-            <div className="flex items-center justify-between app-shell-x mb-1">
+            <div className="flex items-center app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Trophy className="h-4 w-4 text-[#A78BFA]" />
                 <h2
                   id="heading-strategy"
                   className="text-sm font-extrabold tracking-tight text-white"
                 >
-                  Beliebt & Strategie
+                  Strategie
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#98989D]">
-                {strategyGames.length} Spiele
-              </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
@@ -422,22 +416,19 @@ export function App() {
           </section>
         )}
 
-        {/* ── Sektion 3: Denkspiele & Rätsel (horizontales Karussell kompakter 4:3-Karten) ── */}
+        {/* ── Sektion 3: Denken & Rätsel ── */}
         {(showAll || category === 'Denken') && (
           <section aria-labelledby="heading-puzzle">
-            <div className="flex items-center justify-between app-shell-x mb-1">
+            <div className="flex items-center app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Brain className="h-4 w-4 text-[#FB923C]" />
                 <h2
                   id="heading-puzzle"
                   className="text-sm font-extrabold tracking-tight text-white"
                 >
-                  Denkspiele & Rätsel
+                  Denken & Rätsel
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#98989D]">
-                {puzzleGames.length} Spiele
-              </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
@@ -454,10 +445,10 @@ export function App() {
           </section>
         )}
 
-        {/* ── Sektion 4: Arcade & Reflexe (horizontales Karussell kompakter 4:3-Karten) ── */}
+        {/* ── Sektion 4: Arcade & Reflexe ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-arcade">
-            <div className="flex items-center justify-between app-shell-x mb-1">
+            <div className="flex items-center app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-[#34D399]" />
                 <h2
@@ -467,9 +458,6 @@ export function App() {
                   Arcade & Reflexe
                 </h2>
               </div>
-              <span className="text-[11px] font-semibold text-[#98989D]">
-                {arcadeGames.length} Spiele
-              </span>
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}

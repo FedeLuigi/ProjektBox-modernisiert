@@ -5,10 +5,8 @@ import {
   Eraser,
   Paintbrush,
   Send,
-  Sparkles,
   Trash2,
   Trophy,
-  Tv,
   X,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
@@ -77,8 +75,10 @@ export function DrawAndGuessBoard({
   allPlayers,
   onMove,
   disabled: _disabled,
+  isTvMode,
 }: GameRendererProps<DrawAndGuessState>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const prevCanvasElRef = useRef<HTMLCanvasElement | null>(null);
   const canvasStageRef = useRef<HTMLDivElement | null>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
@@ -97,6 +97,7 @@ export function DrawAndGuessBoard({
 
   const isTv = Boolean(myPlayer?.isTvScreen);
   const isDrawer = !isTv && myPlayer?.id === gameState?.currentDrawerId;
+  const needsCanvas = isDrawer || (!isTv && !isTvMode);
 
   const drawerPlayer =
     allPlayers?.find((p) => p.id === gameState?.currentDrawerId) ||
@@ -209,7 +210,11 @@ export function DrawAndGuessBoard({
     const height = canvas.height;
 
     const currentRound = gameState?.round ?? 1;
-    const isRoundChanged = renderedRoundRef.current !== currentRound;
+    const isNewCanvas = prevCanvasElRef.current !== canvas;
+    if (isNewCanvas) {
+      prevCanvasElRef.current = canvas;
+    }
+    const isRoundChanged = isNewCanvas || renderedRoundRef.current !== currentRound;
 
     if (isRoundChanged || !gameState?.strokes || gameState.strokes.length === 0) {
       renderedRoundRef.current = currentRound;
@@ -237,7 +242,7 @@ export function DrawAndGuessBoard({
       }
       renderedCountRef.current = gameState.strokes.length;
     }
-  }, [gameState?.round, gameState?.strokes]);
+  }, [gameState?.round, gameState?.strokes, isDrawer, isTvMode]);
 
   // 5. Flushen des Echtzeit-Puffers für geschmeidiges Streamen zum Fernseher
   const flushStrokes = () => {
@@ -249,7 +254,7 @@ export function DrawAndGuessBoard({
 
   // 5b. Zeichenfläche im Hoch- und Querformat exakt 4:3 an den verfügbaren Platz anpassen
   useEffect(() => {
-    if (!isDrawer) return;
+    if (!needsCanvas) return;
     const stageEl = canvasStageRef.current;
     if (!stageEl) return;
 
@@ -304,7 +309,7 @@ export function DrawAndGuessBoard({
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (rotateTimer !== null) window.clearTimeout(rotateTimer);
     };
-  }, [isDrawer, isRoundOver]);
+  }, [needsCanvas, isRoundOver]);
 
   // 6. Zeichnen-Event-Handler für den Zeichner (Pointer/Touch)
   const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -501,23 +506,20 @@ export function DrawAndGuessBoard({
   if (isDrawer) {
     return (
       <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
-        {/* Kopfzeile: Geheimes Wort & Timer */}
-        <div className="w-full flex items-center justify-between px-3.5 py-2 landscape:py-1 mb-1.5 landscape:mb-1 rounded-2xl bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md shrink-0">
+        {/* Schmale Infozeile: Geheimes Wort & Timer */}
+        <div className="w-full flex items-center justify-between px-1 pb-1.5 landscape:pb-1 shrink-0">
           <div className="flex items-center gap-2 min-w-0">
-            <div className="flex items-center gap-1 text-xs font-black uppercase text-amber-400 shrink-0">
-              <Paintbrush className="h-4 w-4" />
-              <span>Du zeichnest:</span>
-            </div>
-            <strong className="text-white text-sm sm:text-base font-black underline underline-offset-4 tracking-wide truncate">
+            <Paintbrush className="h-4 w-4 text-amber-400 shrink-0" />
+            <strong className="text-white text-sm sm:text-base font-black tracking-wide uppercase truncate">
               {gameState?.secretWord}
             </strong>
           </div>
 
           <div
-            className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
+            className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
               timeLeft <= 10
                 ? 'bg-rose-500/30 text-rose-300 ring-rose-500/50 animate-pulse'
-                : 'bg-white/10 text-white ring-white/20'
+                : 'bg-white/10 text-white ring-white/15'
             }`}
           >
             <Clock className="h-3.5 w-3.5" />
@@ -637,7 +639,7 @@ export function DrawAndGuessBoard({
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // C) SMARTPHONE-ANSICHT: DER RATER (VEREINFACHTES IN-PLACE RATE-LAYOUT)
+  // C) SMARTPHONE-ANSICHT: DER RATER (MIT LIVE-ZEICHNUNG OHNE TV, CLEAN IM TV-MODUS)
   // ═════════════════════════════════════════════════════════════════════════════
   const hintTokens = gameState?.wordHint ? gameState.wordHint.split(' ') : [];
   const targetLength =
@@ -648,29 +650,38 @@ export function DrawAndGuessBoard({
   const totalSlots = Math.max(targetLength, guessInput.length);
   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
 
-  const slotSizeClass =
-    totalSlots <= 5
-      ? 'w-11 h-14 sm:w-13 sm:h-16 text-2xl sm:text-3xl rounded-2xl'
+  const slotSizeClass = !isTvMode
+    ? totalSlots <= 5
+      ? 'w-10 h-12 sm:w-11 sm:h-14 text-xl sm:text-2xl rounded-xl'
       : totalSlots <= 7
-      ? 'w-9 h-12 sm:w-11 sm:h-14 text-xl sm:text-2xl rounded-xl'
-      : 'w-7.5 h-10 sm:w-9 sm:h-12 text-base sm:text-lg rounded-lg';
+      ? 'w-8 h-10 sm:w-10 sm:h-12 text-lg sm:text-xl rounded-xl'
+      : 'w-7 h-9 sm:w-8 sm:h-11 text-sm sm:text-base rounded-lg'
+    : totalSlots <= 5
+    ? 'w-11 h-14 sm:w-13 sm:h-16 text-2xl sm:text-3xl rounded-2xl'
+    : totalSlots <= 7
+    ? 'w-9 h-12 sm:w-11 sm:h-14 text-xl sm:text-2xl rounded-xl'
+    : 'w-7.5 h-10 sm:w-9 sm:h-12 text-base sm:text-lg rounded-lg';
+
+  const recentGuesses = gameState?.guesses?.slice(0, 3) || [];
 
   return (
-    <div className="flex flex-col items-center w-full max-w-md mx-auto select-none h-full justify-between py-1">
-      {/* 1. Kopfzeile: Status, Kategorie & Timer */}
-      <div className="w-full flex items-center justify-between px-3.5 py-2 mb-2 rounded-2xl bg-white/[0.07] ring-1 ring-white/15 backdrop-blur-md shrink-0">
-        <div className="flex items-center gap-2">
-          <Sparkles className="h-4 w-4 text-purple-400" />
-          <span className="text-xs font-black uppercase text-purple-300">
-            Du rätst! • {gameState?.categoryName || 'Allgemein'}
+    <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
+      {/* 1. Schmale Infozeile: Wer malt & Timer */}
+      <div className="w-full flex items-center justify-between px-1 pb-1.5 landscape:pb-1 shrink-0">
+        <div className="flex items-center gap-2 min-w-0 text-xs">
+          <span className="font-bold text-white truncate">
+            {drawerPlayer?.name || 'Mitspieler'} malt
           </span>
+          {gameState?.categoryName && (
+            <span className="text-[#8E8E93] truncate">• {gameState.categoryName}</span>
+          )}
         </div>
 
         <div
-          className={`flex items-center gap-1.5 px-3 py-0.5 rounded-full font-mono font-black text-xs ring-1 ${
+          className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
             timeLeft <= 10
               ? 'bg-rose-500/30 text-rose-300 ring-rose-500/50 animate-pulse'
-              : 'bg-white/10 text-white ring-white/20'
+              : 'bg-white/10 text-white ring-white/15'
           }`}
         >
           <Clock className="h-3.5 w-3.5" />
@@ -678,42 +689,69 @@ export function DrawAndGuessBoard({
         </div>
       </div>
 
-      {/* 2. ZENTRALER, VEREINFACHTER EINGABEBEREICH (KEINE GETEILTEN FENSTER MEHR) */}
-      <div
-        className={`w-full p-4 sm:p-5 rounded-3xl bg-gradient-to-b from-purple-950/40 via-[#181824]/90 to-[#12121c]/95 ring-2 ring-purple-500/30 backdrop-blur-xl flex flex-col items-center text-center my-auto shadow-2xl transition-all ${
-          isWrongGuess ? 'screen-shake ring-rose-500/60' : ''
-        } ${hasGuessedCorrectly ? 'ring-emerald-400/60 bg-emerald-950/20' : ''}`}
-      >
-        {/* Infozeile: Schau auf TV & wer zeichnet */}
-        <div className="flex items-center gap-2 mb-1.5 text-xs text-[#AEAEB2]">
-          <Tv className="h-4 w-4 text-purple-400 shrink-0" />
-          <span>
-            Schau auf den TV • <strong className="text-purple-300">{drawerPlayer?.name || 'Dein Mitspieler'}</strong> malt
-          </span>
-        </div>
+      {/* 2. OHNE TV-MODUS: Live-Zeichnung direkt über der Eingabe */}
+      {!isTvMode && (
+        <div
+          ref={canvasStageRef}
+          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5"
+        >
+          <div
+            style={
+              canvasSize
+                ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
+                : undefined
+            }
+            className={`relative rounded-2xl sm:rounded-3xl overflow-hidden ring-2 ring-purple-500/35 shadow-2xl bg-white ${
+              canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
+            }`}
+          >
+            <canvas
+              ref={canvasRef}
+              width={400}
+              height={300}
+              className="w-full h-full block"
+            />
 
-        {/* Status / Anweisung */}
-        {hasGuessedCorrectly ? (
-          <div className="my-2 flex items-center gap-2 px-4 py-1.5 rounded-full bg-emerald-500 text-black font-black text-xs shadow-lg animate-bounce">
-            <Check className="h-4 w-4 stroke-[3]" />
-            <span>🎉 Du hast das Wort erraten! (+100 Punkte)</span>
+            {isRoundOver && (
+              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center animate-fade-in z-20">
+                <Trophy className="h-9 w-9 text-amber-400 mb-1.5 animate-bounce" />
+                <span className="text-xs font-semibold text-[#AEAEB2]">Gesuchtes Wort</span>
+                <strong className="text-amber-300 text-xl font-black uppercase tracking-wider mt-0.5">
+                  {gameState.secretWord}
+                </strong>
+                <div className="mt-2 text-xs font-bold text-purple-300">
+                  Nächste Runde in {transitionCountdown}s...
+                </div>
+              </div>
+            )}
           </div>
-        ) : isRoundOver ? (
-          <div className="my-2 px-4 py-1.5 rounded-full bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/40 font-bold text-xs">
-            Runde beendet • Rollenwechsel in {transitionCountdown}s...
-          </div>
-        ) : (
-          <div className="text-xs font-semibold text-[#8E8E93] mb-1">
-            Setze die Buchstaben direkt in die Lücken ein ({targetLength} Buchstaben):
+        </div>
+      )}
+
+      {/* 3. OFFENER EINGABEBEREICH (OHNE KÄSTEN IN KÄSTEN) */}
+      <div
+        className={`w-full max-w-md flex flex-col items-center text-center shrink-0 ${
+          isTvMode ? 'my-auto py-2' : 'pt-2 landscape:pt-1'
+        } ${isWrongGuess ? 'screen-shake' : ''}`}
+      >
+        {hasGuessedCorrectly && (
+          <div className="mb-2 flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500 text-black font-black text-xs shadow-md">
+            <Check className="h-3.5 w-3.5 stroke-[3]" />
+            <span>Erraten! (+100)</span>
           </div>
         )}
 
-        {/* ── INTERAKTIVE BUCHSTABEN-LÜCKEN (DIREKT AN ORT UND STELLE EINTIPPEN) ── */}
+        {isTvMode && isRoundOver && !hasGuessedCorrectly && (
+          <div className="mb-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/40 font-bold text-xs">
+            Runde vorbei • Weiter in {transitionCountdown}s
+          </div>
+        )}
+
+        {/* Interaktive Buchstaben-Lücken */}
         <div
           onClick={() => guessInputRef.current?.focus()}
-          className="relative flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 my-2.5 py-1 w-full cursor-text"
+          className="relative flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-1 w-full cursor-text"
         >
-          {/* Unsichtbares, natives Eingabefeld genau über den Lücken platziert */}
           <input
             ref={guessInputRef}
             type="text"
@@ -736,17 +774,16 @@ export function DrawAndGuessBoard({
             autoCorrect="off"
             spellCheck={false}
             className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-            aria-label="Wort direkt in die Lücken eingeben"
+            aria-label="Lösungswort eingeben"
           />
 
-          {/* Die visuellen Lücken-Kacheln */}
           {slotIndices.map((idx) => {
             if (isRoundOver && gameState?.secretWord) {
               const char = gameState.secretWord[idx]?.toUpperCase() || '';
               return (
                 <div
                   key={idx}
-                  className={`relative flex items-center justify-center font-mono font-black transition-all bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/50 shadow-md ${slotSizeClass}`}
+                  className={`relative flex items-center justify-center font-mono font-black transition-all bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/50 ${slotSizeClass}`}
                 >
                   {char}
                 </div>
@@ -767,19 +804,17 @@ export function DrawAndGuessBoard({
                 key={idx}
                 className={`relative flex items-center justify-center font-mono font-black transition-all ${slotSizeClass} ${
                   hasGuessedCorrectly
-                    ? 'bg-emerald-500/25 text-emerald-300 ring-2 ring-emerald-400 shadow-[0_0_15px_rgba(52,211,153,0.3)]'
+                    ? 'bg-emerald-500/25 text-emerald-300 ring-2 ring-emerald-400'
                     : isActive
-                    ? 'bg-purple-600/30 text-white ring-2 ring-purple-400 shadow-[0_0_18px_rgba(168,85,247,0.4)] scale-105'
+                    ? 'bg-purple-600/30 text-white ring-2 ring-purple-400 scale-105'
                     : isTyped
-                    ? 'bg-white/20 text-white ring-1 ring-white/40 shadow-md'
+                    ? 'bg-white/20 text-white ring-1 ring-white/40'
                     : isHintOnly
                     ? 'bg-purple-500/10 text-purple-300/65 ring-1 ring-purple-500/25 border border-dashed border-purple-400/30'
-                    : 'bg-white/[0.04] text-white/20 ring-1 ring-white/10'
+                    : 'bg-white/[0.05] text-white/20 ring-1 ring-white/12'
                 }`}
               >
                 {displayChar}
-
-                {/* Cursor-Indikator für die aktuell aktive Lücke */}
                 {isActive && !hasGuessedCorrectly && !isRoundOver && (
                   <span className="absolute bottom-1.5 inset-x-2 h-0.5 bg-purple-400 rounded-full animate-pulse" />
                 )}
@@ -788,21 +823,20 @@ export function DrawAndGuessBoard({
           })}
         </div>
 
-        {/* Rückmeldung bei falschem Versuch */}
         {wrongText && (
           <div className="mt-1 text-xs font-bold text-rose-300 animate-fade-in">
             {wrongText}
           </div>
         )}
 
-        {/* Aktionsleiste (Tipp absenden & Löschen) direkt an Ort und Stelle */}
+        {/* Senden & Löschen */}
         {!isRoundOver && !hasGuessedCorrectly && (
           <form
             onSubmit={(e) => {
               e.preventDefault();
               handleGuessSubmit();
             }}
-            className="mt-3 flex items-center justify-center gap-2 w-full max-w-xs relative z-20"
+            className="mt-2 flex items-center justify-center gap-2 w-full max-w-xs relative z-20"
           >
             {guessInput.length > 0 && (
               <button
@@ -811,7 +845,8 @@ export function DrawAndGuessBoard({
                   setGuessInput('');
                   guessInputRef.current?.focus();
                 }}
-                className="px-3.5 py-2.5 rounded-xl bg-white/10 hover:bg-white/15 text-white/70 hover:text-white text-xs font-bold ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
+                aria-label="Eingabe löschen"
+                className="h-10 px-3 rounded-full bg-white/10 hover:bg-white/15 text-white/75 hover:text-white text-xs font-bold ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
               >
                 <X className="h-3.5 w-3.5" />
                 <span>Löschen</span>
@@ -821,7 +856,7 @@ export function DrawAndGuessBoard({
             <button
               type="submit"
               disabled={!guessInput.trim()}
-              className={`flex-1 py-3 px-5 rounded-2xl font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
+              className={`flex-1 h-10 px-5 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
                 guessInput.trim() ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
               }`}
             >
@@ -830,33 +865,23 @@ export function DrawAndGuessBoard({
             </button>
           </form>
         )}
-      </div>
 
-      {/* 3. WAS ERRATEN WURDE (KOMPAKTER LIVE-FEED) */}
-      <div className="w-full mt-2 max-h-32 overflow-y-auto overscroll-contain flex flex-col gap-1 p-2 rounded-2xl bg-black/40 ring-1 ring-white/10 shrink-0">
-        <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#8E8E93] px-1">
-          Bisherige Tipps ({gameState?.guesses?.length || 0})
-        </span>
-        {gameState?.guesses && gameState.guesses.length > 0 ? (
-          gameState.guesses.slice(0, 8).map((g) => (
-            <div
-              key={g.id}
-              className={`text-xs px-2.5 py-1 rounded-xl flex items-center justify-between ${
-                g.isCorrect
-                  ? 'bg-emerald-500/25 text-emerald-300 font-black ring-1 ring-emerald-500/40'
-                  : 'bg-white/[0.04] text-[#AEAEB2]'
-              }`}
-            >
-              <span>
-                <strong>{g.playerName}:</strong> &quot;{g.text}&quot;
+        {/* Letzte Tipps nur zeigen, wenn vorhanden */}
+        {recentGuesses.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 w-full">
+            {recentGuesses.map((g) => (
+              <span
+                key={g.id}
+                className={`text-[11px] px-2.5 py-0.5 rounded-full ring-1 ${
+                  g.isCorrect
+                    ? 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/35 font-bold'
+                    : 'bg-white/[0.05] text-[#AEAEB2] ring-white/10'
+                }`}
+              >
+                {g.text}
               </span>
-              <span>{g.isCorrect ? '✅ Richtig (+100)' : '❌'}</span>
-            </div>
-          ))
-        ) : (
-          <span className="text-xs text-[#636366] text-center py-1.5 italic">
-            Noch keine Tipps. Tippe oben deine Vermutung ein!
-          </span>
+            ))}
+          </div>
         )}
       </div>
     </div>

@@ -3,7 +3,6 @@ import {
   ArrowLeft,
   RotateCcw,
   Trophy,
-  Users,
   WifiOff,
 } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
@@ -28,7 +27,7 @@ interface MultiplayerGameViewProps {
 
 export function MultiplayerGameView({
   lobby: initialLobby,
-  gameTitle,
+  gameTitle: _gameTitle,
   onLeave,
 }: MultiplayerGameViewProps) {
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
@@ -152,133 +151,61 @@ export function MultiplayerGameView({
         }}
         className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-3 sm:px-6"
       >
-        {/* 1. KOPFZEILE: Aufgeben/Verlassen, Spielname & Raumcode */}
-        <header className="flex shrink-0 items-center justify-between pb-2 landscape:pb-1">
+        {/* 1. EINZIGE SCHMALE TOP-BAR: Verlassen links, Score/Zug-Status mittig, Raum-Code rechts */}
+        <header className="flex shrink-0 items-center justify-between gap-2 pb-1.5 landscape:pb-1">
           <button
             type="button"
             onClick={onLeave}
-            className="inline-flex items-center gap-2 rounded-full bg-white/10 hover:bg-white/15 px-3.5 py-1.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
           >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Verlassen</span>
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span className="hidden sm:inline">Verlassen</span>
           </button>
 
-          <div className="flex flex-col items-center">
-            <span className="text-[11px] font-extrabold uppercase tracking-widest text-purple-400">
-              {gameTitle || lobby.name}
-            </span>
-            <span className="text-[10px] font-semibold text-[#8E8E93]">
-              Code: <strong className="text-white tracking-widest">{lobby.code}</strong>
-            </span>
-          </div>
-
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3 py-1 text-[11px] font-bold text-white/80 ring-1 ring-white/10">
-            <Users className="h-3 w-3 text-purple-400" />
-            <span>
-              {activePlayers.length}/{lobby.maxPlayers}
-            </span>
-          </div>
-        </header>
-
-        {/* 2. SPIELER-HUD (KOMPAKT FÜR ZEICHNEN & RATEN, STANDARD FÜR DUELLE) */}
-        {lobby.gameId === 'draw-and-guess' ? (
-          <section className="shrink-0 flex items-center justify-between px-3.5 py-1.5 landscape:py-1 rounded-2xl bg-white/[0.05] ring-1 ring-white/10 max-w-2xl mx-auto w-full my-1 landscape:my-0.5 text-xs">
-            <div className="flex items-center gap-2 min-w-0">
-              <Avatar config={currentUser.avatar} size={28} />
-              <span className="font-bold text-white truncate max-w-[100px]">{currentUser.name}</span>
-              <span className="px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300 font-black shrink-0">
-                {gameState?.scores?.[currentUser.id] || 0} Pkt
-              </span>
+          {isDrawAndGuess ? (
+            <div className="flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 ring-1 ring-white/10 text-xs">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Avatar config={currentUser.avatar} size={22} />
+                <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
+                  {currentUser.name}
+                </span>
+                <span className="font-black text-purple-300 tabular-nums">
+                  {gameState?.scores?.[currentUser.id] || 0}
+                </span>
+              </div>
+              <span className="text-white/30 font-bold">:</span>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="font-black text-pink-300 tabular-nums">
+                  {gameState?.scores?.[opponent?.id || ''] || 0}
+                </span>
+                <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
+                  {opponent?.name || 'Gegner'}
+                </span>
+                <Avatar config={opponent?.avatar || ({} as any)} size={22} />
+              </div>
             </div>
-
-            <div className="flex items-center gap-2 min-w-0">
-              <span className="px-2 py-0.5 rounded-full bg-pink-500/20 text-pink-300 font-black shrink-0">
-                {gameState?.scores?.[opponent?.id || ''] || 0} Pkt
-              </span>
-              <span className="font-bold text-white truncate max-w-[100px]">{opponent?.name || 'Gegner'}</span>
-              <Avatar config={opponent?.avatar || ({} as any)} size={28} />
-            </div>
-          </section>
-        ) : (
-          <section className="shrink-0 grid grid-cols-2 gap-3 max-w-lg mx-auto w-full my-2">
-            {/* Dein Profil */}
+          ) : (
             <div
-              className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
+              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
                 isMyTurn
-                  ? 'bg-purple-600/25 ring-2 ring-purple-500 shadow-[0_0_20px_rgba(168,85,247,0.35)] scale-[1.02]'
-                  : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
+                  ? 'bg-purple-500/20 text-purple-200 ring-purple-400/40'
+                  : 'bg-white/[0.06] text-white/75 ring-white/10'
               }`}
             >
-              <div className="relative shrink-0">
-                <Avatar config={currentUser.avatar} size={42} />
-                {myPlayer?.symbol && (
-                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-purple-600 text-[11px] font-black shadow-sm ring-2 ring-black">
-                    {myPlayer.symbol}
-                  </span>
-                )}
-                {myPlayer?.color && (
-                  <span
-                    className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                      myPlayer.color === 'red'
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
-                        : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                    }`}
-                  />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="flex items-center gap-1 text-xs font-bold truncate">
-                  <span className="truncate">{currentUser.name}</span>
-                  <span className="text-[10px] text-purple-400 shrink-0">(Du)</span>
-                </div>
-                <div className="text-[11px] font-semibold text-[#8E8E93]">
-                  {isMyTurn ? (
-                    <span className="text-purple-300 font-bold animate-pulse">Dein Zug!</span>
-                  ) : (
-                    'Wartet...'
-                  )}
-                </div>
-              </div>
+              <Avatar
+                config={(isMyTurn ? currentUser.avatar : opponent?.avatar) || ({} as any)}
+                size={20}
+              />
+              <span className="truncate max-w-[160px]">
+                {isMyTurn ? 'Du bist dran' : `${opponent?.name || 'Gegner'} ist dran`}
+              </span>
             </div>
+          )}
 
-            {/* Gegner Profil */}
-            <div
-              className={`flex items-center gap-2.5 p-2.5 sm:p-3 rounded-2xl transition-all ${
-                !isMyTurn && gameState?.status === 'playing'
-                  ? 'bg-pink-600/25 ring-2 ring-pink-500 shadow-[0_0_20px_rgba(236,72,153,0.35)] scale-[1.02]'
-                  : 'bg-white/[0.05] ring-1 ring-white/10 opacity-75'
-              }`}
-            >
-              <div className="relative shrink-0">
-                <Avatar config={opponent?.avatar || ({} as any)} size={42} />
-                {opponent?.symbol && (
-                  <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-pink-600 text-[11px] font-black shadow-sm ring-2 ring-black">
-                    {opponent.symbol}
-                  </span>
-                )}
-                {opponent?.color && (
-                  <span
-                    className={`absolute -bottom-1 -right-1 h-4 w-4 rounded-full ring-2 ring-black ${
-                      opponent.color === 'red'
-                        ? 'bg-rose-500 shadow-[0_0_8px_#f43f5e]'
-                        : 'bg-amber-400 shadow-[0_0_8px_#fbbf24]'
-                    }`}
-                  />
-                )}
-              </div>
-              <div className="min-w-0 flex-1">
-                <div className="text-xs font-bold truncate">{opponent?.name || 'Gegner'}</div>
-                <div className="text-[11px] font-semibold text-[#8E8E93]">
-                  {!isMyTurn && gameState?.status === 'playing' ? (
-                    <span className="text-pink-300 font-bold animate-pulse">Denkt nach...</span>
-                  ) : (
-                    'Wartet...'
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+          <span className="inline-flex h-8 sm:h-9 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10 shrink-0">
+            {lobby.code}
+          </span>
+        </header>
 
         {/* ─── Fehler-Banner ─── */}
         {errorMsg && (
@@ -311,6 +238,7 @@ export function MultiplayerGameView({
               isGameOver={isGameOver}
               onMove={handleSendMove}
               disabled={isSubmitting}
+              isTvMode={lobby.isTvMode}
             />
           ) : (
             <div className="text-center p-8 rounded-2xl bg-white/5 ring-1 ring-white/10 text-xs text-[#8E8E93]">
@@ -319,8 +247,8 @@ export function MultiplayerGameView({
           )}
         </main>
 
-        {/* 4. UNTERER STATUS / GAME OVER OVERLAY */}
-        {isGameOver ? (
+        {/* 4. GAME OVER OVERLAY */}
+        {isGameOver && (
           <div className="shrink-0 max-w-sm mx-auto w-full p-4 rounded-3xl bg-[#181824]/95 ring-2 ring-purple-500/40 shadow-2xl backdrop-blur-2xl text-center mb-2 animate-fade-in">
             <div className="flex justify-center mb-2">
               {isWinner && <Trophy className="h-10 w-10 text-amber-400 animate-bounce" />}
@@ -362,14 +290,6 @@ export function MultiplayerGameView({
               </button>
             </div>
           </div>
-        ) : lobby.gameId === 'draw-and-guess' ? null : (
-          <footer className="shrink-0 text-center text-xs font-medium text-[#8E8E93] py-2">
-            {isMyTurn ? (
-              <span className="text-purple-400 font-bold">Du bist am Zug!</span>
-            ) : (
-              <span>Warte auf {opponent?.name || 'Gegner'}...</span>
-            )}
-          </footer>
         )}
       </div>
     </div>

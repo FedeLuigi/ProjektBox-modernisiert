@@ -70,10 +70,7 @@ export function TvJoinModal({
             <Tv className="h-7 w-7 text-purple-300" />
           </div>
 
-          <h2 className="text-xl font-black text-white">Fernseher beitreten</h2>
-          <p className="mt-1 text-xs text-[#8E8E93] max-w-xs leading-relaxed">
-            Scanne den QR-Code auf deinem TV oder gib den Beitrittscode ein, um direkt in die Spiellobby zu gelangen.
-          </p>
+          <h2 className="text-xl font-black text-white">Mit Code beitreten</h2>
 
           {/* Fehlermeldung */}
           {errorMessage && (
@@ -82,59 +79,50 @@ export function TvJoinModal({
             </div>
           )}
 
-          {/* Stufe 1 (Primary): QR-Scanner */}
-          <button
-            type="button"
-            onClick={() => setShowScanner(true)}
-            disabled={isJoining}
-            className={`mt-5 ${BTN_PRIMARY_BASE} ${
-              !isJoining ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
-            }`}
-          >
-            <QrCode className="h-4 w-4" />
-            <span>Jetzt TV QR-Code scannen</span>
-          </button>
-
-          {/* Trennlinie */}
-          <div className="my-4 flex items-center gap-3 w-full">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-[10px] uppercase font-bold tracking-widest text-[#8E8E93]">oder Code</span>
-            <div className="h-px flex-1 bg-white/10" />
-          </div>
-
-          {/* Manuelle Code-Eingabe + Stufe 2 (Secondary) */}
-          <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2.5">
+          {/* Direkte Code-Eingabe + Beitritt */}
+          <form onSubmit={handleSubmit} className="mt-4 w-full flex flex-col gap-2.5">
             <input
               type="text"
               maxLength={6}
               value={code}
               onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="Z. B. 7K9P2"
-              className="w-full text-center text-xl font-mono font-black tracking-[0.25em] px-4 py-3 rounded-2xl bg-black/50 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/20"
+              placeholder="CODE"
+              className="w-full text-center text-xl font-mono font-black tracking-[0.25em] px-4 py-3 rounded-2xl bg-black/50 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/25"
             />
 
             <button
               type="submit"
               disabled={code.trim().length < 3 || isJoining}
-              className={`${BTN_SECONDARY_BASE} ${
+              className={`${BTN_PRIMARY_BASE} ${
                 code.trim().length >= 3 && !isJoining
-                  ? BTN_SECONDARY_NEUTRAL
+                  ? BTN_PRIMARY_ENABLED
                   : BTN_PRIMARY_DISABLED
               }`}
             >
               {isJoining ? (
                 <>
                   <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Verbinde mit Lobby...</span>
+                  <span>Verbinde...</span>
                 </>
               ) : (
                 <>
                   <KeyRound className="h-4 w-4" />
-                  <span>Mit Code beitreten</span>
+                  <span>Beitreten</span>
                 </>
               )}
             </button>
           </form>
+
+          {/* Alternative: QR-Scanner */}
+          <button
+            type="button"
+            onClick={() => setShowScanner(true)}
+            disabled={isJoining}
+            className={`mt-2.5 ${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+          >
+            <QrCode className="h-4 w-4" />
+            <span>QR-Code scannen</span>
+          </button>
         </div>
       </div>
 

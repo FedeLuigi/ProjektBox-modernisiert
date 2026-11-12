@@ -1,13 +1,9 @@
 import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
-  Clock3,
   Dices,
   RefreshCw,
-  Sparkles,
   Tv,
-  Users,
-  Wifi,
 } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
@@ -26,10 +22,7 @@ import {
   BTN_PRIMARY_DISABLED,
   BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
-  HEADER_BADGE_PILL,
   HEADER_ROW,
-  STAGE_TWO_COL,
-  SURFACE_CARD,
   SWITCH_TRACK_OFF,
   SWITCH_TRACK_ON,
 } from '../../styles/uiTokens';
@@ -231,7 +224,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
       {/* ─── Vollbild-Container mit einheitlichem Raster (.app-shell) ─── */}
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
-        {/* 1. OBERE LEISTE: Zurück-Pille links, Status & Kategorie-Badge rechts */}
+        {/* 1. OBERE LEISTE: Zurück-Pille links, Verbindungsstatus rechts */}
         <header className={HEADER_ROW}>
           <button
             type="button"
@@ -242,179 +235,116 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
             <span>Zurück</span>
           </button>
 
-          <div className="flex items-center gap-2.5">
-            <ConnectionStatusBadge />
-            <span
-              className={`${HEADER_BADGE_PILL} uppercase shadow-2xs ${style.badge}`}
-            >
-              {game.category}
-            </span>
-          </div>
+          <ConnectionStatusBadge />
         </header>
 
-        {/* 2. MITTE: Zweigeteilte Bühne (Links: Icon & Meta, Rechts: Lobby-Option Card) */}
-        <main className={`${STAGE_TWO_COL} overflow-y-auto overscroll-y-contain scrollbar-none`}>
-          <div className="grid w-full items-center gap-6 sm:gap-8 lg:gap-12 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.3fr] landscape:text-left lg:grid-cols-[1fr_1.3fr] lg:text-left">
-            {/* Linke Seite: Großes Squircle-Icon & Spiel-Präsentation */}
-            <div className="flex flex-col portrait:items-center landscape:items-start lg:items-start">
+        {/* 2. MITTE: Offene Party-Bühne ohne verschachtelte Kästen */}
+        <main className="mx-auto flex w-full max-w-md flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none py-4">
+          <div className="flex flex-col items-center text-center mb-6 landscape:mb-4">
+            <div
+              className={`grid h-16 w-16 sm:h-20 sm:w-20 landscape:h-14 landscape:w-14 place-items-center rounded-[22px] sm:rounded-[26px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
+            >
+              <Icon
+                className="h-8 w-8 sm:h-10 sm:w-10 landscape:h-7 landscape:w-7"
+                strokeWidth={2.1}
+              />
+            </div>
+
+            <h1
+              id="lobby-screen-title"
+              className="mt-3 landscape:mt-2 text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white"
+            >
+              {game.title}
+            </h1>
+          </div>
+
+          {errorMsg && (
+            <div className="mb-4 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+              {errorMsg}
+            </div>
+          )}
+
+          <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5">
+            <div>
+              <label className="text-xs font-bold text-white/70 block mb-1.5 px-1">
+                Lobby-Name
+              </label>
+              <div className="relative flex items-center">
+                <input
+                  type="text"
+                  maxLength={30}
+                  value={createName}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setCreateName(val);
+                    setHasCustomLobbyName(val.trim().length > 0);
+                  }}
+                  placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
+                  className="w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
+                />
+                <button
+                  type="button"
+                  onClick={handleRollLobbyName}
+                  title="Neuen Namen würfeln"
+                  aria-label="Neuen Namen würfeln"
+                  className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
+                >
+                  <Dices className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Kompakter TV-Modus Toggle */}
+            <div
+              onClick={handleToggleTvMode}
+              role="switch"
+              aria-checked={isTvMode}
+              className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                isTvMode
+                  ? 'bg-purple-500/[0.12] ring-purple-400/35'
+                  : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Tv
+                  className={`h-4 w-4 transition-colors ${
+                    isTvMode ? 'text-purple-300' : 'text-[#8E8E93]'
+                  }`}
+                />
+                <span className="text-sm font-bold text-white">TV-Modus</span>
+              </div>
+
               <div
-                className={`grid h-20 w-20 sm:h-26 sm:w-26 landscape:h-18 landscape:w-18 place-items-center rounded-[26px] sm:rounded-[32px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
+                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                  isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
+                }`}
               >
-                <Icon
-                  className="h-10 w-10 sm:h-13 sm:w-13 landscape:h-9 landscape:w-9"
-                  strokeWidth={2.1}
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    isTvMode ? 'translate-x-6' : 'translate-x-1'
+                  }`}
                 />
               </div>
-
-              <div
-                className={`mt-4 sm:mt-5 landscape:mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${style.accentText}`}
-              >
-                <Sparkles className="h-3.5 w-3.5" />
-                <span>{game.subtitle}</span>
-              </div>
-
-              <h1
-                id="lobby-screen-title"
-                className="mt-1.5 text-2xl sm:text-4xl landscape:text-2xl sm:landscape:text-3xl font-black tracking-tight leading-tight text-white"
-              >
-                {game.title}
-              </h1>
-
-              {/* Luftige Info-Pillen (Spieleranzahl, Dauer, Online Multiplayer) */}
-              <div className="mt-3.5 sm:mt-4 flex flex-wrap items-center portrait:justify-center landscape:justify-start lg:justify-start gap-2.5 text-xs font-semibold text-[#AEAEB2]">
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-white/[0.08] backdrop-blur-md text-white">
-                  <Users className="h-3.5 w-3.5 text-purple-300" />
-                  <span>{game.players}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-white/[0.08] backdrop-blur-md text-white">
-                  <Clock3 className="h-3.5 w-3.5 text-purple-300" />
-                  <span>{game.duration}</span>
-                </span>
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 text-purple-300 px-3.5 py-1.5 ring-1 ring-purple-500/25 backdrop-blur-md font-bold">
-                  <Wifi className="h-3.5 w-3.5 text-purple-400" />
-                  <span>Online Multiplayer</span>
-                </span>
-              </div>
-
-              <p className="hidden landscape:block lg:block mt-4 text-xs sm:text-sm leading-relaxed text-[#8E8E93] max-w-sm">
-                Erstelle eine private Spiel-Lobby für Freunde oder starte direkt eine TV-Runde für das Wohnzimmer.
-              </p>
             </div>
 
-            {/* Rechte Seite: Konsistente Lobby-Card (nur Lobby erstellen) */}
-            <div className={`flex flex-col w-full text-left ${SURFACE_CARD}`}>
-              <div className="mb-4">
-                <h2 className="text-base sm:text-lg font-extrabold text-white">
-                  Lobby erstellen
-                </h2>
-                <p className="mt-0.5 text-xs text-[#8E8E93]">
-                  Starte eine private Runde – Mitspieler treten per Code oder QR-Code bei.
-                </p>
-              </div>
-
-              {/* Fehlermeldung */}
-              {errorMsg && (
-                <div className="mb-4 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
-                  {errorMsg}
-                </div>
+            {/* Ein klarer Start-Button */}
+            <button
+              type="submit"
+              disabled={isCreating}
+              className={`mt-1 ${BTN_PRIMARY_BASE} ${
+                !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+              }`}
+            >
+              {isCreating ? (
+                <RefreshCw className="h-4 w-4 animate-spin" />
+              ) : (
+                <>
+                  {isTvMode && <Tv className="h-4 w-4" />}
+                  <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
+                </>
               )}
-
-              <form onSubmit={handleCreateLobby} className="flex flex-col gap-4">
-                <div>
-                  <label className="text-xs font-bold text-white/80 block mb-1.5">
-                    Lobby-Name
-                  </label>
-                  <div className="relative flex items-center">
-                    <input
-                      type="text"
-                      maxLength={30}
-                      value={createName}
-                      onChange={(e) => {
-                        const val = e.target.value;
-                        setCreateName(val);
-                        setHasCustomLobbyName(val.trim().length > 0);
-                      }}
-                      placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                      className="w-full text-xs sm:text-sm font-semibold pl-3.5 pr-11 py-2.5 rounded-2xl bg-black/40 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRollLobbyName}
-                      title="Anderen einfachen Namen vorschlagen"
-                      className="absolute right-2 grid h-7 w-7 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
-                    >
-                      <Dices className="h-3.5 w-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* OPTION: ICH BIN AUF DEM FERNSEHER (STUFE 4 SWITCH) */}
-                <div
-                  onClick={handleToggleTvMode}
-                  role="switch"
-                  aria-checked={isTvMode}
-                  className={`flex items-center justify-between p-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
-                    isTvMode
-                      ? 'bg-purple-500/[0.1] ring-purple-400/35 shadow-xs'
-                      : 'bg-white/[0.03] hover:bg-white/[0.05] ring-white/10'
-                  }`}
-                >
-                  <div className="flex items-center gap-2.5">
-                    <div
-                      className={`grid h-8 w-8 place-items-center rounded-xl transition-colors ${
-                        isTvMode
-                          ? 'bg-purple-500/20 text-purple-300 ring-1 ring-purple-400/30'
-                          : 'bg-white/5 text-[#8E8E93]'
-                      }`}
-                    >
-                      <Tv className="h-4 w-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                        <span>Ich bin auf dem Fernseher</span>
-                        <span className="text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
-                          TV
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-[#8E8E93]">
-                        Zeigt großen TV-Screen. Spieler steuern per Smartphone.
-                      </div>
-                    </div>
-                  </div>
-
-                  <div
-                    className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                      isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        isTvMode ? 'translate-x-6' : 'translate-x-1'
-                      }`}
-                    />
-                  </div>
-                </div>
-
-                {/* STUFE 1 (PRIMARY): Lobby starten */}
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className={`${BTN_PRIMARY_BASE} ${
-                    !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
-                  }`}
-                >
-                  {isCreating ? (
-                    <RefreshCw className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <>
-                      {isTvMode && <Tv className="h-4 w-4" />}
-                      <span>{isTvMode ? 'TV-Lobby jetzt starten' : 'Lobby jetzt eröffnen'}</span>
-                    </>
-                  )}
-                </button>
-              </form>
-            </div>
-          </div>
+            </button>
+          </form>
         </main>
       </div>
     </div>
