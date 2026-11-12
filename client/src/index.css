@@ -110,74 +110,7 @@
   }
 }
 
-/* ─── Cinematic Splash Screen Animations ─── */
-@keyframes tvAmbiGlow {
-  0%, 100% {
-    box-shadow: 0 0 65px 25px rgba(56, 189, 248, 0.4), 0 0 110px 45px rgba(168, 85, 247, 0.25);
-  }
-  33% {
-    box-shadow: 0 0 85px 35px rgba(236, 72, 153, 0.45), 0 0 130px 50px rgba(56, 189, 248, 0.3);
-  }
-  66% {
-    box-shadow: 0 0 75px 30px rgba(129, 140, 248, 0.5), 0 0 100px 40px rgba(34, 197, 94, 0.25);
-  }
-}
-.tv-glow-live {
-  animation: tvAmbiGlow 2.4s infinite ease-in-out;
-}
-
-/* Fast Arcade scanlines inside TV */
-.scanlines {
-  background: linear-gradient(rgba(10, 10, 20, 0) 50%, rgba(0, 0, 0, 0.45) 50%);
-  background-size: 100% 4px;
-}
-
-/* Subtle synchronized gamer vibrations */
-@keyframes gamerBounce1 {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  50% { transform: translateY(-2px) rotate(-1deg); }
-}
-@keyframes gamerBounce2 {
-  0%, 100% { transform: translateY(0); }
-  40% { transform: translateY(-3px) scale(1.01); }
-}
-@keyframes gamerBounce3 {
-  0%, 100% { transform: translateY(0) rotate(0deg); }
-  60% { transform: translateY(-2px) rotate(1deg); }
-}
-.gamer-p1 { animation: gamerBounce1 1.8s infinite ease-in-out; }
-.gamer-p2 { animation: gamerBounce2 1.4s infinite ease-in-out; }
-.gamer-p3 { animation: gamerBounce3 1.9s infinite ease-in-out; }
-
-/* Dynamic Ambilight Rim Lights synchronized with TV cars */
-.ambi-rim-cyan {
-  opacity: var(--ambi-cyan, 0.75);
-  transition: opacity 0.1s ease-out;
-  filter: drop-shadow(0 0 6px #38bdf8);
-}
-.ambi-rim-pink {
-  opacity: var(--ambi-pink, 0.85);
-  transition: opacity 0.1s ease-out;
-  filter: drop-shadow(0 0 8px #f43f5e);
-}
-.ambi-rim-orange {
-  opacity: var(--ambi-orange, 0.75);
-  transition: opacity 0.1s ease-out;
-  filter: drop-shadow(0 0 6px #fb923c);
-}
-
-/* Phone screen bloom glow */
-.phone-screen-cyan {
-  filter: drop-shadow(0 0 8px #38bdf8) drop-shadow(0 0 15px #0284c7);
-}
-.phone-screen-pink {
-  filter: drop-shadow(0 0 8px #f43f5e) drop-shadow(0 0 15px #e11d48);
-}
-.phone-screen-purple {
-  filter: drop-shadow(0 0 8px #c084fc) drop-shadow(0 0 15px #9333ea);
-}
-
-/* Shaking screen effect during comet blast */
+/* Shaking screen effect during blast */
 @keyframes shakeEffect {
   10%, 90% { transform: translate3d(-3px, 2px, 0); }
   20%, 80% { transform: translate3d(4px, -3px, 0); }
@@ -203,100 +136,162 @@
   animation: screenFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Keyframe Animationen für den 3D-Gamebox Ladebildschirm ─── */
-@keyframes splashFloat {
-  0%, 100% {
-    transform: translateY(0px) rotate(0deg);
-  }
-  50% {
-    transform: translateY(-8px) rotate(-1.5deg);
-  }
-}
-
-@keyframes splashPulseRing {
+/* ─── Moderner ProjektBox Startbildschirm (GPU transform + opacity, 0 Lag) ─── */
+@keyframes pbSplashLetterPop {
   0% {
-    transform: scale(0.9);
-    opacity: 0.6;
+    opacity: 0;
+    transform: translate3d(0, 22px, 0) scale(0.2) rotate(-8deg);
   }
-  50% {
-    transform: scale(1.18);
-    opacity: 0.15;
+  58% {
+    opacity: 1;
+    transform: translate3d(0, -6px, 0) scale(1.14) rotate(2deg);
+  }
+  80% {
+    opacity: 1;
+    transform: translate3d(0, 2px, 0) scale(0.96) rotate(0deg);
   }
   100% {
-    transform: scale(0.9);
-    opacity: 0.6;
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
   }
 }
 
-@keyframes splashShine {
+@keyframes pbSplashAccentLine {
   0% {
-    transform: translateX(-120%) rotate(25deg);
-  }
-  100% {
-    transform: translateX(220%) rotate(25deg);
-  }
-}
-
-.animate-splash-float {
-  animation: splashFloat 3.2s ease-in-out infinite;
-}
-
-.animate-splash-pulse-ring {
-  animation: splashPulseRing 2.4s ease-in-out infinite;
-}
-
-.animate-splash-shine {
-  animation: splashShine 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
-
-/* ─── GPU-kompositierter 3D-Video-Startbildschirm (lagfrei & responsiv) ─── */
-.splash-video-stage {
-  width: 100%;
-  height: 100%;
-}
-
-.splash-portrait-brand {
-  display: none;
-}
-
-@media (max-aspect-ratio: 4/5) {
-  .splash-portrait-brand {
-    display: flex;
-  }
-
-  .splash-video-stage {
-    width: min(176vw, 118vh);
-    height: auto;
-    aspect-ratio: 16 / 9;
-    -webkit-mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      #000 14%,
-      #000 86%,
-      transparent 100%
-    );
-    mask-image: linear-gradient(
-      to bottom,
-      transparent 0%,
-      #000 14%,
-      #000 86%,
-      transparent 100%
-    );
-  }
-}
-
-@keyframes splashProgressFill {
-  from {
+    opacity: 0;
     transform: scaleX(0);
   }
-  to {
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.9;
     transform: scaleX(1);
   }
 }
 
-.animate-splash-progress {
-  animation-name: splashProgressFill;
-  animation-timing-function: linear;
-  animation-fill-mode: forwards;
+@keyframes pbSplashBoxChargeBurst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, -18px, 0) scale(0.45);
+  }
+  20% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+  42% {
+    opacity: 1;
+    transform: translate3d(0, 4px, 0) scale(1.12, 0.84);
+  }
+  52% {
+    opacity: 1;
+    transform: translate3d(-4px, -2px, 0) scale(0.92, 1.1) rotate(-4deg);
+  }
+  60% {
+    opacity: 1;
+    transform: translate3d(4px, 2px, 0) scale(1.16, 0.84) rotate(4deg);
+  }
+  72% {
+    opacity: 1;
+    transform: translate3d(0, -4px, 0) scale(1.38);
+  }
+  88%, 100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(1.85);
+  }
+}
+
+@keyframes pbSplashLidFly {
+  0%, 62% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) rotate(0deg);
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(0, -64px, 0) rotate(-22deg) scale(0.75);
+  }
+}
+
+@keyframes pbSplashShockwave {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  18% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.1);
+  }
+}
+
+@keyframes pbSplashParticleBurst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(0.95) rotate(var(--pr, 90deg));
+  }
+}
+
+@keyframes pbSplashFigureBurst {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0) scale(0.15) rotate(0deg);
+  }
+  30% {
+    opacity: 1;
+    transform: translate3d(calc(var(--gx, 0px) * 1.08), calc(var(--gy, 0px) * 1.08), 0) scale(1.12) rotate(calc(var(--gr, 0deg) * 1.25));
+  }
+  58% {
+    opacity: 1;
+    transform: translate3d(var(--gx, 0px), var(--gy, 0px), 0) scale(1) rotate(var(--gr, 0deg));
+  }
+  78% {
+    opacity: 1;
+    transform: translate3d(var(--gx, 0px), calc(var(--gy, 0px) - 8px), 0) scale(1.03) rotate(calc(var(--gr, 0deg) * 0.85));
+  }
+  100% {
+    opacity: 1;
+    transform: translate3d(var(--gx, 0px), calc(var(--gy, 0px) - 3px), 0) scale(1) rotate(var(--gr, 0deg));
+  }
+}
+
+.pb-splash-letter {
+  display: inline-block;
+  animation: pbSplashLetterPop 0.62s cubic-bezier(0.22, 1.25, 0.36, 1) both;
+}
+
+.pb-splash-accent-line {
+  transform-origin: center;
+  animation: pbSplashAccentLine 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pb-splash-box {
+  animation: pbSplashBoxChargeBurst 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.pb-splash-lid {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: pbSplashLidFly 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.pb-splash-shockwave {
+  animation: pbSplashShockwave 0.78s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pb-splash-particle {
+  animation: pbSplashParticleBurst 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.pb-splash-figure {
+  animation: pbSplashFigureBurst 1.9s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
