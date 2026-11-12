@@ -113,12 +113,10 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
                   <Clock3 className="h-3.5 w-3.5" />
                   {game.duration}
                 </span>
-                {isMultiplayer && (
-                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 backdrop-blur-md font-bold ${theme.badgePill}`}>
-                    <Wifi className="h-3.5 w-3.5" />
-                    Online Multiplayer
-                  </span>
-                )}
+                <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 backdrop-blur-md font-bold ${theme.badgePill}`}>
+                  <Wifi className="h-3.5 w-3.5" />
+                  {isMultiplayer ? 'Online Multiplayer' : 'Solo & Lobby'}
+                </span>
               </div>
             </div>
 

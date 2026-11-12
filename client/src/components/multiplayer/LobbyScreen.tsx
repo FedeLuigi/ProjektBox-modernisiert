@@ -2,8 +2,11 @@ import { useEffect, useState } from 'react';
 import {
   ArrowLeft,
   Dices,
+  Play,
   RefreshCw,
+  Trophy,
   Tv,
+  Users,
 } from 'lucide-react';
 import { type Game, TONE_STYLES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
@@ -15,11 +18,16 @@ import { InLobbyView } from './InLobbyView';
 import { TvLobbyView } from './TvLobbyView';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
+import { SoloGameView } from './SoloGameView';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { GameBackground } from '../GameBackground';
+import { isSoloGame } from '../../games/registry';
+import { formatSoloScore, getSoloHighscore } from '../../utils/soloScores';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
+  BTN_SECONDARY_BASE,
+  BTN_SECONDARY_NEUTRAL,
   HEADER_BACK_BTN,
   HEADER_ROW,
   SWITCH_TRACK_OFF,
@@ -54,6 +62,11 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
   const [isTvMode, setIsTvMode] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+
+  const isSoloCapable = isSoloGame(game.id);
+  const [isDirectSolo, setIsDirectSolo] = useState(false);
+  const [showLobbyForm, setShowLobbyForm] = useState(!isSoloCapable);
+  const soloBest = isSoloCapable ? getSoloHighscore(game.id) : null;
 
   const gameId = game.id;
 
@@ -128,6 +141,10 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
   const style = TONE_STYLES[game.tone];
   const theme = getGameTheme(game.id);
+
+  if (isDirectSolo) {
+    return <SoloGameView game={game} onLeave={onClose} />;
+  }
 
   // 1. Wenn ein Spiel läuft -> Vollbild TV oder Multiplayer Game View
   if (isInGame && currentLobby) {
@@ -256,6 +273,12 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
             >
               {game.title}
             </h1>
+            {isSoloCapable && soloBest !== null && (
+              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-500/12 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/25">
+                <Trophy className="h-3.5 w-3.5" />
+                <span>Rekord: {formatSoloScore(game.id, soloBest)}</span>
+              </div>
+            )}
           </div>
 
           {errorMsg && (
@@ -264,87 +287,119 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
             </div>
           )}
 
-          <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5">
-            <div>
-              <label className="text-xs font-bold text-white/70 block mb-1.5 px-1">
-                Lobby-Name
-              </label>
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  maxLength={30}
-                  value={createName}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setCreateName(val);
-                    setHasCustomLobbyName(val.trim().length > 0);
-                  }}
-                  placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                  className={`w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
-                />
-                <button
-                  type="button"
-                  onClick={handleRollLobbyName}
-                  title="Neuen Namen würfeln"
-                  aria-label="Neuen Namen würfeln"
-                  className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
-                >
-                  <Dices className="h-4 w-4" />
-                </button>
-              </div>
+          {isSoloCapable && !showLobbyForm ? (
+            <div className="flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => setIsDirectSolo(true)}
+                className={`${BTN_PRIMARY_BASE} ${theme.primaryBtn}`}
+              >
+                <Play className="h-4 w-4 fill-current" />
+                <span>Solo starten</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowLobbyForm(true)}
+                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+              >
+                <Users className="h-4 w-4" />
+                <span>Mit Lobby / TV spielen</span>
+              </button>
             </div>
-
-            {/* Kompakter TV-Modus Toggle */}
-            <div
-              onClick={handleToggleTvMode}
-              role="switch"
-              aria-checked={isTvMode}
-              className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
-                isTvMode
-                  ? theme.activeSurface
-                  : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <Tv
-                  className={`h-4 w-4 transition-colors ${
-                    isTvMode ? theme.accentText : 'text-[#8E8E93]'
-                  }`}
-                />
-                <span className="text-sm font-bold text-white">TV-Modus</span>
+          ) : (
+            <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5">
+              <div>
+                <label className="text-xs font-bold text-white/70 block mb-1.5 px-1">
+                  Lobby-Name
+                </label>
+                <div className="relative flex items-center">
+                  <input
+                    type="text"
+                    maxLength={30}
+                    value={createName}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCreateName(val);
+                      setHasCustomLobbyName(val.trim().length > 0);
+                    }}
+                    placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
+                    className={`w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRollLobbyName}
+                    title="Neuen Namen würfeln"
+                    aria-label="Neuen Namen würfeln"
+                    className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
+                  >
+                    <Dices className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
+              {/* Kompakter TV-Modus Toggle */}
               <div
-                className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                  isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
+                onClick={handleToggleTvMode}
+                role="switch"
+                aria-checked={isTvMode}
+                className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                  isTvMode
+                    ? theme.activeSurface
+                    : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
                 }`}
               >
-                <span
-                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                    isTvMode ? 'translate-x-6' : 'translate-x-1'
-                  }`}
-                />
-              </div>
-            </div>
+                <div className="flex items-center gap-3">
+                  <Tv
+                    className={`h-4 w-4 transition-colors ${
+                      isTvMode ? theme.accentText : 'text-[#8E8E93]'
+                    }`}
+                  />
+                  <span className="text-sm font-bold text-white">TV-Modus</span>
+                </div>
 
-            {/* Ein klarer Start-Button */}
-            <button
-              type="submit"
-              disabled={isCreating}
-              className={`mt-1 ${BTN_PRIMARY_BASE} ${
-                !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
-              }`}
-            >
-              {isCreating ? (
-                <RefreshCw className="h-4 w-4 animate-spin" />
-              ) : (
-                <>
-                  {isTvMode && <Tv className="h-4 w-4" />}
-                  <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
-                </>
+                <div
+                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                    isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
+                  }`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      isTvMode ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Ein klarer Start-Button */}
+              <button
+                type="submit"
+                disabled={isCreating}
+                className={`mt-1 ${BTN_PRIMARY_BASE} ${
+                  !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
+                }`}
+              >
+                {isCreating ? (
+                  <RefreshCw className="h-4 w-4 animate-spin" />
+                ) : (
+                  <>
+                    {isTvMode && <Tv className="h-4 w-4" />}
+                    <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
+                  </>
+                )}
+              </button>
+
+              {isSoloCapable && (
+                <button
+                  type="button"
+                  onClick={() => setShowLobbyForm(false)}
+                  className="mx-auto mt-1 text-xs font-bold text-white/55 hover:text-white transition-colors cursor-pointer py-1 px-2"
+                >
+                  Oder direkt Solo starten
+                </button>
               )}
-            </button>
-          </form>
+            </form>
+          )}
         </main>
       </div>
     </div>

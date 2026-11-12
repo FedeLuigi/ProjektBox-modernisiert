@@ -9,6 +9,7 @@ export interface GameRendererProps<TState = any, TMove = any> {
   isMyTurn: boolean;
   isGameOver: boolean;
   isTvMode?: boolean;
+  isSolo?: boolean;
   onMove: (move: TMove) => void;
   disabled?: boolean;
 }

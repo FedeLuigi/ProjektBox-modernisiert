@@ -10,7 +10,7 @@ import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { clientGameRegistry } from '../../games/registry';
+import { clientGameRegistry, isSoloGame } from '../../games/registry';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
@@ -18,6 +18,13 @@ import {
   BTN_SECONDARY_NEUTRAL,
   getGameTheme,
 } from '../../styles/uiTokens';
+import {
+  formatSoloScore,
+  getSoloHighscore,
+  isLowerBetterGame,
+  saveSoloHighscore,
+} from '../../utils/soloScores';
+import { SoloResultCard } from './SoloResultCard';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -46,9 +53,14 @@ export function MultiplayerGameView({
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
-  const isMyTurn = isDrawAndGuess
+  const soloMode = isSoloGame(lobby.gameId) && activePlayers.length <= 1 && !opponent;
+  const isMyTurn = isDrawAndGuess || soloMode
     ? (gameState?.status === 'playing')
     : (gameState?.status === 'playing' && gameState.currentTurn === currentUser.id);
+  const [soloBestScore, setSoloBestScore] = useState<number | null>(() =>
+    getSoloHighscore(lobby.gameId)
+  );
+  const [isNewSoloRecord, setIsNewSoloRecord] = useState(false);
 
   useEffect(() => {
     setLobby(initialLobby);
@@ -63,16 +75,32 @@ export function MultiplayerGameView({
         gameState: newState,
         status: status as any,
       }));
+      if (soloMode && newState?.status === 'won') {
+        const myFinalScore = newState?.scores?.[currentUser.id] || 0;
+        const lowerIsBetter =
+          typeof newState?.lastMove?.lowerIsBetter === 'boolean'
+            ? newState.lastMove.lowerIsBetter
+            : isLowerBetterGame(lobby.gameId);
+        const { bestScore, isNewRecord } = saveSoloHighscore(
+          lobby.gameId,
+          myFinalScore,
+          lowerIsBetter
+        );
+        setSoloBestScore(bestScore);
+        setIsNewSoloRecord(isNewRecord);
+      }
       setIsSubmitting(false);
     });
 
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
+      setIsNewSoloRecord(false);
       setIsSubmitting(false);
     });
 
     const unsubRestart = socketService.onGameRestarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
+      setIsNewSoloRecord(false);
       setIsSubmitting(false);
       setErrorMsg(null);
     });
@@ -185,6 +213,21 @@ export function MultiplayerGameView({
                 <Avatar config={opponent?.avatar || ({} as any)} size={22} />
               </div>
             </div>
+          ) : soloMode ? (
+            <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 ring-1 ring-white/10 text-xs font-bold">
+              <span className="text-white/80">Punkte:</span>
+              <span className={`font-black tabular-nums ${theme.accentText}`}>
+                {formatSoloScore(lobby.gameId, gameState?.scores?.[currentUser.id] || 0)}
+              </span>
+              {soloBestScore !== null && (
+                <>
+                  <span className="text-white/25">•</span>
+                  <span className="text-amber-300 font-bold tabular-nums">
+                    🏆 {formatSoloScore(lobby.gameId, soloBestScore)}
+                  </span>
+                </>
+              )}
+            </div>
           ) : (
             <div
               className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
@@ -226,56 +269,69 @@ export function MultiplayerGameView({
         {/* 3. MITTE: ENTWEDER ZENTRIERTE ERGEBNIS-KARTE (BEI SPIELENDE) ODER DYNAMISCHES SPIELFELD */}
         {isGameOver ? (
           <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-2">
-            <div className={`max-w-sm mx-auto w-full p-5 sm:p-6 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center animate-fade-in`}>
-              <div className="flex justify-center mb-2.5 landscape:mb-1.5">
-                {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
-                {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
-                {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
-              </div>
-
-              <h2 className="text-xl sm:text-2xl landscape:text-lg font-black">
-                {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
-                {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
-                {isDraw && <span className="text-amber-400">Unentschieden!</span>}
-              </h2>
-
-              {isDrawAndGuess && gameState?.secretWord && (
-                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
-                  <span className="text-[#8E8E93]">Lösung:</span>
-                  <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
-                    {gameState.secretWord}
-                  </strong>
+            {soloMode ? (
+              <SoloResultCard
+                gameId={lobby.gameId}
+                score={gameState?.scores?.[currentUser.id] || 0}
+                bestScore={soloBestScore}
+                isNewRecord={isNewSoloRecord}
+                resultLabel={gameState?.lastMove?.label}
+                secondaryLabel="Zurück zur Lobby"
+                onPlayAgain={handleRematch}
+                onExit={onLeave}
+              />
+            ) : (
+              <div className={`max-w-sm mx-auto w-full p-5 sm:p-6 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center animate-fade-in`}>
+                <div className="flex justify-center mb-2.5 landscape:mb-1.5">
+                  {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
+                  {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
+                  {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
                 </div>
-              )}
 
-              {lobby.rematchVotes.length > 0 && (
-                <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
-                  {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
-                </p>
-              )}
+                <h2 className="text-xl sm:text-2xl landscape:text-lg font-black">
+                  {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
+                  {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
+                  {isDraw && <span className="text-amber-400">Unentschieden!</span>}
+                </h2>
 
-              <div className="mt-5 landscape:mt-3.5 flex flex-col gap-2.5 landscape:gap-2">
-                <button
-                  type="button"
-                  onClick={handleRematch}
-                  disabled={hasVotedRematch}
-                  className={`${BTN_PRIMARY_BASE} ${
-                    hasVotedRematch ? BTN_PRIMARY_DISABLED : theme.primaryBtn
-                  }`}
-                >
-                  <RotateCcw className="h-4 w-4" />
-                  <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Revanche'}</span>
-                </button>
+                {isDrawAndGuess && gameState?.secretWord && (
+                  <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
+                    <span className="text-[#8E8E93]">Lösung:</span>
+                    <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
+                      {gameState.secretWord}
+                    </strong>
+                  </div>
+                )}
 
-                <button
-                  type="button"
-                  onClick={onLeave}
-                  className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-                >
-                  Zurück zur Lobby
-                </button>
+                {lobby.rematchVotes.length > 0 && (
+                  <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
+                    {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
+                  </p>
+                )}
+
+                <div className="mt-5 landscape:mt-3.5 flex flex-col gap-2.5 landscape:gap-2">
+                  <button
+                    type="button"
+                    onClick={handleRematch}
+                    disabled={hasVotedRematch}
+                    className={`${BTN_PRIMARY_BASE} ${
+                      hasVotedRematch ? BTN_PRIMARY_DISABLED : theme.primaryBtn
+                    }`}
+                  >
+                    <RotateCcw className="h-4 w-4" />
+                    <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Revanche'}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={onLeave}
+                    className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+                  >
+                    Zurück zur Lobby
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </main>
         ) : (
           <main
@@ -292,6 +348,7 @@ export function MultiplayerGameView({
                 allPlayers={activePlayers}
                 isMyTurn={isMyTurn}
                 isGameOver={isGameOver}
+                isSolo={soloMode}
                 onMove={handleSendMove}
                 disabled={isSubmitting}
                 isTvMode={lobby.isTvMode}
