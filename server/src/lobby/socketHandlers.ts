@@ -135,6 +135,33 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     });
 
+    // 4b. Lobby-Spieleinstellungen aktualisieren (Host)
+    socket.on(
+      'lobby:update-settings',
+      (
+        data: { settings: Record<string, any> },
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        if (!checkRateLimit(socket.id)) {
+          return callback?.({ success: false, error: 'Zu viele Aktionen.' });
+        }
+        try {
+          const { lobby, error } = lobbyManager.updateSettings(socket.id, data.settings);
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Einstellungen konnten nicht aktualisiert werden.',
+            });
+          }
+
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          callback?.({ success: true, lobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
     // 5. Spiel durch Host starten
     socket.on('lobby:start', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
       if (!checkRateLimit(socket.id)) {
@@ -217,6 +244,36 @@ export function registerSocketHandlers(io: SocketIOServer) {
         socket.to(`lobby:${lobby.id}`).emit('draw:live-clear');
       } catch (err) {
         console.error('Fehler bei draw:clear:', err);
+      }
+    });
+
+    socket.on('draw:undo', () => {
+      try {
+        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        if (lobby.gameId !== 'draw-and-guess') return;
+
+        const player = lobby.players.find((p) => p.socketId === socket.id);
+        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+
+        const currentStrokes: any[] = (lobby.gameState as any).strokes || [];
+        if (currentStrokes.length === 0) return;
+
+        const lastSegment = currentStrokes[currentStrokes.length - 1];
+        let newStrokes: any[] = [];
+        if (lastSegment && lastSegment.strokeId !== undefined) {
+          const targetId = lastSegment.strokeId;
+          newStrokes = currentStrokes.filter((s) => s.strokeId !== targetId);
+        } else {
+          newStrokes = currentStrokes.slice(0, -1);
+        }
+
+        (lobby.gameState as any).strokes = newStrokes;
+        socket.to(`lobby:${lobby.id}`).emit('draw:live-undo', {
+          strokes: newStrokes,
+        });
+      } catch (err) {
+        console.error('Fehler bei draw:undo:', err);
       }
     });
 

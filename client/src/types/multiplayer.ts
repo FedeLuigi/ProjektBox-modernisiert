@@ -37,6 +37,7 @@ export interface Lobby {
   createdAt: number;
   expiresAt: number;
   isTvMode?: boolean;
+  settings?: Record<string, any>;
   gameState: BaseGameState | null;
   rematchVotes: string[];
 }
@@ -55,4 +56,5 @@ export interface LobbySummary {
   createdAt: number;
   expiresAt: number;
   isTvMode?: boolean;
+  settings?: Record<string, any>;
 }

@@ -12,6 +12,7 @@ import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { LobbyGameSettings } from './LobbyGameSettings';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
@@ -125,6 +126,14 @@ export function InLobbyView({
     }
   };
 
+  const handleUpdateSettings = async (newSettings: Record<string, any>) => {
+    try {
+      await socketService.updateLobbySettings(newSettings);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
+  };
+
   const readyCount = activePlayers.filter((p) => p.isReady).length;
   const theme = getGameTheme(lobby.gameId);
 
@@ -191,9 +200,9 @@ export function InLobbyView({
             </div>
           )}
 
-          <div className="my-auto grid w-full items-center gap-6 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8 py-2 landscape:py-0">
-            {/* Linke Spalte: Spiel-Titel, großer Beitrittscode & Status */}
-            <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left">
+          <div className="my-auto grid w-full items-start gap-4 sm:gap-6 landscape:grid-cols-[1fr_1fr] landscape:gap-6 py-2 landscape:py-0">
+            {/* Linke Spalte oben: Spiel-Titel, großer Beitrittscode & Status */}
+            <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left landscape:col-start-1 landscape:row-start-1">
               <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1 ${theme.accentTextSoft}`}>
                 {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon}`} />}
                 <span>{gameTitle || lobby.name}</span>
@@ -203,9 +212,9 @@ export function InLobbyView({
                 type="button"
                 onClick={handleCopyCode}
                 aria-label={`Beitrittscode ${lobby.code} kopieren`}
-                className="mt-1 inline-flex items-center gap-3 rounded-3xl px-5 py-3 landscape:px-4 landscape:py-2.5 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer group"
+                className="mt-1 inline-flex items-center gap-3 rounded-3xl px-5 py-3 landscape:px-4 landscape:py-2 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer group"
               >
-                <span className={`text-4xl sm:text-5xl landscape:text-4xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
+                <span className={`text-4xl sm:text-5xl landscape:text-3xl sm:landscape:text-4xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
                   {lobby.code}
                 </span>
                 <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
@@ -217,7 +226,7 @@ export function InLobbyView({
                 </span>
               </button>
 
-              <p className="mt-3 text-xs font-semibold text-[#8E8E93]">
+              <p className="mt-2 text-xs font-semibold text-[#8E8E93]">
                 {activePlayers.length < lobby.minPlayers
                   ? `Warte auf Mitspieler (${activePlayers.length}/${lobby.minPlayers})`
                   : `${readyCount}/${activePlayers.length} bereit`}
@@ -225,7 +234,7 @@ export function InLobbyView({
             </div>
 
             {/* Rechte Spalte: Spieler-Chips (+ Haupt-Button im Querformat) */}
-            <div className="flex flex-col items-center landscape:items-stretch w-full gap-5 landscape:gap-4">
+            <div className="flex flex-col items-center landscape:items-stretch w-full gap-4 landscape:gap-4 landscape:col-start-2 landscape:row-start-1 landscape:row-span-2">
               <div className="w-full flex flex-wrap items-center justify-center landscape:justify-start gap-2.5">
                 {activePlayers.map((p, idx) => {
                   const isMe = p.id === currentUser.id;
@@ -260,9 +269,19 @@ export function InLobbyView({
                 })}
               </div>
 
-              <div className="hidden landscape:block w-full">
+              <div className="hidden landscape:block w-full pt-1">
                 {actionButton}
               </div>
+            </div>
+
+            {/* Linke Spalte unten in Landscape / Nach den Spielern in Portrait: Spieleinstellungen */}
+            <div className="w-full landscape:col-start-1 landscape:row-start-2">
+              <LobbyGameSettings
+                gameId={lobby.gameId}
+                settings={lobby.settings}
+                isHost={canStartGame}
+                onUpdate={handleUpdateSettings}
+              />
             </div>
           </div>
         </div>

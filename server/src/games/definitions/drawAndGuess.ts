@@ -7,6 +7,7 @@ export interface StrokeSegment {
   y1: number;
   color: string;
   size: number;
+  strokeId?: number;
 }
 
 export interface DrawAndGuessGuess {
@@ -24,6 +25,8 @@ export interface DrawAndGuessState extends BaseGameState {
   secretWord: string;
   wordHint: string;
   categoryName: string;
+  categoryFilter?: string;
+  hintsEnabled?: boolean;
   round: number;
   maxRounds: number;
   roundDuration: number; // Dauer einer Runde in Sekunden (z. B. 60)
@@ -39,83 +42,130 @@ export interface DrawAndGuessState extends BaseGameState {
 
 export type DrawAndGuessMove =
   | { type: 'stroke'; stroke: StrokeSegment }
+  | { type: 'undo' }
   | { type: 'clear' }
   | { type: 'guess'; text: string }
   | { type: 'time_up' }
   | { type: 'next_round' };
 
-// Umfangreicher deutscher Wortschatz für Zeichnen & Raten
+// Umfangreicher deutscher Wortschatz für Zeichnen & Raten mit klaren Kategorien
 const WORDS: { word: string; category: string }[] = [
-  { word: 'Pizza', category: 'Essen' },
-  { word: 'Haus', category: 'Gebäude' },
+  // Tiere
   { word: 'Katze', category: 'Tiere' },
-  { word: 'Sonne', category: 'Natur' },
-  { word: 'Fahrrad', category: 'Fahrzeuge' },
-  { word: 'Baum', category: 'Natur' },
-  { word: 'Rakete', category: 'Weltall' },
-  { word: 'Schneemann', category: 'Winter' },
-  { word: 'Gitarre', category: 'Musik' },
-  { word: 'Flugzeug', category: 'Fahrzeuge' },
-  { word: 'Apfel', category: 'Essen' },
-  { word: 'Regenschirm', category: 'Gegenstände' },
-  { word: 'Uhr', category: 'Gegenstände' },
-  { word: 'Schiff', category: 'Fahrzeuge' },
-  { word: 'Kamera', category: 'Technik' },
-  { word: 'Brille', category: 'Kleidung' },
-  { word: 'Herz', category: 'Symbole' },
-  { word: 'Krone', category: 'Gegenstände' },
-  { word: 'Vulkan', category: 'Natur' },
-  { word: 'Roboter', category: 'Technik' },
-  { word: 'Auto', category: 'Fahrzeuge' },
-  { word: 'Blume', category: 'Natur' },
-  { word: 'Kuchen', category: 'Essen' },
-  { word: 'Lampe', category: 'Möbel' },
-  { word: 'Berg', category: 'Natur' },
+  { word: 'Hund', category: 'Tiere' },
   { word: 'Pinguin', category: 'Tiere' },
   { word: 'Fisch', category: 'Tiere' },
-  { word: 'Schlüssel', category: 'Gegenstände' },
-  { word: 'Buch', category: 'Schule' },
-  { word: 'Schmetterling', category: 'Insekten' },
-  { word: 'Hund', category: 'Tiere' },
-  { word: 'Mond', category: 'Weltall' },
-  { word: 'Stern', category: 'Weltall' },
+  { word: 'Schmetterling', category: 'Tiere' },
+  { word: 'Elefant', category: 'Tiere' },
+  { word: 'Giraffe', category: 'Tiere' },
+  { word: 'Löwe', category: 'Tiere' },
+  { word: 'Bär', category: 'Tiere' },
+  { word: 'Affe', category: 'Tiere' },
+  { word: 'Delfin', category: 'Tiere' },
+  { word: 'Känguru', category: 'Tiere' },
+  { word: 'Frosch', category: 'Tiere' },
+  { word: 'Schildkröte', category: 'Tiere' },
+  { word: 'Igel', category: 'Tiere' },
+  { word: 'Hase', category: 'Tiere' },
+  { word: 'Krokodil', category: 'Tiere' },
+  { word: 'Eule', category: 'Tiere' },
+
+  // Essen
+  { word: 'Pizza', category: 'Essen' },
+  { word: 'Apfel', category: 'Essen' },
+  { word: 'Kuchen', category: 'Essen' },
   { word: 'Eis', category: 'Essen' },
   { word: 'Banane', category: 'Essen' },
   { word: 'Burger', category: 'Essen' },
-  { word: 'Bett', category: 'Möbel' },
-  { word: 'Stuhl', category: 'Möbel' },
-  { word: 'Tisch', category: 'Möbel' },
-  { word: 'Ball', category: 'Sport' },
-  { word: 'Kopfhörer', category: 'Musik' },
-  { word: 'Schere', category: 'Werkzeug' },
-  { word: 'Bleistift', category: 'Schule' },
-  { word: 'Kaktus', category: 'Pflanzen' },
-  { word: 'Burg', category: 'Gebäude' },
-  { word: 'Schloss', category: 'Gebäude' },
-  { word: 'Zelt', category: 'Camping' },
-  { word: 'Kran', category: 'Baustelle' },
-  { word: 'Wolke', category: 'Wetter' },
-  { word: 'Regenbogen', category: 'Wetter' },
-  { word: 'Blitz', category: 'Wetter' },
-  { word: 'Feuer', category: 'Elemente' },
-  { word: 'Wasser', category: 'Elemente' },
-  { word: 'Schatzkiste', category: 'Abenteuer' },
-  { word: 'Pirat', category: 'Figuren' },
-  { word: 'Zauberer', category: 'Figuren' },
-  { word: 'Drache', category: 'Fabelwesen' },
-  { word: 'Einhorn', category: 'Fabelwesen' },
-  { word: 'Geist', category: 'Gruselig' },
-  { word: 'Kürbis', category: 'Gemüse' },
+  { word: 'Pommes', category: 'Essen' },
+  { word: 'Schokolade', category: 'Essen' },
+  { word: 'Käse', category: 'Essen' },
+  { word: 'Brot', category: 'Essen' },
+  { word: 'Suppe', category: 'Essen' },
+  { word: 'Erdbeere', category: 'Essen' },
+  { word: 'Donut', category: 'Essen' },
+  { word: 'Wassermelone', category: 'Essen' },
+  { word: 'Spiegelei', category: 'Essen' },
+  { word: 'Karotte', category: 'Essen' },
+  { word: 'Kürbis', category: 'Essen' },
+
+  // Fahrzeuge
+  { word: 'Fahrrad', category: 'Fahrzeuge' },
+  { word: 'Auto', category: 'Fahrzeuge' },
+  { word: 'Flugzeug', category: 'Fahrzeuge' },
+  { word: 'Schiff', category: 'Fahrzeuge' },
+  { word: 'Rakete', category: 'Fahrzeuge' },
+  { word: 'Zug', category: 'Fahrzeuge' },
+  { word: 'Hubschrauber', category: 'Fahrzeuge' },
+  { word: 'Bus', category: 'Fahrzeuge' },
+  { word: 'Motorrad', category: 'Fahrzeuge' },
+  { word: 'U-Boot', category: 'Fahrzeuge' },
+  { word: 'Traktor', category: 'Fahrzeuge' },
+  { word: 'Skateboard', category: 'Fahrzeuge' },
+  { word: 'Heißluftballon', category: 'Fahrzeuge' },
+  { word: 'Bagger', category: 'Fahrzeuge' },
+  { word: 'Kran', category: 'Fahrzeuge' },
+
+  // Natur
+  { word: 'Sonne', category: 'Natur' },
+  { word: 'Baum', category: 'Natur' },
+  { word: 'Berg', category: 'Natur' },
+  { word: 'Blume', category: 'Natur' },
+  { word: 'Vulkan', category: 'Natur' },
+  { word: 'Mond', category: 'Natur' },
+  { word: 'Stern', category: 'Natur' },
+  { word: 'Wolke', category: 'Natur' },
+  { word: 'Regenbogen', category: 'Natur' },
+  { word: 'Blitz', category: 'Natur' },
+  { word: 'Feuer', category: 'Natur' },
+  { word: 'Wasserfall', category: 'Natur' },
+  { word: 'Insel', category: 'Natur' },
+  { word: 'Wald', category: 'Natur' },
+  { word: 'Kaktus', category: 'Natur' },
+  { word: 'Schneemann', category: 'Natur' },
+
+  // Gegenstände
+  { word: 'Regenschirm', category: 'Gegenstände' },
+  { word: 'Uhr', category: 'Gegenstände' },
+  { word: 'Kamera', category: 'Gegenstände' },
+  { word: 'Brille', category: 'Gegenstände' },
+  { word: 'Krone', category: 'Gegenstände' },
+  { word: 'Schlüssel', category: 'Gegenstände' },
+  { word: 'Buch', category: 'Gegenstände' },
+  { word: 'Lampe', category: 'Gegenstände' },
+  { word: 'Kopfhörer', category: 'Gegenstände' },
+  { word: 'Schere', category: 'Gegenstände' },
+  { word: 'Bleistift', category: 'Gegenstände' },
+  { word: 'Gitarre', category: 'Gegenstände' },
+  { word: 'Rucksack', category: 'Gegenstände' },
+  { word: 'Koffer', category: 'Gegenstände' },
+  { word: 'Tasse', category: 'Gegenstände' },
+  { word: 'Bett', category: 'Gegenstände' },
+  { word: 'Stuhl', category: 'Gegenstände' },
+  { word: 'Tisch', category: 'Gegenstände' },
+  { word: 'Ball', category: 'Gegenstände' },
+  { word: 'Schatzkiste', category: 'Gegenstände' },
 ];
 
-function getRandomWord(): { word: string; category: string } {
-  const index = Math.floor(Math.random() * WORDS.length);
-  return WORDS[index];
+function getRandomWord(categoryFilter?: string): { word: string; category: string } {
+  let pool = WORDS;
+  if (categoryFilter && categoryFilter !== 'Alle') {
+    const filtered = WORDS.filter(
+      (w) => w.category.toLowerCase() === categoryFilter.toLowerCase()
+    );
+    if (filtered.length > 0) {
+      pool = filtered;
+    }
+  }
+  const index = Math.floor(Math.random() * pool.length);
+  return pool[index];
 }
 
-function makeWordHint(word: string): string {
-  // Erzeugt z. B. "P _ _ _ a (5)"
+function makeWordHint(word: string, hintsEnabled = true): string {
   const letters = word.split('');
+  if (!hintsEnabled) {
+    return letters.map(() => '_').join(' ');
+  }
   if (letters.length <= 3) {
     return letters.map(() => '_').join(' ');
   }
@@ -130,7 +180,11 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
   minPlayers: 2,
   maxPlayers: 8,
 
-  initGameState(players: Player[], starterId?: string): DrawAndGuessState {
+  initGameState(
+    players: Player[],
+    starterId?: string,
+    settings?: Record<string, any>
+  ): DrawAndGuessState {
     if (players.length < 2) {
       throw new Error('Zeichnen & Raten benötigt mindestens 2 Spieler.');
     }
@@ -141,8 +195,12 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       ? starterId
       : players[randomIndex].id;
 
-    const { word, category } = getRandomWord();
-    const roundDuration = 60; // 60 Sekunden Zeit pro Runde
+    const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
+    const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
+    const hintsEnabled = settings?.hints !== false;
+    const categoryFilter = settings?.category || 'Alle';
+
+    const { word, category } = getRandomWord(categoryFilter);
     const now = Date.now();
 
     return {
@@ -150,10 +208,12 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       currentTurn: drawer,
       currentDrawerId: drawer,
       secretWord: word,
-      wordHint: makeWordHint(word),
+      wordHint: makeWordHint(word, hintsEnabled),
       categoryName: category,
+      categoryFilter,
+      hintsEnabled,
       round: 1,
-      maxRounds: Math.max(players.length * 2, 4),
+      maxRounds: rounds,
       roundDuration,
       roundEndsAt: now + roundDuration * 1000,
       strokes: [],
@@ -198,7 +258,34 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       };
     }
 
-    // 2. ZUG: LEINWAND LÖSCHEN (NUR ZEICHNER)
+    // 2. ZUG: STRICH RÜCKGÄNGIG MACHEN (UNDO, NUR ZEICHNER)
+    if (move.type === 'undo') {
+      if (!isDrawer) {
+        return { valid: false, error: 'Nur der Zeichner kann Striche rückgängig machen.', state };
+      }
+      if (state.roundStatus !== 'drawing' || state.strokes.length === 0) {
+        return { valid: true, state };
+      }
+
+      const lastSeg = state.strokes[state.strokes.length - 1];
+      let newStrokes: StrokeSegment[] = [];
+      if (lastSeg?.strokeId !== undefined) {
+        const targetId = lastSeg.strokeId;
+        newStrokes = state.strokes.filter((s) => s.strokeId !== targetId);
+      } else {
+        newStrokes = state.strokes.slice(0, -1);
+      }
+
+      return {
+        valid: true,
+        state: {
+          ...state,
+          strokes: newStrokes,
+        },
+      };
+    }
+
+    // 2b. ZUG: LEINWAND LÖSCHEN (NUR ZEICHNER)
     if (move.type === 'clear') {
       if (!isDrawer) {
         return { valid: false, error: 'Nur der Zeichner kann die Leinwand löschen.', state };
@@ -333,7 +420,9 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
         };
       }
 
-      const { word, category } = getRandomWord();
+      const categoryFilter = state.categoryFilter || 'Alle';
+      const hintsEnabled = state.hintsEnabled !== false;
+      const { word, category } = getRandomWord(categoryFilter);
       const roundDuration = state.roundDuration || 60;
       const now = Date.now();
 
@@ -344,7 +433,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           currentTurn: nextDrawer.id,
           currentDrawerId: nextDrawer.id,
           secretWord: word,
-          wordHint: makeWordHint(word),
+          wordHint: makeWordHint(word, hintsEnabled),
           categoryName: category,
           round: nextRoundNum,
           roundDuration,
@@ -374,13 +463,15 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
     // Wenn der Zeichner geht -> Nächster Spieler übernimmt
     if (leavingPlayerId === state.currentDrawerId) {
       const nextDrawer = remainingPlayers[0];
-      const { word, category } = getRandomWord();
+      const categoryFilter = state.categoryFilter || 'Alle';
+      const hintsEnabled = state.hintsEnabled !== false;
+      const { word, category } = getRandomWord(categoryFilter);
       return {
         ...state,
         currentTurn: nextDrawer.id,
         currentDrawerId: nextDrawer.id,
         secretWord: word,
-        wordHint: makeWordHint(word),
+        wordHint: makeWordHint(word, hintsEnabled),
         categoryName: category,
         strokes: [],
         guesses: [],

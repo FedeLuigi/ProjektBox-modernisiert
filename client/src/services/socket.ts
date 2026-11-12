@@ -203,6 +203,23 @@ class SocketService {
     });
   }
 
+  public async updateLobbySettings(settings: Record<string, any>): Promise<Lobby> {
+    const s = this.connect();
+    return new Promise((resolve, reject) => {
+      s.emit(
+        'lobby:update-settings',
+        { settings },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res.success && res.lobby) {
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res.error || 'Einstellungen konnten nicht aktualisiert werden.'));
+          }
+        }
+      );
+    });
+  }
+
   public async toggleReady(): Promise<Lobby> {
     const s = this.connect();
     return new Promise((resolve, reject) => {
@@ -250,6 +267,11 @@ class SocketService {
   public emitClearCanvas(): void {
     const s = this.connect();
     s.emit('draw:clear');
+  }
+
+  public emitUndo(): void {
+    const s = this.connect();
+    s.emit('draw:undo');
   }
 
   public async requestRematch(): Promise<void> {
@@ -323,6 +345,12 @@ class SocketService {
     const s = this.connect();
     s.on('draw:live-clear', cb);
     return () => s.off('draw:live-clear', cb);
+  }
+
+  public onLiveUndo(cb: (data: { strokes: any[] }) => void): () => void {
+    const s = this.connect();
+    s.on('draw:live-undo', cb);
+    return () => s.off('draw:live-undo', cb);
   }
 }
 

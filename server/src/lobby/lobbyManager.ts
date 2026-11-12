@@ -22,6 +22,23 @@ const SIMPLE_LOBBY_NAMES = [
   'Blitzrunde',
 ];
 
+export function getDefaultSettings(gameId: string): Record<string, any> {
+  if (gameId === 'draw-and-guess') {
+    return {
+      rounds: 3,
+      roundDuration: 60,
+      hints: true,
+      category: 'Alle',
+    };
+  }
+  if (gameId === 'connect' || gameId === 'tic-tac-toe') {
+    return {
+      rounds: 3,
+    };
+  }
+  return {};
+}
+
 function generateLobbyCode(existingCodes: Set<string>): string {
   let code = '';
   for (let attempt = 0; attempt < 100; attempt++) {
@@ -114,6 +131,7 @@ export class LobbyManager {
       createdAt: now,
       expiresAt: now + LOBBY_EXPIRE_MS,
       isTvMode: Boolean(isTvMode),
+      settings: getDefaultSettings(gameId),
       gameState: null,
       rematchVotes: [],
     };
@@ -223,6 +241,40 @@ export class LobbyManager {
     return { lobby };
   }
 
+  // 4b. Spieleinstellungen vor Start anpassen (Host)
+  public updateSettings(
+    socketId: string,
+    newSettings: Record<string, any>
+  ): { lobby: Lobby | null; error?: string } {
+    const lobbyId = this.socketToLobby.get(socketId);
+    if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { lobby: null, error: 'Lobby nicht gefunden.' };
+
+    if (lobby.status !== 'waiting') {
+      return { lobby: null, error: 'Einstellungen können nur vor Spielstart geändert werden.' };
+    }
+
+    const player = lobby.players.find((p) => p.socketId === socketId);
+    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
+
+    const isRoomLeader = lobby.isTvMode
+      ? lobby.players.find((p) => !p.isTvScreen)?.id === player.id || player.isHost
+      : player.isHost;
+
+    if (!isRoomLeader) {
+      return { lobby: null, error: 'Nur der Host kann die Spieleinstellungen ändern.' };
+    }
+
+    lobby.settings = {
+      ...(lobby.settings || getDefaultSettings(lobby.gameId)),
+      ...newSettings,
+    };
+
+    return { lobby };
+  }
+
   // 5. Spiel starten (generisch über GameRegistry)
   public startGame(socketId: string): { lobby: Lobby | null; error?: string } {
     const lobbyId = this.socketToLobby.get(socketId);
@@ -260,7 +312,7 @@ export class LobbyManager {
     }
 
     // Zentraler generischer Spielstart
-    lobby.gameState = gameDef.initGameState(activePlayers);
+    lobby.gameState = gameDef.initGameState(activePlayers, undefined, lobby.settings);
     lobby.status = 'in-game';
     lobby.rematchVotes = [];
 
@@ -347,7 +399,7 @@ export class LobbyManager {
       const previousStarter = lobby.gameState?.currentTurn;
       const nextStarter = activePlayers.find((p) => p.id !== previousStarter)?.id;
 
-      lobby.gameState = gameDef.initGameState(activePlayers, nextStarter);
+      lobby.gameState = gameDef.initGameState(activePlayers, nextStarter, lobby.settings);
       lobby.status = 'in-game';
       lobby.rematchVotes = [];
       return { lobby, restarted: true };

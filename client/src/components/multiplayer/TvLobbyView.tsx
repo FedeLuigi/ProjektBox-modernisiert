@@ -2,8 +2,12 @@ import { useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
+  Clock,
   Copy,
   Crown,
+  HelpCircle,
+  Layers,
+  Palette,
   Play,
   Tv,
   Users,
@@ -163,6 +167,39 @@ export function TvLobbyView({
                 </button>
               </div>
             </div>
+
+            {/* Live-synchronisierte Spieleinstellungen auf dem TV */}
+            {lobby.settings && (
+              <div className="mt-4 flex flex-wrap items-center gap-2 portrait:justify-center">
+                {lobby.gameId === 'draw-and-guess' ? (
+                  <>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-white/90 text-xs font-bold ring-1 ring-white/15">
+                      <Layers className="h-3.5 w-3.5 text-orange-400" />
+                      <span>{lobby.settings.rounds || 3} Runden</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-white/90 text-xs font-bold ring-1 ring-white/15">
+                      <Clock className="h-3.5 w-3.5 text-amber-400" />
+                      <span>{lobby.settings.roundDuration || 60}s</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-white/90 text-xs font-bold ring-1 ring-white/15">
+                      <HelpCircle className="h-3.5 w-3.5 text-yellow-400" />
+                      <span>{lobby.settings.hints !== false ? 'Mit Hinweisen' : 'Ohne Hinweise'}</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-white/90 text-xs font-bold ring-1 ring-white/15">
+                      <Palette className="h-3.5 w-3.5 text-orange-400" />
+                      <span>Kategorie: {lobby.settings.category || 'Alle'}</span>
+                    </span>
+                  </>
+                ) : (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/[0.08] text-white/90 text-xs font-bold ring-1 ring-white/15">
+                    <Layers className="h-3.5 w-3.5 text-purple-400" />
+                    <span>
+                      {lobby.settings.rounds === 1 ? '1 Runde' : `Best of ${lobby.settings.rounds || 3}`}
+                    </span>
+                  </span>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Rechte Seite: Kompakte Spieler-Chips & Start-Button */}

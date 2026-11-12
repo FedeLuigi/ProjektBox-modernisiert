@@ -29,7 +29,11 @@ export interface MultiplayerGameDefinition<TState = any, TMove = any> {
   maxPlayers: number;
 
   // Initialen Spielstand beim Spielstart erstellen
-  initGameState: (players: Player[], starterId?: string) => TState;
+  initGameState: (
+    players: Player[],
+    starterId?: string,
+    settings?: Record<string, any>
+  ) => TState;
 
   // Autoritative Zugvalidierung und Zustandsänderung auf dem Server
   validateAndApplyMove: (params: {
@@ -57,6 +61,7 @@ export interface Lobby {
   createdAt: number;
   expiresAt: number; // Ablaufzeitpunkt der Lobby
   isTvMode?: boolean; // TV-Modus mit QR-Code
+  settings?: Record<string, any>;
   gameState: BaseGameState | null;
   rematchVotes: string[];
 }
@@ -75,4 +80,5 @@ export interface LobbySummary {
   createdAt: number;
   expiresAt: number;
   isTvMode?: boolean;
+  settings?: Record<string, any>;
 }

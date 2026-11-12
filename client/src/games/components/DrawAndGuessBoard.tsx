@@ -8,6 +8,7 @@ import {
   Send,
   Trash2,
   Trophy,
+  Undo2,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
@@ -20,6 +21,7 @@ export interface StrokeSegment {
   y1: number;
   color: string;
   size: number;
+  strokeId?: number;
 }
 
 export interface DrawAndGuessGuess {
@@ -53,14 +55,50 @@ export interface DrawAndGuessState {
 
 const COLORS = [
   '#000000', // Schwarz
-  '#E11D48', // Rot
+  '#6B7280', // Grau
+  '#FFFFFF', // Weiß / Radierer
+  '#8B4513', // Braun
+  '#DC2626', // Rot
+  '#EA580C', // Orange
+  '#EAB308', // Gelb
+  '#84CC16', // Hellgrün
+  '#16A34A', // Grün
+  '#06B6D4', // Hellblau / Cyan
   '#2563EB', // Blau
-  '#059669', // Grün
-  '#D97706', // Orange
-  '#7C3AED', // Violett
-  '#DB2777', // Pink
-  '#FFFFFF', // Radierer / Weiß
+  '#7C3AED', // Lila / Violett
+  '#EC4899', // Pink
+  '#FBCFE8', // Rosa / Hautfarbe
 ];
+
+function renderAllStrokes(
+  ctx: CanvasRenderingContext2D,
+  strokes: StrokeSegment[],
+  width: number,
+  height: number
+) {
+  ctx.fillStyle = '#FFFFFF';
+  ctx.fillRect(0, 0, width, height);
+  ctx.lineCap = 'round';
+  ctx.lineJoin = 'round';
+
+  for (const stroke of strokes) {
+    const isDot = stroke.x0 === stroke.x1 && stroke.y0 === stroke.y1;
+    if (isDot) {
+      ctx.beginPath();
+      ctx.fillStyle = stroke.color;
+      const r = Math.max(1, (stroke.size * (width / 400)) / 2);
+      ctx.arc(stroke.x0 * width, stroke.y0 * height, r, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.strokeStyle = stroke.color;
+      ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
+      ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
+      ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
+      ctx.stroke();
+    }
+  }
+}
 
 const BRUSH_SIZES = [
   { label: 'Fein', size: 2.5 },
@@ -91,6 +129,7 @@ export function DrawAndGuessBoard({
   const canvasStageRef = useRef<HTMLDivElement | null>(null);
   const isDrawingRef = useRef(false);
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  const currentStrokeIdRef = useRef<number>(0);
   const strokeBufferRef = useRef<StrokeSegment[]>([]);
   const flushTimeoutRef = useRef<any>(null);
   const renderedRoundRef = useRef<number | null>(null);
@@ -179,12 +218,21 @@ export function DrawAndGuessBoard({
       ctx.lineJoin = 'round';
 
       for (const stroke of strokes) {
-        ctx.beginPath();
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
-        ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
-        ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
-        ctx.stroke();
+        const isDot = stroke.x0 === stroke.x1 && stroke.y0 === stroke.y1;
+        if (isDot) {
+          ctx.beginPath();
+          ctx.fillStyle = stroke.color;
+          const r = Math.max(1, (stroke.size * (width / 400)) / 2);
+          ctx.arc(stroke.x0 * width, stroke.y0 * height, r, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
+          ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
+          ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
+          ctx.stroke();
+        }
       }
       renderedCountRef.current += strokes.length;
     });
@@ -200,9 +248,20 @@ export function DrawAndGuessBoard({
       renderedCountRef.current = 0;
     });
 
+    const unsubUndo = socketService.onLiveUndo(({ strokes }) => {
+      if (isDrawer) return;
+      const canvas = canvasRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+      renderAllStrokes(ctx, strokes, canvas.width, canvas.height);
+      renderedCountRef.current = strokes.length;
+    });
+
     return () => {
       unsubStrokes();
       unsubClear();
+      unsubUndo();
     };
   }, [isDrawer]);
 
@@ -223,32 +282,47 @@ export function DrawAndGuessBoard({
       prevCanvasElRef.current = canvas;
     }
     const isRoundChanged = isNewCanvas || renderedRoundRef.current !== currentRound;
+    const strokes = gameState?.strokes || [];
 
-    if (isRoundChanged || !gameState?.strokes || gameState.strokes.length === 0) {
+    if (isRoundChanged || renderedCountRef.current > strokes.length) {
       renderedRoundRef.current = currentRound;
-      renderedCountRef.current = 0;
-      ctx.fillStyle = '#FFFFFF';
-      ctx.fillRect(0, 0, width, height);
+      renderAllStrokes(ctx, strokes, width, height);
+      renderedCountRef.current = strokes.length;
+      return;
     }
 
-    if (!gameState?.strokes || gameState.strokes.length === 0) return;
+    if (strokes.length === 0) {
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+      renderedCountRef.current = 0;
+      return;
+    }
 
     // Nur Striche nachzeichnen, die noch nicht auf der Leinwand sind
-    if (isRoundChanged || renderedCountRef.current < gameState.strokes.length) {
-      const startIndex = isRoundChanged ? 0 : renderedCountRef.current;
+    if (renderedCountRef.current < strokes.length) {
+      const startIndex = renderedCountRef.current;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
 
-      for (let i = startIndex; i < gameState.strokes.length; i++) {
-        const stroke = gameState.strokes[i];
-        ctx.beginPath();
-        ctx.strokeStyle = stroke.color;
-        ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
-        ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
-        ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
-        ctx.stroke();
+      for (let i = startIndex; i < strokes.length; i++) {
+        const stroke = strokes[i];
+        const isDot = stroke.x0 === stroke.x1 && stroke.y0 === stroke.y1;
+        if (isDot) {
+          ctx.beginPath();
+          ctx.fillStyle = stroke.color;
+          const r = Math.max(1, (stroke.size * (width / 400)) / 2);
+          ctx.arc(stroke.x0 * width, stroke.y0 * height, r, 0, Math.PI * 2);
+          ctx.fill();
+        } else {
+          ctx.beginPath();
+          ctx.strokeStyle = stroke.color;
+          ctx.lineWidth = Math.max(1, stroke.size * (width / 400));
+          ctx.moveTo(stroke.x0 * width, stroke.y0 * height);
+          ctx.lineTo(stroke.x1 * width, stroke.y1 * height);
+          ctx.stroke();
+        }
       }
-      renderedCountRef.current = gameState.strokes.length;
+      renderedCountRef.current = strokes.length;
     }
   }, [gameState?.round, gameState?.strokes, isDrawer, isTvMode]);
 
@@ -341,6 +415,40 @@ export function DrawAndGuessBoard({
     isDrawingRef.current = true;
     const coords = getCanvasCoords(e);
     lastPointRef.current = coords;
+
+    const strokeId = Date.now() + Math.random();
+    currentStrokeIdRef.current = strokeId;
+
+    // Sofort runden Punkt setzen (ermöglicht Tap/Klick ohne Ziehen)
+    const dotStroke: StrokeSegment = {
+      x0: coords.x,
+      y0: coords.y,
+      x1: coords.x,
+      y1: coords.y,
+      color: currentColor,
+      size: currentSize,
+      strokeId,
+    };
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.beginPath();
+        ctx.fillStyle = currentColor;
+        const r = Math.max(1, (currentSize * (canvas.width / 400)) / 2);
+        ctx.arc(coords.x * canvas.width, coords.y * canvas.height, r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    strokeBufferRef.current.push(dotStroke);
+    if (!flushTimeoutRef.current) {
+      flushTimeoutRef.current = setTimeout(() => {
+        flushTimeoutRef.current = null;
+        flushStrokes();
+      }, 25);
+    }
   };
 
   const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -349,6 +457,13 @@ export function DrawAndGuessBoard({
     }
 
     const currentCoords = getCanvasCoords(e);
+    if (
+      Math.abs(currentCoords.x - lastPointRef.current.x) < 0.001 &&
+      Math.abs(currentCoords.y - lastPointRef.current.y) < 0.001
+    ) {
+      return;
+    }
+
     const stroke: StrokeSegment = {
       x0: lastPointRef.current.x,
       y0: lastPointRef.current.y,
@@ -356,6 +471,7 @@ export function DrawAndGuessBoard({
       y1: currentCoords.y,
       color: currentColor,
       size: currentSize,
+      strokeId: currentStrokeIdRef.current,
     };
 
     lastPointRef.current = currentCoords;
@@ -404,6 +520,37 @@ export function DrawAndGuessBoard({
     flushStrokes();
   };
 
+  const handleUndo = () => {
+    if (!isDrawer || isRoundOver) return;
+
+    // Laufenden Puffer leeren
+    flushStrokes();
+
+    const currentStrokes = gameState?.strokes || [];
+    if (currentStrokes.length === 0) return;
+
+    const lastSeg = currentStrokes[currentStrokes.length - 1];
+    let remaining: StrokeSegment[] = [];
+    if (lastSeg?.strokeId !== undefined) {
+      const targetId = lastSeg.strokeId;
+      remaining = currentStrokes.filter((s) => s.strokeId !== targetId);
+    } else {
+      remaining = currentStrokes.slice(0, -1);
+    }
+
+    const canvas = canvasRef.current;
+    if (canvas) {
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        renderAllStrokes(ctx, remaining, canvas.width, canvas.height);
+        renderedCountRef.current = remaining.length;
+      }
+    }
+
+    socketService.emitUndo();
+    onMove({ type: 'undo' });
+  };
+
   const handleClear = () => {
     if (!isDrawer || isRoundOver) return;
     const canvas = canvasRef.current;
@@ -414,6 +561,7 @@ export function DrawAndGuessBoard({
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
     }
+    renderedCountRef.current = 0;
     socketService.emitClearCanvas();
     onMove({ type: 'clear' });
   };
@@ -650,22 +798,22 @@ export function DrawAndGuessBoard({
           </div>
         </div>
 
-        {/* Mal-Werkzeuge (Hochkant Leiste unten, Querformat kompakte 4x2 Palette & Pinsel rechts) */}
+        {/* Mal-Werkzeuge (Hochkant Leiste unten, Querformat 7x2 Palette & Pinsel/Undo rechts) */}
         {!isRoundOver && (
-          <div className="w-full mt-1.5 landscape:mt-0 px-2.5 py-1.5 landscape:p-3 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-2 landscape:self-center">
-            <div className="flex items-center justify-between gap-2 landscape:flex-col landscape:items-stretch landscape:gap-3">
-              {/* Farb-Palette mit vertikalem & horizontalem Schutzabstand für ring-2 + scale-110 */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-2 py-2 landscape:grid landscape:grid-cols-4 landscape:justify-items-center landscape:overflow-visible landscape:p-1.5">
+          <div className="w-full mt-1.5 landscape:mt-0 px-2 py-1.5 landscape:p-2.5 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-2 landscape:self-center">
+            <div className="flex items-center justify-between gap-2 landscape:flex-col landscape:items-stretch landscape:gap-2.5">
+              {/* Farb-Palette mit 14 Farben (in Portrait horizontal scrollbar, in Landscape 7x2 Grid) */}
+              <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain scrollbar-none px-2 py-2 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-1.5 landscape:justify-items-center landscape:overflow-visible landscape:p-1">
                 {COLORS.map((col) => (
                   <button
                     key={col}
                     type="button"
                     onClick={() => setCurrentColor(col)}
-                    aria-label={col === '#FFFFFF' ? 'Radierer' : `Farbe ${col}`}
-                    className={`h-7 w-7 landscape:h-8 landscape:w-8 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                    aria-label={col === '#FFFFFF' ? 'Radierer / Weiß' : `Farbe ${col}`}
+                    className={`h-7 w-7 landscape:h-7 landscape:w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
                       currentColor === col
                         ? 'ring-2 ring-white scale-110 shadow-md'
-                        : 'ring-1 ring-black/25 hover:scale-105'
+                        : 'ring-1 ring-black/30 hover:scale-105'
                     }`}
                     style={{ backgroundColor: col }}
                   >
@@ -674,15 +822,15 @@ export function DrawAndGuessBoard({
                 ))}
               </div>
 
-              {/* Pinselgrößen & Löschen */}
-              <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10 landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t landscape:justify-between">
-                <div className="flex items-center gap-1.5">
+              {/* Pinselgrößen, Undo & Löschen */}
+              <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-white/10 landscape:pl-0 landscape:border-l-0 landscape:pt-2 landscape:border-t landscape:border-white/10 landscape:justify-between">
+                <div className="flex items-center gap-1">
                   {BRUSH_SIZES.map((b) => (
                     <button
                       key={b.size}
                       type="button"
                       onClick={() => setCurrentSize(b.size)}
-                      className={`px-2 landscape:px-2.5 py-1 landscape:py-1.5 rounded-lg text-[10px] landscape:text-[11px] font-bold transition-all cursor-pointer ${
+                      className={`px-2 landscape:px-2 py-1 landscape:py-1 rounded-lg text-[10px] landscape:text-[11px] font-bold transition-all cursor-pointer ${
                         currentSize === b.size
                           ? theme.brushActive
                           : 'bg-white/10 text-[#8E8E93] hover:text-white'
@@ -693,14 +841,27 @@ export function DrawAndGuessBoard({
                   ))}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleClear}
-                  title="Leinwand leeren"
-                  className="p-1.5 landscape:p-2 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
-                >
-                  <Trash2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
-                </button>
+                <div className="flex items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={handleUndo}
+                    title="Letzten Strich rückgängig machen"
+                    aria-label="Rückgängig"
+                    className="p-1.5 landscape:p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors active:scale-90 cursor-pointer"
+                  >
+                    <Undo2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleClear}
+                    title="Leinwand leeren"
+                    aria-label="Leinwand löschen"
+                    className="p-1.5 landscape:p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
+                  >
+                    <Trash2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
