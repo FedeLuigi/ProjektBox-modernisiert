@@ -22,9 +22,17 @@ export const HEADER_BADGE_PILL =
 export const STAGE_TWO_COL = 'my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center py-2 sm:py-4';
 export const STAGE_SINGLE_COL = 'my-auto mx-auto flex w-full max-w-lg flex-1 flex-col justify-center py-2 sm:py-4';
 
-// Einheitliche Dark-Glass-Karte
+// Einheitliche Dark-Glass-Karte & Unter-Elemente
 export const SURFACE_CARD =
   'rounded-[28px] bg-[#18181C]/80 p-6 sm:p-7 ring-1 ring-white/[0.08] backdrop-blur-xl shadow-lg';
+export const SURFACE_ITEM_ROW =
+  'rounded-2xl bg-white/[0.04] p-3.5 ring-1 ring-white/[0.08] backdrop-blur-md';
+export const INFO_PILL =
+  'inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1.5 text-xs font-semibold text-white ring-1 ring-white/[0.08] backdrop-blur-md';
+export const STATUS_PILL_SUCCESS =
+  'rounded-full px-3 py-1 text-xs font-extrabold ring-1 bg-emerald-500/20 text-emerald-300 ring-emerald-500/35';
+export const STATUS_PILL_NEUTRAL =
+  'rounded-full px-3 py-1 text-xs font-extrabold ring-1 bg-white/10 text-white/60 ring-white/15';
 
 // ─── 4-STUFEN BUTTON-SYSTEM ──────────────────────────────────────────────────
 

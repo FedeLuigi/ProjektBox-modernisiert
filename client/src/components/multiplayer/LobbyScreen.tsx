@@ -134,6 +134,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
   const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
+  const style = TONE_STYLES[game.tone];
 
   // 1. Wenn ein Spiel läuft -> Vollbild TV oder Multiplayer Game View
   if (isInGame && currentLobby) {
@@ -156,16 +157,30 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     );
   }
 
-  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell wie Hauptmenü & Spiel-Vorbereitung)
+  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell & Hintergrund wie GameSheet)
   if (currentLobby) {
     return (
       <div className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
-        <BackgroundCometCanvas opacity={0.4} />
+        <BackgroundCometCanvas opacity={0.45} />
+
+        <div className="pointer-events-none absolute inset-0 opacity-30 scale-125 transform-gpu">
+          <GameBackground gameId={game.id} />
+        </div>
+
+        <div
+          className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
+        />
+        <div
+          className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
+        />
+
         <div className="app-shell relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
           {isTvScreenHost ? (
             <TvLobbyView
               lobby={currentLobby}
               gameTitle={game.title}
+              categoryLabel={game.category}
+              categoryBadgeClass={style.badge}
               onLeave={handleLeaveLobby}
               onGameStart={(startedLobby) => {
                 if (startedLobby) setCurrentLobby(startedLobby);
@@ -190,7 +205,6 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   // 3. Lobby Auswahl / Erstellen Screen
   const Icon = game.icon;
-  const style = TONE_STYLES[game.tone];
 
   return (
     <div
