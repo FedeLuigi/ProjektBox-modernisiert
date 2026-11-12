@@ -1,13 +1,13 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   Check,
   Clock,
+  Delete,
   Eraser,
   Paintbrush,
   Send,
   Trash2,
   Trophy,
-  X,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
@@ -68,6 +68,12 @@ const BRUSH_SIZES = [
   { label: 'Dick', size: 10 },
 ];
 
+const KEYBOARD_ROWS = [
+  ['Q', 'W', 'E', 'R', 'T', 'Z', 'U', 'I', 'O', 'P', 'Ü'],
+  ['A', 'S', 'D', 'F', 'G', 'H', 'J', 'K', 'L', 'Ö', 'Ä'],
+  ['Y', 'X', 'C', 'V', 'B', 'N', 'M'],
+];
+
 export function DrawAndGuessBoard({
   gameState,
   myPlayer,
@@ -93,7 +99,6 @@ export function DrawAndGuessBoard({
   const [guessInput, setGuessInput] = useState('');
   const [isWrongGuess, setIsWrongGuess] = useState(false);
   const [wrongText, setWrongText] = useState<string | null>(null);
-  const guessInputRef = useRef<HTMLInputElement | null>(null);
 
   const isTv = Boolean(myPlayer?.isTvScreen);
   const isDrawer = !isTv && myPlayer?.id === gameState?.currentDrawerId;
@@ -410,16 +415,61 @@ export function DrawAndGuessBoard({
     onMove({ type: 'clear' });
   };
 
-  const handleGuessSubmit = (e?: React.FormEvent) => {
-    e?.preventDefault();
+  const hintTokens = gameState?.wordHint ? gameState.wordHint.split(' ') : [];
+  const targetLength =
+    isRoundOver && gameState?.secretWord
+      ? gameState.secretWord.length
+      : Math.max(hintTokens.length, 1);
+
+  const handleGuessSubmit = useCallback(() => {
     const text = guessInput.trim();
     if (!text || isDrawer || hasGuessedCorrectly || isRoundOver) return;
     onMove({ type: 'guess', text });
     setGuessInput('');
-    setTimeout(() => {
-      guessInputRef.current?.focus();
-    }, 50);
-  };
+  }, [guessInput, isDrawer, hasGuessedCorrectly, isRoundOver, onMove]);
+
+  const handleKeyboardChar = useCallback(
+    (char: string) => {
+      if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+      setGuessInput((prev) => (prev.length < targetLength ? prev + char : prev));
+    },
+    [isDrawer, hasGuessedCorrectly, isRoundOver, targetLength]
+  );
+
+  const handleKeyboardBackspace = useCallback(() => {
+    if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+    setGuessInput((prev) => prev.slice(0, -1));
+  }, [isDrawer, hasGuessedCorrectly, isRoundOver]);
+
+  // Physische Tastatur am Desktop unterstützen, ohne auf Mobilgeräten die Systemtastatur zu öffnen
+  useEffect(() => {
+    if (isTv || isDrawer || hasGuessedCorrectly || isRoundOver) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === 'Backspace') {
+        e.preventDefault();
+        handleKeyboardBackspace();
+      } else if (e.key === 'Enter') {
+        e.preventDefault();
+        handleGuessSubmit();
+      } else if (/^[a-zA-ZäöüÄÖÜ]$/.test(e.key)) {
+        e.preventDefault();
+        handleKeyboardChar(e.key.toUpperCase());
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    isTv,
+    isDrawer,
+    hasGuessedCorrectly,
+    isRoundOver,
+    handleKeyboardBackspace,
+    handleKeyboardChar,
+    handleGuessSubmit,
+  ]);
 
   const latestGuess = gameState?.guesses?.[0];
 
@@ -639,43 +689,38 @@ export function DrawAndGuessBoard({
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // C) SMARTPHONE-ANSICHT: DER RATER (MIT LIVE-ZEICHNUNG OHNE TV, CLEAN IM TV-MODUS)
+  // C) SMARTPHONE-ANSICHT: DER RATER (LIVE-CANVAS, LEERE FELDER & IN-APP-TASTATUR)
   // ═════════════════════════════════════════════════════════════════════════════
-  const hintTokens = gameState?.wordHint ? gameState.wordHint.split(' ') : [];
-  const targetLength =
-    isRoundOver && gameState?.secretWord
-      ? gameState.secretWord.length
-      : Math.max(hintTokens.length, 1);
-
   const totalSlots = Math.max(targetLength, guessInput.length);
   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
 
   const slotSizeClass = !isTvMode
     ? totalSlots <= 5
-      ? 'w-10 h-12 sm:w-11 sm:h-14 text-xl sm:text-2xl rounded-xl'
-      : totalSlots <= 7
-      ? 'w-8 h-10 sm:w-10 sm:h-12 text-lg sm:text-xl rounded-xl'
-      : 'w-7 h-9 sm:w-8 sm:h-11 text-sm sm:text-base rounded-lg'
+      ? 'w-10 h-10 sm:w-11 sm:h-12 landscape:w-8 landscape:h-8 text-lg sm:text-2xl landscape:text-sm rounded-xl landscape:rounded-lg'
+      : totalSlots <= 8
+      ? 'w-8 h-9 sm:w-10 sm:h-11 landscape:w-7 landscape:h-7 text-base sm:text-xl landscape:text-xs rounded-xl landscape:rounded-lg'
+      : 'w-[26px] h-8 sm:w-8 sm:h-10 landscape:w-6 landscape:h-7 text-sm sm:text-base landscape:text-xs rounded-lg'
     : totalSlots <= 5
-    ? 'w-11 h-14 sm:w-13 sm:h-16 text-2xl sm:text-3xl rounded-2xl'
-    : totalSlots <= 7
-    ? 'w-9 h-12 sm:w-11 sm:h-14 text-xl sm:text-2xl rounded-xl'
-    : 'w-7.5 h-10 sm:w-9 sm:h-12 text-base sm:text-lg rounded-lg';
+    ? 'w-11 h-12 sm:w-13 sm:h-14 landscape:w-9 landscape:h-9 text-xl sm:text-3xl landscape:text-base rounded-2xl landscape:rounded-lg'
+    : totalSlots <= 8
+    ? 'w-9 h-10 sm:w-11 sm:h-12 landscape:w-8 landscape:h-8 text-lg sm:text-2xl landscape:text-sm rounded-xl landscape:rounded-lg'
+    : 'w-[26px] h-9 sm:w-9 sm:h-11 landscape:w-6.5 landscape:h-7 text-sm sm:text-lg landscape:text-xs rounded-lg';
 
   const recentGuesses = gameState?.guesses?.slice(0, 3) || [];
 
   return (
     <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
-      {/* 1. Schmale Infozeile: Wer malt & Timer */}
-      <div className="w-full flex items-center justify-between px-1 pb-1.5 landscape:pb-1 shrink-0">
-        <div className="flex items-center gap-2 min-w-0 text-xs">
-          <span className="font-bold text-white truncate">
-            {drawerPlayer?.name || 'Mitspieler'} malt
+      {/* 1. Schmale Infozeile ohne Themen-Anzeige: Wer malt & Timer */}
+      <div className="w-full flex items-center justify-between gap-2 px-1 pb-1 shrink-0">
+        <span className="text-xs font-bold text-white truncate">
+          {drawerPlayer?.name || 'Mitspieler'} malt
+        </span>
+
+        {wrongText && (
+          <span className="truncate rounded-full bg-rose-500/20 px-2.5 py-0.5 text-[11px] font-bold text-rose-300 ring-1 ring-rose-500/35 animate-fade-in">
+            {wrongText}
           </span>
-          {gameState?.categoryName && (
-            <span className="text-[#8E8E93] truncate">• {gameState.categoryName}</span>
-          )}
-        </div>
+        )}
 
         <div
           className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
@@ -689,7 +734,7 @@ export function DrawAndGuessBoard({
         </div>
       </div>
 
-      {/* 2. OHNE TV-MODUS: Live-Zeichnung direkt über der Eingabe */}
+      {/* 2. OHNE TV-MODUS: Live-Zeichnung direkt über Platzhaltern & Tastatur */}
       {!isTvMode && (
         <div
           ref={canvasStageRef}
@@ -728,55 +773,31 @@ export function DrawAndGuessBoard({
         </div>
       )}
 
-      {/* 3. OFFENER EINGABEBEREICH (OHNE KÄSTEN IN KÄSTEN) */}
+      {/* 3. BUCHSTABEN-PLATZHALTER (NUR LEERE FELDER) + IN-APP QWERTZ-TASTATUR */}
       <div
-        className={`w-full max-w-md flex flex-col items-center text-center shrink-0 ${
-          isTvMode ? 'my-auto py-2' : 'pt-2 landscape:pt-1'
+        className={`w-full max-w-lg flex flex-col items-center text-center shrink-0 ${
+          isTvMode ? 'my-auto py-1' : 'pt-1.5 landscape:pt-1'
         } ${isWrongGuess ? 'screen-shake' : ''}`}
       >
         {hasGuessedCorrectly && (
-          <div className="mb-2 flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500 text-black font-black text-xs shadow-md">
+          <div className="mb-1.5 flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-emerald-500 text-black font-black text-xs shadow-md">
             <Check className="h-3.5 w-3.5 stroke-[3]" />
             <span>Erraten! (+100)</span>
           </div>
         )}
 
         {isTvMode && isRoundOver && !hasGuessedCorrectly && (
-          <div className="mb-2 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/40 font-bold text-xs">
+          <div className="mb-1.5 px-3.5 py-1 rounded-full bg-amber-500/20 text-amber-300 ring-1 ring-amber-400/40 font-bold text-xs">
             Runde vorbei • Weiter in {transitionCountdown}s
           </div>
         )}
 
-        {/* Interaktive Buchstaben-Lücken */}
+        {/* Leere Buchstaben-Platzhalter (keine vorab ausgefüllten Hinweise) */}
         <div
-          onClick={() => guessInputRef.current?.focus()}
-          className="relative flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 py-1 w-full cursor-text"
+          className={`flex flex-wrap items-center justify-center w-full ${
+            totalSlots > 8 ? 'gap-1' : 'gap-1.5 sm:gap-2'
+          } py-1 landscape:py-0.5`}
         >
-          <input
-            ref={guessInputRef}
-            type="text"
-            value={guessInput}
-            onChange={(e) => {
-              const val = e.target.value.replace(/[^a-zA-ZäöüÄÖÜß -]/g, '');
-              if (val.length <= Math.max(targetLength + 4, 15)) {
-                setGuessInput(val);
-              }
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault();
-                handleGuessSubmit();
-              }
-            }}
-            disabled={hasGuessedCorrectly || isRoundOver}
-            autoCapitalize="characters"
-            autoComplete="off"
-            autoCorrect="off"
-            spellCheck={false}
-            className="absolute inset-0 w-full h-full opacity-0 cursor-text z-10"
-            aria-label="Lösungswort eingeben"
-          />
-
           {slotIndices.map((idx) => {
             if (isRoundOver && gameState?.secretWord) {
               const char = gameState.secretWord[idx]?.toUpperCase() || '';
@@ -791,13 +812,11 @@ export function DrawAndGuessBoard({
             }
 
             const typedChar = guessInput[idx]?.toUpperCase() || '';
-            const hintChar =
-              hintTokens[idx] && hintTokens[idx] !== '_' ? hintTokens[idx].toUpperCase() : '';
-            const displayChar = typedChar || hintChar || '';
             const isTyped = Boolean(typedChar);
-            const isHintOnly = !isTyped && Boolean(hintChar);
             const isActive =
-              idx === Math.min(guessInput.length, totalSlots - 1) && !hasGuessedCorrectly;
+              idx === Math.min(guessInput.length, totalSlots - 1) &&
+              !hasGuessedCorrectly &&
+              !isRoundOver;
 
             return (
               <div
@@ -809,70 +828,25 @@ export function DrawAndGuessBoard({
                     ? 'bg-purple-600/30 text-white ring-2 ring-purple-400 scale-105'
                     : isTyped
                     ? 'bg-white/20 text-white ring-1 ring-white/40'
-                    : isHintOnly
-                    ? 'bg-purple-500/10 text-purple-300/65 ring-1 ring-purple-500/25 border border-dashed border-purple-400/30'
                     : 'bg-white/[0.05] text-white/20 ring-1 ring-white/12'
                 }`}
               >
-                {displayChar}
-                {isActive && !hasGuessedCorrectly && !isRoundOver && (
-                  <span className="absolute bottom-1.5 inset-x-2 h-0.5 bg-purple-400 rounded-full animate-pulse" />
+                {typedChar}
+                {isActive && (
+                  <span className="absolute bottom-1 inset-x-1.5 h-0.5 bg-purple-400 rounded-full animate-pulse" />
                 )}
               </div>
             );
           })}
         </div>
 
-        {wrongText && (
-          <div className="mt-1 text-xs font-bold text-rose-300 animate-fade-in">
-            {wrongText}
-          </div>
-        )}
-
-        {/* Senden & Löschen */}
-        {!isRoundOver && !hasGuessedCorrectly && (
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              handleGuessSubmit();
-            }}
-            className="mt-2 flex items-center justify-center gap-2 w-full max-w-xs relative z-20"
-          >
-            {guessInput.length > 0 && (
-              <button
-                type="button"
-                onClick={() => {
-                  setGuessInput('');
-                  guessInputRef.current?.focus();
-                }}
-                aria-label="Eingabe löschen"
-                className="h-10 px-3 rounded-full bg-white/10 hover:bg-white/15 text-white/75 hover:text-white text-xs font-bold ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer flex items-center gap-1"
-              >
-                <X className="h-3.5 w-3.5" />
-                <span>Löschen</span>
-              </button>
-            )}
-
-            <button
-              type="submit"
-              disabled={!guessInput.trim()}
-              className={`flex-1 h-10 px-5 rounded-full font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-all active:scale-95 ${
-                guessInput.trim() ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
-              }`}
-            >
-              <Send className="h-3.5 w-3.5" />
-              <span>Tipp absenden</span>
-            </button>
-          </form>
-        )}
-
-        {/* Letzte Tipps nur zeigen, wenn vorhanden */}
+        {/* Letzte Tipps nur bei TV-Modus oder als super schmale Chipzeile wenn vorhanden */}
         {recentGuesses.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center justify-center gap-1.5 w-full">
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 w-full landscape:hidden">
             {recentGuesses.map((g) => (
               <span
                 key={g.id}
-                className={`text-[11px] px-2.5 py-0.5 rounded-full ring-1 ${
+                className={`text-[10px] px-2 py-0.5 rounded-full ring-1 ${
                   g.isCorrect
                     ? 'bg-emerald-500/20 text-emerald-300 ring-emerald-500/35 font-bold'
                     : 'bg-white/[0.05] text-[#AEAEB2] ring-white/10'
@@ -880,6 +854,56 @@ export function DrawAndGuessBoard({
               >
                 {g.text}
               </span>
+            ))}
+          </div>
+        )}
+
+        {/* Moderne In-App QWERTZ-Tastatur im ProjektBox Dark-Glass-Design */}
+        {!isRoundOver && !hasGuessedCorrectly && (
+          <div
+            role="group"
+            aria-label="In-App Tastatur"
+            className="mt-1.5 landscape:mt-1 flex w-full flex-col gap-1.5 landscape:gap-1 px-1 pb-1"
+          >
+            {KEYBOARD_ROWS.map((row, rowIdx) => (
+              <div key={rowIdx} className="flex w-full items-center gap-1 landscape:gap-1">
+                {row.map((letter) => (
+                  <button
+                    key={letter}
+                    type="button"
+                    onClick={() => handleKeyboardChar(letter)}
+                    className="flex-1 min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg bg-[#1A1A24]/95 hover:bg-[#252534] active:bg-purple-600/50 active:scale-95 text-white text-sm sm:text-base landscape:text-xs font-bold ring-1 ring-white/[0.1] shadow-xs transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                  >
+                    {letter}
+                  </button>
+                ))}
+
+                {rowIdx === 2 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={handleKeyboardBackspace}
+                      aria-label="Buchstabe löschen"
+                      className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg bg-white/[0.11] hover:bg-white/[0.18] active:scale-95 text-white/90 ring-1 ring-white/15 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                    >
+                      <Delete className="h-4 w-4 landscape:h-3.5 landscape:w-3.5" />
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handleGuessSubmit}
+                      disabled={!guessInput.trim()}
+                      aria-label="Tipp absenden"
+                      className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg font-bold text-xs sm:text-sm landscape:text-[11px] flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
+                        guessInput.trim() ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                      }`}
+                    >
+                      <Send className="h-3.5 w-3.5 landscape:h-3 landscape:w-3" />
+                      <span>OK</span>
+                    </button>
+                  </>
+                )}
+              </div>
             ))}
           </div>
         )}

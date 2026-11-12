@@ -39,7 +39,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-screen-title"
-      className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details ─── */}
       <BackgroundCometCanvas opacity={0.45} />
@@ -58,7 +58,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
       />
 
       {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
-      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
+      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
         {/* 1. OBERE LEISTE: Zurück-Pille & Kategorie-Badge */}
         <header className={HEADER_ROW}>
           <button
@@ -78,7 +78,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
         </header>
 
         {/* 2. MITTE: Großzügige, luftige Spiel-Präsentation über den ganzen Bildschirm */}
-        <main className={`${STAGE_TWO_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none`}>
+        <main className={`${STAGE_TWO_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 sm:px-3 py-3`}>
           <div className="grid w-full items-center gap-6 sm:gap-10 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.2fr] landscape:text-left">
             {/* Linke / Obere Seite: Großes Squircle-Icon & Titel */}
             <div className="flex flex-col portrait:items-center landscape:items-start">

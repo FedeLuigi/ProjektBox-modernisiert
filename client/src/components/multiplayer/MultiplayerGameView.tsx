@@ -135,7 +135,7 @@ export function MultiplayerGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#07070C] text-white select-none animate-fade-in">
+    <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
       {/* ─── Dynamischer Hintergrund ─── */}
       <BackgroundCometCanvas opacity={0.35} />
 
@@ -151,19 +151,19 @@ export function MultiplayerGameView({
         }}
         className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-3 sm:px-6"
       >
-        {/* 1. EINZIGE SCHMALE TOP-BAR: Verlassen links, Score/Zug-Status mittig, Raum-Code rechts */}
-        <header className="flex shrink-0 items-center justify-between gap-2 pb-1.5 landscape:pb-1">
+        {/* 1. EINZIGE SCHMALE TOP-BAR: Verlassen links, Score/Zug-Status exakt mittig, Raum-Code rechts */}
+        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5 landscape:pb-1">
           <button
             type="button"
             onClick={onLeave}
-            className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer shrink-0"
+            className="justify-self-start inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Verlassen</span>
           </button>
 
           {isDrawAndGuess ? (
-            <div className="flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 ring-1 ring-white/10 text-xs">
+            <div className="justify-self-center flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 ring-1 ring-white/10 text-xs">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Avatar config={currentUser.avatar} size={22} />
                 <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
@@ -186,7 +186,7 @@ export function MultiplayerGameView({
             </div>
           ) : (
             <div
-              className={`inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
+              className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
                 isMyTurn
                   ? 'bg-purple-500/20 text-purple-200 ring-purple-400/40'
                   : 'bg-white/[0.06] text-white/75 ring-white/10'
@@ -202,7 +202,7 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <span className="inline-flex h-8 sm:h-9 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10 shrink-0">
+          <span className="justify-self-end inline-flex h-8 sm:h-9 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10">
             {lobby.code}
           </span>
         </header>
@@ -225,7 +225,7 @@ export function MultiplayerGameView({
         {/* 3. MITTE: DYNAMISCHES SPIELFELD AUS DER REGISTRY */}
         <main
           className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
-            lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1 sm:p-2' : 'max-w-md p-2'
+            lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1.5 sm:p-2' : 'max-w-md p-3'
           }`}
         >
           {BoardComponent && myPlayer ? (

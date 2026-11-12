@@ -197,7 +197,7 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F]/95 backdrop-blur-2xl text-white select-none animate-fade-in"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── VOLLBILD-KOMETEN-ANIMATION HINTER DER GESAMTEN EINSTELLUNGSSEITE ─── */}
       <BackgroundCometCanvas opacity={0.6} />
@@ -207,7 +207,7 @@ export function SettingsSheet({
       <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 bg-indigo-600/20" />
 
       {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
-      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
+      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
         {/* 1. OBERE LEISTE: Gewohnter Zurück-Button & Status-Badge */}
         <header className={HEADER_ROW}>
           <button
@@ -227,7 +227,7 @@ export function SettingsSheet({
         </header>
 
         {/* 2. MITTE: Großzügige, moderne Einstellungen */}
-        <main className={`${STAGE_SINGLE_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none`}>
+        <main className={`${STAGE_SINGLE_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4`}>
           <div className="my-auto w-full space-y-5">
             {/* ─── A) SPIELER-PROFIL KARTE (AVATAR & NAME) ─── */}
             <div className={`flex flex-col items-center justify-center text-center ${SURFACE_CARD}`}>

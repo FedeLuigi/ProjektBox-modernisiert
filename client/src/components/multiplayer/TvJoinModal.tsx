@@ -53,7 +53,7 @@ export function TvJoinModal({
           paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
           paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
         }}
-        className="fixed inset-0 z-50 flex w-full flex-col items-center justify-center px-4 overflow-y-auto overscroll-y-contain bg-black/80 backdrop-blur-xl text-white select-none animate-fade-in"
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center px-4 overflow-y-auto overscroll-y-contain bg-[#0B0B0F]/85 backdrop-blur-xl text-white select-none animate-fade-in"
       >
         <div className={`relative w-full max-w-sm ${SURFACE_CARD} flex flex-col items-center text-center`}>
           {/* Schließen Button */}

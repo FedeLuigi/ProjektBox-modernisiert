@@ -252,7 +252,7 @@ export function App() {
   const showAll = category === 'Alle';
 
   return (
-    <div className="fixed inset-0 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
+    <div className="fixed inset-0 min-h-dvh flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
       {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (wie beim Game-Screen, fixiert) ─── */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -275,7 +275,7 @@ export function App() {
 
       {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 z-50 flex w-full flex-col items-center justify-center bg-[#07070C] text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0B0B0F] text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <BackgroundCometCanvas opacity={0.35} />
           <div className="relative z-10 flex flex-col items-center p-6 text-center max-w-sm mx-auto animate-fade-in">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-purple-600/25 text-purple-300 ring-2 ring-purple-500/40 mb-4 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-pulse">
@@ -300,7 +300,7 @@ export function App() {
           <nav
             role="tablist"
             aria-label="Kategorien"
-            className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-1"
+            className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1.5 py-1.5"
           >
             {CATEGORIES.map((cat) => {
               const isSelected = category === cat;
@@ -374,7 +374,7 @@ export function App() {
             </div>
 
             {/* Horizontale Wischleiste mit genug vertikalem Padding gegen abgeschnittene Borders/Schatten */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
               {quickLaunchGames.map((game) => (
                 <QuickLaunchTile
                   key={`quick-${game.id}`}
@@ -403,7 +403,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
               {strategyGames.map((game) => (
                 <CompactGameCard
                   key={`strat-${game.id}`}
@@ -432,7 +432,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
               {puzzleGames.map((game) => (
                 <CompactGameCard
                   key={`puzzle-${game.id}`}
@@ -461,7 +461,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
               {arcadeGames.map((game) => (
                 <CompactGameCard
                   key={`arcade-${game.id}`}

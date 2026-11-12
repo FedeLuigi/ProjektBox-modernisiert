@@ -28,7 +28,7 @@ export function ConnectFourBoard({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-sm">
+    <div className="flex flex-col items-center w-full max-w-[min(24rem,62dvh)]">
       {/* Spalten-Auswahl-Pfeile */}
       <div className="grid grid-cols-7 gap-1.5 w-full px-3 mb-1">
         {Array.from({ length: 7 }).map((_, c) => {

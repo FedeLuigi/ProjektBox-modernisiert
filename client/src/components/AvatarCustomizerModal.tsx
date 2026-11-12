@@ -81,7 +81,7 @@ export function AvatarCustomizerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none"
     >
       <div className="relative w-full max-w-lg rounded-[32px] bg-[#16161C] text-white p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90dvh] overflow-hidden">
         {/* Header mit Schließen-Button */}
@@ -133,7 +133,7 @@ export function AvatarCustomizerModal({
         </div>
 
         {/* ─── KATEGORIE-TABS ─── */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-0.5 pb-2.5 pt-1 border-b border-white/[0.08]">
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-2 py-2 border-b border-white/[0.08]">
           {(
             [
               { id: 'base', label: 'Figur' },
@@ -159,7 +159,7 @@ export function AvatarCustomizerModal({
         </div>
 
         {/* ─── AUSWAHL-OPTIONEN (Seitlicher Puffer gegen Ring-/Schatten-Clipping) ─── */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-1.5 -mx-1.5 py-3 scrollbar-none">
+        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-none">
           {/* TAB 1: BASIS-FIGUR */}
           {activeTab === 'base' && (
             <div className="grid grid-cols-3 gap-2.5">

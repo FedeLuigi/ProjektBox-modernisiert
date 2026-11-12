@@ -124,7 +124,7 @@ export function TvLobbyView({
       </header>
 
       {/* ─── 2. ZWEIGETEILTE BÜHNE (offen, ohne verschachtelte Kästen) ─── */}
-      <main className={`${STAGE_TWO_COL} overflow-y-auto overscroll-y-contain scrollbar-none`}>
+      <main className={`${STAGE_TWO_COL} overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-3`}>
         <div className="grid w-full items-center gap-6 sm:gap-8 lg:gap-12 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.15fr] landscape:text-left lg:grid-cols-[1fr_1.15fr] lg:text-left">
           {/* Linke Seite: Spiel-Titel, QR-Code & Beitrittscode */}
           <div className="flex flex-col portrait:items-center landscape:items-start lg:items-start">

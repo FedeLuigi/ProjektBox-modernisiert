@@ -21,7 +21,7 @@ export function TicTacToeBoard({
   };
 
   return (
-    <div className="grid grid-cols-3 gap-3 p-4 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-72 h-72 sm:w-84 sm:h-84">
+    <div className="grid grid-cols-3 gap-3 p-4 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] max-h-[65dvh] aspect-square">
       {board.map((cell, idx) => {
         const isWinningCell = winningLine?.includes(idx);
         const canClick = isMyTurn && !isGameOver && !disabled && cell === null;

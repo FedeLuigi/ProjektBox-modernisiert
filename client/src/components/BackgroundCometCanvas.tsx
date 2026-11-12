@@ -55,6 +55,7 @@ export function BackgroundCometCanvas({
 
     updateSize();
     window.addEventListener('resize', updateSize);
+    window.visualViewport?.addEventListener('resize', updateSize);
 
     const comets: ScreenComet[] = [];
     const sparks: ScreenSpark[] = [];
@@ -297,6 +298,7 @@ export function BackgroundCometCanvas({
 
     return () => {
       window.removeEventListener('resize', updateSize);
+      window.visualViewport?.removeEventListener('resize', updateSize);
       if (animId !== null) cancelAnimationFrame(animId);
     };
   }, [opacity]);
@@ -304,7 +306,7 @@ export function BackgroundCometCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 h-full w-full pointer-events-none z-0 ${className}`}
+      className={`fixed inset-0 h-full min-h-dvh w-full pointer-events-none z-0 ${className}`}
       style={{ zIndex: 0 }}
       aria-hidden="true"
     />

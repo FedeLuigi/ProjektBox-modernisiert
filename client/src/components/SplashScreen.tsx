@@ -305,7 +305,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <div
-      className={`fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#0B0B0F] select-none transition-[opacity,transform] duration-400 ease-out ${
+      className={`fixed inset-0 min-h-dvh z-50 flex items-center justify-center overflow-hidden bg-[#0B0B0F] select-none transition-[opacity,transform] duration-400 ease-out ${
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
       aria-label="ProjektBox wird gestartet"

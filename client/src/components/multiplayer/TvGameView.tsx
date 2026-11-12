@@ -88,7 +88,7 @@ export function TvGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden bg-[#07070C] text-white select-none animate-fade-in">
+    <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col justify-between overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
       <BackgroundCometCanvas opacity={0.35} />
 
       {/* ─── Ambient Glow ─── */}
@@ -170,7 +170,7 @@ export function TvGameView({
                 <span>SPIELER & PUNKTE</span>
                 <span className="font-mono text-purple-400">{activePlayers.length}</span>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-1 pb-4 overscroll-contain scrollbar-none">
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 px-2.5 py-2 pb-4 overscroll-contain scrollbar-none">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
                   const hasGuessed = gameState?.correctGuesserIds?.includes(p.id);
@@ -244,7 +244,7 @@ export function TvGameView({
                 <span>WAS ERRATEN WURDE</span>
                 <span className="font-mono text-purple-400">{gameState?.guesses?.length || 0} Tipps</span>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 p-1 pb-4 overscroll-contain scrollbar-none">
+              <div className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2 px-2.5 py-2 pb-4 overscroll-contain scrollbar-none">
                 {gameState?.guesses && gameState.guesses.length > 0 ? (
                   gameState.guesses.map((g: any) => (
                     <div

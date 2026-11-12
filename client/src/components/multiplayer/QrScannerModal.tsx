@@ -209,7 +209,7 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-black/95 text-white select-none animate-fade-in"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── KOPFZEILE MIT SCHLIESSEN-BUTTON ─── */}
       <header
@@ -236,7 +236,7 @@ export function QrScannerModal({
       </header>
 
       {/* ─── MITTE: KAMERA-VIEWFINDER ODER FEHLERMELDUNG ─── */}
-      <main className="relative flex-1 w-full flex flex-col items-center justify-center p-4">
+      <main className="relative flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center justify-center p-5">
         {errorType !== 'none' ? (
           /* Fehlermeldung mit sauberer Alternative per Code-Eingabe */
           <div className="w-full max-w-sm rounded-3xl bg-[#161622]/95 p-6 ring-1 ring-rose-500/30 backdrop-blur-2xl text-center flex flex-col items-center shadow-2xl animate-fade-in">

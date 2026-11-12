@@ -145,7 +145,7 @@ export function InLobbyView({
 
       <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-between min-h-0">
         {/* Scrollbarer Mittelbereich ohne doppelte Karten */}
-        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain py-2 scrollbar-none">
+        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 py-3 scrollbar-none">
           {errorMsg && (
             <div className="mb-3 rounded-2xl bg-purple-500/15 p-3 text-center text-xs font-bold text-purple-200 ring-1 ring-purple-500/25 animate-fade-in shrink-0">
               {errorMsg}
@@ -223,7 +223,7 @@ export function InLobbyView({
         </div>
 
         {/* 3. EINZIGE HAUPT-AKTION UNTEN */}
-        <div className="shrink-0 pt-3">
+        <div className="shrink-0 px-1 pt-3 pb-1">
           {!isReady ? (
             <button
               type="button"
