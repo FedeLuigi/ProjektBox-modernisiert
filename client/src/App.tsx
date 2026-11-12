@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Gamepad2, Trophy, Brain, Zap, Clock, Settings, Tv } from 'lucide-react';
+import { Trophy, Brain, Zap, Clock, Settings, Tv } from 'lucide-react';
 import {
   CATEGORIES,
   type Category,
@@ -252,10 +252,7 @@ export function App() {
   const showAll = category === 'Alle';
 
   return (
-    <div
-      style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
-      className="fixed inset-0 flex h-full min-h-screen w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none pb-[env(safe-area-inset-bottom)]"
-    >
+    <div className="fixed inset-0 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
       {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (wie beim Game-Screen, fixiert) ─── */}
       <div
         className="pointer-events-none absolute inset-0 -z-10"
@@ -278,7 +275,7 @@ export function App() {
 
       {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 z-50 flex h-full min-h-screen w-full flex-col items-center justify-center bg-[#07070C] text-white select-none">
+        <div className="fixed inset-0 z-50 flex w-full flex-col items-center justify-center bg-[#07070C] text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <BackgroundCometCanvas opacity={0.35} />
           <div className="relative z-10 flex flex-col items-center p-6 text-center max-w-sm mx-auto animate-fade-in">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-purple-600/25 text-purple-300 ring-2 ring-purple-500/40 mb-4 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-pulse">
@@ -296,23 +293,38 @@ export function App() {
         </div>
       )}
 
-      {/* ─── 1. OBERE LEISTE: Transparenter, ruhiger Header & iOS Kategorie-Filter ─── */}
-      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[max(1rem,env(safe-area-inset-top))] lg:pt-6 pb-2.5">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          {/* Logo & Titel: ruhig, dezent, mit dem Hintergrund verschmolzen */}
-          <div className="flex items-center gap-2.5">
-            <div
-              className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-xl bg-gradient-to-br from-purple-500/15 via-violet-500/10 to-indigo-500/10 text-purple-300/85 ring-1 ring-white/[0.08] shadow-[0_2px_16px_rgba(139,92,246,0.18)] transition-transform active:scale-95"
-            >
-              <Gamepad2 className="h-4.5 w-4.5 text-purple-300/85" strokeWidth={1.8} />
-            </div>
-            <h1 className="text-sm sm:text-base font-bold tracking-wide text-zinc-100 leading-none">
-              ProjektBox
-            </h1>
-          </div>
+      {/* ─── 1. OBERE LEISTE: Kompakte einzeilige Kategorie-Filter & Aktionen rechts ─── */}
+      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[calc(0.625rem+env(safe-area-inset-top,0px))] lg:pt-5 pb-2">
+        <div className="flex items-center justify-between gap-2.5">
+          {/* Links: Horizontale Kategorie-Pillen */}
+          <nav
+            role="tablist"
+            aria-label="Kategorien"
+            className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none py-1"
+          >
+            {CATEGORIES.map((cat) => {
+              const isSelected = category === cat;
+              return (
+                <button
+                  key={cat}
+                  role="tab"
+                  aria-selected={isSelected}
+                  type="button"
+                  onClick={() => handleSelectCategory(cat)}
+                  className={`inline-flex h-8 sm:h-9 shrink-0 items-center justify-center rounded-full px-3.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
+                    isSelected
+                      ? 'bg-white text-[#1C1C1E] shadow-xs'
+                      : 'bg-white/[0.08] text-[#98989D] hover:text-white'
+                  }`}
+                >
+                  {cat}
+                </button>
+              );
+            })}
+          </nav>
 
-          {/* Rechte Seite: TV beitreten & Einstellungen (gleiche Pillen-Höhe wie Zurück) */}
-          <div className="flex items-center gap-2">
+          {/* Rechts: TV beitreten & Einstellungen */}
+          <div className="flex shrink-0 items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -322,9 +334,9 @@ export function App() {
               }}
               aria-label="Fernseher beitreten"
               title="Fernseher beitreten"
-              className="inline-flex h-9 sm:h-10 items-center justify-center gap-2 px-4 rounded-full bg-purple-500/16 hover:bg-purple-500/24 text-purple-100 ring-1 ring-purple-400/35 font-bold text-xs sm:text-sm backdrop-blur-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              className="inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-full bg-purple-500/16 hover:bg-purple-500/24 text-purple-100 ring-1 ring-purple-400/35 font-bold text-xs sm:text-sm backdrop-blur-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
             >
-              <Tv className="h-4 w-4 text-purple-300" />
+              <Tv className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-300" />
               <span>TV beitreten</span>
             </button>
 
@@ -336,47 +348,20 @@ export function App() {
               }}
               aria-label="Einstellungen öffnen"
               title="Einstellungen"
-              className="grid h-9 w-9 sm:h-10 sm:w-10 place-items-center rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] text-zinc-200 ring-1 ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer shadow-xs shrink-0"
+              className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] text-zinc-200 ring-1 ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer shadow-xs shrink-0"
             >
-              <Settings className="h-4.5 w-4.5 text-zinc-200" />
+              <Settings className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-200" />
             </button>
           </div>
         </div>
-
-        {/* Horizontale Kategorie-Pillen */}
-        <nav
-          role="tablist"
-          aria-label="Kategorien"
-          className="flex items-center gap-2 overflow-x-auto scrollbar-none py-0.5"
-        >
-          {CATEGORIES.map((cat) => {
-            const isSelected = category === cat;
-            return (
-              <button
-                key={cat}
-                role="tab"
-                aria-selected={isSelected}
-                type="button"
-                onClick={() => handleSelectCategory(cat)}
-                className={`inline-flex h-8 items-center justify-center rounded-full px-3.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                  isSelected
-                    ? 'bg-white text-[#1C1C1E] shadow-xs'
-                    : 'bg-white/[0.08] text-[#98989D] hover:text-white'
-                }`}
-              >
-                {cat}
-              </button>
-            );
-          })}
-        </nav>
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-8 pt-2 space-y-6 scrollbar-none max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-1 space-y-4 sm:space-y-5 scrollbar-none max-w-7xl mx-auto w-full">
         {/* ── Sektion 1: Zuletzt gespielt / Schnellstart (flache Reihe kleiner Kacheln) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">
-            <div className="flex items-center justify-between app-shell-x mb-2.5">
+            <div className="flex items-center justify-between app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Clock className="h-4 w-4 text-[#FB923C]" />
                 <h2
@@ -391,8 +376,8 @@ export function App() {
               </span>
             </div>
 
-            {/* Horizontale Wischleiste mit flachen Kacheln (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
+            {/* Horizontale Wischleiste mit genug vertikalem Padding gegen abgeschnittene Borders/Schatten */}
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
               {quickLaunchGames.map((game) => (
                 <QuickLaunchTile
                   key={`quick-${game.id}`}
@@ -408,7 +393,7 @@ export function App() {
         {/* ── Sektion 2: Beliebt & Strategie (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Strategie') && (
           <section aria-labelledby="heading-strategy">
-            <div className="flex items-center justify-between app-shell-x mb-2.5">
+            <div className="flex items-center justify-between app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Trophy className="h-4 w-4 text-[#A78BFA]" />
                 <h2
@@ -424,7 +409,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
               {strategyGames.map((game) => (
                 <CompactGameCard
                   key={`strat-${game.id}`}
@@ -440,7 +425,7 @@ export function App() {
         {/* ── Sektion 3: Denkspiele & Rätsel (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Denken') && (
           <section aria-labelledby="heading-puzzle">
-            <div className="flex items-center justify-between app-shell-x mb-2.5">
+            <div className="flex items-center justify-between app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Brain className="h-4 w-4 text-[#FB923C]" />
                 <h2
@@ -456,7 +441,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
               {puzzleGames.map((game) => (
                 <CompactGameCard
                   key={`puzzle-${game.id}`}
@@ -472,7 +457,7 @@ export function App() {
         {/* ── Sektion 4: Arcade & Reflexe (horizontales Karussell kompakter 4:3-Karten) ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-arcade">
-            <div className="flex items-center justify-between app-shell-x mb-2.5">
+            <div className="flex items-center justify-between app-shell-x mb-1">
               <div className="flex items-center gap-1.5">
                 <Zap className="h-4 w-4 text-[#34D399]" />
                 <h2
@@ -488,7 +473,7 @@ export function App() {
             </div>
 
             {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x pb-2 scrollbar-none overscroll-x-contain">
+            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-2.5 scrollbar-none overscroll-x-contain">
               {arcadeGames.map((game) => (
                 <CompactGameCard
                   key={`arcade-${game.id}`}
