@@ -31,19 +31,9 @@ export function App() {
   }, []);
 
   const [showSplash, setShowSplash] = useState(() => {
-    if (typeof window !== 'undefined') {
-      // 1. Wenn per QR-Code / Deep-Link beigetreten wird: NIEMALS Splash-Screen zeigen
-      if (parseLobbyCode(window.location.href)) {
-        return false;
-      }
-      // 2. Wurde die Startanimation bereits einmal geladen (z. B. bei Reload)? -> Überspringen!
-      try {
-        if (localStorage.getItem('projektbox_splash_seen_v1') === 'true') {
-          return false;
-        }
-      } catch {
-        // ignore
-      }
+    if (typeof window !== 'undefined' && parseLobbyCode(window.location.href)) {
+      // Wenn per QR-Code / Deep-Link beigetreten wird: NIEMALS Splash-Screen zeigen
+      return false;
     }
     return true;
   });
@@ -122,11 +112,6 @@ export function App() {
   const handleSplashFinish = () => {
     triggerHaptic();
     setShowSplash(false);
-    try {
-      localStorage.setItem('projektbox_splash_seen_v1', 'true');
-    } catch {
-      // ignore
-    }
   };
 
   const handleInstall = async () => {
@@ -279,13 +264,16 @@ export function App() {
             'radial-gradient(110% 75% at 50% -10%, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.09) 40%, transparent 80%)',
         }}
       />
-      <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/20" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-50 bg-indigo-600/15" />
+      {/* ─── Hintergrund-Orbs & Globale Kometen-Animation erst nach Splash rendern (null GPU-Overhead beim Start) ─── */}
+      {!showSplash && (
+        <>
+          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/20" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-50 bg-indigo-600/15" />
+          <BackgroundCometCanvas opacity={0.65} />
+        </>
+      )}
 
-      {/* ─── Globale Vollbild-Kometen-Animation hinter allen Menüs & Buttons ─── */}
-      <BackgroundCometCanvas opacity={0.65} />
-
-      {/* ─── Animierter Ladebildschirm beim Start ─── */}
+      {/* ─── Animierter 3D-Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
       {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}

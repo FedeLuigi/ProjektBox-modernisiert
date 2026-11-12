@@ -249,3 +249,54 @@
   animation: splashShine 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
 }
 
+/* ─── GPU-kompositierter 3D-Video-Startbildschirm (lagfrei & responsiv) ─── */
+.splash-video-stage {
+  width: 100%;
+  height: 100%;
+}
+
+.splash-portrait-brand {
+  display: none;
+}
+
+@media (max-aspect-ratio: 4/5) {
+  .splash-portrait-brand {
+    display: flex;
+  }
+
+  .splash-video-stage {
+    width: min(176vw, 118vh);
+    height: auto;
+    aspect-ratio: 16 / 9;
+    -webkit-mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 14%,
+      #000 86%,
+      transparent 100%
+    );
+    mask-image: linear-gradient(
+      to bottom,
+      transparent 0%,
+      #000 14%,
+      #000 86%,
+      transparent 100%
+    );
+  }
+}
+
+@keyframes splashProgressFill {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
+  }
+}
+
+.animate-splash-progress {
+  animation-name: splashProgressFill;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
