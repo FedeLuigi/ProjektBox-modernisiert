@@ -16,11 +16,11 @@ import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper'
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
-  BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
   STAGE_TWO_COL,
+  getGameTheme,
 } from '../../styles/uiTokens';
 
 interface TvLobbyViewProps {
@@ -87,6 +87,8 @@ export function TvLobbyView({
     }
   };
 
+  const theme = getGameTheme(lobby.gameId);
+
   const handleStartGame = async () => {
     if (!allReady || isStarting) return;
     setIsStarting(true);
@@ -114,7 +116,7 @@ export function TvLobbyView({
           <ConnectionStatusBadge />
           <span
             className={`${HEADER_BADGE_PILL} uppercase shadow-2xs ${
-              categoryBadgeClass || 'bg-purple-500/18 text-purple-200 ring-1 ring-purple-400/35'
+              categoryBadgeClass || theme.badgePill
             }`}
           >
             <Tv className="h-3.5 w-3.5" />
@@ -148,10 +150,10 @@ export function TvLobbyView({
                   aria-label={`Beitrittscode ${lobby.code} kopieren`}
                   className="mt-1.5 inline-flex items-center gap-3 rounded-2xl bg-white/[0.06] hover:bg-white/[0.11] px-4 py-2.5 ring-1 ring-white/15 backdrop-blur-md transition-all active:scale-95 cursor-pointer group"
                 >
-                  <span className="font-mono text-3xl sm:text-4xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300">
+                  <span className={`font-mono text-3xl sm:text-4xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
                     {lobby.code}
                   </span>
-                  <span className="grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white group-hover:bg-purple-500/40 transition-colors">
+                  <span className={`grid h-8 w-8 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
                     {copiedCode ? (
                       <Check className="h-4 w-4 text-emerald-300" />
                     ) : (
@@ -167,7 +169,7 @@ export function TvLobbyView({
           <div className="flex flex-col w-full text-left gap-5">
             <div className="flex items-center justify-between text-xs font-bold text-[#8E8E93]">
               <span className="inline-flex items-center gap-1.5 text-white/80">
-                <Users className="h-3.5 w-3.5 text-purple-300" />
+                <Users className={`h-3.5 w-3.5 ${theme.accentText}`} />
                 <span>
                   Spieler ({activePlayers.length}/{lobby.maxPlayers})
                 </span>
@@ -221,7 +223,7 @@ export function TvLobbyView({
               disabled={!allReady || isStarting}
               onClick={handleStartGame}
               className={`${BTN_PRIMARY_BASE} ${
-                allReady && !isStarting ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                allReady && !isStarting ? theme.primaryBtn : BTN_PRIMARY_DISABLED
               }`}
             >
               <Play className="h-4 w-4 fill-current" />

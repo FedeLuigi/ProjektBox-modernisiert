@@ -15,11 +15,11 @@ import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
-  BTN_PRIMARY_ENABLED,
   BTN_SUCCESS_CONFIRMED,
   BTN_SUCCESS_READY,
   HEADER_BACK_BTN,
   HEADER_ROW,
+  getGameTheme,
 } from '../../styles/uiTokens';
 
 interface InLobbyViewProps {
@@ -126,6 +126,7 @@ export function InLobbyView({
   };
 
   const readyCount = activePlayers.filter((p) => p.isReady).length;
+  const theme = getGameTheme(lobby.gameId);
 
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
@@ -147,15 +148,15 @@ export function InLobbyView({
         {/* Scrollbarer Mittelbereich ohne doppelte Karten */}
         <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 py-3 scrollbar-none">
           {errorMsg && (
-            <div className="mb-3 rounded-2xl bg-purple-500/15 p-3 text-center text-xs font-bold text-purple-200 ring-1 ring-purple-500/25 animate-fade-in shrink-0">
+            <div className={`mb-3 rounded-2xl p-3 text-center text-xs font-bold animate-fade-in shrink-0 ${theme.infoBox}`}>
               {errorMsg}
             </div>
           )}
 
           <div className="my-auto flex flex-col items-center py-2">
             {/* Spiel- / Lobby-Titel */}
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-purple-300/90 mb-1">
-              {lobby.isTvMode && <Tv className="h-3.5 w-3.5 text-purple-400" />}
+            <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1 ${theme.accentTextSoft}`}>
+              {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon}`} />}
               <span>{gameTitle || lobby.name}</span>
             </div>
 
@@ -166,10 +167,10 @@ export function InLobbyView({
               aria-label={`Beitrittscode ${lobby.code} kopieren`}
               className="mt-1 inline-flex items-center gap-3 rounded-3xl px-5 py-3 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer group"
             >
-              <span className="text-4xl sm:text-5xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-pink-400 to-amber-300">
+              <span className={`text-4xl sm:text-5xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
                 {lobby.code}
               </span>
-              <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white group-hover:bg-purple-600 transition-colors">
+              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
                 {copiedCode ? (
                   <Check className="h-4 w-4 text-emerald-400" />
                 ) : (
@@ -239,7 +240,7 @@ export function InLobbyView({
               disabled={!allReady || isStarting}
               onClick={handleStartGame}
               className={`${BTN_PRIMARY_BASE} ${
-                allReady && !isStarting ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                allReady && !isStarting ? theme.primaryBtn : BTN_PRIMARY_DISABLED
               }`}
             >
               <Play className="h-4 w-4 fill-current" />

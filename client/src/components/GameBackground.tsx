@@ -1,14 +1,17 @@
 interface GameBackgroundProps {
   gameId: string;
+  fullBleed?: boolean;
 }
 
-export function GameBackground({ gameId }: GameBackgroundProps) {
+export function GameBackground({ gameId, fullBleed = false }: GameBackgroundProps) {
+  const aspectRatio = fullBleed ? 'xMidYMid slice' : 'xMidYMid meet';
   switch (gameId) {
     case 'memory':
       return (
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -109,6 +112,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -171,6 +175,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -246,6 +251,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -324,6 +330,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -365,6 +372,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -408,6 +416,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -452,6 +461,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
@@ -511,6 +521,7 @@ export function GameBackground({ gameId }: GameBackgroundProps) {
         <svg
           className="absolute inset-0 h-full w-full pointer-events-none"
           viewBox="0 0 240 300"
+          preserveAspectRatio={aspectRatio}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >

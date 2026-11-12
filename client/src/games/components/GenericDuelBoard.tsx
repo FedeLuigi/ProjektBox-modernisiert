@@ -1,7 +1,9 @@
 import { Sparkles, Swords, Zap } from 'lucide-react';
 import type { GameRendererProps } from '../types';
+import { getGameTheme } from '../../styles/uiTokens';
 
 export function GenericDuelBoard({
+  gameId,
   gameState,
   myPlayer,
   opponent,
@@ -10,6 +12,7 @@ export function GenericDuelBoard({
   onMove,
   disabled,
 }: GameRendererProps) {
+  const theme = getGameTheme(gameId || gameState?.gameId);
   const scores = gameState?.scores || {};
   const myScore = scores[myPlayer.id] || 0;
   const oppScore = opponent ? scores[opponent.id] || 0 : 0;
@@ -24,7 +27,7 @@ export function GenericDuelBoard({
       {/* ─── Match Punktestand ─── */}
       <div className="w-full flex items-center justify-around py-3 px-4 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 mb-6">
         <div className="flex flex-col items-center">
-          <span className="text-[11px] font-bold text-purple-400 truncate max-w-[90px]">
+          <span className={`text-[11px] font-bold ${theme.accentIcon} truncate max-w-[90px]`}>
             {myPlayer.name} (Du)
           </span>
           <span className="text-2xl font-black text-white mt-0.5">{myScore}</span>
@@ -38,7 +41,7 @@ export function GenericDuelBoard({
         </div>
 
         <div className="flex flex-col items-center">
-          <span className="text-[11px] font-bold text-pink-400 truncate max-w-[90px]">
+          <span className={`text-[11px] font-bold ${theme.secondaryAccentText} truncate max-w-[90px]`}>
             {opponent?.name || 'Gegner'}
           </span>
           <span className="text-2xl font-black text-white mt-0.5">{oppScore}</span>
@@ -53,7 +56,7 @@ export function GenericDuelBoard({
           onClick={handleAction}
           className={`h-28 w-28 rounded-full flex flex-col items-center justify-center gap-1.5 font-extrabold tracking-wide transition-all shadow-xl active:scale-95 ${
             isMyTurn && !isGameOver && !disabled
-              ? 'bg-gradient-to-tr from-purple-600 via-indigo-600 to-pink-500 text-white shadow-purple-500/40 ring-4 ring-purple-400/40 cursor-pointer animate-pulse hover:scale-105'
+              ? theme.actionOrb
               : 'bg-white/10 text-white/40 ring-2 ring-white/10 cursor-not-allowed opacity-60'
           }`}
         >
@@ -71,7 +74,7 @@ export function GenericDuelBoard({
       </div>
 
       {/* ─── Footer Status ─── */}
-      <div className="w-full pt-4 mt-2 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] text-purple-300 font-medium">
+      <div className={`w-full pt-4 mt-2 border-t border-white/10 flex items-center justify-center gap-1.5 text-[11px] ${theme.accentText} font-medium`}>
         <Sparkles className="h-3.5 w-3.5" />
         <span>Echtzeit-Synchronisation aktiv</span>
       </div>

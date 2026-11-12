@@ -1,6 +1,7 @@
 import type { Player } from '../types/multiplayer';
 
 export interface GameRendererProps<TState = any, TMove = any> {
+  gameId?: string;
   gameState: TState;
   myPlayer: Player;
   opponent?: Player;

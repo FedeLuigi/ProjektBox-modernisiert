@@ -1,4 +1,5 @@
 import type { GameRendererProps } from '../types';
+import { getGameTheme } from '../../styles/uiTokens';
 
 export interface TicTacToeState {
   board: (string | null)[];
@@ -6,6 +7,7 @@ export interface TicTacToeState {
 }
 
 export function TicTacToeBoard({
+  gameId = 'tic-tac-toe',
   gameState,
   isMyTurn,
   isGameOver,
@@ -13,6 +15,7 @@ export function TicTacToeBoard({
   disabled,
 }: GameRendererProps<TicTacToeState>) {
   const { board, winningLine } = gameState || { board: Array(9).fill(null), winningLine: null };
+  const theme = getGameTheme(gameId);
 
   const handleCellClick = (idx: number) => {
     if (!isMyTurn || isGameOver || disabled) return;
@@ -35,22 +38,22 @@ export function TicTacToeBoard({
             className={`relative flex items-center justify-center rounded-2xl text-4xl sm:text-5xl font-black transition-all ${
               cell === null
                 ? canClick
-                  ? 'bg-white/5 hover:bg-white/10 active:scale-95 cursor-pointer ring-1 ring-white/10 hover:ring-purple-500/50'
+                  ? `bg-white/5 hover:bg-white/10 active:scale-95 cursor-pointer ring-1 ring-white/10 ${theme.hoverRing}`
                   : 'bg-white/[0.03] cursor-not-allowed opacity-60'
                 : isWinningCell
-                  ? 'bg-purple-600/40 text-purple-300 ring-2 ring-purple-400 shadow-[0_0_20px_rgba(168,85,247,0.6)] animate-pulse'
+                  ? 'bg-sky-500/35 text-sky-200 ring-2 ring-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.55)] animate-pulse'
                   : cell === 'X'
-                    ? 'bg-purple-500/15 text-purple-400 ring-1 ring-purple-500/30'
-                    : 'bg-pink-500/15 text-pink-400 ring-1 ring-pink-500/30'
+                    ? 'bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30'
+                    : 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
             }`}
           >
             {cell === 'X' && (
-              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#a855f7]">
+              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#38bdf8]">
                 X
               </span>
             )}
             {cell === 'O' && (
-              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#ec4899]">
+              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#fbbf24]">
                 O
               </span>
             )}

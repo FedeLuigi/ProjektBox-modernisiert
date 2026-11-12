@@ -252,20 +252,20 @@ export function App() {
   const showAll = category === 'Alle';
 
   return (
-    <div className="fixed inset-0 min-h-dvh flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
-      {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (wie beim Game-Screen, fixiert) ─── */}
+    <div className="fixed inset-0 h-full min-h-dvh flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
+      {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (oben bis ganz nach unten) ─── */}
       <div
-        className="pointer-events-none absolute inset-0 -z-10"
+        className="pointer-events-none absolute inset-0 z-0"
         style={{
           background:
-            'radial-gradient(110% 75% at 50% -10%, rgba(139, 92, 246, 0.18) 0%, rgba(99, 102, 241, 0.09) 40%, transparent 80%)',
+            'radial-gradient(110% 70% at 50% -10%, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.09) 45%, transparent 80%), radial-gradient(110% 60% at 50% 108%, rgba(99, 102, 241, 0.16) 0%, rgba(139, 92, 246, 0.06) 45%, transparent 80%)',
         }}
       />
       {/* ─── Hintergrund-Orbs & Globale Kometen-Animation erst nach Splash rendern (null GPU-Overhead beim Start) ─── */}
       {!showSplash && (
         <>
           <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/20" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-50 bg-indigo-600/15" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-55 bg-indigo-600/20" />
           <BackgroundCometCanvas opacity={0.65} />
         </>
       )}

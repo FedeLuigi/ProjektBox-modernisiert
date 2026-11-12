@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { GameRendererProps } from '../types';
+import { getGameTheme } from '../../styles/uiTokens';
 
 export interface ConnectFourState {
   board: (string | null)[][];
@@ -8,6 +9,7 @@ export interface ConnectFourState {
 }
 
 export function ConnectFourBoard({
+  gameId = 'connect',
   gameState,
   isMyTurn,
   isGameOver,
@@ -15,6 +17,7 @@ export function ConnectFourBoard({
   disabled,
 }: GameRendererProps<ConnectFourState>) {
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+  const theme = getGameTheme(gameId);
 
   const { board, winningCoords } = gameState || {
     board: Array.from({ length: 6 }, () => Array(7).fill(null)),
@@ -47,7 +50,7 @@ export function ConnectFourBoard({
               className={`h-6 flex items-center justify-center rounded-t-lg transition-all ${
                 canClick
                   ? isHovered
-                    ? 'text-purple-400 scale-125'
+                    ? `${theme.accentIcon} scale-125`
                     : 'text-white/40 hover:text-white'
                   : 'opacity-0 pointer-events-none'
               }`}

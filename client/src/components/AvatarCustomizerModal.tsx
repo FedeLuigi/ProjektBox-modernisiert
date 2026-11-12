@@ -119,15 +119,15 @@ export function AvatarCustomizerModal({
             >
               <Avatar config={current} size={110} />
             </div>
-            {/* Würfeln-Button (Stufe 2/3 Utility-Pille statt grellem Pink) */}
+            {/* Würfeln-Button (nur Icon) */}
             <button
               type="button"
               onClick={handleRandomize}
+              aria-label="Zufälligen Avatar würfeln"
               title="Zufälligen Avatar würfeln"
-              className="absolute -bottom-1 -right-1 flex items-center gap-1.5 rounded-full bg-[#23232B] hover:bg-[#2E2E38] px-3 py-1.5 text-xs font-bold text-white shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer"
+              className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full bg-[#23232B] hover:bg-[#2E2E38] text-white shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer"
             >
-              <Dices className="h-3.5 w-3.5 text-purple-300" />
-              <span>Würfeln</span>
+              <Dices className="h-4 w-4 text-purple-300" />
             </button>
           </div>
         </div>

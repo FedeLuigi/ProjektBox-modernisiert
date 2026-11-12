@@ -4,11 +4,9 @@ import {
   Check,
   Copy,
   Dices,
-  Palette,
   Pencil,
   Smartphone,
   Sparkles,
-  Trophy,
   Volume2,
   VolumeX,
 } from 'lucide-react';
@@ -197,14 +195,14 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── VOLLBILD-KOMETEN-ANIMATION HINTER DER GESAMTEN EINSTELLUNGSSEITE ─── */}
       <BackgroundCometCanvas opacity={0.6} />
 
-      {/* ─── Sanftes Ambient-Hintergrundlicht (Lila/Blau) ─── */}
+      {/* ─── Sanftes Ambient-Hintergrundlicht (Lila/Blau bis ganz nach unten) ─── */}
       <div className="pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/25" />
-      <div className="pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 bg-indigo-600/20" />
+      <div className="pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-60 bg-indigo-600/20" />
 
       {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
@@ -267,16 +265,6 @@ export function SettingsSheet({
                 </div>
               </div>
 
-              {/* Avatar anpassen Button */}
-              <button
-                type="button"
-                onClick={() => setIsAvatarModalOpen(true)}
-                className="mb-2 inline-flex items-center gap-1.5 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-600 dark:text-purple-300 px-3 py-1 text-xs font-bold ring-1 ring-purple-500/20 active:scale-95 transition-all cursor-pointer"
-              >
-                <Palette className="h-3 w-3" />
-                <span>Avatar anpassen</span>
-              </button>
-
               {/* Spielername mit Validierung & Würfeln */}
               <div className="flex items-center justify-center gap-1.5 max-w-full">
                 <div className="relative flex items-center">
@@ -312,7 +300,7 @@ export function SettingsSheet({
               )}
 
               {/* Eindeutige ID Badge */}
-              <div className="mt-2 flex items-center justify-center gap-2">
+              <div className="mt-2 flex items-center justify-center">
                 <button
                   type="button"
                   onClick={handleCopyId}
@@ -326,11 +314,6 @@ export function SettingsSheet({
                     <Copy className="h-2.5 w-2.5" />
                   )}
                 </button>
-
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-gradient-to-r from-purple-500/15 via-indigo-500/15 to-pink-500/15 px-2.5 py-0.5 text-[10px] font-bold text-purple-400 ring-1 ring-purple-500/30">
-                  <Trophy className="h-3 w-3 text-amber-400" />
-                  <span>Arcade Champion</span>
-                </div>
               </div>
             </div>
 

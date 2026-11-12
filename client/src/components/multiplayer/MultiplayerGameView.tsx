@@ -14,9 +14,9 @@ import { clientGameRegistry } from '../../games/registry';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
-  BTN_PRIMARY_ENABLED,
   BTN_SECONDARY_BASE,
   BTN_SECONDARY_NEUTRAL,
+  getGameTheme,
 } from '../../styles/uiTokens';
 
 interface MultiplayerGameViewProps {
@@ -133,15 +133,16 @@ export function MultiplayerGameView({
 
   // Dynamischer Game-Board Renderer aus der zentralen Registry
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
+  const theme = getGameTheme(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
       {/* ─── Dynamischer Hintergrund ─── */}
       <BackgroundCometCanvas opacity={0.35} />
 
       {/* ─── Ambient Glow ─── */}
-      <div className="pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-40 bg-purple-600/30" />
-      <div className="pointer-events-none absolute -bottom-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-40 bg-pink-600/25" />
+      <div className={`pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-45 ${theme.ambientTop}`} />
+      <div className={`pointer-events-none absolute -bottom-16 -right-16 h-96 w-96 rounded-full blur-3xl opacity-50 ${theme.ambientBottom}`} />
 
       {/* ─── Vollbild-Container mit Safe-Area ─── */}
       <div
@@ -169,13 +170,13 @@ export function MultiplayerGameView({
                 <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
                   {currentUser.name}
                 </span>
-                <span className="font-black text-purple-300 tabular-nums">
+                <span className={`font-black tabular-nums ${theme.accentText}`}>
                   {gameState?.scores?.[currentUser.id] || 0}
                 </span>
               </div>
               <span className="text-white/30 font-bold">:</span>
               <div className="flex items-center gap-1.5 min-w-0">
-                <span className="font-black text-pink-300 tabular-nums">
+                <span className={`font-black tabular-nums ${theme.secondaryAccentText}`}>
                   {gameState?.scores?.[opponent?.id || ''] || 0}
                 </span>
                 <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
@@ -188,7 +189,7 @@ export function MultiplayerGameView({
             <div
               className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
                 isMyTurn
-                  ? 'bg-purple-500/20 text-purple-200 ring-purple-400/40'
+                  ? theme.turnPill
                   : 'bg-white/[0.06] text-white/75 ring-white/10'
               }`}
             >
@@ -222,74 +223,85 @@ export function MultiplayerGameView({
           </div>
         )}
 
-        {/* 3. MITTE: DYNAMISCHES SPIELFELD AUS DER REGISTRY */}
-        <main
-          className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
-            lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1.5 sm:p-2' : 'max-w-md p-3'
-          }`}
-        >
-          {BoardComponent && myPlayer ? (
-            <BoardComponent
-              gameState={gameState}
-              myPlayer={myPlayer}
-              opponent={opponent}
-              allPlayers={activePlayers}
-              isMyTurn={isMyTurn}
-              isGameOver={isGameOver}
-              onMove={handleSendMove}
-              disabled={isSubmitting}
-              isTvMode={lobby.isTvMode}
-            />
-          ) : (
-            <div className="text-center p-8 rounded-2xl bg-white/5 ring-1 ring-white/10 text-xs text-[#8E8E93]">
-              Spielfeld wird initialisiert...
+        {/* 3. MITTE: ENTWEDER ZENTRIERTE ERGEBNIS-KARTE (BEI SPIELENDE) ODER DYNAMISCHES SPIELFELD */}
+        {isGameOver ? (
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-2">
+            <div className={`max-w-sm mx-auto w-full p-5 sm:p-6 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center animate-fade-in`}>
+              <div className="flex justify-center mb-2.5 landscape:mb-1.5">
+                {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
+                {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
+                {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
+              </div>
+
+              <h2 className="text-xl sm:text-2xl landscape:text-lg font-black">
+                {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
+                {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
+                {isDraw && <span className="text-amber-400">Unentschieden!</span>}
+              </h2>
+
+              {isDrawAndGuess && gameState?.secretWord && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
+                  <span className="text-[#8E8E93]">Lösung:</span>
+                  <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
+                    {gameState.secretWord}
+                  </strong>
+                </div>
+              )}
+
+              {lobby.rematchVotes.length > 0 && (
+                <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
+                  {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
+                </p>
+              )}
+
+              <div className="mt-5 landscape:mt-3.5 flex flex-col gap-2.5 landscape:gap-2">
+                <button
+                  type="button"
+                  onClick={handleRematch}
+                  disabled={hasVotedRematch}
+                  className={`${BTN_PRIMARY_BASE} ${
+                    hasVotedRematch ? BTN_PRIMARY_DISABLED : theme.primaryBtn
+                  }`}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Revanche'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={onLeave}
+                  className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+                >
+                  Zurück zur Lobby
+                </button>
+              </div>
             </div>
-          )}
-        </main>
-
-        {/* 4. GAME OVER OVERLAY */}
-        {isGameOver && (
-          <div className="shrink-0 max-w-sm mx-auto w-full p-4 rounded-3xl bg-[#181824]/95 ring-2 ring-purple-500/40 shadow-2xl backdrop-blur-2xl text-center mb-2 animate-fade-in">
-            <div className="flex justify-center mb-2">
-              {isWinner && <Trophy className="h-10 w-10 text-amber-400 animate-bounce" />}
-              {isLoser && <span className="text-3xl">😔</span>}
-              {isDraw && <span className="text-3xl">🤝</span>}
-            </div>
-
-            <h2 className="text-xl sm:text-2xl font-black">
-              {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
-              {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
-              {isDraw && <span className="text-amber-400">Unentschieden!</span>}
-            </h2>
-
-            <p className="mt-1 text-xs text-[#8E8E93]">
-              {lobby.rematchVotes.length > 0
-                ? `${lobby.rematchVotes.length}/${activePlayers.length} Spieler möchten Revanche`
-                : 'Bereit für eine Revanche?'}
-            </p>
-
-            <div className="mt-4 flex flex-col gap-2.5">
-              <button
-                type="button"
-                onClick={handleRematch}
-                disabled={hasVotedRematch}
-                className={`${BTN_PRIMARY_BASE} ${
-                  hasVotedRematch ? BTN_PRIMARY_DISABLED : BTN_PRIMARY_ENABLED
-                }`}
-              >
-                <RotateCcw className="h-4 w-4" />
-                <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Nochmal spielen (Revanche)'}</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onLeave}
-                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-              >
-                Zurück zur Lobby
-              </button>
-            </div>
-          </div>
+          </main>
+        ) : (
+          <main
+            className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
+              lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1.5 sm:p-2' : 'max-w-md p-3'
+            }`}
+          >
+            {BoardComponent && myPlayer ? (
+              <BoardComponent
+                gameId={lobby.gameId}
+                gameState={gameState}
+                myPlayer={myPlayer}
+                opponent={opponent}
+                allPlayers={activePlayers}
+                isMyTurn={isMyTurn}
+                isGameOver={isGameOver}
+                onMove={handleSendMove}
+                disabled={isSubmitting}
+                isTvMode={lobby.isTvMode}
+              />
+            ) : (
+              <div className="text-center p-8 rounded-2xl bg-white/5 ring-1 ring-white/10 text-xs text-[#8E8E93]">
+                Spielfeld wird initialisiert...
+              </div>
+            )}
+          </main>
         )}
       </div>
     </div>

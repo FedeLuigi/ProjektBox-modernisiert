@@ -20,11 +20,10 @@ import { GameBackground } from '../GameBackground';
 import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
-  BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
   HEADER_ROW,
   SWITCH_TRACK_OFF,
-  SWITCH_TRACK_ON,
+  getGameTheme,
 } from '../../styles/uiTokens';
 
 interface LobbyScreenProps {
@@ -128,6 +127,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
   const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
   const style = TONE_STYLES[game.tone];
+  const theme = getGameTheme(game.id);
 
   // 1. Wenn ein Spiel läuft -> Vollbild TV oder Multiplayer Game View
   if (isInGame && currentLobby) {
@@ -153,18 +153,18 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell & Hintergrund wie GameSheet)
   if (currentLobby) {
     return (
-      <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
+      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
         <BackgroundCometCanvas opacity={0.45} />
 
-        <div className="pointer-events-none absolute inset-0 opacity-30 scale-125 transform-gpu">
-          <GameBackground gameId={game.id} />
+        <div className="pointer-events-none absolute inset-0 opacity-30 transform-gpu">
+          <GameBackground gameId={game.id} fullBleed />
         </div>
 
         <div
           className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
         />
         <div
-          className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
+          className={`pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-65 ${style.glow}`}
         />
 
         <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
@@ -204,14 +204,14 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="lobby-screen-title"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details (exakt wie in GameSheet) ─── */}
       <BackgroundCometCanvas opacity={0.45} />
 
       {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild) ─── */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 scale-125 transform-gpu">
-        <GameBackground gameId={game.id} />
+      <div className="absolute inset-0 pointer-events-none opacity-30 transform-gpu">
+        <GameBackground gameId={game.id} fullBleed />
       </div>
 
       {/* ─── Sanftes Ambient-Hintergrundlicht passend zum Spielton ─── */}
@@ -219,7 +219,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
         className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
       />
       <div
-        className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
+        className={`pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-65 ${style.glow}`}
       />
 
       {/* ─── Vollbild-Container mit einheitlichem Raster (.app-shell) ─── */}
@@ -280,7 +280,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                     setHasCustomLobbyName(val.trim().length > 0);
                   }}
                   placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                  className="w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 focus:ring-2 focus:ring-purple-500 outline-none text-white placeholder:text-white/25"
+                  className={`w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
                 />
                 <button
                   type="button"
@@ -301,14 +301,14 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
               aria-checked={isTvMode}
               className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
                 isTvMode
-                  ? 'bg-purple-500/[0.12] ring-purple-400/35'
+                  ? theme.activeSurface
                   : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
               }`}
             >
               <div className="flex items-center gap-3">
                 <Tv
                   className={`h-4 w-4 transition-colors ${
-                    isTvMode ? 'text-purple-300' : 'text-[#8E8E93]'
+                    isTvMode ? theme.accentText : 'text-[#8E8E93]'
                   }`}
                 />
                 <span className="text-sm font-bold text-white">TV-Modus</span>
@@ -316,7 +316,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
               <div
                 className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                  isTvMode ? SWITCH_TRACK_ON : SWITCH_TRACK_OFF
+                  isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
                 }`}
               >
                 <span
@@ -332,7 +332,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
               type="submit"
               disabled={isCreating}
               className={`mt-1 ${BTN_PRIMARY_BASE} ${
-                !isCreating ? BTN_PRIMARY_ENABLED : BTN_PRIMARY_DISABLED
+                !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
               }`}
             >
               {isCreating ? (

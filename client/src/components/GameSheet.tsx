@@ -5,12 +5,12 @@ import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 import { isMultiplayerGame } from '../games/registry';
 import {
   BTN_PRIMARY_BASE,
-  BTN_PRIMARY_ENABLED,
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
   STAGE_TWO_COL,
   SURFACE_CARD,
+  getGameTheme,
 } from '../styles/uiTokens';
 
 interface GameSheetProps {
@@ -23,6 +23,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
   if (!game) return null;
 
   const style = TONE_STYLES[game.tone];
+  const theme = getGameTheme(game.id);
   const Icon = game.icon;
   const isMultiplayer = isMultiplayerGame(game);
 
@@ -39,14 +40,14 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="game-screen-title"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
     >
       {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details ─── */}
       <BackgroundCometCanvas opacity={0.45} />
 
-      {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild) ─── */}
-      <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-30 scale-125 transform-gpu">
-        <GameBackground gameId={game.id} />
+      {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild ohne Randbalken) ─── */}
+      <div className="absolute inset-0 pointer-events-none opacity-40 dark:opacity-30 transform-gpu">
+        <GameBackground gameId={game.id} fullBleed />
       </div>
 
       {/* ─── Sanftes Ambient-Hintergrundlicht passend zum Spielton ─── */}
@@ -54,7 +55,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
         className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
       />
       <div
-        className={`pointer-events-none absolute -bottom-24 -left-24 h-80 w-80 rounded-full blur-3xl opacity-50 ${style.glow}`}
+        className={`pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-65 ${style.glow}`}
       />
 
       {/* ─── Vollbild-Container mit einheitlichem Shell-Abstand ─── */}
@@ -113,7 +114,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
                   {game.duration}
                 </span>
                 {isMultiplayer && (
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-purple-500/15 text-purple-400 px-3.5 py-1.5 ring-1 ring-purple-500/25 backdrop-blur-md font-bold">
+                  <span className={`inline-flex items-center gap-1.5 rounded-full px-3.5 py-1.5 backdrop-blur-md font-bold ${theme.badgePill}`}>
                     <Wifi className="h-3.5 w-3.5" />
                     Online Multiplayer
                   </span>
@@ -134,7 +135,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
               <button
                 type="button"
                 onClick={handlePlayClick}
-                className={`mt-6 landscape:mt-5 ${BTN_PRIMARY_BASE} ${BTN_PRIMARY_ENABLED} sm:w-auto sm:min-w-[220px]`}
+                className={`mt-6 landscape:mt-5 ${BTN_PRIMARY_BASE} ${theme.primaryBtn} sm:w-auto sm:min-w-[220px]`}
               >
                 <Play className="h-4 w-4 fill-current" />
                 <span>Jetzt losspielen</span>
