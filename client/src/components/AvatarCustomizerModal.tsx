@@ -81,11 +81,11 @@ export function AvatarCustomizerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center p-3 sm:p-4 bg-black/75 backdrop-blur-md animate-fade-in select-none"
     >
-      <div className="relative w-full max-w-lg rounded-[32px] bg-[#16161C] text-white p-5 sm:p-6 shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90dvh] overflow-hidden">
+      <div className="relative w-full max-w-lg landscape:max-w-3xl rounded-[32px] landscape:rounded-[26px] bg-[#16161C] text-white p-5 sm:p-6 landscape:p-4 shadow-2xl ring-1 ring-white/10 flex flex-col max-h-[90dvh] landscape:max-h-[92dvh] overflow-hidden">
         {/* Header mit Schließen-Button */}
-        <div className="flex items-center justify-between pb-3 border-b border-white/[0.08]">
+        <div className="flex items-center justify-between pb-3 landscape:pb-2 border-b border-white/[0.08] shrink-0">
           <div className="flex items-center gap-2">
             <Sparkles className="h-4 w-4 text-[#8B5CF6]" />
             <h2 className="text-base sm:text-lg font-black tracking-tight text-white">
@@ -101,65 +101,69 @@ export function AvatarCustomizerModal({
           </button>
         </div>
 
-        {/* ─── LIVE VORSCHAU DES AVATARS ─── */}
-        <div className="my-5 flex flex-col items-center justify-center">
-          <div className="relative inline-flex items-center justify-center rounded-full">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -inset-5 rounded-full transition-all duration-300"
-              style={{
-                background: `radial-gradient(circle closest-side, ${previewBgMeta.glowRgba} 62%, ${previewBgMeta.haloMidRgba} 78%, ${previewBgMeta.haloEdgeRgba} 90%, rgba(0, 0, 0, 0) 99%)`,
-              }}
-            />
-            <div
-              className="relative inline-flex items-center justify-center rounded-full p-1 transition-all duration-300"
-              style={{
-                backgroundImage: `linear-gradient(to top right, ${previewBgMeta.from}, ${previewBgMeta.accent}, ${previewBgMeta.to})`,
-              }}
-            >
-              <Avatar config={current} size={110} />
+        {/* Body: Hochformat vertikal gestapelt, Querformat links Vorschau & rechts Auswahl */}
+        <div className="flex flex-col flex-1 min-h-0 landscape:grid landscape:grid-cols-[175px_1fr] sm:landscape:grid-cols-[200px_1fr] landscape:gap-5 landscape:pt-3">
+          {/* ─── LIVE VORSCHAU DES AVATARS ─── */}
+          <div className="my-5 landscape:my-0 flex flex-col items-center justify-center shrink-0">
+            <div className="relative inline-flex items-center justify-center rounded-full">
+              <div
+                aria-hidden="true"
+                className="pointer-events-none absolute -inset-5 rounded-full transition-all duration-300"
+                style={{
+                  background: `radial-gradient(circle closest-side, ${previewBgMeta.glowRgba} 62%, ${previewBgMeta.haloMidRgba} 78%, ${previewBgMeta.haloEdgeRgba} 90%, rgba(0, 0, 0, 0) 99%)`,
+                }}
+              />
+              <div
+                className="relative inline-flex items-center justify-center rounded-full p-1 transition-all duration-300"
+                style={{
+                  backgroundImage: `linear-gradient(to top right, ${previewBgMeta.from}, ${previewBgMeta.accent}, ${previewBgMeta.to})`,
+                }}
+              >
+                <Avatar config={current} size={110} />
+              </div>
+              {/* Würfeln-Button (nur Icon) */}
+              <button
+                type="button"
+                onClick={handleRandomize}
+                aria-label="Zufälligen Avatar würfeln"
+                title="Zufälligen Avatar würfeln"
+                className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full bg-[#23232B] hover:bg-[#2E2E38] text-white shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer"
+              >
+                <Dices className="h-4 w-4 text-purple-300" />
+              </button>
             </div>
-            {/* Würfeln-Button (nur Icon) */}
-            <button
-              type="button"
-              onClick={handleRandomize}
-              aria-label="Zufälligen Avatar würfeln"
-              title="Zufälligen Avatar würfeln"
-              className="absolute -bottom-1 -right-1 grid h-9 w-9 place-items-center rounded-full bg-[#23232B] hover:bg-[#2E2E38] text-white shadow-lg ring-1 ring-white/20 active:scale-95 transition-all cursor-pointer"
-            >
-              <Dices className="h-4 w-4 text-purple-300" />
-            </button>
           </div>
-        </div>
 
-        {/* ─── KATEGORIE-TABS ─── */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-2 py-2 border-b border-white/[0.08]">
-          {(
-            [
-              { id: 'base', label: 'Figur' },
-              { id: 'skin', label: 'Farbe' },
-              { id: 'hat', label: 'Hut' },
-              { id: 'accessory', label: 'Brille' },
-              { id: 'bg', label: 'Aura' },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setActiveTab(tab.id)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
-                activeTab === tab.id
-                  ? 'bg-white/[0.15] text-white ring-1 ring-white/20 shadow-xs'
-                  : 'text-[#98989D] hover:bg-white/[0.06] hover:text-white'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+          {/* ─── RECHTE SPALTE: KATEGORIE-TABS & OPTIONEN ─── */}
+          <div className="flex flex-col flex-1 min-h-0">
+            {/* ─── KATEGORIE-TABS ─── */}
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-none px-2 py-2 landscape:pt-0 border-b border-white/[0.08] shrink-0">
+              {(
+                [
+                  { id: 'base', label: 'Figur' },
+                  { id: 'skin', label: 'Farbe' },
+                  { id: 'hat', label: 'Hut' },
+                  { id: 'accessory', label: 'Brille' },
+                  { id: 'bg', label: 'Aura' },
+                ] as const
+              ).map((tab) => (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`rounded-full px-3.5 py-1.5 text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    activeTab === tab.id
+                      ? 'bg-white/[0.15] text-white ring-1 ring-white/20 shadow-xs'
+                      : 'text-[#98989D] hover:bg-white/[0.06] hover:text-white'
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
 
-        {/* ─── AUSWAHL-OPTIONEN (Seitlicher Puffer gegen Ring-/Schatten-Clipping) ─── */}
-        <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-none">
+            {/* ─── AUSWAHL-OPTIONEN (Seitlicher Puffer gegen Ring-/Schatten-Clipping) ─── */}
+            <div className="flex-1 min-h-0 overflow-y-auto overflow-x-hidden px-2 py-3 scrollbar-none">
           {/* TAB 1: BASIS-FIGUR */}
           {activeTab === 'base' && (
             <div className="grid grid-cols-3 gap-2.5">
@@ -290,10 +294,12 @@ export function AvatarCustomizerModal({
               })}
             </div>
           )}
+            </div>
+          </div>
         </div>
 
         {/* ─── SPEICHERN BUTTON ─── */}
-        <div className="pt-3 border-t border-white/[0.08]">
+        <div className="pt-3 landscape:pt-2 border-t border-white/[0.08] shrink-0">
           <button
             type="button"
             onClick={handleSave}

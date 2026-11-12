@@ -89,20 +89,30 @@ export function SpaceDodgeBoard({
     setShipX(pct);
   };
 
+  const nudgeShip = (delta: number) => {
+    if (endedRef.current) return;
+    setStarted(true);
+    const next = Math.max(8, Math.min(92, shipXRef.current + delta));
+    shipXRef.current = next;
+    setShipX(next);
+  };
+
   return (
-    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs gap-2 select-none">
-      <div className="flex items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
+    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[1fr_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2 select-none">
+      {/* Hochformat Info-Zeile */}
+      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
         <span>Punkte: <strong className={theme.accentText}>{score}</strong></span>
         {!started && <span className="text-[11px] text-white/60">Feld ziehen zum Starten</span>}
       </div>
 
+      {/* Weltraum-Arena */}
       <div
         ref={stageRef}
         onPointerDown={(e) => updateShipFromClientX(e.clientX)}
         onPointerMove={(e) => {
           if (e.buttons > 0 || e.pointerType === 'touch') updateShipFromClientX(e.clientX);
         }}
-        className={`relative w-full h-72 sm:h-80 landscape:h-52 rounded-3xl bg-[#0D1322]/95 ${theme.softRing} overflow-hidden touch-none cursor-ew-resize`}
+        className={`relative w-full h-72 sm:h-80 landscape:h-[min(calc(100dvh-5.2rem),21rem)] landscape:max-w-[20rem] landscape:mx-auto rounded-3xl bg-[#0D1322]/95 ${theme.softRing} overflow-hidden touch-none cursor-ew-resize`}
       >
         {obstacles.map((o) => (
           <div
@@ -122,6 +132,36 @@ export function SpaceDodgeBoard({
           className="absolute -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-2xl bg-sky-500/25 text-sky-300 ring-1 ring-sky-400/60 shadow-[0_0_18px_rgba(56,189,248,0.45)]"
         >
           <Rocket className="h-5 w-5 -rotate-45" />
+        </div>
+      </div>
+
+      {/* Rechte Seitenleiste im Querformat */}
+      <div className="hidden landscape:flex flex-col gap-3 w-full">
+        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/10 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Punkte</span>
+          <strong className={`text-2xl font-black tabular-nums ${theme.accentText}`}>{score}</strong>
+          {!started && (
+            <span className="mt-1 text-[10px] text-white/55">Ziehen oder steuern</span>
+          )}
+        </div>
+
+        <div className="grid grid-cols-2 gap-2">
+          <button
+            type="button"
+            aria-label="Nach links steuern"
+            onClick={() => nudgeShip(-14)}
+            className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 text-sm font-black ring-1 ring-white/10 cursor-pointer"
+          >
+            ◀
+          </button>
+          <button
+            type="button"
+            aria-label="Nach rechts steuern"
+            onClick={() => nudgeShip(14)}
+            className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 text-sm font-black ring-1 ring-white/10 cursor-pointer"
+          >
+            ▶
+          </button>
         </div>
       </div>
     </div>

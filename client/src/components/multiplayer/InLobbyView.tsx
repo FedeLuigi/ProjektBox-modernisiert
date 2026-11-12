@@ -128,6 +128,44 @@ export function InLobbyView({
   const readyCount = activePlayers.filter((p) => p.isReady).length;
   const theme = getGameTheme(lobby.gameId);
 
+  const actionButton = !isReady ? (
+    <button
+      type="button"
+      onClick={handleToggleReady}
+      className={`${BTN_PRIMARY_BASE} ${BTN_SUCCESS_READY}`}
+    >
+      <Check className="h-4 w-4 stroke-[2.5]" />
+      <span>Ich bin bereit</span>
+    </button>
+  ) : canStartGame ? (
+    <button
+      type="button"
+      disabled={!allReady || isStarting}
+      onClick={handleStartGame}
+      className={`${BTN_PRIMARY_BASE} ${
+        allReady && !isStarting ? theme.primaryBtn : BTN_PRIMARY_DISABLED
+      }`}
+    >
+      <Play className="h-4 w-4 fill-current" />
+      <span>
+        {!allReady
+          ? activePlayers.length < lobby.minPlayers
+            ? `Warte auf Spieler (${activePlayers.length}/${lobby.minPlayers})`
+            : `Warte auf Bereit (${readyCount}/${activePlayers.length})`
+          : 'Spiel starten'}
+      </span>
+    </button>
+  ) : (
+    <button
+      type="button"
+      onClick={handleToggleReady}
+      className={`${BTN_PRIMARY_BASE} ${BTN_SUCCESS_CONFIRMED}`}
+    >
+      <Check className="h-4 w-4 stroke-[2.5]" />
+      <span>Bereit ✓</span>
+    </button>
+  );
+
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: Zurück-Pille & Verbindungsstatus */}
@@ -144,124 +182,94 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-between min-h-0">
-        {/* Scrollbarer Mittelbereich ohne doppelte Karten */}
-        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 py-3 scrollbar-none">
+      <div className="mx-auto flex w-full max-w-md landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
+        {/* Scrollbarer Mittelbereich: Hochformat zentriert, Querformat 2-Spalten (Code links, Spieler & Start rechts) */}
+        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 py-3 landscape:py-1 scrollbar-none">
           {errorMsg && (
             <div className={`mb-3 rounded-2xl p-3 text-center text-xs font-bold animate-fade-in shrink-0 ${theme.infoBox}`}>
               {errorMsg}
             </div>
           )}
 
-          <div className="my-auto flex flex-col items-center py-2">
-            {/* Spiel- / Lobby-Titel */}
-            <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1 ${theme.accentTextSoft}`}>
-              {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon}`} />}
-              <span>{gameTitle || lobby.name}</span>
+          <div className="my-auto grid w-full items-center gap-6 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8 py-2 landscape:py-0">
+            {/* Linke Spalte: Spiel-Titel, großer Beitrittscode & Status */}
+            <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left">
+              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1 ${theme.accentTextSoft}`}>
+                {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon}`} />}
+                <span>{gameTitle || lobby.name}</span>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleCopyCode}
+                aria-label={`Beitrittscode ${lobby.code} kopieren`}
+                className="mt-1 inline-flex items-center gap-3 rounded-3xl px-5 py-3 landscape:px-4 landscape:py-2.5 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer group"
+              >
+                <span className={`text-4xl sm:text-5xl landscape:text-4xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
+                  {lobby.code}
+                </span>
+                <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
+                  {copiedCode ? (
+                    <Check className="h-4 w-4 text-emerald-400" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
+                </span>
+              </button>
+
+              <p className="mt-3 text-xs font-semibold text-[#8E8E93]">
+                {activePlayers.length < lobby.minPlayers
+                  ? `Warte auf Mitspieler (${activePlayers.length}/${lobby.minPlayers})`
+                  : `${readyCount}/${activePlayers.length} bereit`}
+              </p>
             </div>
 
-            {/* Großer Beitrittscode auf offener Bühne */}
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              aria-label={`Beitrittscode ${lobby.code} kopieren`}
-              className="mt-1 inline-flex items-center gap-3 rounded-3xl px-5 py-3 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/10 transition-all active:scale-95 cursor-pointer group"
-            >
-              <span className={`text-4xl sm:text-5xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
-                {lobby.code}
-              </span>
-              <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
-                {copiedCode ? (
-                  <Check className="h-4 w-4 text-emerald-400" />
-                ) : (
-                  <Copy className="h-4 w-4" />
-                )}
-              </span>
-            </button>
-
-            {/* Kompakte Spieler-Chips */}
-            <div className="mt-7 w-full flex flex-wrap items-center justify-center gap-2.5">
-              {activePlayers.map((p, idx) => {
-                const isMe = p.id === currentUser.id;
-                return (
-                  <div
-                    key={p.id || idx}
-                    className={`flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5 ring-1 transition-all ${
-                      p.isReady
-                        ? 'bg-emerald-500/12 ring-emerald-500/35'
-                        : 'bg-[#18181E] ring-white/12'
-                    }`}
-                  >
-                    <div className="relative shrink-0">
-                      <Avatar config={p.avatar} size={32} />
-                      {p.isHost && (
-                        <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
-                          <Crown className="h-2 w-2 fill-current" />
-                        </span>
+            {/* Rechte Spalte: Spieler-Chips (+ Haupt-Button im Querformat) */}
+            <div className="flex flex-col items-center landscape:items-stretch w-full gap-5 landscape:gap-4">
+              <div className="w-full flex flex-wrap items-center justify-center landscape:justify-start gap-2.5">
+                {activePlayers.map((p, idx) => {
+                  const isMe = p.id === currentUser.id;
+                  return (
+                    <div
+                      key={p.id || idx}
+                      className={`flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5 ring-1 transition-all ${
+                        p.isReady
+                          ? 'bg-emerald-500/12 ring-emerald-500/35'
+                          : 'bg-[#18181E] ring-white/12'
+                      }`}
+                    >
+                      <div className="relative shrink-0">
+                        <Avatar config={p.avatar} size={32} />
+                        {p.isHost && (
+                          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
+                            <Crown className="h-2 w-2 fill-current" />
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-xs sm:text-sm font-bold text-white max-w-[120px] truncate">
+                        {p.name}
+                        {isMe ? ' (Du)' : ''}
+                      </span>
+                      {p.isReady ? (
+                        <Check className="h-4 w-4 shrink-0 text-emerald-400 stroke-[2.75]" />
+                      ) : (
+                        <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
                       )}
                     </div>
-                    <span className="text-xs sm:text-sm font-bold text-white max-w-[120px] truncate">
-                      {p.name}
-                      {isMe ? ' (Du)' : ''}
-                    </span>
-                    {p.isReady ? (
-                      <Check className="h-4 w-4 shrink-0 text-emerald-400 stroke-[2.75]" />
-                    ) : (
-                      <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
-                    )}
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
 
-            {/* Dezente 1-Zeilen-Statusanzeige */}
-            <p className="mt-4 text-xs font-semibold text-[#8E8E93]">
-              {activePlayers.length < lobby.minPlayers
-                ? `Warte auf Mitspieler (${activePlayers.length}/${lobby.minPlayers})`
-                : `${readyCount}/${activePlayers.length} bereit`}
-            </p>
+              <div className="hidden landscape:block w-full">
+                {actionButton}
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* 3. EINZIGE HAUPT-AKTION UNTEN */}
-        <div className="shrink-0 px-1 pt-3 pb-1">
-          {!isReady ? (
-            <button
-              type="button"
-              onClick={handleToggleReady}
-              className={`${BTN_PRIMARY_BASE} ${BTN_SUCCESS_READY}`}
-            >
-              <Check className="h-4 w-4 stroke-[2.5]" />
-              <span>Ich bin bereit</span>
-            </button>
-          ) : canStartGame ? (
-            <button
-              type="button"
-              disabled={!allReady || isStarting}
-              onClick={handleStartGame}
-              className={`${BTN_PRIMARY_BASE} ${
-                allReady && !isStarting ? theme.primaryBtn : BTN_PRIMARY_DISABLED
-              }`}
-            >
-              <Play className="h-4 w-4 fill-current" />
-              <span>
-                {!allReady
-                  ? activePlayers.length < lobby.minPlayers
-                    ? `Warte auf Spieler (${activePlayers.length}/${lobby.minPlayers})`
-                    : `Warte auf Bereit (${readyCount}/${activePlayers.length})`
-                  : 'Spiel starten'}
-              </span>
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={handleToggleReady}
-              className={`${BTN_PRIMARY_BASE} ${BTN_SUCCESS_CONFIRMED}`}
-            >
-              <Check className="h-4 w-4 stroke-[2.5]" />
-              <span>Bereit ✓</span>
-            </button>
-          )}
+        {/* 3. EINZIGE HAUPT-AKTION UNTEN IM HOCHFORMAT */}
+        <div className="shrink-0 px-1 pt-3 pb-1 landscape:hidden">
+          {actionButton}
         </div>
       </div>
     </div>

@@ -100,25 +100,21 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
       <div className={`pointer-events-none absolute -bottom-16 -right-16 h-96 w-96 rounded-full blur-3xl opacity-55 ${theme.ambientBottom}`} />
 
       <div
-        style={{
-          paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        }}
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-3 sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] landscape:pt-[calc(6px+env(safe-area-inset-top,0px))] landscape:pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
       >
         {/* 1. SCHMALE TOP-BAR */}
         <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5 landscape:pb-1">
           <button
             type="button"
             onClick={onLeave}
-            className="justify-self-start inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className="justify-self-start inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 landscape:px-2.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Verlassen</span>
           </button>
 
-          <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 ring-1 ring-white/10 text-xs font-bold">
-            <span className="text-white truncate max-w-[120px]">{game.title}</span>
+          <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs font-bold">
+            <span className="text-white truncate max-w-[120px] landscape:max-w-[160px]">{game.title}</span>
             {score > 0 && !isFinished && (
               <>
                 <span className="text-white/25">•</span>
@@ -131,12 +127,12 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
 
           <div className="justify-self-end flex items-center">
             {bestScore !== null ? (
-              <span className={`inline-flex h-8 sm:h-9 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold ${theme.badgePill}`}>
+              <span className={`inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold ${theme.badgePill}`}>
                 <Trophy className="h-3 w-3 text-amber-400" />
                 <span className="tabular-nums">{formatSoloScore(game.id, bestScore)}</span>
               </span>
             ) : (
-              <span className={`inline-flex h-8 sm:h-9 items-center rounded-full px-2.5 text-[11px] font-bold uppercase ${theme.badgePill}`}>
+              <span className={`inline-flex h-8 sm:h-9 landscape:h-7 items-center rounded-full px-2.5 text-[11px] font-bold uppercase ${theme.badgePill}`}>
                 Solo
               </span>
             )}
@@ -145,7 +141,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
 
         {/* 2. MITTE: ERGEBNIS-KARTE ODER SOLO-SPIELFELD */}
         {isFinished ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-2">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-1">
             <SoloResultCard
               gameId={game.id}
               score={score}
@@ -157,7 +153,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
             />
           </main>
         ) : (
-          <main className="my-auto mx-auto flex w-full max-w-md flex-1 min-h-0 items-center justify-center p-2 sm:p-3">
+          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center p-2 sm:p-3 landscape:px-2 landscape:py-1">
             <BoardComponent
               key={roundId}
               gameId={game.id}

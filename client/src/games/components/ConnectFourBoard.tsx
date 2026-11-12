@@ -31,9 +31,9 @@ export function ConnectFourBoard({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[min(24rem,62dvh)]">
+    <div className="flex flex-col items-center w-full max-w-[min(24rem,62dvh)] landscape:max-w-[min(25rem,calc((100dvh-6.2rem)*1.12))]">
       {/* Spalten-Auswahl-Pfeile */}
-      <div className="grid grid-cols-7 gap-1.5 w-full px-3 mb-1">
+      <div className="grid grid-cols-7 gap-1.5 w-full px-3 mb-1 landscape:mb-0.5">
         {Array.from({ length: 7 }).map((_, c) => {
           const isColFull = board[0] && board[0][c] !== null;
           const isHovered = hoveredCol === c;
@@ -47,7 +47,7 @@ export function ConnectFourBoard({
               onClick={() => handleColClick(c)}
               onMouseEnter={() => setHoveredCol(c)}
               onMouseLeave={() => setHoveredCol(null)}
-              className={`h-6 flex items-center justify-center rounded-t-lg transition-all ${
+              className={`h-6 landscape:h-5 flex items-center justify-center rounded-t-lg transition-all ${
                 canClick
                   ? isHovered
                     ? `${theme.accentIcon} scale-125`
@@ -62,7 +62,7 @@ export function ConnectFourBoard({
       </div>
 
       {/* 7 Spalten x 6 Zeilen Raster */}
-      <div className="p-3 rounded-3xl bg-[#141526] ring-2 ring-[#2A2B45] shadow-2xl backdrop-blur-xl w-full">
+      <div className="p-3 landscape:p-2 rounded-3xl bg-[#141526] ring-2 ring-[#2A2B45] shadow-2xl backdrop-blur-xl w-full">
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {Array.from({ length: 7 }).map((_, colIdx) => {
             const isColFull = board[0] && board[0][colIdx] !== null;

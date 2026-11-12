@@ -26,7 +26,7 @@ import {
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  STAGE_SINGLE_COL,
+  STAGE_TWO_COL,
   SURFACE_CARD,
   SWITCH_TRACK_OFF,
   SWITCH_TRACK_ON,
@@ -224,9 +224,9 @@ export function SettingsSheet({
           </span>
         </header>
 
-        {/* 2. MITTE: Großzügige, moderne Einstellungen */}
-        <main className={`${STAGE_SINGLE_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4`}>
-          <div className="my-auto w-full space-y-5">
+        {/* 2. MITTE: Großzügige, moderne Einstellungen (Hochformat gestapelt, Querformat 2-spaltig) */}
+        <main className={`${STAGE_TWO_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-3 landscape:py-1`}>
+          <div className="my-auto grid w-full items-center gap-4 sm:gap-6 portrait:grid-cols-1 landscape:grid-cols-[0.95fr_1.15fr]">
             {/* ─── A) SPIELER-PROFIL KARTE (AVATAR & NAME) ─── */}
             <div className={`flex flex-col items-center justify-center text-center ${SURFACE_CARD}`}>
               {/* Runder Avatar mit leuchtender Kontur */}

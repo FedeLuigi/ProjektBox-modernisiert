@@ -294,7 +294,7 @@ export function App() {
       )}
 
       {/* ─── 1. OBERE LEISTE: Kompakte einzeilige Kategorie-Filter & Aktionen rechts ─── */}
-      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[calc(0.625rem+env(safe-area-inset-top,0px))] lg:pt-5 pb-2">
+      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[calc(0.625rem+env(safe-area-inset-top,0px))] landscape:pt-[calc(0.375rem+env(safe-area-inset-top,0px))] lg:pt-5 pb-2 landscape:pb-1">
         <div className="flex items-center justify-between gap-2.5">
           {/* Links: Horizontale Kategorie-Pillen */}
           <nav
@@ -357,7 +357,7 @@ export function App() {
       </header>
 
       {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[calc(2rem+env(safe-area-inset-bottom,0px))] pt-1 space-y-4 sm:space-y-5 scrollbar-none max-w-7xl mx-auto w-full">
+      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[calc(2rem+env(safe-area-inset-bottom,0px))] landscape:pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-1 space-y-4 sm:space-y-5 landscape:space-y-2.5 scrollbar-none max-w-7xl mx-auto w-full">
         {/* ── Sektion 1: Schnellstart ── */}
         {(showAll || category === 'Arcade') && (
           <section aria-labelledby="heading-quick-launch">

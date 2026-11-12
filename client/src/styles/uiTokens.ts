@@ -195,23 +195,23 @@ export const SHELL_CONTAINER = 'w-full max-w-7xl mx-auto';
 export const SHELL_PADDING_X = 'app-shell-x';
 
 // Kopfzeile innerhalb `.app-shell`
-export const HEADER_ROW = 'flex shrink-0 items-center justify-between gap-3 pb-3 sm:pb-4';
+export const HEADER_ROW = 'flex shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3 landscape:pb-1.5';
 
 // Navigation / Zurück-Button (Stufe 4 Ghost/Nav — ruhig im Dark-Glass-Stil)
 export const HEADER_BACK_BTN =
-  'inline-flex h-9 sm:h-10 items-center justify-center gap-2 rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] px-4 text-xs sm:text-sm font-bold text-white shadow-xs ring-1 ring-white/[0.1] backdrop-blur-xl transition-all active:scale-95 cursor-pointer shrink-0';
+  'inline-flex h-9 sm:h-10 landscape:h-8 items-center justify-center gap-2 rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] px-4 landscape:px-3 text-xs sm:text-sm landscape:text-xs font-bold text-white shadow-xs ring-1 ring-white/[0.1] backdrop-blur-xl transition-all active:scale-95 cursor-pointer shrink-0';
 
 // Einheitliche Header-Badges rechts (Kategorie, Einstellungen, Status)
 export const HEADER_BADGE_PILL =
-  'inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 rounded-full px-3.5 text-xs font-bold tracking-wide';
+  'inline-flex h-8 sm:h-9 landscape:h-7 items-center justify-center gap-1.5 rounded-full px-3.5 landscape:px-3 text-xs font-bold tracking-wide';
 
 // Inhalts-Bühnen innerhalb <main>
-export const STAGE_TWO_COL = 'my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center py-2 sm:py-4';
-export const STAGE_SINGLE_COL = 'my-auto mx-auto flex w-full max-w-lg flex-1 flex-col justify-center py-2 sm:py-4';
+export const STAGE_TWO_COL = 'my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center py-2 sm:py-4 landscape:py-1';
+export const STAGE_SINGLE_COL = 'my-auto mx-auto flex w-full max-w-lg flex-1 flex-col justify-center py-2 sm:py-4 landscape:py-1';
 
 // Einheitliche Dark-Glass-Karte & Unter-Elemente
 export const SURFACE_CARD =
-  'rounded-[28px] bg-[#18181C]/80 p-6 sm:p-7 ring-1 ring-white/[0.08] backdrop-blur-xl shadow-lg';
+  'rounded-[28px] bg-[#18181C]/80 p-6 sm:p-7 landscape:p-4 sm:landscape:p-5 ring-1 ring-white/[0.08] backdrop-blur-xl shadow-lg';
 export const SURFACE_ITEM_ROW =
   'rounded-2xl bg-white/[0.04] p-3.5 ring-1 ring-white/[0.08] backdrop-blur-md';
 export const INFO_PILL =
@@ -225,7 +225,7 @@ export const STATUS_PILL_NEUTRAL =
 
 // Stufe 1 (Primary): Genau EINE Haupt- bzw. Abschluss-Aktion pro Ansicht/Card.
 export const BTN_PRIMARY_BASE =
-  'flex h-12 w-full items-center justify-center gap-2.5 rounded-full px-6 text-sm font-bold tracking-wide transition-all duration-150 active:scale-95';
+  'flex h-12 landscape:h-10 sm:landscape:h-11 w-full items-center justify-center gap-2.5 rounded-full px-6 text-sm font-bold tracking-wide transition-all duration-150 active:scale-95';
 export const BTN_PRIMARY_ENABLED =
   'bg-gradient-to-r from-[#7C3AED] via-[#9333EA] to-[#C026D3] text-white shadow-md shadow-purple-600/25 hover:brightness-110 cursor-pointer';
 export const BTN_PRIMARY_DISABLED =
@@ -233,7 +233,7 @@ export const BTN_PRIMARY_DISABLED =
 
 // Stufe 2 (Secondary): Wichtige Alternativ- oder Schnellaktionen ohne grellen Pink-Schrei.
 export const BTN_SECONDARY_BASE =
-  'flex h-12 w-full items-center justify-center gap-2.5 rounded-full px-6 text-sm font-bold tracking-wide transition-all duration-150 active:scale-95 cursor-pointer';
+  'flex h-12 landscape:h-10 sm:landscape:h-11 w-full items-center justify-center gap-2.5 rounded-full px-6 text-sm font-bold tracking-wide transition-all duration-150 active:scale-95 cursor-pointer';
 export const BTN_SECONDARY_NEUTRAL =
   'bg-white/[0.09] hover:bg-white/[0.15] text-white ring-1 ring-white/[0.16] backdrop-blur-md shadow-xs';
 export const BTN_SECONDARY_ACCENT =

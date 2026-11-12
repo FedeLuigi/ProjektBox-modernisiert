@@ -174,25 +174,21 @@ export function MultiplayerGameView({
 
       {/* ─── Vollbild-Container mit Safe-Area ─── */}
       <div
-        style={{
-          paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(12px + env(safe-area-inset-bottom, 0px))',
-        }}
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-3 sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] landscape:pt-[calc(6px+env(safe-area-inset-top,0px))] landscape:pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
       >
         {/* 1. EINZIGE SCHMALE TOP-BAR: Verlassen links, Score/Zug-Status exakt mittig, Raum-Code rechts */}
         <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5 landscape:pb-1">
           <button
             type="button"
             onClick={onLeave}
-            className="justify-self-start inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
+            className="justify-self-start inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 landscape:px-2.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
             <span className="hidden sm:inline">Verlassen</span>
           </button>
 
           {isDrawAndGuess ? (
-            <div className="justify-self-center flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 ring-1 ring-white/10 text-xs">
+            <div className="justify-self-center flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs">
               <div className="flex items-center gap-1.5 min-w-0">
                 <Avatar config={currentUser.avatar} size={22} />
                 <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
@@ -214,7 +210,7 @@ export function MultiplayerGameView({
               </div>
             </div>
           ) : soloMode ? (
-            <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 ring-1 ring-white/10 text-xs font-bold">
+            <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs font-bold">
               <span className="text-white/80">Punkte:</span>
               <span className={`font-black tabular-nums ${theme.accentText}`}>
                 {formatSoloScore(lobby.gameId, gameState?.scores?.[currentUser.id] || 0)}
@@ -230,7 +226,7 @@ export function MultiplayerGameView({
             </div>
           ) : (
             <div
-              className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 ring-1 text-xs font-bold transition-colors ${
+              className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 landscape:py-0.5 ring-1 text-xs font-bold transition-colors ${
                 isMyTurn
                   ? theme.turnPill
                   : 'bg-white/[0.06] text-white/75 ring-white/10'
@@ -246,7 +242,7 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <span className="justify-self-end inline-flex h-8 sm:h-9 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10">
+          <span className="justify-self-end inline-flex h-8 sm:h-9 landscape:h-7 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10">
             {lobby.code}
           </span>
         </header>
@@ -281,35 +277,37 @@ export function MultiplayerGameView({
                 onExit={onLeave}
               />
             ) : (
-              <div className={`max-w-sm mx-auto w-full p-5 sm:p-6 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center animate-fade-in`}>
-                <div className="flex justify-center mb-2.5 landscape:mb-1.5">
-                  {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
-                  {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
-                  {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
+              <div className={`max-w-sm landscape:max-w-xl mx-auto w-full p-5 sm:p-6 landscape:p-5 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}>
+                <div className="flex flex-col items-center landscape:items-start">
+                  <div className="flex justify-center landscape:justify-start mb-2.5 landscape:mb-2">
+                    {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
+                    {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
+                    {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
+                  </div>
+
+                  <h2 className="text-xl sm:text-2xl landscape:text-xl font-black">
+                    {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
+                    {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
+                    {isDraw && <span className="text-amber-400">Unentschieden!</span>}
+                  </h2>
+
+                  {isDrawAndGuess && gameState?.secretWord && (
+                    <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
+                      <span className="text-[#8E8E93]">Lösung:</span>
+                      <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
+                        {gameState.secretWord}
+                      </strong>
+                    </div>
+                  )}
+
+                  {lobby.rematchVotes.length > 0 && (
+                    <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
+                      {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
+                    </p>
+                  )}
                 </div>
 
-                <h2 className="text-xl sm:text-2xl landscape:text-lg font-black">
-                  {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
-                  {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
-                  {isDraw && <span className="text-amber-400">Unentschieden!</span>}
-                </h2>
-
-                {isDrawAndGuess && gameState?.secretWord && (
-                  <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
-                    <span className="text-[#8E8E93]">Lösung:</span>
-                    <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
-                      {gameState.secretWord}
-                    </strong>
-                  </div>
-                )}
-
-                {lobby.rematchVotes.length > 0 && (
-                  <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
-                    {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
-                  </p>
-                )}
-
-                <div className="mt-5 landscape:mt-3.5 flex flex-col gap-2.5 landscape:gap-2">
+                <div className="mt-5 landscape:mt-0 flex flex-col gap-2.5">
                   <button
                     type="button"
                     onClick={handleRematch}
@@ -336,7 +334,9 @@ export function MultiplayerGameView({
         ) : (
           <main
             className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
-              lobby.gameId === 'draw-and-guess' ? 'max-w-2xl p-1.5 sm:p-2' : 'max-w-md p-3'
+              lobby.gameId === 'draw-and-guess'
+                ? 'max-w-2xl landscape:max-w-5xl p-1.5 sm:p-2 landscape:py-0.5'
+                : 'max-w-md landscape:max-w-5xl p-2 sm:p-3 landscape:px-2 landscape:py-1'
             }`}
           >
             {BoardComponent && myPlayer ? (

@@ -90,13 +90,15 @@ export function MemoryBoard({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm gap-2.5 select-none">
-      <div className="flex items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
+    <div className="flex flex-col items-center w-full max-w-xs sm:max-w-sm landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
+      {/* Hochformat Info-Zeile */}
+      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
         <span>Paare: <strong className="text-white">{matchedCount}/{CARD_ICONS.length}</strong></span>
         <span>Züge: <strong className={theme.accentText}>{moves}</strong></span>
       </div>
 
-      <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full">
+      {/* Karten-Raster (4x3 -> skaliert im Querformat an verfügbare Höhe) */}
+      <div className="grid grid-cols-4 gap-2 sm:gap-2.5 w-full landscape:w-[min(56vw,calc((100dvh-5.2rem)*1.33),25rem)]">
         {cards.map((card) => {
           const isOpen = card.matched || flipped.includes(card.uid);
           const Icon = CARD_ICONS[card.pairId];
@@ -122,6 +124,21 @@ export function MemoryBoard({
             </button>
           );
         })}
+      </div>
+
+      {/* Rechte Seitenleiste im Querformat */}
+      <div className="hidden landscape:flex flex-col gap-2.5 w-full">
+        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-3 ring-1 ring-white/10 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Paare</span>
+          <strong className="text-2xl font-black text-white tabular-nums">
+            {matchedCount}/{CARD_ICONS.length}
+          </strong>
+        </div>
+
+        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-3 ring-1 ring-white/10 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Züge</span>
+          <strong className={`text-2xl font-black tabular-nums ${theme.accentText}`}>{moves}</strong>
+        </div>
       </div>
     </div>
   );

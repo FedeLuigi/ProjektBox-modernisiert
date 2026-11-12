@@ -34,44 +34,46 @@ export function SoloResultCard({
 
   return (
     <div
-      className={`max-w-sm mx-auto w-full p-5 sm:p-6 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center animate-fade-in`}
+      className={`max-w-sm landscape:max-w-xl mx-auto w-full p-5 sm:p-6 landscape:p-5 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}
     >
-      <div className="flex justify-center mb-2.5 landscape:mb-1.5">
-        <Trophy
-          className={`h-11 w-11 landscape:h-9 landscape:w-9 ${
-            isNewRecord ? 'text-amber-400 animate-bounce' : theme.accentIcon
-          }`}
-        />
-      </div>
-
-      <h2 className="text-xl sm:text-2xl landscape:text-lg font-black text-white">
-        {isNewRecord ? (
-          <span className="text-amber-300">Neuer Highscore! 🎉</span>
-        ) : (
-          <span>Runde beendet!</span>
-        )}
-      </h2>
-
-      {/* Punktestand & Highscore Pillen */}
-      <div className="mt-3 flex flex-wrap items-center justify-center gap-2">
-        <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 py-1 ring-1 ring-white/15 text-xs">
-          <span className="text-[#8E8E93]">Ergebnis:</span>
-          <strong className={`font-black tabular-nums ${theme.accentText}`}>
-            {displayScore}
-          </strong>
+      <div className="flex flex-col items-center landscape:items-start">
+        <div className="flex justify-center landscape:justify-start mb-2.5 landscape:mb-2">
+          <Trophy
+            className={`h-11 w-11 landscape:h-9 landscape:w-9 ${
+              isNewRecord ? 'text-amber-400 animate-bounce' : theme.accentIcon
+            }`}
+          />
         </div>
 
-        {displayBest && (
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3.5 py-1 ring-1 ring-amber-400/35 text-xs">
-            <span className="text-amber-200/80">Highscore:</span>
-            <strong className="font-black tabular-nums text-amber-300">
-              {displayBest}
+        <h2 className="text-xl sm:text-2xl landscape:text-xl font-black text-white">
+          {isNewRecord ? (
+            <span className="text-amber-300">Neuer Highscore! 🎉</span>
+          ) : (
+            <span>Runde beendet!</span>
+          )}
+        </h2>
+
+        {/* Punktestand & Highscore Pillen */}
+        <div className="mt-3 landscape:mt-2.5 flex flex-wrap items-center justify-center landscape:justify-start gap-2">
+          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 py-1 ring-1 ring-white/15 text-xs">
+            <span className="text-[#8E8E93]">Ergebnis:</span>
+            <strong className={`font-black tabular-nums ${theme.accentText}`}>
+              {displayScore}
             </strong>
           </div>
-        )}
+
+          {displayBest && (
+            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3.5 py-1 ring-1 ring-amber-400/35 text-xs">
+              <span className="text-amber-200/80">Highscore:</span>
+              <strong className="font-black tabular-nums text-amber-300">
+                {displayBest}
+              </strong>
+            </div>
+          )}
+        </div>
       </div>
 
-      <div className="mt-5 landscape:mt-3.5 flex flex-col gap-2.5 landscape:gap-2">
+      <div className="mt-5 landscape:mt-0 flex flex-col gap-2.5">
         <button
           type="button"
           onClick={onPlayAgain}

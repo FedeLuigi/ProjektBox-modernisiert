@@ -105,6 +105,13 @@
     padding-left: max(1rem, env(safe-area-inset-left, 0px));
     padding-right: max(1rem, env(safe-area-inset-right, 0px));
   }
+
+  @media (orientation: landscape) and (max-height: 540px) {
+    .app-shell {
+      padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    }
+  }
 }
 
 /* ─── Bei sehr geringer Bildschirmhöhe Elemente noch kompakter halten ─── */

@@ -24,7 +24,7 @@ export function TicTacToeBoard({
   };
 
   return (
-    <div className="grid grid-cols-3 gap-3 p-4 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] max-h-[65dvh] aspect-square">
+    <div className="grid grid-cols-3 gap-3 landscape:gap-2.5 p-4 landscape:p-3 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] landscape:w-[min(calc(100dvh-5.2rem),20rem)] max-h-[65dvh] landscape:max-h-[calc(100dvh-5.2rem)] aspect-square">
       {board.map((cell, idx) => {
         const isWinningCell = winningLine?.includes(idx);
         const canClick = isMyTurn && !isGameOver && !disabled && cell === null;

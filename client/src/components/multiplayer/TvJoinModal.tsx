@@ -55,74 +55,78 @@ export function TvJoinModal({
         }}
         className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center px-4 overflow-y-auto overscroll-y-contain bg-[#0B0B0F]/85 backdrop-blur-xl text-white select-none animate-fade-in"
       >
-        <div className={`relative w-full max-w-sm ${SURFACE_CARD} flex flex-col items-center text-center`}>
+        <div className={`relative w-full max-w-sm landscape:max-w-xl ${SURFACE_CARD} landscape:grid landscape:grid-cols-[0.85fr_1.15fr] landscape:items-center landscape:gap-5 flex flex-col items-center text-center landscape:text-left`}>
           {/* Schließen Button */}
           <button
             type="button"
             onClick={onClose}
-            className="absolute top-5 right-5 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[#AEAEB2] hover:text-white ring-1 ring-white/10 transition-transform active:scale-95 cursor-pointer"
+            className="absolute top-4 right-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[#AEAEB2] hover:text-white ring-1 ring-white/10 transition-transform active:scale-95 cursor-pointer"
           >
             <X className="h-4 w-4" />
           </button>
 
-          {/* Icon Badge */}
-          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/30 mb-3 shadow-xs">
-            <Tv className="h-7 w-7 text-purple-300" />
+          <div className="flex flex-col items-center landscape:items-start w-full">
+            {/* Icon Badge */}
+            <div className="flex h-14 w-14 landscape:h-12 landscape:w-12 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/30 mb-3 landscape:mb-2 shadow-xs">
+              <Tv className="h-7 w-7 landscape:h-6 landscape:w-6 text-purple-300" />
+            </div>
+
+            <h2 className="text-xl font-black text-white">Mit Code beitreten</h2>
+
+            {/* Fehlermeldung */}
+            {errorMessage && (
+              <div className="mt-3 w-full rounded-2xl bg-rose-500/20 px-3.5 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+                {errorMessage}
+              </div>
+            )}
           </div>
 
-          <h2 className="text-xl font-black text-white">Mit Code beitreten</h2>
+          <div className="w-full flex flex-col">
+            {/* Direkte Code-Eingabe + Beitritt */}
+            <form onSubmit={handleSubmit} className="mt-4 landscape:mt-0 w-full flex flex-col gap-2.5">
+              <input
+                type="text"
+                maxLength={6}
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="CODE"
+                className="w-full text-center text-xl landscape:text-lg font-mono font-black tracking-[0.25em] px-4 py-3 landscape:py-2.5 rounded-2xl bg-black/50 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/25"
+              />
 
-          {/* Fehlermeldung */}
-          {errorMessage && (
-            <div className="mt-3 w-full rounded-2xl bg-rose-500/20 px-3.5 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
-              {errorMessage}
-            </div>
-          )}
+              <button
+                type="submit"
+                disabled={code.trim().length < 3 || isJoining}
+                className={`${BTN_PRIMARY_BASE} ${
+                  code.trim().length >= 3 && !isJoining
+                    ? BTN_PRIMARY_ENABLED
+                    : BTN_PRIMARY_DISABLED
+                }`}
+              >
+                {isJoining ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 animate-spin" />
+                    <span>Verbinde...</span>
+                  </>
+                ) : (
+                  <>
+                    <KeyRound className="h-4 w-4" />
+                    <span>Beitreten</span>
+                  </>
+                )}
+              </button>
+            </form>
 
-          {/* Direkte Code-Eingabe + Beitritt */}
-          <form onSubmit={handleSubmit} className="mt-4 w-full flex flex-col gap-2.5">
-            <input
-              type="text"
-              maxLength={6}
-              value={code}
-              onChange={(e) => setCode(e.target.value.toUpperCase())}
-              placeholder="CODE"
-              className="w-full text-center text-xl font-mono font-black tracking-[0.25em] px-4 py-3 rounded-2xl bg-black/50 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/25"
-            />
-
+            {/* Alternative: QR-Scanner */}
             <button
-              type="submit"
-              disabled={code.trim().length < 3 || isJoining}
-              className={`${BTN_PRIMARY_BASE} ${
-                code.trim().length >= 3 && !isJoining
-                  ? BTN_PRIMARY_ENABLED
-                  : BTN_PRIMARY_DISABLED
-              }`}
+              type="button"
+              onClick={() => setShowScanner(true)}
+              disabled={isJoining}
+              className={`mt-2.5 landscape:mt-2 ${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
             >
-              {isJoining ? (
-                <>
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                  <span>Verbinde...</span>
-                </>
-              ) : (
-                <>
-                  <KeyRound className="h-4 w-4" />
-                  <span>Beitreten</span>
-                </>
-              )}
+              <QrCode className="h-4 w-4" />
+              <span>QR-Code scannen</span>
             </button>
-          </form>
-
-          {/* Alternative: QR-Scanner */}
-          <button
-            type="button"
-            onClick={() => setShowScanner(true)}
-            disabled={isJoining}
-            className={`mt-2.5 ${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-          >
-            <QrCode className="h-4 w-4" />
-            <span>QR-Code scannen</span>
-          </button>
+          </div>
         </div>
       </div>
 

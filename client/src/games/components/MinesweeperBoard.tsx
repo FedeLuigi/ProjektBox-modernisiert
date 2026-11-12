@@ -130,8 +130,9 @@ export function MinesweeperBoard({
   };
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs gap-2.5 select-none">
-      <div className="flex items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
+    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
+      {/* Hochformat Status & Modus */}
+      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
         <span>Aufgedeckt: <strong className="text-white">{revealedSafe}/{safeCells}</strong></span>
         <button
           type="button"
@@ -145,7 +146,8 @@ export function MinesweeperBoard({
         </button>
       </div>
 
-      <div className={`grid grid-cols-7 gap-1.5 p-2.5 rounded-3xl bg-[#161620]/95 ${theme.softRing} w-full aspect-square`}>
+      {/* 7x7 Minenfeld */}
+      <div className={`grid grid-cols-7 gap-1.5 landscape:gap-1 p-2.5 landscape:p-2 rounded-3xl bg-[#161620]/95 ${theme.softRing} w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square`}>
         {board.map((row, r) =>
           row.map((cell, c) => (
             <button
@@ -178,6 +180,29 @@ export function MinesweeperBoard({
             </button>
           ))
         )}
+      </div>
+
+      {/* Rechte Seitenleiste im Querformat */}
+      <div className="hidden landscape:flex flex-col gap-3 w-full">
+        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-3 ring-1 ring-white/10 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Aufgedeckt</span>
+          <strong className="text-2xl font-black text-white tabular-nums">
+            {revealedSafe}/{safeCells}
+          </strong>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setFlagMode((v) => !v)}
+          className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold ring-1 transition-all cursor-pointer active:scale-95 ${
+            flagMode
+              ? `${theme.activeSurface} ${theme.accentText}`
+              : 'bg-white/[0.07] hover:bg-white/[0.12] text-white/85 ring-white/12'
+          }`}
+        >
+          <Flag className="h-4 w-4" />
+          <span>{flagMode ? 'Flagge aktiv' : 'Modus: Aufdecken'}</span>
+        </button>
       </div>
     </div>
   );

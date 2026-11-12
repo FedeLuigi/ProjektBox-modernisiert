@@ -141,8 +141,9 @@ export function Game2048Board({
   }, [performMove]);
 
   return (
-    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs gap-2.5 select-none">
-      <div className="flex items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
+    <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
+      {/* Hochformat Kopfzeile */}
+      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
         <span>Punkte: <strong className={theme.accentText}>{score}</strong></span>
         <button
           type="button"
@@ -177,13 +178,13 @@ export function Game2048Board({
             performMove(dy > 0 ? 'down' : 'up');
           }
         }}
-        className={`grid grid-cols-4 gap-2 p-2.5 rounded-3xl bg-[#161620]/95 ${theme.softRing} w-full aspect-square touch-none`}
+        className={`grid grid-cols-4 gap-2 landscape:gap-1.5 p-2.5 landscape:p-2 rounded-3xl bg-[#161620]/95 ${theme.softRing} w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square touch-none`}
       >
         {grid.flat().map((val, idx) => (
           <div
             key={idx}
             className={`rounded-xl flex items-center justify-center font-black ring-1 transition-all ${
-              val >= 1024 ? 'text-base' : val >= 128 ? 'text-lg' : 'text-xl sm:text-2xl'
+              val >= 1024 ? 'text-base landscape:text-sm' : val >= 128 ? 'text-lg landscape:text-base' : 'text-xl sm:text-2xl landscape:text-lg'
             } ${TILE_COLORS[val] || 'bg-amber-400 text-[#0B0B0F] ring-amber-200'}`}
           >
             {val > 0 ? val : ''}
@@ -191,19 +192,40 @@ export function Game2048Board({
         ))}
       </div>
 
-      {/* Pfeil-Steuerung für Einhand-/Desktop-Nutzung */}
-      <div className="flex items-center gap-2 landscape:hidden">
-        <button type="button" aria-label="Links" onClick={() => performMove('left')} className="grid h-9 w-11 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer">
-          <ArrowLeft className="h-4 w-4" />
-        </button>
-        <button type="button" aria-label="Hoch" onClick={() => performMove('up')} className="grid h-9 w-11 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer">
-          <ArrowUp className="h-4 w-4" />
-        </button>
-        <button type="button" aria-label="Runter" onClick={() => performMove('down')} className="grid h-9 w-11 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer">
-          <ArrowDown className="h-4 w-4" />
-        </button>
-        <button type="button" aria-label="Rechts" onClick={() => performMove('right')} className="grid h-9 w-11 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer">
-          <ArrowRight className="h-4 w-4" />
+      {/* Rechte Seitenleiste im Querformat & untere Pfeil-Steuerung im Hochformat */}
+      <div className="flex flex-col items-center landscape:items-stretch gap-2.5 w-full">
+        <div className="hidden landscape:flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/10 text-center">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Punkte</span>
+          <strong className={`text-2xl font-black tabular-nums ${theme.accentText}`}>{score}</strong>
+        </div>
+
+        {/* Pfeil-Steuerung: kompakt in 1 Zeile hochkant, 2D-Steuerkreuz im Querformat */}
+        <div className="flex items-center justify-center gap-2 landscape:grid landscape:grid-cols-3 landscape:gap-1.5 landscape:mx-auto">
+          <div className="hidden landscape:block" />
+          <button type="button" aria-label="Hoch" onClick={() => performMove('up')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer ring-1 ring-white/10 landscape:col-start-2 landscape:row-start-1">
+            <ArrowUp className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Links" onClick={() => performMove('left')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer ring-1 ring-white/10 landscape:col-start-1 landscape:row-start-2">
+            <ArrowLeft className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Runter" onClick={() => performMove('down')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer ring-1 ring-white/10 landscape:col-start-2 landscape:row-start-2">
+            <ArrowDown className="h-4 w-4" />
+          </button>
+          <button type="button" aria-label="Rechts" onClick={() => performMove('right')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 cursor-pointer ring-1 ring-white/10 landscape:col-start-3 landscape:row-start-2">
+            <ArrowRight className="h-4 w-4" />
+          </button>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => {
+            if (finishedRef.current) return;
+            finishedRef.current = true;
+            onMove({ score, isAbsolute: true, finish: true });
+          }}
+          className="hidden landscape:flex w-full items-center justify-center rounded-full bg-white/[0.08] hover:bg-white/[0.15] px-3 py-2 text-xs font-bold text-white/85 ring-1 ring-white/12 cursor-pointer transition-all active:scale-95"
+        >
+          Beenden
         </button>
       </div>
     </div>

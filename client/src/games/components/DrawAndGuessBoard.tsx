@@ -560,14 +560,20 @@ export function DrawAndGuessBoard({
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // B) SMARTPHONE-ANSICHT: DER ZEICHNER (VOLLE LEINWAND, MAL-WERKZEUGE, KEIN RATEN)
+  // B) SMARTPHONE-ANSICHT: DER ZEICHNER (HOCHFORMAT GESTAPELT, QUERFORMAT 2-SPALTIG)
   // ═════════════════════════════════════════════════════════════════════════════
   if (isDrawer) {
     return (
-      <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
-        {/* Schmale Infozeile: Geheimes Wort & Timer (bei Rundenende ausgeblendet) */}
+      <div
+        className={`flex flex-col items-center w-full max-w-2xl landscape:max-w-5xl mx-auto select-none h-full min-h-0 justify-between ${
+          !isRoundOver
+            ? 'landscape:grid landscape:grid-cols-[minmax(0,1fr)_14.5rem] sm:landscape:grid-cols-[minmax(0,1fr)_16.5rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3 landscape:gap-y-2'
+            : ''
+        }`}
+      >
+        {/* Schmale Infozeile: Geheimes Wort & Timer (im Querformat oben in der rechten Spalte) */}
         {!isRoundOver && (
-          <div className="w-full flex items-center justify-between px-1 pb-1.5 landscape:pb-1 shrink-0">
+          <div className="w-full flex items-center justify-between gap-2 px-1 pb-1.5 landscape:pb-2 landscape:px-3 landscape:py-2 landscape:rounded-2xl landscape:bg-white/[0.05] landscape:ring-1 landscape:ring-white/10 shrink-0 landscape:col-start-2 landscape:row-start-1">
             <div className="flex items-center gap-2 min-w-0">
               <Paintbrush className={`h-4 w-4 ${theme.accentIcon} shrink-0`} />
               <strong className="text-white text-sm sm:text-base font-black tracking-wide uppercase truncate">
@@ -588,10 +594,10 @@ export function DrawAndGuessBoard({
           </div>
         )}
 
-        {/* Dynamisch skalierende 4:3 Zeichenfläche (passt sich im Hoch- & Querformat an die Höhe an) */}
+        {/* Dynamisch skalierende 4:3 Zeichenfläche (im Querformat links volle Höhe!) */}
         <div
           ref={canvasStageRef}
-          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5"
+          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 landscape:col-start-1 landscape:row-start-1 landscape:row-span-2 landscape:h-full"
         >
           <div
             style={
@@ -644,19 +650,19 @@ export function DrawAndGuessBoard({
           </div>
         </div>
 
-        {/* Mal-Werkzeuge (Genug Innenabstand damit der aktive weiße Auswahlrahmen nicht abgeschnitten wird) */}
+        {/* Mal-Werkzeuge (Hochkant Leiste unten, Querformat kompakte 4x2 Palette & Pinsel rechts) */}
         {!isRoundOver && (
-          <div className="w-full mt-1.5 landscape:mt-1 px-2.5 py-1.5 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible">
-            <div className="flex items-center justify-between gap-2">
+          <div className="w-full mt-1.5 landscape:mt-0 px-2.5 py-1.5 landscape:p-3 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-2 landscape:self-center">
+            <div className="flex items-center justify-between gap-2 landscape:flex-col landscape:items-stretch landscape:gap-3">
               {/* Farb-Palette mit vertikalem & horizontalem Schutzabstand für ring-2 + scale-110 */}
-              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-2 py-2">
+              <div className="flex items-center gap-2 overflow-x-auto scrollbar-none px-2 py-2 landscape:grid landscape:grid-cols-4 landscape:justify-items-center landscape:overflow-visible landscape:p-1.5">
                 {COLORS.map((col) => (
                   <button
                     key={col}
                     type="button"
                     onClick={() => setCurrentColor(col)}
                     aria-label={col === '#FFFFFF' ? 'Radierer' : `Farbe ${col}`}
-                    className={`h-7 w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                    className={`h-7 w-7 landscape:h-8 landscape:w-8 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
                       currentColor === col
                         ? 'ring-2 ring-white scale-110 shadow-md'
                         : 'ring-1 ring-black/25 hover:scale-105'
@@ -669,29 +675,31 @@ export function DrawAndGuessBoard({
               </div>
 
               {/* Pinselgrößen & Löschen */}
-              <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10">
-                {BRUSH_SIZES.map((b) => (
-                  <button
-                    key={b.size}
-                    type="button"
-                    onClick={() => setCurrentSize(b.size)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                      currentSize === b.size
-                        ? theme.brushActive
-                        : 'bg-white/10 text-[#8E8E93] hover:text-white'
-                    }`}
-                  >
-                    {b.label}
-                  </button>
-                ))}
+              <div className="flex items-center gap-1.5 shrink-0 pl-2 border-l border-white/10 landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t landscape:justify-between">
+                <div className="flex items-center gap-1.5">
+                  {BRUSH_SIZES.map((b) => (
+                    <button
+                      key={b.size}
+                      type="button"
+                      onClick={() => setCurrentSize(b.size)}
+                      className={`px-2 landscape:px-2.5 py-1 landscape:py-1.5 rounded-lg text-[10px] landscape:text-[11px] font-bold transition-all cursor-pointer ${
+                        currentSize === b.size
+                          ? theme.brushActive
+                          : 'bg-white/10 text-[#8E8E93] hover:text-white'
+                      }`}
+                    >
+                      {b.label}
+                    </button>
+                  ))}
+                </div>
 
                 <button
                   type="button"
                   onClick={handleClear}
                   title="Leinwand leeren"
-                  className="p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
+                  className="p-1.5 landscape:p-2 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
                 >
-                  <Trash2 className="h-3.5 w-3.5" />
+                  <Trash2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
                 </button>
               </div>
             </div>
@@ -702,30 +710,41 @@ export function DrawAndGuessBoard({
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // C) SMARTPHONE-ANSICHT: DER RATER (LIVE-CANVAS, LEERE FELDER & IN-APP-TASTATUR)
+  // C) SMARTPHONE-ANSICHT: DER RATER (HOCHFORMAT UNTEREINANDER, QUERFORMAT NEBENEINANDER)
   // ═════════════════════════════════════════════════════════════════════════════
   const totalSlots = Math.max(targetLength, guessInput.length);
   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
 
   const slotSizeClass = !isTvMode
     ? totalSlots <= 5
-      ? 'w-10 h-10 sm:w-11 sm:h-12 landscape:w-8 landscape:h-8 text-lg sm:text-2xl landscape:text-sm rounded-xl landscape:rounded-lg'
+      ? 'w-10 h-10 sm:w-11 sm:h-12 landscape:w-9 landscape:h-10 text-lg sm:text-2xl landscape:text-base rounded-xl landscape:rounded-lg'
       : totalSlots <= 8
-      ? 'w-8 h-9 sm:w-10 sm:h-11 landscape:w-7 landscape:h-7 text-base sm:text-xl landscape:text-xs rounded-xl landscape:rounded-lg'
-      : 'w-[26px] h-8 sm:w-8 sm:h-10 landscape:w-6 landscape:h-7 text-sm sm:text-base landscape:text-xs rounded-lg'
+      ? 'w-8 h-9 sm:w-10 sm:h-11 landscape:w-8 landscape:h-9 text-base sm:text-xl landscape:text-sm rounded-xl landscape:rounded-lg'
+      : 'w-[26px] h-8 sm:w-8 sm:h-10 landscape:w-7 landscape:h-8 text-sm sm:text-base landscape:text-xs rounded-lg'
     : totalSlots <= 5
-    ? 'w-11 h-12 sm:w-13 sm:h-14 landscape:w-9 landscape:h-9 text-xl sm:text-3xl landscape:text-base rounded-2xl landscape:rounded-lg'
+    ? 'w-11 h-12 sm:w-13 sm:h-14 landscape:w-10 landscape:h-11 text-xl sm:text-3xl landscape:text-lg rounded-2xl landscape:rounded-xl'
     : totalSlots <= 8
-    ? 'w-9 h-10 sm:w-11 sm:h-12 landscape:w-8 landscape:h-8 text-lg sm:text-2xl landscape:text-sm rounded-xl landscape:rounded-lg'
-    : 'w-[26px] h-9 sm:w-9 sm:h-11 landscape:w-6.5 landscape:h-7 text-sm sm:text-lg landscape:text-xs rounded-lg';
+    ? 'w-9 h-10 sm:w-11 sm:h-12 landscape:w-9 landscape:h-10 text-lg sm:text-2xl landscape:text-base rounded-xl landscape:rounded-lg'
+    : 'w-[26px] h-9 sm:w-9 sm:h-11 landscape:w-7 landscape:h-9 text-sm sm:text-lg landscape:text-sm rounded-lg';
 
   const recentGuesses = gameState?.guesses?.slice(0, 3) || [];
+  const isRaterTwoColLandscape = !isTvMode && !isRoundOver;
 
   return (
-    <div className="flex flex-col items-center w-full max-w-2xl mx-auto select-none h-full min-h-0 justify-between">
+    <div
+      className={`flex flex-col items-center w-full max-w-2xl ${
+        isRaterTwoColLandscape
+          ? 'landscape:max-w-5xl landscape:grid landscape:grid-cols-[minmax(0,0.92fr)_minmax(18.5rem,1.08fr)] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3 landscape:gap-y-1.5'
+          : 'landscape:max-w-3xl'
+      } mx-auto select-none h-full min-h-0 justify-between`}
+    >
       {/* 1. Schmale Infozeile ohne Themen-Anzeige: Wer malt & Timer (bei Rundenende ausgeblendet) */}
       {!isRoundOver && (
-        <div className="w-full flex items-center justify-between gap-2 px-1 pb-1 shrink-0">
+        <div
+          className={`w-full flex items-center justify-between gap-2 px-1 pb-1 shrink-0 ${
+            isRaterTwoColLandscape ? 'landscape:col-start-2 landscape:row-start-1 landscape:pb-0' : ''
+          }`}
+        >
           <span className="text-xs font-bold text-white truncate">
             {drawerPlayer?.name || 'Mitspieler'} malt
           </span>
@@ -749,11 +768,15 @@ export function DrawAndGuessBoard({
         </div>
       )}
 
-      {/* 2. OHNE TV-MODUS: Live-Zeichnung direkt über Platzhaltern & Tastatur */}
+      {/* 2. OHNE TV-MODUS: Live-Zeichnung (Hochkant oben, Querformat links volle Höhe) */}
       {!isTvMode && (
         <div
           ref={canvasStageRef}
-          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5"
+          className={`relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 ${
+            isRaterTwoColLandscape
+              ? 'landscape:col-start-1 landscape:row-start-1 landscape:row-span-2 landscape:h-full'
+              : ''
+          }`}
         >
           <div
             style={
@@ -790,11 +813,15 @@ export function DrawAndGuessBoard({
         </div>
       )}
 
-      {/* 3. BUCHSTABEN-PLATZHALTER & TASTATUR (im Rundenende ohne TV-Modus ausblenden, um doppeltes Wort zu vermeiden) */}
+      {/* 3. BUCHSTABEN-PLATZHALTER & TASTATUR (Querformat rechts neben Leinwand oder TV-Modus zentriert) */}
       {!(isRoundOver && !isTvMode) && (
         <div
           className={`w-full max-w-lg flex flex-col items-center text-center shrink-0 ${
-            isTvMode ? 'my-auto py-1' : 'pt-1.5 landscape:pt-1'
+            isRaterTwoColLandscape
+              ? 'landscape:col-start-2 landscape:row-start-2 landscape:self-center landscape:max-w-none landscape:pt-0'
+              : isTvMode
+              ? 'my-auto py-1'
+              : 'pt-1.5 landscape:pt-1'
           } ${isWrongGuess ? 'screen-shake' : ''}`}
         >
           {hasGuessedCorrectly && (
@@ -814,7 +841,7 @@ export function DrawAndGuessBoard({
           <div
             className={`flex flex-wrap items-center justify-center w-full ${
               totalSlots > 8 ? 'gap-1' : 'gap-1.5 sm:gap-2'
-            } py-1 landscape:py-0.5`}
+            } py-1 landscape:py-1.5`}
           >
             {slotIndices.map((idx) => {
               if (isRoundOver && gameState?.secretWord) {
@@ -881,16 +908,16 @@ export function DrawAndGuessBoard({
             <div
               role="group"
               aria-label="In-App Tastatur"
-              className="mt-1.5 landscape:mt-1 flex w-full flex-col gap-1.5 landscape:gap-1 px-1 pb-1"
+              className="mt-1.5 landscape:mt-2 flex w-full flex-col gap-1.5 px-1 pb-1"
             >
               {KEYBOARD_ROWS.map((row, rowIdx) => (
-                <div key={rowIdx} className="flex w-full items-center gap-1 landscape:gap-1">
+                <div key={rowIdx} className="flex w-full items-center gap-1">
                   {row.map((letter) => (
                     <button
                       key={letter}
                       type="button"
                       onClick={() => handleKeyboardChar(letter)}
-                      className={`flex-1 min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg bg-[#1A1A24]/95 hover:bg-[#252534] ${theme.keyActive} active:scale-95 text-white text-sm sm:text-base landscape:text-xs font-bold ring-1 ring-white/[0.1] shadow-xs transition-all cursor-pointer touch-manipulation flex items-center justify-center`}
+                      className={`flex-1 min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 rounded-xl landscape:rounded-lg bg-[#1A1A24]/95 hover:bg-[#252534] ${theme.keyActive} active:scale-95 text-white text-sm sm:text-base landscape:text-xs sm:landscape:text-sm font-bold ring-1 ring-white/[0.1] shadow-xs transition-all cursor-pointer touch-manipulation flex items-center justify-center`}
                     >
                       {letter}
                     </button>
@@ -902,9 +929,9 @@ export function DrawAndGuessBoard({
                         type="button"
                         onClick={handleKeyboardBackspace}
                         aria-label="Buchstabe löschen"
-                        className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg bg-white/[0.11] hover:bg-white/[0.18] active:scale-95 text-white/90 ring-1 ring-white/15 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                        className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 rounded-xl landscape:rounded-lg bg-white/[0.11] hover:bg-white/[0.18] active:scale-95 text-white/90 ring-1 ring-white/15 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                       >
-                        <Delete className="h-4 w-4 landscape:h-3.5 landscape:w-3.5" />
+                        <Delete className="h-4 w-4" />
                       </button>
 
                       <button
@@ -912,11 +939,11 @@ export function DrawAndGuessBoard({
                         onClick={handleGuessSubmit}
                         disabled={!guessInput.trim()}
                         aria-label="Tipp absenden"
-                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-7 sm:landscape:h-8 rounded-xl landscape:rounded-lg font-bold text-xs sm:text-sm landscape:text-[11px] flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
+                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 rounded-xl landscape:rounded-lg font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
                           guessInput.trim() ? theme.primaryBtn : BTN_PRIMARY_DISABLED
                         }`}
                       >
-                        <Send className="h-3.5 w-3.5 landscape:h-3 landscape:w-3" />
+                        <Send className="h-3.5 w-3.5" />
                         <span>OK</span>
                       </button>
                     </>

@@ -255,151 +255,155 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
           <ConnectionStatusBadge />
         </header>
 
-        {/* 2. MITTE: Offene Party-Bühne ohne verschachtelte Kästen */}
-        <main className="mx-auto flex w-full max-w-md flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4">
-          <div className="flex flex-col items-center text-center mb-6 landscape:mb-4">
-            <div
-              className={`grid h-16 w-16 sm:h-20 sm:w-20 landscape:h-14 landscape:w-14 place-items-center rounded-[22px] sm:rounded-[26px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
-            >
-              <Icon
-                className="h-8 w-8 sm:h-10 sm:w-10 landscape:h-7 landscape:w-7"
-                strokeWidth={2.1}
-              />
-            </div>
-
-            <h1
-              id="lobby-screen-title"
-              className="mt-3 landscape:mt-2 text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white"
-            >
-              {game.title}
-            </h1>
-            {isSoloCapable && soloBest !== null && (
-              <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-500/12 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/25">
-                <Trophy className="h-3.5 w-3.5" />
-                <span>Rekord: {formatSoloScore(game.id, soloBest)}</span>
+        {/* 2. MITTE: Offene Party-Bühne (Hochformat gestapelt, Querformat 2-Spalten) */}
+        <main className="mx-auto flex w-full max-w-md landscape:max-w-3xl flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4 landscape:py-1">
+          <div className="grid w-full items-center gap-6 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8">
+            <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left">
+              <div
+                className={`grid h-16 w-16 sm:h-20 sm:w-20 landscape:h-16 landscape:w-16 place-items-center rounded-[22px] sm:rounded-[26px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
+              >
+                <Icon
+                  className="h-8 w-8 sm:h-10 sm:w-10 landscape:h-8 landscape:w-8"
+                  strokeWidth={2.1}
+                />
               </div>
-            )}
-          </div>
 
-          {errorMsg && (
-            <div className="mb-4 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
-              {errorMsg}
-            </div>
-          )}
-
-          {isSoloCapable && !showLobbyForm ? (
-            <div className="flex flex-col gap-3">
-              <button
-                type="button"
-                onClick={() => setIsDirectSolo(true)}
-                className={`${BTN_PRIMARY_BASE} ${theme.primaryBtn}`}
+              <h1
+                id="lobby-screen-title"
+                className="mt-3 landscape:mt-2.5 text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white"
               >
-                <Play className="h-4 w-4 fill-current" />
-                <span>Solo starten</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setShowLobbyForm(true)}
-                className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-              >
-                <Users className="h-4 w-4" />
-                <span>Mit Lobby / TV spielen</span>
-              </button>
+                {game.title}
+              </h1>
+              {isSoloCapable && soloBest !== null && (
+                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-500/12 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/25">
+                  <Trophy className="h-3.5 w-3.5" />
+                  <span>Rekord: {formatSoloScore(game.id, soloBest)}</span>
+                </div>
+              )}
             </div>
-          ) : (
-            <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5">
-              <div>
-                <label className="text-xs font-bold text-white/70 block mb-1.5 px-1">
-                  Lobby-Name
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    maxLength={30}
-                    value={createName}
-                    onChange={(e) => {
-                      const val = e.target.value;
-                      setCreateName(val);
-                      setHasCustomLobbyName(val.trim().length > 0);
-                    }}
-                    placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                    className={`w-full text-sm font-semibold pl-4 pr-11 py-3 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
-                  />
+
+            <div className="flex flex-col w-full">
+              {errorMsg && (
+                <div className="mb-4 landscape:mb-2.5 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+                  {errorMsg}
+                </div>
+              )}
+
+              {isSoloCapable && !showLobbyForm ? (
+                <div className="flex flex-col gap-3">
                   <button
                     type="button"
-                    onClick={handleRollLobbyName}
-                    title="Neuen Namen würfeln"
-                    aria-label="Neuen Namen würfeln"
-                    className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
+                    onClick={() => setIsDirectSolo(true)}
+                    className={`${BTN_PRIMARY_BASE} ${theme.primaryBtn}`}
                   >
-                    <Dices className="h-4 w-4" />
+                    <Play className="h-4 w-4 fill-current" />
+                    <span>Solo starten</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setShowLobbyForm(true)}
+                    className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+                  >
+                    <Users className="h-4 w-4" />
+                    <span>Mit Lobby / TV spielen</span>
                   </button>
                 </div>
-              </div>
+              ) : (
+                <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 landscape:gap-2.5">
+                  <div>
+                    <label className="text-xs font-bold text-white/70 block mb-1.5 landscape:mb-1 px-1">
+                      Lobby-Name
+                    </label>
+                    <div className="relative flex items-center">
+                      <input
+                        type="text"
+                        maxLength={30}
+                        value={createName}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setCreateName(val);
+                          setHasCustomLobbyName(val.trim().length > 0);
+                        }}
+                        placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
+                        className={`w-full text-sm font-semibold pl-4 pr-11 py-3 landscape:py-2.5 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleRollLobbyName}
+                        title="Neuen Namen würfeln"
+                        aria-label="Neuen Namen würfeln"
+                        className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
+                      >
+                        <Dices className="h-4 w-4" />
+                      </button>
+                    </div>
+                  </div>
 
-              {/* Kompakter TV-Modus Toggle */}
-              <div
-                onClick={handleToggleTvMode}
-                role="switch"
-                aria-checked={isTvMode}
-                className={`flex items-center justify-between px-4 py-3 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
-                  isTvMode
-                    ? theme.activeSurface
-                    : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <Tv
-                    className={`h-4 w-4 transition-colors ${
-                      isTvMode ? theme.accentText : 'text-[#8E8E93]'
+                  {/* Kompakter TV-Modus Toggle */}
+                  <div
+                    onClick={handleToggleTvMode}
+                    role="switch"
+                    aria-checked={isTvMode}
+                    className={`flex items-center justify-between px-4 py-3 landscape:py-2.5 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
+                      isTvMode
+                        ? theme.activeSurface
+                        : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
                     }`}
-                  />
-                  <span className="text-sm font-bold text-white">TV-Modus</span>
-                </div>
+                  >
+                    <div className="flex items-center gap-3">
+                      <Tv
+                        className={`h-4 w-4 transition-colors ${
+                          isTvMode ? theme.accentText : 'text-[#8E8E93]'
+                        }`}
+                      />
+                      <span className="text-sm font-bold text-white">TV-Modus</span>
+                    </div>
 
-                <div
-                  className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                    isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
-                  }`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      isTvMode ? 'translate-x-6' : 'translate-x-1'
+                    <div
+                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
+                        isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
+                      }`}
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          isTvMode ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Ein klarer Start-Button */}
+                  <button
+                    type="submit"
+                    disabled={isCreating}
+                    className={`mt-1 landscape:mt-0.5 ${BTN_PRIMARY_BASE} ${
+                      !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
                     }`}
-                  />
-                </div>
-              </div>
+                  >
+                    {isCreating ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        {isTvMode && <Tv className="h-4 w-4" />}
+                        <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
+                      </>
+                    )}
+                  </button>
 
-              {/* Ein klarer Start-Button */}
-              <button
-                type="submit"
-                disabled={isCreating}
-                className={`mt-1 ${BTN_PRIMARY_BASE} ${
-                  !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
-                }`}
-              >
-                {isCreating ? (
-                  <RefreshCw className="h-4 w-4 animate-spin" />
-                ) : (
-                  <>
-                    {isTvMode && <Tv className="h-4 w-4" />}
-                    <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
-                  </>
-                )}
-              </button>
-
-              {isSoloCapable && (
-                <button
-                  type="button"
-                  onClick={() => setShowLobbyForm(false)}
-                  className="mx-auto mt-1 text-xs font-bold text-white/55 hover:text-white transition-colors cursor-pointer py-1 px-2"
-                >
-                  Oder direkt Solo starten
-                </button>
+                  {isSoloCapable && (
+                    <button
+                      type="button"
+                      onClick={() => setShowLobbyForm(false)}
+                      className="mx-auto mt-1 landscape:mt-0 text-xs font-bold text-white/55 hover:text-white transition-colors cursor-pointer py-1 px-2"
+                    >
+                      Oder direkt Solo starten
+                    </button>
+                  )}
+                </form>
               )}
-            </form>
-          )}
+            </div>
+          </div>
         </main>
       </div>
     </div>
