@@ -31,7 +31,7 @@ export async function renderQrCodeToCanvas(
   text: string,
   size = 280
 ): Promise<void> {
-  return QRCode.toCanvas(canvas, text, {
+  await QRCode.toCanvas(canvas, text, {
     width: size,
     margin: 2,
     color: {
@@ -40,6 +40,9 @@ export async function renderQrCodeToCanvas(
     },
     errorCorrectionLevel: 'M',
   });
+  // Inline-Styles entfernen, damit CSS / Tailwind-Klassen (z. B. w-32, max-w-full) die Dimensionen responsiv steuern
+  canvas.style.removeProperty('width');
+  canvas.style.removeProperty('height');
 }
 
 /**

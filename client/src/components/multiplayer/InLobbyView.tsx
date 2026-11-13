@@ -223,20 +223,20 @@ export function InLobbyView({
         </div>
       </header>
 
-      <div className="mx-auto flex w-full max-w-lg md:max-w-4xl lg:max-w-5xl landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
+      <div className="mx-auto flex w-full max-w-lg md:max-w-4xl lg:max-w-5xl landscape:max-w-4xl flex-1 flex-col justify-between min-h-0 min-w-0">
         {/* Scrollbarer Mittelbereich: Auf großen Screens ausgewogenes 2-Spalten-Layout, bei wenig Platz saubere Reihenfolge */}
-        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 sm:px-4 py-2 sm:py-3 md:py-4 landscape:py-1 scrollbar-none">
+        <div className="flex flex-1 min-h-0 min-w-0 flex-col overflow-y-auto overscroll-y-contain px-0 sm:px-3 py-2 sm:py-3 md:py-4 landscape:py-1 scrollbar-none">
           {errorMsg && (
             <div className={`mb-4 rounded-2xl p-3 text-center text-xs font-bold animate-fade-in shrink-0 ${theme.infoBox}`}>
               {errorMsg}
             </div>
           )}
 
-          <div className="my-auto grid w-full items-start gap-5 sm:gap-6 md:grid-cols-[minmax(240px,280px)_1fr] lg:grid-cols-[minmax(260px,320px)_1fr] md:gap-8 lg:gap-12 landscape:grid-cols-[minmax(220px,260px)_1fr] landscape:gap-6 py-1">
+          <div className="my-auto grid w-full min-w-0 items-start gap-4 sm:gap-6 md:grid-cols-[minmax(240px,280px)_1fr] lg:grid-cols-[minmax(260px,320px)_1fr] md:gap-8 lg:gap-12 landscape:grid-cols-[minmax(220px,260px)_1fr] landscape:gap-6 py-1">
             {/* ─── BEREICH 1 (Links auf Desktop / Oben bei wenig Platz): Beitrittscode & QR-Code direkt unten dran ─── */}
-            <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left md:col-start-1 md:row-start-1 landscape:col-start-1 landscape:row-start-1 gap-3.5 sm:gap-4 w-full">
+            <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left md:col-start-1 md:row-start-1 landscape:col-start-1 landscape:row-start-1 gap-3.5 sm:gap-4 w-full min-w-0">
               {/* Beitrittscode */}
-              <div className="flex flex-col items-center md:items-start w-full">
+              <div className="flex flex-col items-center md:items-start w-full min-w-0">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93] mb-1.5">
                   Beitrittscode
                 </span>
@@ -267,19 +267,19 @@ export function InLobbyView({
                   onClick={() => setIsQrModalOpen(true)}
                   title="Klicken zum Vergrößern"
                   aria-label="QR-Code vergrößern"
-                  className="rounded-[28px] bg-white p-3 sm:p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0"
+                  className="rounded-[28px] bg-white p-3 sm:p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0 max-w-full"
                 >
                   <canvas
                     ref={desktopQrCanvasRef}
-                    className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 block rounded-2xl"
+                    className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 max-w-full aspect-square block rounded-2xl"
                   />
                 </button>
               </div>
             </div>
 
             {/* ─── BEREICH 2 (Rechts auf Desktop / Unten bei wenig Platz): Spieleinstellungen, Teilnehmer & Start-Button ─── */}
-            <div className="flex flex-col justify-between w-full h-full gap-4 sm:gap-5 md:col-start-2 md:row-start-1 landscape:col-start-2 landscape:row-start-1">
-              <div className="flex flex-col gap-4 sm:gap-5 w-full">
+            <div className="flex flex-col justify-between w-full min-w-0 h-full gap-4 sm:gap-5 md:col-start-2 md:row-start-1 landscape:col-start-2 landscape:row-start-1">
+              <div className="flex flex-col gap-4 sm:gap-5 w-full min-w-0">
                 {/* Spieleinstellungen */}
                 <LobbyGameSettings
                   gameId={lobby.gameId}
