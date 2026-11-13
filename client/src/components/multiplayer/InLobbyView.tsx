@@ -201,11 +201,11 @@ export function InLobbyView({
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: Zurück-Pille, Zentrierter Spieltitel ganz oben & Verbindungsstatus */}
-      <header className="relative flex shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3 landscape:pb-1 w-full max-w-5xl mx-auto px-1">
+      <header className="flex shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3 landscape:pb-1 w-full max-w-5xl mx-auto px-1">
         <button
           type="button"
           onClick={onLeave}
-          className={HEADER_BACK_BTN}
+          className={`${HEADER_BACK_BTN} shrink-0`}
         >
           <ArrowLeft className="h-4 w-4 shrink-0" />
           <span className="hidden sm:inline">Lobby verlassen</span>
@@ -213,12 +213,14 @@ export function InLobbyView({
         </button>
 
         {/* Spieltitel ganz oben zentriert am Bildschirmrand außerhalb der zentralen Lobby-Karte */}
-        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-amber-300 pointer-events-none select-none max-w-[50%]">
+        <div className="flex-1 min-w-0 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-amber-300 select-none px-2 text-center">
           {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon} shrink-0`} />}
-          <span className="truncate">{gameTitle || lobby.name}</span>
+          <span className="truncate max-w-[200px] sm:max-w-none">{gameTitle || lobby.name}</span>
         </div>
 
-        <ConnectionStatusBadge />
+        <div className="shrink-0 flex items-center justify-end">
+          <ConnectionStatusBadge />
+        </div>
       </header>
 
       <div className="mx-auto flex w-full max-w-lg md:max-w-4xl lg:max-w-5xl landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
@@ -355,7 +357,7 @@ export function InLobbyView({
           onClick={() => setIsQrModalOpen(false)}
         >
           <div
-            className="relative w-full max-w-xs rounded-3xl bg-[#14141E] p-6 text-center ring-1 ring-white/15 shadow-2xl flex flex-col items-center gap-4 animate-scale-up"
+            className="relative w-full max-w-xs max-h-[92vh] overflow-y-auto scrollbar-none rounded-3xl bg-[#14141E] p-5 sm:p-6 text-center ring-1 ring-white/15 shadow-2xl flex flex-col items-center gap-3.5 sm:gap-4 animate-scale-up"
             onClick={(e) => e.stopPropagation()}
           >
             <button
