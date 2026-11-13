@@ -63,7 +63,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   return (
     <div
       onClick={triggerFadeOut}
-      className={`fixed inset-0 min-h-dvh z-50 flex items-center justify-center overflow-hidden bg-[#3B82B6] select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out ${
+      className={`fixed inset-0 min-h-dvh z-50 flex items-center justify-center overflow-hidden bg-[#1B2B40] select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out ${
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
       aria-label="ProjektBox wird gestartet"
@@ -92,10 +92,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
         {/* Zentrales "LEVEL 16"-Stil Kristall-Startfenster */}
         <div className="w-[290px] sm:w-[330px] animate-fade-in">
-          <CrystalPanel stars={3} title="PROJEKT BOX" contentClassName="gap-3.5 py-6">
+          <CrystalPanel stars={3} title="PROJEKT BOX" accent="amber" contentClassName="gap-3.5 py-6">
             <CrystalReadout label="SCORE" value="25873" />
             <CrystalReadout label="REWARD" value="63581" />
-            <span className="font-arcade mt-2 text-sm tracking-widest text-[#15608E] uppercase animate-pulse">
+            <span className="font-arcade mt-2 text-sm tracking-widest text-[#334155] uppercase animate-pulse">
               LOADING CRYSTAL UI...
             </span>
           </CrystalPanel>

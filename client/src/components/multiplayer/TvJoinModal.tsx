@@ -43,10 +43,10 @@ export function TvJoinModal({
         role="dialog"
         aria-modal="true"
         onClick={onClose}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto p-4 bg-[#103858]/70 backdrop-blur-xs select-none animate-fade-in"
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto p-4 bg-[#0F172A]/80 backdrop-blur-xs select-none animate-fade-in"
       >
         <div onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-sm pt-3">
-          <CrystalPanel topTabLabel="TV JOIN" title="ENTER CODE" contentClassName="gap-4 py-6">
+          <CrystalPanel topTabLabel="TV JOIN" title="ENTER CODE" accent="amber" contentClassName="gap-4 py-6">
             {errorMessage && (
               <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">
                 {errorMessage}
@@ -57,7 +57,7 @@ export function TvJoinModal({
               {/* Abgeschrägtes Code-Eingabefeld im SCORE/REWARD Readout-Stil */}
               <div
                 style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                className="w-full max-w-[230px] bg-[#17689A] p-[3px]"
+                className="w-full max-w-[230px] bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.28)]"
               >
                 <input
                   type="text"
@@ -66,7 +66,7 @@ export function TvJoinModal({
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="CODE"
                   style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                  className="font-arcade w-full bg-[#39A9DD] py-2.5 text-center text-2xl tracking-[0.25em] text-white placeholder:text-white/50 focus:outline-none uppercase"
+                  className="font-arcade w-full bg-[#1E293B] py-2.5 text-center text-2xl tracking-[0.25em] text-[#F8FAFC] placeholder:text-[#94A3B8] focus:outline-none uppercase"
                 />
               </div>
 
@@ -74,6 +74,7 @@ export function TvJoinModal({
                 type="submit"
                 fullWidth
                 size="md"
+                variant="primary"
                 tilt="left"
                 disabled={code.trim().length < 3 || isJoining}
               >
@@ -91,7 +92,7 @@ export function TvJoinModal({
             <CrystalButton
               fullWidth
               size="sm"
-              variant="secondary"
+              variant="amber"
               tilt="right"
               disabled={isJoining}
               onClick={() => setShowScanner(true)}

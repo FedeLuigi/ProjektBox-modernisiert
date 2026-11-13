@@ -21,7 +21,7 @@ export function TicTacToeBoard({
   };
 
   return (
-    <div className="relative grid grid-cols-3 gap-3 landscape:gap-2.5 p-4 landscape:p-3 bg-[#9CE0FA] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)] w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] landscape:w-[min(calc(100dvh-5.2rem),20rem)] max-h-[65dvh] landscape:max-h-[calc(100dvh-5.2rem)] aspect-square">
+    <div className="relative grid grid-cols-3 gap-3 landscape:gap-2.5 p-4 landscape:p-3 bg-[#F5F3FF] border-[4px] border-[#4C1D95] shadow-[inset_0_0_0_4px_#DDD6FE,0_10px_0_rgba(15,23,42,0.42)] w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] landscape:w-[min(calc(100dvh-5.2rem),20rem)] max-h-[65dvh] landscape:max-h-[calc(100dvh-5.2rem)] aspect-square">
       {board.map((cell, idx) => {
         const isWinningCell = winningLine?.includes(idx);
         const canClick = isMyTurn && !isGameOver && !disabled && cell === null;
@@ -32,16 +32,16 @@ export function TicTacToeBoard({
             type="button"
             disabled={!canClick}
             onClick={() => handleCellClick(idx)}
-            className={`relative flex items-center justify-center text-4xl sm:text-5xl font-arcade uppercase transition-all border-[3px] border-[#17608E] overflow-hidden ${
+            className={`relative flex items-center justify-center text-4xl sm:text-5xl font-arcade uppercase transition-all border-[3px] overflow-hidden ${
               cell === null
                 ? canClick
-                  ? 'bg-[#52A9D6] hover:bg-[#38ACE0] active:scale-95 cursor-pointer shadow-[inset_0_0_0_2px_#8AD8F8]'
-                  : 'bg-[#52A9D6]/60 cursor-not-allowed opacity-75'
+                  ? 'bg-[#E2E8F0] hover:bg-[#DDD6FE] border-[#475569] active:scale-95 cursor-pointer shadow-[inset_0_0_0_2px_#FFFFFF]'
+                  : 'bg-[#E2E8F0]/70 border-[#64748B] cursor-not-allowed opacity-75'
                 : isWinningCell
-                  ? 'bg-[#F6B969] text-white border-[#C48232] shadow-[inset_0_0_0_3px_#FDE0A6,0_0_16px_rgba(246,185,105,0.75)] animate-pulse'
+                  ? 'bg-[#059669] text-white border-[#064E3B] shadow-[inset_0_0_0_3px_#6EE7B7,0_0_16px_rgba(16,185,129,0.75)] animate-pulse'
                   : cell === 'X'
-                    ? 'bg-[#2B9FD6] text-white shadow-[inset_0_0_0_2px_#7DD3FA]'
-                    : 'bg-[#F3AC58] text-white border-[#C48232] shadow-[inset_0_0_0_2px_#FDE0A6]'
+                    ? 'bg-[#7C3AED] text-white border-[#4C1D95] shadow-[inset_0_0_0_2px_#C4B5FD]'
+                    : 'bg-[#D97706] text-white border-[#78350F] shadow-[inset_0_0_0_2px_#FCD34D]'
             }`}
             style={{
               clipPath: 'polygon(0% 3%, 100% 0%, 98% 97%, 2% 100%)',
@@ -53,12 +53,12 @@ export function TicTacToeBoard({
               style={{ clipPath: 'polygon(0 0, 62% 0, 35% 100%, 0 100%)' }}
             />
             {cell === 'X' && (
-              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(14,90,138,0.65)]">
+              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(76,29,149,0.7)]">
                 X
               </span>
             )}
             {cell === 'O' && (
-              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(140,78,12,0.65)]">
+              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(120,53,15,0.7)]">
                 O
               </span>
             )}

@@ -47,8 +47,8 @@ export function ConnectFourBoard({
               className={`h-6 landscape:h-5 flex items-center justify-center font-arcade transition-all ${
                 canClick
                   ? isHovered
-                    ? 'text-[#FDE0A6] scale-125 drop-shadow-[0_2px_0_#17608E]'
-                    : 'text-[#9CE0FA] hover:text-white'
+                    ? 'text-[#FBBF24] scale-125 drop-shadow-[0_2px_0_#0F172A]'
+                    : 'text-[#F8FAFC] hover:text-[#FBBF24]'
                   : 'opacity-0 pointer-events-none'
               }`}
             >
@@ -58,8 +58,8 @@ export function ConnectFourBoard({
         })}
       </div>
 
-      {/* 7 Spalten x 6 Zeilen Raster im Crystal-Rahmen */}
-      <div className="p-3 landscape:p-2 bg-[#52A9D6] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#8AD8F8,0_8px_0_rgba(14,62,96,0.38)] w-full">
+      {/* 7 Spalten x 6 Zeilen Raster im edlen Deep-Slate Rahmen für maximalen Kontrast der Spielsteine */}
+      <div className="p-3 landscape:p-2 bg-[#1E293B] border-[4px] border-[#0F172A] shadow-[inset_0_0_0_4px_#334155,0_10px_0_rgba(15,23,42,0.5)] w-full">
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {Array.from({ length: 7 }).map((_, colIdx) => {
             const isColFull = board[0] && board[0][colIdx] !== null;
@@ -72,7 +72,7 @@ export function ConnectFourBoard({
                 onMouseEnter={() => setHoveredCol(colIdx)}
                 onMouseLeave={() => setHoveredCol(null)}
                 className={`flex flex-col gap-1.5 sm:gap-2 p-0.5 transition-colors ${
-                  canClick && hoveredCol === colIdx ? 'bg-[#9CE0FA]/40 cursor-pointer' : ''
+                  canClick && hoveredCol === colIdx ? 'bg-[#334155]/80 cursor-pointer' : ''
                 }`}
               >
                 {Array.from({ length: 6 }).map((_, rowIdx) => {
@@ -86,14 +86,14 @@ export function ConnectFourBoard({
                       key={rowIdx}
                       className={`aspect-square w-full rounded-full transition-transform flex items-center justify-center border-2 ${
                         cellColor === null
-                          ? 'bg-[#17608E] border-[#0E486C] shadow-inner'
+                          ? 'bg-[#0F172A] border-[#334155] shadow-inner'
                           : cellColor === 'red'
                             ? isWinningCell
-                              ? 'bg-[#E14B5A] border-white shadow-[0_0_14px_#F43F5E] scale-105 animate-pulse'
-                              : 'bg-gradient-to-br from-[#FF7582] to-[#D93848] border-[#8F1D28] shadow-[inset_0_2px_0_rgba(255,255,255,0.45)]'
+                              ? 'bg-[#E11D48] border-white shadow-[0_0_16px_#FB7185] scale-105 animate-pulse'
+                              : 'bg-gradient-to-br from-[#FB7185] to-[#E11D48] border-[#881337] shadow-[inset_0_2px_0_rgba(255,255,255,0.5)]'
                             : isWinningCell
-                              ? 'bg-[#FDE0A6] border-white shadow-[0_0_14px_#F6B969] scale-105 animate-pulse'
-                              : 'bg-gradient-to-br from-[#FDE0A6] to-[#EAA14B] border-[#B47122] shadow-[inset_0_2px_0_rgba(255,255,255,0.55)]'
+                              ? 'bg-[#FBBF24] border-white shadow-[0_0_16px_#FDE68A] scale-105 animate-pulse'
+                              : 'bg-gradient-to-br from-[#FDE68A] to-[#D97706] border-[#78350F] shadow-[inset_0_2px_0_rgba(255,255,255,0.65)]'
                       }`}
                     >
                       {cellColor && (

@@ -98,23 +98,23 @@ export function SpaceDodgeBoard({
   return (
     <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[1fr_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2 select-none">
       {/* Hochformat Info-Zeile */}
-      <div className="flex landscape:hidden items-center justify-between w-full px-2 py-1.5 bg-[#9CE0FA] border-2 border-[#17608E] text-xs font-arcade uppercase text-[#15608E]">
-        <span>SCORE: <strong className="text-[#0E486C]">{score}</strong></span>
-        {!started && <span className="text-[10px] text-[#17608E]">DRAG TO START</span>}
+      <div className="flex landscape:hidden items-center justify-between w-full px-3 py-1.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[0_3px_0_rgba(15,23,42,0.25)] text-xs font-arcade uppercase text-[#1E293B]">
+        <span>SCORE: <strong className="text-[#0284C7]">{score}</strong></span>
+        {!started && <span className="text-[10px] text-[#475569]">DRAG TO START</span>}
       </div>
 
-      {/* Kristall-Arena */}
+      {/* Deep-Space-Kosmos-Arena */}
       <div
         ref={stageRef}
         onPointerDown={(e) => updateShipFromClientX(e.clientX)}
         onPointerMove={(e) => {
           if (e.buttons > 0 || e.pointerType === 'touch') updateShipFromClientX(e.clientX);
         }}
-        className="relative w-full h-72 sm:h-80 landscape:h-[min(calc(100dvh-5.2rem),21rem)] landscape:max-w-[20rem] landscape:mx-auto bg-[#2B82B8] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)] overflow-hidden touch-none cursor-ew-resize"
+        className="relative w-full h-72 sm:h-80 landscape:h-[min(calc(100dvh-5.2rem),21rem)] landscape:max-w-[20rem] landscape:mx-auto bg-gradient-to-b from-[#090D16] via-[#0F172A] to-[#1E293B] border-[4px] border-[#334155] shadow-[inset_0_0_0_3px_#475569,0_10px_0_rgba(9,13,22,0.5)] overflow-hidden touch-none cursor-ew-resize"
       >
-        {/* Diagonal crystal sheen */}
+        {/* Diagonal nebula sheen */}
         <div
-          className="pointer-events-none absolute inset-0 bg-[#52A9D6]/40"
+          className="pointer-events-none absolute inset-0 bg-white/[0.04]"
           style={{ clipPath: 'polygon(0 0, 58% 0, 32% 100%, 0 100%)' }}
         />
 
@@ -128,17 +128,17 @@ export function SpaceDodgeBoard({
               <CrystalStar size={22} active />
             ) : (
               <div
-                className="h-6 w-6 bg-[#17608E] border-2 border-[#9CE0FA] shadow-md"
+                className="h-6 w-6 bg-[#64748B] border-2 border-[#CBD5E1] shadow-md"
                 style={{ clipPath: 'polygon(15% 0%, 88% 8%, 100% 75%, 72% 100%, 0% 82%)' }}
               />
             )}
           </div>
         ))}
 
-        {/* Raumschiff im Crystal-Look */}
+        {/* Raumschiff im leuchtenden Pearl-Emerald-Look */}
         <div
           style={{ left: `${shipX}%`, top: '84%' }}
-          className="absolute -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#17608E] shadow-[inset_0_0_0_2px_#DDF6FF,0_4px_0_rgba(14,62,96,0.45)]"
+          className="absolute -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center bg-[#F8FAFC] text-[#059669] border-[3px] border-[#10B981] shadow-[inset_0_0_0_2px_#FFFFFF,0_4px_12px_rgba(16,185,129,0.5)]"
         >
           <Rocket className="h-5 w-5 -rotate-45" />
         </div>
@@ -146,18 +146,18 @@ export function SpaceDodgeBoard({
 
       {/* Rechte Seitenleiste im Querformat */}
       <div className="hidden landscape:flex flex-col gap-3 w-full">
-        <div className="flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-2.5 text-center">
+        <div className="flex flex-col items-center bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_6px_0_rgba(15,23,42,0.3)] px-3 py-2.5 text-center">
           <CrystalReadout label="SCORE" value={score} />
           {!started && (
-            <span className="mt-1.5 text-[10px] font-arcade uppercase text-[#15608E]">DRAG OR STEER</span>
+            <span className="mt-1.5 text-[10px] font-arcade uppercase text-[#475569]">DRAG OR STEER</span>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <CrystalButton size="sm" onClick={() => nudgeShip(-14)}>
+          <CrystalButton size="sm" variant="secondary" onClick={() => nudgeShip(-14)}>
             ◀
           </CrystalButton>
-          <CrystalButton size="sm" onClick={() => nudgeShip(14)}>
+          <CrystalButton size="sm" variant="secondary" onClick={() => nudgeShip(14)}>
             ▶
           </CrystalButton>
         </div>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   CATEGORIES,
+  CATEGORY_ACCENTS,
   type Category,
   GAMES,
   type Game,
@@ -351,20 +352,20 @@ export function App() {
   };
 
   return (
-    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none">
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* ─── 1. Globaler Crystal-Facetten-Hintergrund (#3B82B6) ─── */}
+      {/* ─── 1. Globaler Crystal-Facetten-Hintergrund ─── */}
       <IslandBackground />
 
       {/* ─── Verbindungs-Overlay bei QR-Code Beitritt im "LEVEL 16" Crystal-Panel-Stil ─── */}
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#103858]/70 backdrop-blur-xs select-none p-4">
+        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0F172A]/75 backdrop-blur-xs select-none p-4">
           <div className="w-full max-w-sm animate-fade-in">
-            <CrystalPanel stars={3} title="TV CONNECT" contentClassName="gap-3">
+            <CrystalPanel stars={3} accent="amber" title="TV CONNECT" contentClassName="gap-3">
               <CrystalReadout label="LOBBY CODE" value={initialDeepLinkCode ?? '----'} />
-              <p className="font-arcade text-sm tracking-wider text-[#15608E] uppercase mt-1">
+              <p className="font-arcade text-sm tracking-wider text-[#334155] uppercase mt-1">
                 JOINING TV LOBBY...
               </p>
             </CrystalPanel>
@@ -398,6 +399,7 @@ export function App() {
             <CrystalButton
               size="sm"
               tilt="right"
+              variant="amber"
               onClick={() => {
                 triggerHaptic();
                 setTvJoinError(null);
@@ -460,7 +462,7 @@ export function App() {
                   fullWidth
                   size="sm"
                   tilt={idx % 2 === 0 ? 'left' : 'right'}
-                  variant={category === cat ? 'primary' : 'secondary'}
+                  variant={category === cat ? CATEGORY_ACCENTS[cat] : 'secondary'}
                   onClick={() => {
                     triggerHaptic();
                     setCategory(cat);
@@ -482,7 +484,7 @@ export function App() {
                   key={cat}
                   size="sm"
                   tilt={idx % 2 === 0 ? 'left' : 'right'}
-                  variant={category === cat ? 'primary' : 'secondary'}
+                  variant={category === cat ? CATEGORY_ACCENTS[cat] : 'secondary'}
                   onClick={() => {
                     triggerHaptic();
                     setCategory(cat);
@@ -536,6 +538,7 @@ export function App() {
               <CrystalButton
                 size="md"
                 tilt="right"
+                variant={activeGame?.accent || 'primary'}
                 onClick={() => {
                   triggerHaptic();
                   setMultiplayerGame(activeGame);

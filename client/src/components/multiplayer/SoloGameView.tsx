@@ -92,7 +92,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
   };
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in">
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
@@ -101,12 +101,12 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
         {/* 1. CRYSTAL HUD TOP-BAR ("EXIT" links, Spieltitel/Score Mitte, Stern-Highscore rechts) */}
         <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
           <div className="justify-self-start flex items-center gap-2">
-            <CrystalButton size="sm" tilt="left" onClick={onLeave}>
+            <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
               EXIT
             </CrystalButton>
             <CrystalButton
               size="sm"
-              variant="secondary"
+              variant={game.accent}
               tilt="right"
               onClick={handlePlayAgain}
               className="hidden sm:inline-flex"

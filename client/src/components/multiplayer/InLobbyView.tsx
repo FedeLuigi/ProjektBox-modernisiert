@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Crown } from 'lucide-react';
+import { GAMES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { useUserProfile } from '../../utils/userProfile';
@@ -35,6 +36,7 @@ export function InLobbyView({
   const desktopQrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const joinUrl = getLobbyJoinUrl(lobby.code);
+  const gameAccent = GAMES.find((g) => g.id === lobby.gameId)?.accent ?? 'emerald';
 
   const currentUser = useUserProfile();
 
@@ -169,7 +171,7 @@ export function InLobbyView({
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: "EXIT" links, Spieltitel Mitte, Verbindungsstatus rechts */}
       <header className="flex shrink-0 items-center justify-between gap-2 pb-2 w-full max-w-5xl mx-auto px-1">
-        <CrystalButton size="sm" tilt="left" onClick={onLeave}>
+        <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
           EXIT
         </CrystalButton>
 
@@ -180,16 +182,17 @@ export function InLobbyView({
 
       <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto px-2 pt-3 pb-2">
         {errorMsg && (
-          <div className="font-arcade mb-3 border-[3px] border-[#17608E] bg-[#88D6F8] p-2.5 text-center text-xs text-[#15608E] uppercase">
+          <div className="font-arcade mb-3 border-[3px] border-[#991B1B] bg-[#FEE2E2] p-2.5 text-center text-xs text-[#991B1B] uppercase">
             {errorMsg}
           </div>
         )}
 
         <div className="my-auto grid w-full items-center gap-5 grid-cols-1 md:grid-cols-[0.9fr_1.1fr]">
           {/* Linkes Kristall-Panel: Beitrittscode & QR-Code */}
-          <CrystalPanel topTabLabel="LOBBY CODE" contentClassName="gap-3.5 py-5">
+          <CrystalPanel topTabLabel="LOBBY CODE" accent="amber" contentClassName="gap-3.5 py-5">
             <div onClick={handleCopyCode} className="cursor-pointer">
               <CrystalReadout
+                variant="gold"
                 label={copiedCode ? 'COPIED ✓' : 'TAP TO COPY'}
                 value={lobby.code}
               />
@@ -198,7 +201,7 @@ export function InLobbyView({
             <button
               type="button"
               onClick={() => setIsQrModalOpen(true)}
-              className="border-[4px] border-[#17608E] bg-white p-3 shadow-[0_6px_0_rgba(14,62,96,0.35)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="border-[4px] border-[#1E293B] bg-white p-3 shadow-[0_6px_0_rgba(15,23,42,0.3)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
               title="QR-Code vergrößern"
             >
               <canvas
@@ -209,7 +212,7 @@ export function InLobbyView({
           </CrystalPanel>
 
           {/* Rechtes Kristall-Panel: Optionen, Spieler & PLAY Button */}
-          <CrystalPanel title="PLAYERS" contentClassName="gap-4 py-5 px-4 sm:px-5">
+          <CrystalPanel title="PLAYERS" accent={gameAccent} contentClassName="gap-4 py-5 px-4 sm:px-5">
             <LobbyGameSettings
               gameId={lobby.gameId}
               settings={lobby.settings}
@@ -219,10 +222,10 @@ export function InLobbyView({
 
             <div className="w-full flex flex-col gap-2">
               <div className="flex items-center justify-between w-full px-1">
-                <span className="font-arcade text-xs text-[#15608E] uppercase">
+                <span className="font-arcade text-xs text-[#1E293B] uppercase">
                   PLAYERS ({activePlayers.length}/{lobby.maxPlayers})
                 </span>
-                <span className="font-arcade text-xs text-[#17689A] uppercase">
+                <span className="font-arcade text-xs text-[#047857] uppercase">
                   {readyCount}/{activePlayers.length} READY
                 </span>
               </div>
@@ -233,16 +236,16 @@ export function InLobbyView({
                   return (
                     <div
                       key={p.id || idx}
-                      className={`flex items-center gap-2 border-[3px] px-3 py-1.5 ${
+                      className={`flex items-center gap-2 border-[3px] px-3 py-1.5 shadow-[0_3px_0_rgba(15,23,42,0.18)] ${
                         p.isReady
-                          ? 'bg-[#2B9FD6] border-[#0E5A8A] text-white'
-                          : 'bg-[#B8ECFD] border-[#17608E] text-[#15608E]'
+                          ? 'bg-[#059669] border-[#064E3B] text-white'
+                          : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
                       }`}
                     >
                       <div className="relative shrink-0">
                         <Avatar config={p.avatar} size={28} />
                         {p.isHost && (
-                          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center bg-[#F6B969] border border-[#9E5D19] text-[#15608E]">
+                          <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center bg-[#F59E0B] border border-[#78350F] text-[#1E293B]">
                             <Crown className="h-2 w-2 fill-current" />
                           </span>
                         )}
@@ -268,21 +271,21 @@ export function InLobbyView({
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#103858]/70 backdrop-blur-xs p-4 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/80 backdrop-blur-xs p-4 animate-fade-in"
           onClick={() => setIsQrModalOpen(false)}
         >
           <div className="w-full max-w-xs" onClick={(e) => e.stopPropagation()}>
-            <CrystalPanel topTabLabel="QR CODE" title={lobby.code} contentClassName="gap-3.5">
-              <div className="border-[4px] border-[#17608E] bg-white p-3">
+            <CrystalPanel topTabLabel="QR CODE" title={lobby.code} accent="amber" contentClassName="gap-3.5">
+              <div className="border-[4px] border-[#1E293B] bg-white p-3">
                 <canvas ref={qrModalCanvasRef} width={220} height={220} className="block" />
               </div>
 
               <div className="flex items-center gap-2 w-full justify-center">
                 <CrystalButton size="sm" variant="secondary" onClick={handleCopyCode}>
-                  {copiedCode ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copiedCode ? <Check className="h-4 w-4 text-[#059669]" /> : <Copy className="h-4 w-4" />}
                   <span>COPY</span>
                 </CrystalButton>
-                <CrystalButton size="sm" onClick={() => setIsQrModalOpen(false)}>
+                <CrystalButton size="sm" variant="primary" onClick={() => setIsQrModalOpen(false)}>
                   OK
                 </CrystalButton>
               </div>

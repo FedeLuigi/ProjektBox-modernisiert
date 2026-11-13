@@ -104,15 +104,15 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
     >
-      {/* Globaler Cerulean-Kristall-Hintergrund */}
+      {/* Globaler Slate-Ocean-Kristall-Hintergrund */}
       <IslandBackground />
 
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-y-auto">
         {/* Obere Navigationsleiste mit "HOME" / "EXIT" Crystal-Buttons */}
         <header className="flex shrink-0 items-center justify-between gap-2 pb-2">
-          <CrystalButton size="sm" tilt="left" onClick={onClose}>
+          <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
             HOME
           </CrystalButton>
 
@@ -125,7 +125,7 @@ export function SettingsSheet({
         <main className="my-auto mx-auto flex w-full max-w-4xl flex-1 items-center justify-center pt-4 pb-2">
           <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
             {/* 1. "OPTIONS" Kristall-Panel (Exakt wie rechts unten im Referenzbild mit "OPTIONS" Trapez-Tab, "MUSIC" & "SOUND" Reglern) */}
-            <CrystalPanel topTabLabel="OPTIONS" contentClassName="gap-6 py-7 px-6">
+            <CrystalPanel topTabLabel="OPTIONS" accent="amber" contentClassName="gap-6 py-7 px-6">
               <CrystalSlider
                 label="MUSIC"
                 value={soundEnabled ? 82 : 18}
@@ -145,37 +145,37 @@ export function SettingsSheet({
               )}
 
               <div className="pt-1 flex justify-center">
-                <CrystalButton size="md" onClick={onClose} className="min-w-[130px]">
+                <CrystalButton size="md" variant="primary" onClick={onClose} className="min-w-[130px]">
                   OK
                 </CrystalButton>
               </div>
             </CrystalPanel>
 
             {/* 2. "PLAYER" Kristall-Panel für Avatar & Name */}
-            <CrystalPanel topTabLabel="PLAYER" contentClassName="gap-3.5 py-6 px-6">
+            <CrystalPanel topTabLabel="PLAYER" accent="indigo" contentClassName="gap-3.5 py-6 px-6">
               {/* Avatar im quadratischen/trapezförmigen Kristall-Rahmen */}
               <div
                 onClick={() => setIsAvatarModalOpen(true)}
                 className="group relative cursor-pointer transition-transform hover:scale-105 active:scale-95"
                 title="Avatar anpassen"
               >
-                <div className="border-[4px] border-[#17608E] bg-[#52A9D6] p-2 shadow-[inset_0_2px_0_#AEE8FC,0_4px_0_rgba(14,62,96,0.35)]">
+                <div className="border-[4px] border-[#1E293B] bg-[#F8FAFC] p-2 shadow-[inset_0_2px_0_#FFFFFF,0_5px_0_rgba(15,23,42,0.3)]">
                   <Avatar config={profile.avatar} size={76} />
                 </div>
-                <div className="absolute -bottom-2 -right-2 border-2 border-[#17608E] bg-[#2B9FD6] p-1.5 text-white shadow-xs">
+                <div className="absolute -bottom-2 -right-2 border-2 border-[#1E293B] bg-[#4F46E5] p-1.5 text-white shadow-xs">
                   <Pencil className="h-3.5 w-3.5" />
                 </div>
               </div>
 
               {/* Namensfeld im abgeschrägten SCORE/REWARD Readout-Stil */}
               <div className="w-full flex flex-col items-center">
-                <span className="font-arcade mb-1 text-sm tracking-wider text-[#15608E] uppercase">
+                <span className="font-arcade mb-1 text-sm tracking-wider text-[#334155] uppercase">
                   NAME
                 </span>
                 <div className="flex items-center gap-2 w-full justify-center">
                   <div
                     style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                    className="bg-[#17689A] p-[2.5px]"
+                    className="bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.2)]"
                   >
                     <input
                       type="text"
@@ -185,12 +185,13 @@ export function SettingsSheet({
                       maxLength={20}
                       placeholder="PLAYER..."
                       style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                      className="font-arcade bg-[#39A9DD] px-4 py-1.5 text-center text-base sm:text-lg tracking-wider text-white uppercase focus:outline-none w-[175px]"
+                      className="font-arcade bg-[#1E293B] px-4 py-1.5 text-center text-base sm:text-lg tracking-wider text-[#F8FAFC] uppercase focus:outline-none w-[175px]"
                     />
                   </div>
 
                   <CrystalIconButton
                     size="sm"
+                    variant="amber"
                     tilt="right"
                     onClick={handleRollNewName}
                     title="Neuen Namen würfeln"
@@ -200,7 +201,7 @@ export function SettingsSheet({
                 </div>
 
                 {nameError && (
-                  <span className="font-arcade mt-1 text-xs text-[#B91C1C] uppercase">
+                  <span className="font-arcade mt-1 text-xs text-[#E11D48] uppercase">
                     {nameError}
                   </span>
                 )}
@@ -210,7 +211,7 @@ export function SettingsSheet({
               <div className="flex items-center gap-2 mt-1">
                 <CrystalButton
                   size="sm"
-                  variant="secondary"
+                  variant="indigo"
                   tilt="left"
                   onClick={() => setIsAvatarModalOpen(true)}
                 >
@@ -222,7 +223,7 @@ export function SettingsSheet({
                   tilt="right"
                   onClick={handleCopyId}
                 >
-                  {copiedId ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copiedId ? <Check className="h-4 w-4 text-[#059669]" /> : <Copy className="h-4 w-4" />}
                   <span>ID</span>
                 </CrystalButton>
               </div>

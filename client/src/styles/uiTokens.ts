@@ -1,6 +1,7 @@
 /**
- * Einheitliches Crystal-UI Design-System (verbindliche Designreferenz: Faceted Ice / Crystal Game UI)
- * für Hauptmenü, Spiel-Erklärung, Spiel-Vorbereitung, Lobby-Warteraum, Modals, TV-Modus und Spielfelder.
+ * Weiterentwickeltes Crystal-UI Design-System:
+ * Verbindet die facettierte Kristall-Formensprache mit neutralen Frost-/Schiefer-Oberflächen
+ * und individuellen Spiel-Akzentfarben (Sunset/Amber, Indigo/Violet, Emerald/Jade, Ocean/Cyan).
  */
 import { GAMES, type Tone } from '../data/games';
 
@@ -40,55 +41,71 @@ export interface GameThemeTokens {
 
 const CRYSTAL_THEME_BASE: Omit<GameThemeTokens, 'tone'> = {
   primaryBtn:
-    'font-arcade uppercase tracking-wider bg-[#2B9FD6] hover:bg-[#38ACE0] text-white border-[3px] border-[#0E5A8A] shadow-[inset_0_2px_0_#7AD3F7,0_3px_0_rgba(14,62,96,0.45)] cursor-pointer',
+    'font-arcade uppercase tracking-wider bg-[#059669] hover:bg-[#10B981] text-white border-[3px] border-[#064E3B] shadow-[inset_0_2px_0_#6EE7B7,0_3px_0_rgba(6,78,59,0.5)] cursor-pointer',
   secondaryAccentBtn:
-    'font-arcade uppercase tracking-wider bg-[#52A9D6] hover:bg-[#64B7E2] text-white border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#9CE0FA] cursor-pointer',
-  switchOn: 'bg-[#2B9FD6] border-2 border-[#12608E]',
-  focusRing: 'focus:ring-2 focus:ring-[#17608E]',
-  activeSurface: 'bg-[#52A9D6]/45 border-2 border-[#17608E]',
+    'font-arcade uppercase tracking-wider bg-[#E2E8F0] hover:bg-[#F1F5F9] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_2px_0_#FFFFFF] cursor-pointer',
+  switchOn: 'bg-[#10B981] border-2 border-[#065F46]',
+  focusRing: 'focus:ring-2 focus:ring-[#334155]',
+  activeSurface: 'bg-[#F1F5F9] border-2 border-[#334155]',
   badgePill:
-    'font-arcade uppercase tracking-wider bg-[#39A9DD] text-white border-2 border-[#17608E] shadow-[inset_0_1.5px_0_#8AD8F8]',
+    'font-arcade uppercase tracking-wider bg-[#1E293B] text-white border-2 border-[#0F172A] shadow-[inset_0_1.5px_0_#475569]',
   infoBox:
-    'bg-[#88D6F8] text-[#15608E] border-2 border-[#17608E] shadow-[inset_0_2px_0_#CFF2FF]',
-  accentText: 'text-[#15608E]',
-  accentTextSoft: 'text-[#17689A]',
-  accentIcon: 'text-[#15608E]',
-  secondaryAccentText: 'text-[#0E4D78]',
-  codeGradient: 'from-[#15608E] via-[#1A6798] to-[#0E4D78]',
-  copyHover: 'group-hover:bg-[#2B9FD6]',
-  softRing: 'border-[3px] border-[#17608E]',
+    'bg-[#F8FAFC] text-[#1E293B] border-2 border-[#334155] shadow-[inset_0_2px_0_#FFFFFF]',
+  accentText: 'text-[#1E293B]',
+  accentTextSoft: 'text-[#475569]',
+  accentIcon: 'text-[#1E293B]',
+  secondaryAccentText: 'text-[#334155]',
+  codeGradient: 'from-[#0F172A] via-[#1E293B] to-[#334155]',
+  copyHover: 'group-hover:bg-[#10B981]',
+  softRing: 'border-[3px] border-[#334155]',
   turnPill:
-    'font-arcade uppercase tracking-wider bg-[#2B9FD6] text-white border-2 border-[#0E5A8A]',
-  ambientTop: 'bg-[#8DD7F7]/25',
-  ambientBottom: 'bg-[#52A9D6]/25',
-  canvasRing: 'border-[4px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE]',
+    'font-arcade uppercase tracking-wider bg-[#059669] text-white border-2 border-[#064E3B]',
+  ambientTop: 'bg-[#F59E0B]/15',
+  ambientBottom: 'bg-[#10B981]/15',
+  canvasRing: 'border-[4px] border-[#1E293B] shadow-[inset_0_0_0_3px_#CBD5E1,0_10px_24px_rgba(15,23,42,0.45)]',
   tvCanvasRing:
-    'border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_10px_0_rgba(14,62,96,0.4)]',
+    'border-[4px] border-[#1E293B] shadow-[inset_0_0_0_4px_#CBD5E1,0_12px_28px_rgba(15,23,42,0.5)]',
   slotActive:
-    'bg-[#2B9FD6] text-white border-[3px] border-[#0E5A8A] shadow-[inset_0_2px_0_#8AD8F8] scale-105',
-  slotBar: 'bg-[#F6B969]',
-  brushActive: 'bg-[#2B9FD6] text-white border-2 border-[#0E5A8A]',
-  keyActive: 'active:bg-[#2B9FD6]',
-  progressGradient: 'from-[#8DD7F7] via-[#52A9D6] to-[#2B9FD6]',
+    'bg-[#059669] text-white border-[3px] border-[#064E3B] shadow-[inset_0_2px_0_#6EE7B7] scale-105',
+  slotBar: 'bg-[#F59E0B]',
+  brushActive: 'bg-[#1E293B] text-white border-2 border-[#0F172A]',
+  keyActive: 'active:bg-[#059669]',
+  progressGradient: 'from-[#34D399] via-[#10B981] to-[#059669]',
   duelPlayerOneCard:
-    'bg-[#ADE6FB] border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#E6F8FF,0_4px_0_rgba(14,62,96,0.35)] scale-105',
+    'bg-[#F8FAFC] border-[3px] border-[#0284C7] shadow-[inset_0_2px_0_#FFFFFF,0_4px_0_rgba(3,105,161,0.35)] scale-105',
   duelPlayerTwoCard:
-    'bg-[#FDE0A6] border-[3px] border-[#D9923E] shadow-[inset_0_2px_0_#FFF8E7,0_4px_0_rgba(158,93,25,0.35)] scale-105',
-  duelBadgeOne: 'bg-[#2B9FD6] border-2 border-[#0E5A8A]',
-  duelBadgeTwo: 'bg-[#EAA14B] border-2 border-[#9E5D19]',
+    'bg-[#FFFBEB] border-[3px] border-[#D97706] shadow-[inset_0_2px_0_#FFFFFF,0_4px_0_rgba(180,83,9,0.35)] scale-105',
+  duelBadgeOne: 'bg-[#0284C7] border-2 border-[#075985]',
+  duelBadgeTwo: 'bg-[#D97706] border-2 border-[#92400E]',
   actionOrb:
-    'font-arcade uppercase bg-[#2B9FD6] hover:bg-[#38ACE0] text-white border-[4px] border-[#0E5A8A] shadow-[inset_0_3px_0_#8AD8F8,0_6px_0_rgba(14,62,96,0.45)] cursor-pointer hover:scale-105',
-  hoverRing: 'hover:border-[#0E5A8A]',
+    'font-arcade uppercase bg-[#059669] hover:bg-[#10B981] text-white border-[4px] border-[#064E3B] shadow-[inset_0_3px_0_#6EE7B7,0_6px_0_rgba(6,78,59,0.45)] cursor-pointer hover:scale-105',
+  hoverRing: 'hover:border-[#0F172A]',
 };
 
 export const GAME_THEMES: Record<Tone, GameThemeTokens> = {
   sunset: {
     ...CRYSTAL_THEME_BASE,
     tone: 'sunset',
+    primaryBtn:
+      'font-arcade uppercase tracking-wider bg-[#EA580C] hover:bg-[#F97316] text-white border-[3px] border-[#7C2D12] shadow-[inset_0_2px_0_#FDBA74,0_3px_0_rgba(124,45,18,0.5)] cursor-pointer',
+    turnPill:
+      'font-arcade uppercase tracking-wider bg-[#EA580C] text-white border-2 border-[#7C2D12]',
+    brushActive: 'bg-[#EA580C] text-white border-2 border-[#7C2D12]',
+    keyActive: 'active:bg-[#EA580C]',
+    actionOrb:
+      'font-arcade uppercase bg-[#EA580C] hover:bg-[#F97316] text-white border-[4px] border-[#7C2D12] shadow-[inset_0_3px_0_#FDBA74,0_6px_0_rgba(124,45,18,0.45)] cursor-pointer hover:scale-105',
   },
   indigo: {
     ...CRYSTAL_THEME_BASE,
     tone: 'indigo',
+    primaryBtn:
+      'font-arcade uppercase tracking-wider bg-[#7C3AED] hover:bg-[#8B5CF6] text-white border-[3px] border-[#4C1D95] shadow-[inset_0_2px_0_#C4B5FD,0_3px_0_rgba(76,29,149,0.5)] cursor-pointer',
+    turnPill:
+      'font-arcade uppercase tracking-wider bg-[#7C3AED] text-white border-2 border-[#4C1D95]',
+    brushActive: 'bg-[#7C3AED] text-white border-2 border-[#4C1D95]',
+    keyActive: 'active:bg-[#7C3AED]',
+    actionOrb:
+      'font-arcade uppercase bg-[#7C3AED] hover:bg-[#8B5CF6] text-white border-[4px] border-[#4C1D95] shadow-[inset_0_3px_0_#C4B5FD,0_6px_0_rgba(76,29,149,0.45)] cursor-pointer hover:scale-105',
   },
   emerald: {
     ...CRYSTAL_THEME_BASE,
@@ -97,6 +114,12 @@ export const GAME_THEMES: Record<Tone, GameThemeTokens> = {
   ocean: {
     ...CRYSTAL_THEME_BASE,
     tone: 'ocean',
+    primaryBtn:
+      'font-arcade uppercase tracking-wider bg-[#0284C7] hover:bg-[#0EA5E9] text-white border-[3px] border-[#075985] shadow-[inset_0_2px_0_#7DD3FC,0_3px_0_rgba(7,89,133,0.5)] cursor-pointer',
+    turnPill:
+      'font-arcade uppercase tracking-wider bg-[#0284C7] text-white border-2 border-[#075985]',
+    actionOrb:
+      'font-arcade uppercase bg-[#0284C7] hover:bg-[#0EA5E9] text-white border-[4px] border-[#075985] shadow-[inset_0_3px_0_#7DD3FC,0_6px_0_rgba(7,89,133,0.45)] cursor-pointer hover:scale-105',
   },
 };
 
@@ -112,61 +135,61 @@ export const SHELL_PADDING_X = 'app-shell-x';
 // Kopfzeile innerhalb `.app-shell`
 export const HEADER_ROW = 'flex shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3 landscape:pb-1.5';
 
-// Navigation / Zurück-Button im abgeschrägten Crystal-Button-Stil ("EXIT" / "HOME")
+// Navigation / Zurück-Button im neutralen Schiefer-Perlmutt Crystal-Stil ("EXIT" / "HOME")
 export const HEADER_BACK_BTN =
-  'font-arcade uppercase tracking-wider inline-flex h-10 sm:h-11 landscape:h-9 items-center justify-center gap-2 bg-[#2B9FD6] hover:bg-[#38ACE0] px-4 sm:px-5 text-xs sm:text-sm text-white border-[3px] border-[#0E5A8A] shadow-[inset_0_2px_0_#8AD8F8,0_3px_0_rgba(14,62,96,0.4)] transition-transform active:scale-95 cursor-pointer shrink-0 [clip-path:polygon(0%_6%,100%_0%,98%_95%,2%_100%)]';
+  'font-arcade uppercase tracking-wider inline-flex h-10 sm:h-11 landscape:h-9 items-center justify-center gap-2 bg-[#E2E8F0] hover:bg-[#F8FAFC] px-4 sm:px-5 text-xs sm:text-sm text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_2px_0_#FFFFFF,0_3px_0_rgba(15,23,42,0.4)] transition-transform active:scale-95 cursor-pointer shrink-0 [clip-path:polygon(0%_6%,100%_0%,98%_95%,2%_100%)]';
 
-// Einheitliche Header-Badges rechts (Kategorie, Einstellungen, Status) im Crystal-Readout-Stil
+// Einheitliche Header-Badges rechts
 export const HEADER_BADGE_PILL =
-  'font-arcade uppercase tracking-wider inline-flex h-9 sm:h-10 landscape:h-8 items-center justify-center gap-1.5 bg-[#88D6F8] text-[#15608E] border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#DDF6FF,0_2px_0_rgba(14,62,96,0.35)] px-3.5 text-xs sm:text-sm [clip-path:polygon(0%_5%,100%_0%,98%_95%,2%_100%)]';
+  'font-arcade uppercase tracking-wider inline-flex h-9 sm:h-10 landscape:h-8 items-center justify-center gap-1.5 bg-[#F1F5F9] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_2px_0_#FFFFFF,0_2px_0_rgba(15,23,42,0.35)] px-3.5 text-xs sm:text-sm [clip-path:polygon(0%_5%,100%_0%,98%_95%,2%_100%)]';
 
 // Inhalts-Bühnen innerhalb <main>
 export const STAGE_TWO_COL = 'my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center py-2 sm:py-4 landscape:py-1';
 export const STAGE_SINGLE_COL = 'my-auto mx-auto flex w-full max-w-lg flex-1 flex-col justify-center py-2 sm:py-4 landscape:py-1';
 
-// Einheitliches Crystal-Panel ("DIFFICULTY" / "LEVEL 16" / "OPTIONS" Fläche) & Unter-Elemente
+// Einheitliches Frost-Crystal-Panel & Unter-Elemente
 export const SURFACE_CARD =
-  'relative bg-[#9CE0FA] text-[#15608E] p-5 sm:p-7 landscape:p-4 sm:landscape:p-5 border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_10px_0_rgba(14,62,96,0.38)]';
+  'relative bg-[#EEF4F9] text-[#1E293B] p-5 sm:p-7 landscape:p-4 sm:landscape:p-5 border-[4px] border-[#2B425B] shadow-[inset_0_0_0_3.5px_#FFFFFF,0_12px_24px_rgba(9,20,38,0.42)]';
 export const SURFACE_ITEM_ROW =
-  'bg-[#B8ECFD]/85 text-[#15608E] p-3.5 border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#E6F8FF]';
+  'bg-[#F8FAFC] text-[#1E293B] p-3.5 border-[3px] border-[#CBD5E1] shadow-[inset_0_2px_0_#FFFFFF]';
 export const INFO_PILL =
-  'font-arcade uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#39A9DD] px-3.5 py-1.5 text-xs text-white border-[2.5px] border-[#17608E] shadow-[inset_0_1.5px_0_#9CE0FA] [clip-path:polygon(0%_6%,100%_0%,98%_95%,2%_100%)]';
+  'font-arcade uppercase tracking-wider inline-flex items-center gap-1.5 bg-[#1E293B] px-3.5 py-1.5 text-xs text-white border-[2.5px] border-[#0F172A] shadow-[inset_0_1.5px_0_#475569] [clip-path:polygon(0%_6%,100%_0%,98%_95%,2%_100%)]';
 export const STATUS_PILL_SUCCESS =
-  'font-arcade uppercase tracking-wider px-3 py-1 text-xs bg-[#2B9FD6] text-white border-2 border-[#0E5A8A] shadow-[inset_0_1.5px_0_#8AD8F8]';
+  'font-arcade uppercase tracking-wider px-3 py-1 text-xs bg-[#059669] text-white border-2 border-[#064E3B] shadow-[inset_0_1.5px_0_#6EE7B7]';
 export const STATUS_PILL_NEUTRAL =
-  'font-arcade uppercase tracking-wider px-3 py-1 text-xs bg-[#88D6F8] text-[#15608E] border-2 border-[#17608E]';
+  'font-arcade uppercase tracking-wider px-3 py-1 text-xs bg-[#E2E8F0] text-[#1E293B] border-2 border-[#475569]';
 
-// ─── CRYSTAL BUTTON-SYSTEM ("EASY", "NORMAL", "HARD", "PLAY", "CONTINUE", "OK") ─────
+// ─── CRYSTAL BUTTON-SYSTEM ─────
 
 export const BTN_PRIMARY_BASE =
   'font-arcade uppercase tracking-wider flex h-12 landscape:h-10 sm:landscape:h-11 w-full items-center justify-center gap-2.5 px-6 text-sm sm:text-base transition-transform duration-150 active:scale-95 [clip-path:polygon(0%_6%,100%_0%,98%_95%,2%_100%)]';
 export const BTN_PRIMARY_ENABLED =
-  'bg-[#2B9FD6] hover:bg-[#38ACE0] text-white border-[3px] border-[#0E5A8A] shadow-[inset_0_2px_0_#8AD8F8,0_4px_0_rgba(14,62,96,0.45)] cursor-pointer';
+  'bg-[#059669] hover:bg-[#10B981] text-white border-[3px] border-[#064E3B] shadow-[inset_0_2px_0_#6EE7B7,0_4px_0_rgba(6,78,59,0.45)] cursor-pointer';
 export const BTN_PRIMARY_DISABLED =
-  'bg-[#74BCE0]/60 text-[#15608E]/50 border-[3px] border-[#17608E]/50 cursor-not-allowed shadow-none';
+  'bg-[#CBD5E1] text-[#64748B] border-[3px] border-[#94A3B8] cursor-not-allowed shadow-none';
 
 export const BTN_SECONDARY_BASE =
   'font-arcade uppercase tracking-wider flex h-11 sm:h-12 landscape:h-10 w-full items-center justify-center gap-2.5 px-5 text-sm sm:text-base transition-transform duration-150 active:scale-95 cursor-pointer [clip-path:polygon(1%_0%,99%_6%,97%_100%,0%_94%)]';
 export const BTN_SECONDARY_NEUTRAL =
-  'bg-[#52A9D6] hover:bg-[#64B7E2] text-white border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#AEE8FC]';
+  'bg-[#E2E8F0] hover:bg-[#F8FAFC] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_2px_0_#FFFFFF]';
 export const BTN_SECONDARY_ACCENT =
-  'bg-[#39A9DD] hover:bg-[#4EB6E6] text-white border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#9CE0FA]';
+  'bg-[#F59E0B] hover:bg-[#FBBF24] text-white border-[3px] border-[#78350F] shadow-[inset_0_2px_0_#FDE68A]';
 
 export const BTN_SUCCESS_READY =
-  'bg-[#2B9FD6] hover:bg-[#38ACE0] text-white border-[3px] border-[#0E5A8A] shadow-[inset_0_2px_0_#8AD8F8]';
+  'bg-[#059669] hover:bg-[#10B981] text-white border-[3px] border-[#064E3B] shadow-[inset_0_2px_0_#6EE7B7]';
 export const BTN_SUCCESS_CONFIRMED =
-  'bg-[#F6B969] hover:bg-[#FDE0A6] text-[#15608E] border-[3px] border-[#D9923E] shadow-[inset_0_2px_0_#FFF1C9]';
+  'bg-[#F59E0B] hover:bg-[#FBBF24] text-white border-[3px] border-[#78350F] shadow-[inset_0_2px_0_#FDE68A]';
 
 export const SEGMENT_CONTAINER =
-  'grid gap-1.5 p-1.5 bg-[#52A9D6] border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#3990BE]';
+  'grid gap-1.5 p-1.5 bg-[#E2E8F0] border-[3px] border-[#334155] shadow-inner';
 export const SEGMENT_TAB_BASE =
   'font-arcade uppercase tracking-wider py-2 px-3 text-center text-xs sm:text-sm transition-all cursor-pointer [clip-path:polygon(0%_5%,100%_0%,98%_95%,2%_100%)]';
 export const SEGMENT_TAB_ACTIVE =
-  'bg-[#2B9FD6] text-white border-2 border-[#0E5A8A] shadow-[inset_0_1.5px_0_#8AD8F8]';
+  'bg-[#1E293B] text-white border-2 border-[#0F172A] shadow-[inset_0_1.5px_0_#475569]';
 export const SEGMENT_TAB_INACTIVE =
-  'bg-[#88D6F8]/70 text-[#15608E] hover:bg-[#9CE0FA]';
+  'bg-[#F8FAFC] text-[#334155] hover:bg-white';
 
 export const SWITCH_TRACK_ON =
-  'bg-[#2B9FD6] border-2 border-[#12608E]';
+  'bg-[#10B981] border-2 border-[#065F46]';
 export const SWITCH_TRACK_OFF =
-  'bg-[#74BCE0] border-2 border-[#17608E]';
+  'bg-[#CBD5E1] border-2 border-[#475569]';

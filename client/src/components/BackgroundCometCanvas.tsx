@@ -9,6 +9,7 @@ interface CrystalShard {
   rotation: number;
   vRot: number;
   alpha: number;
+  warm: boolean;
 }
 
 interface BackgroundCometCanvasProps {
@@ -43,7 +44,7 @@ export function BackgroundCometCanvas({
     window.addEventListener('resize', updateSize);
     window.visualViewport?.addEventListener('resize', updateSize);
 
-    const shards: CrystalShard[] = Array.from({ length: 16 }, () => ({
+    const shards: CrystalShard[] = Array.from({ length: 16 }, (_, idx) => ({
       x: Math.random() * window.innerWidth,
       y: Math.random() * window.innerHeight,
       vx: (Math.random() - 0.5) * 0.35,
@@ -51,7 +52,8 @@ export function BackgroundCometCanvas({
       size: 6 + Math.random() * 12,
       rotation: Math.random() * Math.PI * 2,
       vRot: (Math.random() - 0.5) * 0.01,
-      alpha: 0.14 + Math.random() * 0.22,
+      alpha: 0.12 + Math.random() * 0.18,
+      warm: idx % 3 === 0,
     }));
 
     const render = () => {
@@ -62,12 +64,12 @@ export function BackgroundCometCanvas({
 
       ctx.clearRect(0, 0, width, height);
 
-      // Basis-Hintergrund #3B82B6 mit geometrischen Kristall-Facetten
-      ctx.fillStyle = '#3B82B6';
+      // Tiefer Schiefer-Nacht-Hintergrund (#1B2B40) mit geometrischen Kristall-Facetten
+      ctx.fillStyle = '#1B2B40';
       ctx.fillRect(0, 0, width, height);
 
       // Diagonale Facette links
-      ctx.fillStyle = 'rgba(72, 145, 198, 0.45)';
+      ctx.fillStyle = 'rgba(46, 71, 102, 0.48)';
       ctx.beginPath();
       ctx.moveTo(0, 0);
       ctx.lineTo(width * 0.44, 0);
@@ -77,7 +79,7 @@ export function BackgroundCometCanvas({
       ctx.fill();
 
       // Diagonale Facette rechts unten
-      ctx.fillStyle = 'rgba(49, 114, 166, 0.45)';
+      ctx.fillStyle = 'rgba(21, 35, 52, 0.55)';
       ctx.beginPath();
       ctx.moveTo(width * 0.58, height);
       ctx.lineTo(width, height * 0.32);
@@ -85,7 +87,7 @@ export function BackgroundCometCanvas({
       ctx.closePath();
       ctx.fill();
 
-      // Schwebende kleine Eis-Kristall-Splitter
+      // Schwebende kleine Kristall-Splitter (abwechselnd Perlmutt & Gold-Bernstein)
       for (const s of shards) {
         s.x += s.vx;
         s.y += s.vy;
@@ -102,8 +104,8 @@ export function BackgroundCometCanvas({
         ctx.translate(s.x, s.y);
         ctx.rotate(s.rotation);
         ctx.globalAlpha = s.alpha * opacity;
-        ctx.fillStyle = '#ADE6FB';
-        ctx.strokeStyle = '#DDF6FF';
+        ctx.fillStyle = s.warm ? '#FDE68A' : '#E2E8F0';
+        ctx.strokeStyle = s.warm ? '#FEF3C7' : '#FFFFFF';
         ctx.lineWidth = 1.2;
 
         ctx.beginPath();

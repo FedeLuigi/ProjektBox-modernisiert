@@ -1,3 +1,4 @@
+import { GAMES } from '../../data/games';
 import { formatSoloScore } from '../../utils/soloScores';
 import { CrystalButton, CrystalPanel, CrystalReadout } from '../CrystalUI';
 
@@ -23,6 +24,7 @@ export function SoloResultCard({
 }: SoloResultCardProps) {
   const displayScore = resultLabel || formatSoloScore(gameId, score);
   const displayBest = bestScore !== null ? formatSoloScore(gameId, bestScore) : displayScore;
+  const gameAccent = GAMES.find((g) => g.id === gameId)?.accent ?? 'emerald';
 
   return (
     <div className="mx-auto w-full max-w-sm animate-fade-in">
@@ -30,13 +32,14 @@ export function SoloResultCard({
       <CrystalPanel
         stars={isNewRecord ? 3 : 2}
         title={isNewRecord ? 'NEW RECORD' : 'LEVEL CLEAR'}
+        accent={gameAccent}
         contentClassName="gap-4 py-6"
       >
         <CrystalReadout label="SCORE" value={displayScore} />
         <CrystalReadout label="REWARD" value={displayBest} />
 
         <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
-          <CrystalButton fullWidth size="md" tilt="left" onClick={onPlayAgain}>
+          <CrystalButton fullWidth size="md" variant={gameAccent} tilt="left" onClick={onPlayAgain}>
             REPLAY
           </CrystalButton>
           <CrystalButton

@@ -23,8 +23,8 @@ export default defineConfig({
         short_name: 'ProjektBox',
         description:
           'Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.',
-        theme_color: '#3B82B6',
-        background_color: '#3B82B6',
+        theme_color: '#1B2B40',
+        background_color: '#1B2B40',
         display: 'fullscreen',
         display_override: ['fullscreen', 'standalone', 'window-controls-overlay'],
         orientation: 'any',

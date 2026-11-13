@@ -87,14 +87,14 @@ function hasAnyMove(grid: Grid): boolean {
 }
 
 const TILE_COLORS: Record<number, string> = {
-  0: 'bg-[#52A9D6]/55 text-transparent border-[#17608E]/50',
-  2: 'bg-[#DDF6FF] text-[#15608E] border-[#17608E]',
-  4: 'bg-[#B6ECFD] text-[#15608E] border-[#17608E]',
-  8: 'bg-[#5AC2EE] text-white border-[#17608E]',
-  16: 'bg-[#2B9FD6] text-white border-[#0E5A8A]',
-  32: 'bg-[#17689A] text-white border-[#0B3B59]',
-  64: 'bg-[#FDE0A6] text-[#8C4E0C] border-[#C48232]',
-  128: 'bg-[#F6B969] text-white border-[#C48232]',
+  0: 'bg-[#CBD5E1]/70 text-transparent border-[#94A3B8]',
+  2: 'bg-[#FFFFFF] text-[#1E293B] border-[#64748B]',
+  4: 'bg-[#FEF3C7] text-[#78350F] border-[#D97706]',
+  8: 'bg-[#F59E0B] text-white border-[#92400E]',
+  16: 'bg-[#EA580C] text-white border-[#9A3412]',
+  32: 'bg-[#E11D48] text-white border-[#881337]',
+  64: 'bg-[#DB2777] text-white border-[#831843]',
+  128: 'bg-[#7C3AED] text-white border-[#4C1D95]',
 };
 
 export function Game2048Board({
@@ -141,8 +141,8 @@ export function Game2048Board({
   return (
     <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
       {/* Hochformat Kopfzeile */}
-      <div className="flex landscape:hidden items-center justify-between w-full px-2 py-1.5 bg-[#9CE0FA] border-2 border-[#17608E] text-xs font-arcade uppercase text-[#15608E]">
-        <span>SCORE: <strong className="text-[#0E486C]">{score}</strong></span>
+      <div className="flex landscape:hidden items-center justify-between w-full px-3 py-1.5 bg-[#FFFBEB] border-[3px] border-[#92400E] shadow-[0_3px_0_rgba(15,23,42,0.25)] text-xs font-arcade uppercase text-[#78350F]">
+        <span>SCORE: <strong className="text-[#D97706]">{score}</strong></span>
         <button
           type="button"
           onClick={() => {
@@ -150,13 +150,13 @@ export function Game2048Board({
             finishedRef.current = true;
             onMove({ score, isAbsolute: true, finish: true });
           }}
-          className="bg-[#2B9FD6] border-2 border-[#0E5A8A] px-2.5 py-0.5 text-[11px] font-arcade text-white cursor-pointer active:scale-95"
+          className="bg-[#D97706] hover:bg-[#B45309] border-2 border-[#78350F] px-2.5 py-0.5 text-[11px] font-arcade text-white cursor-pointer active:scale-95"
         >
           FINISH
         </button>
       </div>
 
-      {/* 4x4 Spielfeld mit Wischgesten */}
+      {/* 4x4 Spielfeld mit Wischgesten im neutralen Slate-Pearl Rahmen für farbige Kachel-Progression */}
       <div
         onTouchStart={(e) => {
           touchStartRef.current = {
@@ -176,14 +176,14 @@ export function Game2048Board({
             performMove(dy > 0 ? 'down' : 'up');
           }
         }}
-        className="grid grid-cols-4 gap-2 landscape:gap-1.5 p-2.5 landscape:p-2 bg-[#9CE0FA] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)] w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square touch-none"
+        className="grid grid-cols-4 gap-2 landscape:gap-1.5 p-2.5 landscape:p-2 bg-[#E2E8F0] border-[4px] border-[#1E293B] shadow-[inset_0_0_0_4px_#F8FAFC,0_10px_0_rgba(15,23,42,0.42)] w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square touch-none"
       >
         {grid.flat().map((val, idx) => (
           <div
             key={idx}
             className={`relative flex items-center justify-center font-arcade border-2 transition-all overflow-hidden ${
               val >= 1024 ? 'text-base landscape:text-sm' : val >= 128 ? 'text-lg landscape:text-base' : 'text-xl sm:text-2xl landscape:text-lg'
-            } ${TILE_COLORS[val] || 'bg-[#EAA14B] text-white border-[#C48232]'}`}
+            } ${TILE_COLORS[val] || 'bg-[#059669] text-white border-[#064E3B]'}`}
             style={{
               clipPath: 'polygon(0% 4%, 100% 0%, 97% 96%, 3% 100%)',
             }}
@@ -201,23 +201,23 @@ export function Game2048Board({
 
       {/* Rechte Seitenleiste im Querformat & untere Pfeil-Steuerung im Hochformat */}
       <div className="flex flex-col items-center landscape:items-stretch gap-2.5 w-full">
-        <div className="hidden landscape:flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-2.5 text-center">
-          <CrystalReadout label="SCORE" value={score} />
+        <div className="hidden landscape:flex flex-col items-center bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_6px_0_rgba(15,23,42,0.3)] px-3 py-2.5 text-center">
+          <CrystalReadout variant="gold" label="SCORE" value={score} />
         </div>
 
         {/* Pfeil-Steuerung im Crystal-Look */}
         <div className="flex items-center justify-center gap-2 landscape:grid landscape:grid-cols-3 landscape:gap-1.5 landscape:mx-auto">
           <div className="hidden landscape:block" />
-          <button type="button" aria-label="Hoch" onClick={() => performMove('up')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#88D6F8] hover:bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#1A6798] shadow-[inset_0_0_0_2px_#B6ECFD] active:scale-90 cursor-pointer landscape:col-start-2 landscape:row-start-1">
+          <button type="button" aria-label="Hoch" onClick={() => performMove('up')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#F8FAFC] hover:bg-[#FFFFFF] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_3px_0_rgba(15,23,42,0.28)] active:scale-90 cursor-pointer landscape:col-start-2 landscape:row-start-1">
             <ArrowUp className="h-4 w-4 stroke-[3]" />
           </button>
-          <button type="button" aria-label="Links" onClick={() => performMove('left')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#88D6F8] hover:bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#1A6798] shadow-[inset_0_0_0_2px_#B6ECFD] active:scale-90 cursor-pointer landscape:col-start-1 landscape:row-start-2">
+          <button type="button" aria-label="Links" onClick={() => performMove('left')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#F8FAFC] hover:bg-[#FFFFFF] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_3px_0_rgba(15,23,42,0.28)] active:scale-90 cursor-pointer landscape:col-start-1 landscape:row-start-2">
             <ArrowLeft className="h-4 w-4 stroke-[3]" />
           </button>
-          <button type="button" aria-label="Runter" onClick={() => performMove('down')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#88D6F8] hover:bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#1A6798] shadow-[inset_0_0_0_2px_#B6ECFD] active:scale-90 cursor-pointer landscape:col-start-2 landscape:row-start-2">
+          <button type="button" aria-label="Runter" onClick={() => performMove('down')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#F8FAFC] hover:bg-[#FFFFFF] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_3px_0_rgba(15,23,42,0.28)] active:scale-90 cursor-pointer landscape:col-start-2 landscape:row-start-2">
             <ArrowDown className="h-4 w-4 stroke-[3]" />
           </button>
-          <button type="button" aria-label="Rechts" onClick={() => performMove('right')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#88D6F8] hover:bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#1A6798] shadow-[inset_0_0_0_2px_#B6ECFD] active:scale-90 cursor-pointer landscape:col-start-3 landscape:row-start-2">
+          <button type="button" aria-label="Rechts" onClick={() => performMove('right')} className="grid h-9 w-11 landscape:h-10 landscape:w-10 place-items-center bg-[#F8FAFC] hover:bg-[#FFFFFF] text-[#1E293B] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_3px_0_rgba(15,23,42,0.28)] active:scale-90 cursor-pointer landscape:col-start-3 landscape:row-start-2">
             <ArrowRight className="h-4 w-4 stroke-[3]" />
           </button>
         </div>
@@ -225,6 +225,7 @@ export function Game2048Board({
         <div className="hidden landscape:block w-full">
           <CrystalButton
             size="sm"
+            variant="gold"
             fullWidth
             onClick={() => {
               if (finishedRef.current) return;

@@ -126,16 +126,24 @@ export function MinesweeperBoard({
     }
   };
 
+  const ADJ_TEXT_COLOR: Record<number, string> = {
+    1: 'text-[#2563EB]',
+    2: 'text-[#059669]',
+    3: 'text-[#E11D48]',
+    4: 'text-[#7C3AED]',
+    5: 'text-[#D97706]',
+  };
+
   return (
     <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
       {/* Hochformat Status & Modus */}
-      <div className="flex landscape:hidden items-center justify-between w-full px-2 py-1.5 bg-[#9CE0FA] border-2 border-[#17608E] text-xs font-arcade uppercase text-[#15608E]">
-        <span>SAFE: <strong className="text-[#0E486C]">{revealedSafe}/{safeCells}</strong></span>
+      <div className="flex landscape:hidden items-center justify-between w-full px-3 py-1.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[0_3px_0_rgba(15,23,42,0.25)] text-xs font-arcade uppercase text-[#1E293B]">
+        <span>SAFE: <strong className="text-[#4F46E5]">{revealedSafe}/{safeCells}</strong></span>
         <button
           type="button"
           onClick={() => setFlagMode((v) => !v)}
           className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-arcade uppercase border-2 transition-all cursor-pointer ${
-            flagMode ? 'bg-[#F6B969] text-white border-[#C48232]' : 'bg-[#2B9FD6] text-white border-[#0E5A8A]'
+            flagMode ? 'bg-[#D97706] text-white border-[#78350F]' : 'bg-[#4F46E5] text-white border-[#312E81]'
           }`}
         >
           <Flag className="h-3 w-3" />
@@ -143,8 +151,8 @@ export function MinesweeperBoard({
         </button>
       </div>
 
-      {/* 7x7 Minenfeld im Crystal-Design */}
-      <div className="grid grid-cols-7 gap-1.5 landscape:gap-1 p-2.5 landscape:p-2 bg-[#52A9D6] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#8AD8F8,0_8px_0_rgba(14,62,96,0.38)] w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square">
+      {/* 7x7 Minenfeld im taktischen Slate-Indigo-Design mit farbcodierten Zahlen */}
+      <div className="grid grid-cols-7 gap-1.5 landscape:gap-1 p-2.5 landscape:p-2 bg-[#CBD5E1] border-[4px] border-[#1E293B] shadow-[inset_0_0_0_4px_#E2E8F0,0_10px_0_rgba(15,23,42,0.42)] w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square">
         {board.map((row, r) =>
           row.map((cell, c) => (
             <button
@@ -154,11 +162,11 @@ export function MinesweeperBoard({
               className={`flex items-center justify-center text-xs sm:text-sm font-arcade border-2 transition-all cursor-pointer active:scale-90 ${
                 cell.revealed
                   ? cell.isMine
-                    ? 'bg-[#E14B5A] text-white border-[#8F1D28]'
-                    : 'bg-[#DDF6FF] text-[#15608E] border-[#52A9D6]'
+                    ? 'bg-[#E11D48] text-white border-[#881337]'
+                    : `bg-[#F8FAFC] ${ADJ_TEXT_COLOR[cell.adjacent] || 'text-[#1E293B]'} border-[#94A3B8]`
                   : cell.flagged
-                  ? 'bg-[#F6B969] text-white border-[#C48232] shadow-[inset_0_0_0_1px_#FDE0A6]'
-                  : 'bg-[#9CE0FA] hover:bg-[#B6ECFD] text-[#15608E] border-[#17608E] shadow-[inset_0_0_0_1px_#DDF6FF]'
+                  ? 'bg-[#F59E0B] text-white border-[#78350F] shadow-[inset_0_0_0_1px_#FDE68A]'
+                  : 'bg-[#475569] hover:bg-[#64748B] text-white border-[#1E293B] shadow-[inset_0_2px_0_#94A3B8]'
               }`}
             >
               {cell.revealed ? (
@@ -181,14 +189,14 @@ export function MinesweeperBoard({
 
       {/* Rechte Seitenleiste im Querformat */}
       <div className="hidden landscape:flex flex-col gap-3 w-full">
-        <div className="flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-3 text-center">
+        <div className="flex flex-col items-center bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_6px_0_rgba(15,23,42,0.3)] px-3 py-3 text-center">
           <CrystalReadout label="SAFE" value={`${revealedSafe}/${safeCells}`} />
         </div>
 
         <CrystalButton
           size="sm"
           fullWidth
-          variant={flagMode ? 'success' : 'primary'}
+          variant={flagMode ? 'amber' : 'indigo'}
           onClick={() => setFlagMode((v) => !v)}
         >
           {flagMode ? 'FLAG ON' : 'REVEAL'}

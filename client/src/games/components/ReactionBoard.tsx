@@ -73,37 +73,37 @@ export function ReactionBoard({
   return (
     <div className="flex flex-col items-center justify-center w-full max-w-sm landscape:max-w-xl landscape:grid landscape:grid-cols-[1.35fr_0.85fr] landscape:items-center landscape:gap-5 gap-3 select-none">
       {/* Hochformat Rundenfortschritt */}
-      <div className="flex landscape:hidden items-center gap-2 text-xs font-arcade uppercase text-white drop-shadow-[0_1px_0_#17608E]">
+      <div className="flex landscape:hidden items-center gap-2 text-xs font-arcade uppercase text-white drop-shadow-[0_1.5px_0_#0F172A]">
         <span>VERSUCH {Math.min(attempts.length + (phase === 'done' ? 0 : 1), TOTAL_ROUNDS)} / {TOTAL_ROUNDS}</span>
         {lastMs !== null && (
-          <span className="bg-[#39A9DD] border-2 border-[#17689A] px-2.5 py-0.5 text-[11px] font-arcade text-white">
+          <span className="bg-[#059669] border-2 border-[#064E3B] px-2.5 py-0.5 text-[11px] font-arcade text-white shadow-[0_2px_0_rgba(15,23,42,0.3)]">
             LETZTE: {lastMs} MS
           </span>
         )}
       </div>
 
-      {/* Haupt-Tippanzeige im Crystal-Look */}
+      {/* Haupt-Tippanzeige mit klaren Ampel-Phasenfarben (Smaragd = JETZT, Bernstein = WARTEN, Rubin = ZU FRÜH, Perle = START) */}
       <button
         type="button"
         onPointerDown={handleTap}
         className={`relative w-full h-56 sm:h-64 landscape:h-[min(calc(100dvh-5.5rem),16.5rem)] flex flex-col items-center justify-center gap-2.5 p-6 text-center transition-all active:scale-[0.98] cursor-pointer border-[4px] overflow-hidden ${
           phase === 'ready'
-            ? 'bg-[#2B9FD6] text-white border-[#0E5A8A] shadow-[inset_0_0_0_4px_#B6ECFD,0_8px_0_rgba(14,62,96,0.4)]'
+            ? 'bg-[#059669] text-white border-[#064E3B] shadow-[inset_0_0_0_4px_#6EE7B7,0_10px_0_rgba(6,78,59,0.45)]'
             : phase === 'waiting'
-            ? 'bg-[#52A9D6] text-white border-[#17608E] shadow-[inset_0_0_0_4px_#8AD8F8,0_8px_0_rgba(14,62,96,0.38)]'
+            ? 'bg-[#D97706] text-white border-[#78350F] shadow-[inset_0_0_0_4px_#FCD34D,0_10px_0_rgba(120,53,15,0.45)]'
             : phase === 'early'
-            ? 'bg-[#F6B969] text-white border-[#C48232] shadow-[inset_0_0_0_4px_#FDE0A6,0_8px_0_rgba(140,78,12,0.38)]'
-            : 'bg-[#9CE0FA] text-[#15608E] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)]'
+            ? 'bg-[#E11D48] text-white border-[#881337] shadow-[inset_0_0_0_4px_#FDA4AF,0_10px_0_rgba(136,19,55,0.45)]'
+            : 'bg-[#F8FAFC] text-[#1E293B] border-[#334155] shadow-[inset_0_0_0_4px_#E2E8F0,0_10px_0_rgba(15,23,42,0.4)]'
         }`}
       >
         <div
           className="pointer-events-none absolute inset-0 bg-white/18"
           style={{ clipPath: 'polygon(0 0, 56% 0, 32% 100%, 0 100%)' }}
         />
-        <Zap className={`relative z-10 h-11 w-11 landscape:h-9 landscape:w-9 ${phase === 'ready' ? 'fill-current animate-bounce text-[#FDE0A6]' : ''}`} />
+        <Zap className={`relative z-10 h-11 w-11 landscape:h-9 landscape:w-9 ${phase === 'ready' ? 'fill-current animate-bounce text-[#FEF3C7]' : phase === 'idle' ? 'text-[#059669]' : ''}`} />
         <span className="relative z-10 text-xl sm:text-2xl landscape:text-xl font-arcade uppercase tracking-wide">
           {phase === 'idle' && (attempts.length === 0 ? 'TIPPEN ZUM STARTEN' : 'NÄCHSTER VERSUCH')}
-          {phase === 'waiting' && 'WARTE AUF SIGNAL…'}
+          {phase === 'waiting' && 'WARTE AUF GRÜN…'}
           {phase === 'ready' && 'JETZT TIPPEN!'}
           {phase === 'early' && 'ZU FRÜH! NOCHMAL'}
           {phase === 'done' && 'FERTIG!'}
@@ -112,12 +112,12 @@ export function ReactionBoard({
 
       {/* Rechte Infospalte im Querformat & Chipzeile im Hochformat */}
       <div className="flex flex-col items-center landscape:items-stretch gap-2.5 w-full">
-        <div className="hidden landscape:flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-3 text-center gap-2">
+        <div className="hidden landscape:flex flex-col items-center bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_6px_0_rgba(15,23,42,0.3)] px-3 py-3 text-center gap-2">
           <CrystalReadout
             label="RUNDE"
             value={`${Math.min(attempts.length + (phase === 'done' ? 0 : 1), TOTAL_ROUNDS)}/${TOTAL_ROUNDS}`}
           />
-          {lastMs !== null && <CrystalReadout label="LETZTE" value={`${lastMs} MS`} />}
+          {lastMs !== null && <CrystalReadout variant="emerald" label="LETZTE" value={`${lastMs} MS`} />}
         </div>
 
         {attempts.length > 0 && (
@@ -125,7 +125,7 @@ export function ReactionBoard({
             {attempts.map((ms, i) => (
               <span
                 key={i}
-                className="bg-[#39A9DD] border-2 border-[#17689A] px-2.5 py-0.5 text-[11px] font-arcade text-white shadow-[inset_0_0_0_1px_#6EC5ED]"
+                className="bg-[#1E293B] border-2 border-[#0F172A] px-2.5 py-0.5 text-[11px] font-arcade text-[#6EE7B7] shadow-[0_2px_0_rgba(15,23,42,0.3)]"
               >
                 #{i + 1}: {ms} MS
               </span>

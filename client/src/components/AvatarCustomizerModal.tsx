@@ -69,29 +69,30 @@ export function AvatarCustomizerModal({
   const optionCardClass = (isSelected: boolean) =>
     `min-w-0 w-full flex flex-col items-center p-2.5 border-[3px] transition-transform cursor-pointer active:scale-95 ${
       isSelected
-        ? 'bg-[#2B9FD6] border-[#0E5A8A] text-white shadow-[inset_0_2px_0_#8AD8F8]'
-        : 'bg-[#B8ECFD]/80 hover:bg-[#CFF2FF] border-[#17608E] text-[#15608E]'
+        ? 'bg-[#4F46E5] border-[#312E81] text-white shadow-[inset_0_2px_0_#A5B4FC,0_3px_0_rgba(15,23,42,0.28)]'
+        : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
     }`;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-[#103858]/70 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
         className="my-auto w-full max-w-lg pt-3 flex flex-col"
       >
-        <CrystalPanel topTabLabel="AVATAR" contentClassName="w-full gap-3 p-4 sm:p-5">
+        <CrystalPanel topTabLabel="AVATAR" accent="indigo" contentClassName="w-full gap-3 p-4 sm:p-5">
           {/* Vorschau + Würfel-Icon-Button */}
           <div className="flex items-center justify-center gap-4">
-            <div className="border-[4px] border-[#17608E] bg-[#52A9D6] p-2 shadow-[inset_0_2px_0_#AEE8FC]">
+            <div className="border-[4px] border-[#1E293B] bg-[#F8FAFC] p-2 shadow-[inset_0_2px_0_#FFFFFF,0_5px_0_rgba(15,23,42,0.3)]">
               <Avatar config={current} size={84} />
             </div>
             <CrystalIconButton
               size="md"
+              variant="amber"
               tilt="right"
               onClick={handleRandomize}
               title="Zufälliger Avatar"
@@ -115,7 +116,7 @@ export function AvatarCustomizerModal({
                 key={tab.id}
                 size="sm"
                 tilt={idx % 2 === 0 ? 'left' : 'right'}
-                variant={activeTab === tab.id ? 'primary' : 'secondary'}
+                variant={activeTab === tab.id ? 'indigo' : 'secondary'}
                 onClick={() => setActiveTab(tab.id)}
               >
                 {tab.label}

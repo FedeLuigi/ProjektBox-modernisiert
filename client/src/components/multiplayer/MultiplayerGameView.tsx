@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { WifiOff } from 'lucide-react';
+import { GAMES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { useUserProfile } from '../../utils/userProfile';
@@ -37,6 +38,7 @@ export function MultiplayerGameView({
   const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
 
   const currentUser = useUserProfile();
+  const gameAccent = GAMES.find((g) => g.id === lobby.gameId)?.accent ?? 'emerald';
   const activePlayers = lobby.isTvMode
     ? lobby.players.filter((p) => !p.isTvScreen)
     : lobby.players;
@@ -152,7 +154,7 @@ export function MultiplayerGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in">
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
@@ -161,15 +163,15 @@ export function MultiplayerGameView({
         {/* 1. CRYSTAL TOP-BAR: EXIT links, Spielstatus Mitte, Code rechts */}
         <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
           <div className="justify-self-start">
-            <CrystalButton size="sm" tilt="left" onClick={onLeave}>
+            <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
               EXIT
             </CrystalButton>
           </div>
 
           {isDrawAndGuess ? (
-            <div className="justify-self-center flex items-center gap-2 border-[3px] border-[#17608E] bg-[#9CE0FA] px-3 py-1 shadow-[inset_0_2px_0_#DDF6FF]">
+            <div className="justify-self-center flex items-center gap-2 border-[3px] border-[#334155] bg-[#F8FAFC] px-3 py-1 shadow-[inset_0_2px_0_#FFFFFF,0_3px_0_rgba(15,23,42,0.2)]">
               <Avatar config={currentUser.avatar} size={22} />
-              <span className="font-arcade text-sm text-[#15608E]">
+              <span className="font-arcade text-sm text-[#1E293B]">
                 {gameState?.scores?.[currentUser.id] || 0} : {gameState?.scores?.[opponent?.id || ''] || 0}
               </span>
               <Avatar config={opponent?.avatar || ({} as any)} size={22} />
@@ -183,6 +185,7 @@ export function MultiplayerGameView({
           ) : (
             <div className="justify-self-center">
               <CrystalReadout
+                variant={isMyTurn ? 'emerald' : 'neutral'}
                 value={isMyTurn ? 'YOUR TURN' : `${opponent?.name || 'OPPONENT'}`}
               />
             </div>
@@ -200,7 +203,7 @@ export function MultiplayerGameView({
         )}
 
         {disconnectedOpponent && (
-          <div className="font-arcade mx-auto my-1 flex items-center gap-2 border-2 border-[#9E5D19] bg-[#F6B969] px-3.5 py-2 text-center text-xs text-[#15608E] uppercase animate-pulse">
+          <div className="font-arcade mx-auto my-1 flex items-center gap-2 border-2 border-[#92400E] bg-[#FEF3C7] px-3.5 py-2 text-center text-xs text-[#78350F] uppercase animate-pulse">
             <WifiOff className="h-4 w-4 shrink-0" />
             <span>WAITING FOR {disconnectedOpponent}...</span>
           </div>
@@ -225,6 +228,7 @@ export function MultiplayerGameView({
                 <CrystalPanel
                   stars={isWinner ? 3 : isDraw ? 2 : 1}
                   title={isWinner ? 'VICTORY!' : isDraw ? 'DRAW!' : 'GAME OVER'}
+                  accent={isWinner ? 'emerald' : gameAccent}
                   contentClassName="gap-3.5 py-6"
                 >
                   <CrystalReadout
@@ -244,6 +248,7 @@ export function MultiplayerGameView({
                     <CrystalButton
                       fullWidth
                       size="md"
+                      variant={gameAccent}
                       tilt="left"
                       disabled={hasVotedRematch}
                       onClick={handleRematch}
@@ -287,8 +292,8 @@ export function MultiplayerGameView({
                 isTvMode={lobby.isTvMode}
               />
             ) : (
-              <CrystalPanel title="LOADING..." contentClassName="py-8">
-                <span className="font-arcade text-sm text-[#15608E] uppercase">
+              <CrystalPanel title="LOADING..." accent={gameAccent} contentClassName="py-8">
+                <span className="font-arcade text-sm text-[#334155] uppercase">
                   PREPARING BOARD...
                 </span>
               </CrystalPanel>

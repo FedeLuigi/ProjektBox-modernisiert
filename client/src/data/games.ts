@@ -15,6 +15,16 @@ export type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
 
 export type Tone = 'sunset' | 'indigo' | 'emerald' | 'ocean';
 
+export type CrystalAccent =
+  | 'amber'
+  | 'coral'
+  | 'emerald'
+  | 'violet'
+  | 'rose'
+  | 'gold'
+  | 'indigo'
+  | 'cyan';
+
 export interface Game {
   id: string;
   title: string;
@@ -26,6 +36,7 @@ export interface Game {
   duration: string;
   icon: LucideIcon;
   tone: Tone;
+  accent: CrystalAccent;
   starsEarned: number;
   starsTotal: number;
   defaultScore: number;
@@ -34,6 +45,13 @@ export interface Game {
 }
 
 export const CATEGORIES: Category[] = ['Alle', 'Strategie', 'Denken', 'Arcade'];
+
+export const CATEGORY_ACCENTS: Record<Category, CrystalAccent> = {
+  Alle: 'amber',
+  Strategie: 'indigo',
+  Denken: 'rose',
+  Arcade: 'emerald',
+};
 
 export const GAMES: Game[] = [
   {
@@ -49,6 +67,7 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Brain,
     tone: 'sunset',
+    accent: 'amber',
     starsEarned: 22,
     starsTotal: 135,
     defaultScore: 25873,
@@ -67,7 +86,8 @@ export const GAMES: Game[] = [
     players: '2 Spieler',
     duration: '5 Min.',
     icon: Grid2X2,
-    tone: 'indigo',
+    tone: 'sunset',
+    accent: 'coral',
     starsEarned: 45,
     starsTotal: 135,
     defaultScore: 19420,
@@ -87,6 +107,7 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Zap,
     tone: 'emerald',
+    accent: 'emerald',
     starsEarned: 33,
     starsTotal: 135,
     defaultScore: 31050,
@@ -105,7 +126,8 @@ export const GAMES: Game[] = [
     players: '2 Spieler',
     duration: '3 Min.',
     icon: Puzzle,
-    tone: 'ocean',
+    tone: 'indigo',
+    accent: 'violet',
     starsEarned: 54,
     starsTotal: 135,
     defaultScore: 14890,
@@ -125,6 +147,7 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Palette,
     tone: 'sunset',
+    accent: 'rose',
     starsEarned: 18,
     starsTotal: 135,
     defaultScore: 22500,
@@ -144,6 +167,7 @@ export const GAMES: Game[] = [
     duration: '3 Min.',
     icon: Flame,
     tone: 'emerald',
+    accent: 'emerald',
     starsEarned: 15,
     starsTotal: 135,
     defaultScore: 28640,
@@ -163,6 +187,7 @@ export const GAMES: Game[] = [
     duration: '8 Min.',
     icon: Gamepad2,
     tone: 'sunset',
+    accent: 'gold',
     starsEarned: 28,
     starsTotal: 135,
     defaultScore: 42048,
@@ -182,6 +207,7 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Bomb,
     tone: 'indigo',
+    accent: 'indigo',
     starsEarned: 10,
     starsTotal: 135,
     defaultScore: 17320,
@@ -201,6 +227,7 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Rocket,
     tone: 'ocean',
+    accent: 'cyan',
     starsEarned: 12,
     starsTotal: 135,
     defaultScore: 36910,

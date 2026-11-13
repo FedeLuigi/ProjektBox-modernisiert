@@ -142,7 +142,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   if (currentLobby) {
     return (
-      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in">
         <BackgroundCometCanvas opacity={0.85} />
 
         <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
@@ -178,14 +178,14 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
       role="dialog"
       aria-modal="true"
       aria-labelledby="lobby-screen-title"
-      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
     >
       <BackgroundCometCanvas opacity={0.85} />
 
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
         {/* 1. OBERE LEISTE: "HOME" / "EXIT" Crystal-Button links, Verbindungsstatus rechts */}
         <header className="flex shrink-0 items-center justify-between gap-2 pb-2">
-          <CrystalButton size="sm" tilt="left" onClick={onClose}>
+          <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
             HOME
           </CrystalButton>
 
@@ -195,8 +195,8 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
         {/* 2. MITTE: Links "LEVEL 16"-Stil Spiel-Info-Panel, Rechts "DIFFICULTY"-Stil Modus-Auswahl */}
         <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-7 pb-3">
           <div className="my-auto grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
-            {/* Linkes Panel: 1:1 wie "LEVEL 16" im Referenzbild */}
-            <CrystalPanel stars={3} title={game.title} contentClassName="gap-3.5 py-6">
+            {/* Linkes Panel: 1:1 wie "LEVEL 16" im Referenzbild mit individuellem Spiel-Akzent */}
+            <CrystalPanel stars={3} title={game.title} accent={game.accent} contentClassName="gap-3.5 py-6">
               <CrystalReadout
                 label="SCORE"
                 value={soloBest !== null ? formatSoloScore(game.id, soloBest) : String(game.defaultScore)}
@@ -211,7 +211,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
             </CrystalPanel>
 
             {/* Rechtes Panel: 1:1 wie "DIFFICULTY" ("EASY / NORMAL / HARD") im Referenzbild */}
-            <CrystalPanel title="DIFFICULTY" contentClassName="gap-3.5 py-6 px-5">
+            <CrystalPanel title="DIFFICULTY" accent={game.accent} contentClassName="gap-3.5 py-6 px-5">
               {errorMsg && (
                 <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">
                   {errorMsg}
@@ -223,6 +223,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                   <CrystalButton
                     fullWidth
                     size="lg"
+                    variant={game.accent}
                     tilt="left"
                     onClick={() => setIsDirectSolo(true)}
                   >
@@ -259,13 +260,13 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                 <form onSubmit={handleCreateLobby} className="flex w-full flex-col gap-3.5">
                   {/* Lobby-Name im SCORE/REWARD Readout-Stil */}
                   <div className="flex flex-col items-center w-full">
-                    <span className="font-arcade mb-1 text-sm tracking-wider text-[#15608E] uppercase">
+                    <span className="font-arcade mb-1 text-sm tracking-wider text-[#334155] uppercase">
                       LOBBY NAME
                     </span>
                     <div className="flex items-center gap-2 w-full justify-center">
                       <div
                         style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                        className="flex-1 bg-[#17689A] p-[2.5px]"
+                        className="flex-1 bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.2)]"
                       >
                         <input
                           type="text"
@@ -278,12 +279,13 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                           }}
                           placeholder="LOBBY..."
                           style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                          className="font-arcade w-full bg-[#39A9DD] px-4 py-2 text-center text-base tracking-wider text-white uppercase focus:outline-none"
+                          className="font-arcade w-full bg-[#1E293B] px-4 py-2 text-center text-base tracking-wider text-[#F8FAFC] uppercase focus:outline-none"
                         />
                       </div>
 
                       <CrystalIconButton
                         size="sm"
+                        variant="amber"
                         tilt="right"
                         onClick={handleRollLobbyName}
                         title="Neuen Namen würfeln"
@@ -298,7 +300,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                     <CrystalButton
                       size="sm"
                       tilt="left"
-                      variant={!isTvMode ? 'primary' : 'secondary'}
+                      variant={!isTvMode ? game.accent : 'secondary'}
                       onClick={() => {
                         setIsTvMode(false);
                         if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(false));
@@ -309,7 +311,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                     <CrystalButton
                       size="sm"
                       tilt="right"
-                      variant={isTvMode ? 'primary' : 'secondary'}
+                      variant={isTvMode ? game.accent : 'secondary'}
                       onClick={() => {
                         setIsTvMode(true);
                         if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(true));
@@ -323,6 +325,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
                     type="submit"
                     fullWidth
                     size="lg"
+                    variant="primary"
                     tilt="left"
                     disabled={isCreating}
                   >

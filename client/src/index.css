@@ -18,7 +18,7 @@
     min-height: 100dvh;
     min-height: 100lvh;
     min-height: -webkit-fill-available;
-    background-color: #3B82B6;
+    background-color: #1B2B40;
   }
 
   body, #root {
@@ -29,8 +29,8 @@
     min-height: 100dvh;
     min-height: 100lvh;
     min-height: -webkit-fill-available;
-    background-color: #3B82B6;
-    color: #15608E;
+    background-color: #1B2B40;
+    color: #1E293B;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-user-select: none;

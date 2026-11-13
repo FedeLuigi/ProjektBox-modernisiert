@@ -199,15 +199,15 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in p-4"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in p-4"
     >
       <IslandBackground />
 
       <header className="relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
-        <CrystalButton size="sm" tilt="left" onClick={onClose}>
+        <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
           EXIT
         </CrystalButton>
-        <span className="font-arcade text-lg tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(14,62,96,0.65)]">
+        <span className="font-arcade text-lg tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(15,23,42,0.8)]">
           QR SCANNER
         </span>
       </header>
@@ -215,18 +215,18 @@ export function QrScannerModal({
       <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3">
         {errorType !== 'none' ? (
           <div className="my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="CAMERA" title="NO CAMERA" contentClassName="gap-4">
-              <CameraOff className="h-10 w-10 text-[#15608E]" />
-              <p className="text-center text-sm font-bold text-[#15608E]">{errorMessage}</p>
-              <CrystalButton fullWidth size="md" onClick={onSwitchToCodeEntry}>
+            <CrystalPanel topTabLabel="CAMERA" title="NO CAMERA" accent="rose" contentClassName="gap-4">
+              <CameraOff className="h-10 w-10 text-[#E11D48]" />
+              <p className="text-center text-sm font-bold text-[#334155]">{errorMessage}</p>
+              <CrystalButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry}>
                 ENTER CODE
               </CrystalButton>
             </CrystalPanel>
           </div>
         ) : (
           <div className="my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="SCAN QR" contentClassName="gap-3">
-              <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#17608E] bg-[#124B70] flex items-center justify-center">
+            <CrystalPanel topTabLabel="SCAN QR" accent="amber" contentClassName="gap-3">
+              <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   className="absolute inset-0 h-full w-full object-cover"
@@ -234,16 +234,16 @@ export function QrScannerModal({
                   playsInline
                 />
 
-                <div className="relative z-10 w-48 h-48 border-[3px] border-[#9CE0FA] pointer-events-none flex items-center justify-center">
+                <div className="relative z-10 w-48 h-48 border-[3px] border-[#F59E0B] pointer-events-none flex items-center justify-center">
                   {hasScanned && (
-                    <span className="font-arcade bg-[#2B9FD6] border-2 border-[#0E5A8A] px-4 py-1.5 text-sm text-white uppercase">
+                    <span className="font-arcade bg-[#059669] border-2 border-[#064E3B] px-4 py-1.5 text-sm text-white uppercase">
                       FOUND!
                     </span>
                   )}
                 </div>
 
                 {isInitializing && (
-                  <div className="font-arcade absolute inset-0 bg-[#17608E]/85 flex items-center justify-center text-sm text-white uppercase">
+                  <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm text-white uppercase">
                     STARTING CAMERA...
                   </div>
                 )}

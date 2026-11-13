@@ -22,9 +22,9 @@ export function ConnectionStatusBadge() {
     return (
       <div
         style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#39A9DD] border-[2.5px] border-[#17608E] px-3.5 text-xs text-white shadow-[inset_0_1.5px_0_#9CE0FA] shrink-0"
+        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#059669] border-[2.5px] border-[#064E3B] px-3.5 text-xs text-white shadow-[inset_0_1.5px_0_#6EE7B7,0_3px_0_rgba(15,23,42,0.2)] shrink-0"
       >
-        <span className="h-2 w-2 rounded-full bg-[#B8ECFD] animate-pulse" />
+        <span className="h-2 w-2 rounded-full bg-[#A7F3D0] animate-pulse" />
         <Wifi className="h-3.5 w-3.5" />
         <span>ONLINE</span>
       </div>
@@ -35,7 +35,7 @@ export function ConnectionStatusBadge() {
     return (
       <div
         style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#F6B969] border-[2.5px] border-[#9E5D19] px-3.5 text-xs text-[#15608E] shrink-0"
+        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#FEF3C7] border-[2.5px] border-[#92400E] px-3.5 text-xs text-[#78350F] shadow-[0_3px_0_rgba(15,23,42,0.2)] shrink-0"
       >
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
         <span>CONNECTING...</span>
