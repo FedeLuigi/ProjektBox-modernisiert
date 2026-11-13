@@ -29,7 +29,7 @@ export function LobbyGameSettings({
   isHost,
   onUpdate,
 }: LobbyGameSettingsProps) {
-  const [isOpen, setIsOpen] = useState(true);
+  const [isOpen, setIsOpen] = useState(false);
   const theme = getGameTheme(gameId);
 
   // Defaults je nach Spiel
