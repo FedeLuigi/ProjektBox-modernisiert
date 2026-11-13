@@ -5,7 +5,6 @@ import {
   Copy,
   Crown,
   Play,
-  QrCode,
   Tv,
   X,
 } from 'lucide-react';
@@ -22,7 +21,6 @@ import {
   BTN_SUCCESS_CONFIRMED,
   BTN_SUCCESS_READY,
   HEADER_BACK_BTN,
-  HEADER_ROW,
   getGameTheme,
 } from '../../styles/uiTokens';
 
@@ -45,7 +43,6 @@ export function InLobbyView({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
 
-  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const desktopQrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const joinUrl = getLobbyJoinUrl(lobby.code);
@@ -111,9 +108,6 @@ export function InLobbyView({
   }, [errorMsg]);
 
   useEffect(() => {
-    if (qrCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 160).catch(console.error);
-    }
     if (desktopQrCanvasRef.current && joinUrl) {
       renderQrCodeToCanvas(desktopQrCanvasRef.current, joinUrl, 320).catch(console.error);
     }
@@ -206,98 +200,83 @@ export function InLobbyView({
 
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
-      {/* 1. HEADER: Zurück-Pille & Verbindungsstatus */}
-      <header className={HEADER_ROW}>
+      {/* 1. HEADER: Zurück-Pille, Zentrierter Spieltitel ganz oben & Verbindungsstatus */}
+      <header className="relative flex shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3 landscape:pb-1 w-full max-w-5xl mx-auto px-1">
         <button
           type="button"
           onClick={onLeave}
           className={HEADER_BACK_BTN}
         >
-          <ArrowLeft className="h-4 w-4" />
-          <span>Lobby verlassen</span>
+          <ArrowLeft className="h-4 w-4 shrink-0" />
+          <span className="hidden sm:inline">Lobby verlassen</span>
+          <span className="sm:hidden">Zurück</span>
         </button>
+
+        {/* Spieltitel ganz oben zentriert am Bildschirmrand außerhalb der zentralen Lobby-Karte */}
+        <div className="absolute left-1/2 -translate-x-1/2 flex items-center justify-center gap-1.5 text-xs sm:text-sm font-black uppercase tracking-widest text-amber-300 pointer-events-none select-none max-w-[50%]">
+          {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon} shrink-0`} />}
+          <span className="truncate">{gameTitle || lobby.name}</span>
+        </div>
 
         <ConnectionStatusBadge />
       </header>
 
-      <div className="mx-auto flex w-full max-w-md md:max-w-4xl lg:max-w-5xl landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
-        {/* Scrollbarer Mittelbereich: Auf großen Screens ausgewogenes 2-Spalten-Layout mit viel Raum */}
-        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 sm:px-4 py-3 md:py-4 landscape:py-1 scrollbar-none">
+      <div className="mx-auto flex w-full max-w-lg md:max-w-4xl lg:max-w-5xl landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
+        {/* Scrollbarer Mittelbereich: Auf großen Screens ausgewogenes 2-Spalten-Layout, bei wenig Platz saubere Reihenfolge */}
+        <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 sm:px-4 py-2 sm:py-3 md:py-4 landscape:py-1 scrollbar-none">
           {errorMsg && (
             <div className={`mb-4 rounded-2xl p-3 text-center text-xs font-bold animate-fade-in shrink-0 ${theme.infoBox}`}>
               {errorMsg}
             </div>
           )}
 
-          <div className="my-auto grid w-full items-start gap-6 md:grid-cols-[auto_1fr] lg:grid-cols-[minmax(280px,340px)_1fr] md:gap-8 lg:gap-12 landscape:grid-cols-[auto_1fr] landscape:gap-8 py-2 landscape:py-0">
-            {/* ─── LINKE SPALTE: Titel, Raumcode & großer QR-Code ─── */}
-            <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left md:col-start-1 md:row-start-1 landscape:col-start-1 landscape:row-start-1 gap-4 sm:gap-5 w-full">
-              {/* Spiel-Titel */}
-              <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${theme.accentTextSoft}`}>
-                {lobby.isTvMode && <Tv className={`h-3.5 w-3.5 ${theme.accentIcon}`} />}
-                <span>{gameTitle || lobby.name}</span>
-              </div>
-
+          <div className="my-auto grid w-full items-start gap-5 sm:gap-6 md:grid-cols-[minmax(240px,280px)_1fr] lg:grid-cols-[minmax(260px,320px)_1fr] md:gap-8 lg:gap-12 landscape:grid-cols-[minmax(220px,260px)_1fr] landscape:gap-6 py-1">
+            {/* ─── BEREICH 1 (Links auf Desktop / Oben bei wenig Platz): Beitrittscode & QR-Code direkt unten dran ─── */}
+            <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left md:col-start-1 md:row-start-1 landscape:col-start-1 landscape:row-start-1 gap-3.5 sm:gap-4 w-full">
               {/* Beitrittscode */}
               <div className="flex flex-col items-center md:items-start w-full">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93] mb-1.5">
                   Beitrittscode
                 </span>
 
-                <div className="flex items-center justify-center md:justify-start gap-3.5 w-full">
-                  <button
-                    type="button"
-                    onClick={handleCopyCode}
-                    aria-label={`Beitrittscode ${lobby.code} kopieren`}
-                    className="inline-flex items-center gap-3 sm:gap-3.5 rounded-3xl px-5 py-3 sm:px-6 sm:py-3.5 landscape:px-4 landscape:py-2 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/12 transition-all active:scale-95 cursor-pointer group shadow-lg"
-                  >
-                    <span className={`text-4xl sm:text-5xl landscape:text-3xl font-black tracking-[0.22em] pl-[0.22em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
-                      {lobby.code}
-                    </span>
-                    <span className={`grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
-                      {copiedCode ? (
-                        <Check className="h-4 w-4 text-emerald-400 stroke-[2.5]" />
-                      ) : (
-                        <Copy className="h-4 w-4" />
-                      )}
-                    </span>
-                  </button>
-
-                  {/* Auf Smartphones: Kompakter QR-Preview Button mit Klick zum Vergrößern */}
-                  <button
-                    type="button"
-                    onClick={() => setIsQrModalOpen(true)}
-                    title="QR-Code vergrößern"
-                    aria-label="QR-Code vergrößern"
-                    className="md:hidden group relative rounded-2xl bg-white p-2 shadow-md ring-1 ring-white/20 hover:ring-white/50 transition-all hover:scale-105 active:scale-95 cursor-pointer shrink-0"
-                  >
-                    <canvas ref={qrCanvasRef} width={62} height={62} className="block rounded-lg" />
-                    <span className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#161622] text-white shadow ring-1 ring-white/25 group-hover:scale-110 transition-transform">
-                      <QrCode className="h-3 w-3" />
-                    </span>
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleCopyCode}
+                  aria-label={`Beitrittscode ${lobby.code} kopieren`}
+                  className="inline-flex items-center justify-center gap-2.5 sm:gap-3.5 rounded-3xl px-4 py-2.5 sm:px-6 sm:py-3.5 bg-white/[0.04] hover:bg-white/[0.08] ring-1 ring-white/12 transition-all active:scale-95 cursor-pointer group shadow-lg max-w-full"
+                >
+                  <span className={`text-3xl sm:text-4xl md:text-5xl font-black tracking-[0.16em] sm:tracking-[0.2em] pl-[0.16em] sm:pl-[0.2em] text-transparent bg-clip-text bg-gradient-to-r ${theme.codeGradient}`}>
+                    {lobby.code}
+                  </span>
+                  <span className={`grid h-8 w-8 sm:h-9 sm:w-9 shrink-0 place-items-center rounded-full bg-white/10 text-white ${theme.copyHover} transition-colors`}>
+                    {copiedCode ? (
+                      <Check className="h-4 w-4 text-emerald-400 stroke-[2.5]" />
+                    ) : (
+                      <Copy className="h-4 w-4" />
+                    )}
+                  </span>
+                </button>
               </div>
 
-              {/* Auf Desktop, Tablet und TV: Großer, gut scanbarer QR-Code pur ohne Text */}
-              <div className="hidden md:flex flex-col items-center md:items-start pt-1">
+              {/* QR-Code: Bei wenig Platz direkt unten dran, auf Desktop in der linken Spalte */}
+              <div className="flex flex-col items-center md:items-start pt-0.5 sm:pt-1">
                 <button
                   type="button"
                   onClick={() => setIsQrModalOpen(true)}
                   title="Klicken zum Vergrößern"
                   aria-label="QR-Code vergrößern"
-                  className="rounded-[28px] bg-white p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0"
+                  className="rounded-[28px] bg-white p-3 sm:p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0"
                 >
                   <canvas
                     ref={desktopQrCanvasRef}
-                    className="w-40 h-40 lg:w-44 lg:h-44 block rounded-2xl"
+                    className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 block rounded-2xl"
                   />
                 </button>
               </div>
             </div>
 
-            {/* ─── RECHTE SPALTE: Spieleinstellungen, Teilnehmerliste & Haupt-Aktion ─── */}
-            <div className="flex flex-col justify-between w-full h-full gap-5 md:col-start-2 md:row-start-1 landscape:col-start-2 landscape:row-start-1">
+            {/* ─── BEREICH 2 (Rechts auf Desktop / Unten bei wenig Platz): Spieleinstellungen, Teilnehmer & Start-Button ─── */}
+            <div className="flex flex-col justify-between w-full h-full gap-4 sm:gap-5 md:col-start-2 md:row-start-1 landscape:col-start-2 landscape:row-start-1">
               <div className="flex flex-col gap-4 sm:gap-5 w-full">
                 {/* Spieleinstellungen */}
                 <LobbyGameSettings
@@ -308,41 +287,41 @@ export function InLobbyView({
                 />
 
                 {/* Teilnehmerliste prominent direkt über dem Start-Button */}
-                <div className="flex flex-col items-center md:items-start w-full gap-2.5">
-                  <div className="flex items-center justify-between w-full px-0.5">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93]">
+                <div className="flex flex-col items-center md:items-start w-full gap-2">
+                  <div className="flex items-center justify-between w-full px-1">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93] shrink-0">
                       Teilnehmer ({activePlayers.length}/{lobby.maxPlayers})
                     </span>
-                    <span className="text-xs font-semibold text-emerald-400">
+                    <span className="text-xs font-semibold text-emerald-400 shrink-0">
                       {readyCount}/{activePlayers.length} bereit
                     </span>
                   </div>
-                  <div className="w-full flex flex-wrap items-center justify-center md:justify-start landscape:justify-start gap-2.5">
+                  <div className="w-full flex flex-wrap items-center justify-center md:justify-start landscape:justify-start gap-2">
                     {activePlayers.map((p, idx) => {
                       const isMe = p.id === currentUser.id;
                       return (
                         <div
                           key={p.id || idx}
-                          className={`flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5 ring-1 transition-all ${
+                          className={`flex items-center gap-2 rounded-full pl-2 pr-3 py-1.5 ring-1 transition-all max-w-full ${
                             p.isReady
                               ? 'bg-emerald-500/12 ring-emerald-500/35'
                               : 'bg-[#18181E] ring-white/12'
                           }`}
                         >
                           <div className="relative shrink-0">
-                            <Avatar config={p.avatar} size={32} />
+                            <Avatar config={p.avatar} size={30} />
                             {p.isHost && (
                               <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
                                 <Crown className="h-2 w-2 fill-current" />
                               </span>
                             )}
                           </div>
-                          <span className="text-xs sm:text-sm font-bold text-white max-w-[130px] sm:max-w-[200px] md:max-w-none md:truncate-none">
+                          <span className="text-xs sm:text-sm font-bold text-white truncate max-w-[140px] sm:max-w-[200px]">
                             {p.name}
                             {isMe ? ' (Du)' : ''}
                           </span>
                           {p.isReady ? (
-                            <Check className="h-4 w-4 shrink-0 text-emerald-400 stroke-[2.75]" />
+                            <Check className="h-3.5 w-3.5 shrink-0 text-emerald-400 stroke-[2.75]" />
                           ) : (
                             <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
                           )}
@@ -361,8 +340,8 @@ export function InLobbyView({
           </div>
         </div>
 
-        {/* 3. HAUPT-AKTION UNTEN IM HOCHFORMAT (NUR AUF SMARTPHONES) */}
-        <div className="shrink-0 px-1 pt-3 pb-1 md:hidden landscape:hidden">
+        {/* 3. HAUPT-AKTION UNTEN IM HOCHFORMAT (NUR AUF SMARTPHONES / BEI WENIG PLATZ) */}
+        <div className="shrink-0 px-1 pt-3 pb-1 md:hidden landscape:hidden w-full">
           {actionButton}
         </div>
       </div>
