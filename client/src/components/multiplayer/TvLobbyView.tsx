@@ -117,19 +117,19 @@ export function TvLobbyView({
 
       {/* ─── 2. ZWEIGETEILTE BÜHNE (offen, ohne verschachtelte Kästen) ─── */}
       <main className={`${STAGE_TWO_COL} overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-3`}>
-        <div className="grid w-full items-center gap-6 sm:gap-8 lg:gap-12 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.15fr] landscape:text-left lg:grid-cols-[1fr_1.15fr] lg:text-left">
+        <div className="grid w-full items-center gap-6 sm:gap-8 md:gap-10 lg:gap-12 grid-cols-1 text-center md:grid-cols-[1fr_1.15fr] md:text-left landscape:grid-cols-[1fr_1.15fr] landscape:text-left">
           {/* Linke Seite: Spiel-Titel, QR-Code & Beitrittscode */}
-          <div className="flex flex-col portrait:items-center landscape:items-start lg:items-start">
+          <div className="flex flex-col items-center md:items-start landscape:items-start">
             <h1 className="text-2xl sm:text-4xl landscape:text-2xl sm:landscape:text-3xl font-black tracking-tight leading-tight text-white">
               {gameTitle || lobby.name}
             </h1>
 
-            <div className="mt-5 flex flex-col sm:flex-row lg:flex-col xl:flex-row items-center gap-4 portrait:justify-center">
+            <div className="mt-5 flex flex-col sm:flex-row md:flex-col lg:flex-row items-center gap-4 justify-center md:justify-start">
               <div className="rounded-[24px] bg-white p-3.5 shadow-lg ring-1 ring-white/15 shrink-0">
                 <canvas ref={canvasRef} className="block rounded-xl" />
               </div>
 
-              <div className="flex flex-col portrait:items-center landscape:items-start lg:items-start">
+              <div className="flex flex-col items-center md:items-start landscape:items-start">
                 <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93]">
                   Beitrittscode
                 </span>
@@ -227,7 +227,7 @@ export function TvLobbyView({
                       )}
                     </div>
 
-                    <span className="text-sm font-bold text-white max-w-[140px] truncate">
+                    <span className="text-sm font-bold text-white max-w-[140px] sm:max-w-[220px] md:max-w-none md:truncate-none">
                       {player.name}
                     </span>
 
