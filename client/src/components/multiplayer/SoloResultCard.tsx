@@ -1,11 +1,5 @@
-import { RotateCcw, Trophy } from 'lucide-react';
-import {
-  BTN_PRIMARY_BASE,
-  BTN_SECONDARY_BASE,
-  BTN_SECONDARY_NEUTRAL,
-  getGameTheme,
-} from '../../styles/uiTokens';
 import { formatSoloScore } from '../../utils/soloScores';
+import { CrystalButton, CrystalPanel, CrystalReadout } from '../CrystalUI';
 
 interface SoloResultCardProps {
   gameId: string;
@@ -24,73 +18,38 @@ export function SoloResultCard({
   bestScore,
   isNewRecord,
   resultLabel,
-  secondaryLabel = 'Zurück zur Übersicht',
   onPlayAgain,
   onExit,
 }: SoloResultCardProps) {
-  const theme = getGameTheme(gameId);
   const displayScore = resultLabel || formatSoloScore(gameId, score);
-  const displayBest = bestScore !== null ? formatSoloScore(gameId, bestScore) : null;
+  const displayBest = bestScore !== null ? formatSoloScore(gameId, bestScore) : displayScore;
 
   return (
-    <div
-      className={`max-w-sm sm:max-w-md md:max-w-lg landscape:max-w-xl mx-auto w-full p-6 sm:p-8 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}
-    >
-      <div className="flex flex-col items-center landscape:items-start">
-        <div className="flex justify-center landscape:justify-start mb-2.5 landscape:mb-2">
-          <Trophy
-            className={`h-11 w-11 landscape:h-9 landscape:w-9 ${
-              isNewRecord ? 'text-amber-400 animate-bounce' : theme.accentIcon
-            }`}
-          />
+    <div className="mx-auto w-full max-w-sm animate-fade-in">
+      {/* 1:1 Umsetzung des "LEVEL 16" Kristall-Ergebnis-Fensters aus dem Referenzbild */}
+      <CrystalPanel
+        stars={isNewRecord ? 3 : 2}
+        title={isNewRecord ? 'NEW RECORD' : 'LEVEL CLEAR'}
+        contentClassName="gap-4 py-6"
+      >
+        <CrystalReadout label="SCORE" value={displayScore} />
+        <CrystalReadout label="REWARD" value={displayBest} />
+
+        <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
+          <CrystalButton fullWidth size="md" tilt="left" onClick={onPlayAgain}>
+            REPLAY
+          </CrystalButton>
+          <CrystalButton
+            size="md"
+            variant="secondary"
+            tilt="right"
+            onClick={onExit}
+            className="min-w-[130px]"
+          >
+            OK
+          </CrystalButton>
         </div>
-
-        <h2 className="text-xl sm:text-2xl landscape:text-xl font-black text-white">
-          {isNewRecord ? (
-            <span className="text-amber-300">Neuer Highscore! 🎉</span>
-          ) : (
-            <span>Runde beendet!</span>
-          )}
-        </h2>
-
-        {/* Punktestand & Highscore Pillen */}
-        <div className="mt-3 landscape:mt-2.5 flex flex-wrap items-center justify-center landscape:justify-start gap-2">
-          <div className="inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] px-3.5 py-1 ring-1 ring-white/15 text-xs">
-            <span className="text-[#8E8E93]">Ergebnis:</span>
-            <strong className={`font-black tabular-nums ${theme.accentText}`}>
-              {displayScore}
-            </strong>
-          </div>
-
-          {displayBest && (
-            <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-3.5 py-1 ring-1 ring-amber-400/35 text-xs">
-              <span className="text-amber-200/80">Highscore:</span>
-              <strong className="font-black tabular-nums text-amber-300">
-                {displayBest}
-              </strong>
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="mt-5 landscape:mt-0 flex flex-col gap-2.5">
-        <button
-          type="button"
-          onClick={onPlayAgain}
-          className={`${BTN_PRIMARY_BASE} ${theme.primaryBtn}`}
-        >
-          <RotateCcw className="h-4 w-4" />
-          <span>Nochmal spielen</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onExit}
-          className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-        >
-          {secondaryLabel}
-        </button>
-      </div>
+      </CrystalPanel>
     </div>
   );
 }

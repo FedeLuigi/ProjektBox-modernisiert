@@ -1,11 +1,8 @@
 import { useCallback, useState } from 'react';
-import { ArrowLeft, Trophy } from 'lucide-react';
 import type { Game } from '../../data/games';
 import { getUserProfile } from '../../utils/userProfile';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { GameBackground } from '../GameBackground';
 import { clientGameRegistry } from '../../games/registry';
-import { getGameTheme } from '../../styles/uiTokens';
 import {
   formatSoloScore,
   getSoloHighscore,
@@ -13,6 +10,7 @@ import {
   saveSoloHighscore,
 } from '../../utils/soloScores';
 import { SoloResultCard } from './SoloResultCard';
+import { CrystalButton, CrystalReadout, CrystalStatBar } from '../CrystalUI';
 
 interface SoloGameViewProps {
   game: Game;
@@ -21,7 +19,6 @@ interface SoloGameViewProps {
 
 export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
   const currentUser = getUserProfile();
-  const theme = getGameTheme(game.id);
   const BoardComponent = clientGameRegistry.get(game.id);
 
   const [roundId, setRoundId] = useState(1);
@@ -88,60 +85,50 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
   };
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
-      <BackgroundCometCanvas opacity={0.35} />
-
-      <div className="pointer-events-none absolute inset-0 opacity-25 transform-gpu">
-        <GameBackground gameId={game.id} fullBleed />
-      </div>
-
-      {/* ─── Passender Themen-Glow bis ganz nach unten ─── */}
-      <div className={`pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-50 ${theme.ambientTop}`} />
-      <div className={`pointer-events-none absolute -bottom-16 -right-16 h-96 w-96 rounded-full blur-3xl opacity-55 ${theme.ambientBottom}`} />
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+      <BackgroundCometCanvas opacity={0.85} />
 
       <div
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] landscape:pt-[calc(6px+env(safe-area-inset-top,0px))] landscape:pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
       >
-        {/* 1. SCHMALE TOP-BAR */}
-        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5 landscape:pb-1">
-          <button
-            type="button"
-            onClick={onLeave}
-            className="justify-self-start inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 landscape:px-2.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Verlassen</span>
-          </button>
+        {/* 1. CRYSTAL HUD TOP-BAR ("EXIT" links, Spieltitel/Score Mitte, Stern-Highscore rechts) */}
+        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
+          <div className="justify-self-start flex items-center gap-2">
+            <CrystalButton size="sm" tilt="left" onClick={onLeave}>
+              EXIT
+            </CrystalButton>
+            <CrystalButton
+              size="sm"
+              variant="secondary"
+              tilt="right"
+              onClick={handlePlayAgain}
+              className="hidden sm:inline-flex"
+            >
+              REPLAY
+            </CrystalButton>
+          </div>
 
-          <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs font-bold">
-            <span className="text-white truncate max-w-[120px] landscape:max-w-[160px]">{game.title}</span>
-            {score > 0 && !isFinished && (
-              <>
-                <span className="text-white/25">•</span>
-                <span className={`font-black tabular-nums ${theme.accentText}`}>
-                  {formatSoloScore(game.id, score)}
-                </span>
-              </>
-            )}
+          <div className="justify-self-center">
+            <CrystalReadout
+              value={
+                score > 0 && !isFinished
+                  ? `${game.title} • ${formatSoloScore(game.id, score)}`
+                  : game.title
+              }
+            />
           </div>
 
           <div className="justify-self-end flex items-center">
-            {bestScore !== null ? (
-              <span className={`inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1 rounded-full px-2.5 text-[11px] font-bold ${theme.badgePill}`}>
-                <Trophy className="h-3 w-3 text-amber-400" />
-                <span className="tabular-nums">{formatSoloScore(game.id, bestScore)}</span>
-              </span>
-            ) : (
-              <span className={`inline-flex h-8 sm:h-9 landscape:h-7 items-center rounded-full px-2.5 text-[11px] font-bold uppercase ${theme.badgePill}`}>
-                Solo
-              </span>
-            )}
+            <CrystalStatBar
+              type="star"
+              value={bestScore !== null ? formatSoloScore(game.id, bestScore) : 'SOLO'}
+            />
           </div>
         </header>
 
-        {/* 2. MITTE: ERGEBNIS-KARTE ODER SOLO-SPIELFELD */}
+        {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SOLO-SPIELFELD */}
         {isFinished ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-1">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4">
             <SoloResultCard
               gameId={game.id}
               score={score}
@@ -153,7 +140,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
             />
           </main>
         ) : (
-          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center p-2 sm:p-3 landscape:px-2 landscape:py-1">
+          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center p-2 sm:p-3">
             <BoardComponent
               key={roundId}
               gameId={game.id}

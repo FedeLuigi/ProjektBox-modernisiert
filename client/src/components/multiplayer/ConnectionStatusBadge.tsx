@@ -20,19 +20,25 @@ export function ConnectionStatusBadge() {
 
   if (status === 'connected') {
     return (
-      <div className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-emerald-500/10 px-3.5 text-xs font-bold text-emerald-400 ring-1 ring-emerald-500/20 backdrop-blur-md shrink-0">
-        <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+      <div
+        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
+        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#39A9DD] border-[2.5px] border-[#17608E] px-3.5 text-xs text-white shadow-[inset_0_1.5px_0_#9CE0FA] shrink-0"
+      >
+        <span className="h-2 w-2 rounded-full bg-[#B8ECFD] animate-pulse" />
         <Wifi className="h-3.5 w-3.5" />
-        <span>Online</span>
+        <span>ONLINE</span>
       </div>
     );
   }
 
   if (status === 'connecting') {
     return (
-      <div className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-amber-500/10 px-3.5 text-xs font-bold text-amber-400 ring-1 ring-amber-500/20 backdrop-blur-md shrink-0">
+      <div
+        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
+        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#F6B969] border-[2.5px] border-[#9E5D19] px-3.5 text-xs text-[#15608E] shrink-0"
+      >
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        <span>Verbinde...</span>
+        <span>CONNECTING...</span>
       </div>
     );
   }
@@ -44,10 +50,11 @@ export function ConnectionStatusBadge() {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       title="Tippen zum erneuten Verbinden"
-      className="inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-full bg-rose-500/15 px-3.5 text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 backdrop-blur-md transition-all active:scale-95 cursor-pointer hover:bg-rose-500/25 shrink-0"
+      style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
+      className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#DC2626] border-[2.5px] border-[#7F1D1D] px-3.5 text-xs text-white transition-transform active:scale-95 cursor-pointer shrink-0"
     >
-      <WifiOff className="h-3.5 w-3.5 text-rose-400" />
-      <span>{isHovered ? 'Erneut verbinden' : 'Keine Verbindung'}</span>
+      <WifiOff className="h-3.5 w-3.5" />
+      <span>{isHovered ? 'REPLAY' : 'OFFLINE'}</span>
     </button>
   );
 }

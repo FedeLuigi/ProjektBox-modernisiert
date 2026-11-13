@@ -1,13 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { Camera, CameraOff, KeyRound, X } from 'lucide-react';
+import { CameraOff } from 'lucide-react';
 import jsQR from 'jsqr';
 import { parseLobbyCode } from '../../utils/qrCodeHelper';
-import {
-  BTN_PRIMARY_BASE,
-  BTN_PRIMARY_ENABLED,
-  BTN_SECONDARY_BASE,
-  BTN_SECONDARY_NEUTRAL,
-} from '../../styles/uiTokens';
+import { CrystalButton, CrystalPanel } from '../CrystalUI';
+import { IslandBackground } from '../IslandBackground';
 
 interface QrScannerModalProps {
   isOpen: boolean;
@@ -34,7 +30,6 @@ export function QrScannerModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
-  // Kamera starten und Scan-Loop initialisieren
   useEffect(() => {
     if (!isOpen) return;
 
@@ -88,14 +83,14 @@ export function QrScannerModal({
         ) {
           setErrorType('permission_denied');
           setErrorMessage(
-            'Kamera-Zugriff wurde verweigert. Bitte erlaube den Kamera-Zugriff in deinen Systemeinstellungen oder tritt mit dem Code bei.'
+            'Kamera-Zugriff wurde verweigert. Bitte erlaube den Kamera-Zugriff oder gib den Code manuell ein.'
           );
         } else if (err.name === 'NotFoundError' || err.name === 'DevicesNotFoundError') {
           setErrorType('no_camera');
-          setErrorMessage('Keine Kamera auf diesem Gerät gefunden. Du kannst den Code manuell eingeben.');
+          setErrorMessage('Keine Kamera gefunden. Du kannst den Code manuell eingeben.');
         } else {
           setErrorType('generic');
-          setErrorMessage('Kamera konnte nicht gestartet werden: ' + (err.message || 'Unbekannter Fehler'));
+          setErrorMessage('Kamera konnte nicht gestartet werden.');
         }
       }
     }
@@ -122,7 +117,6 @@ export function QrScannerModal({
     }
   };
 
-  // Kontinuierliche Scan-Schleife (BarcodeDetector mit jsQR-Fallback)
   const startScanningLoop = () => {
     let detector: any = null;
     if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
@@ -142,7 +136,6 @@ export function QrScannerModal({
 
       let detectedCode: string | null = null;
 
-      // 1. Primär: Native BarcodeDetector API (extrem schnell & nativ)
       if (detector) {
         try {
           const barcodes = await detector.detect(video);
@@ -150,12 +143,10 @@ export function QrScannerModal({
             detectedCode = parseLobbyCode(barcodes[0].rawValue);
           }
         } catch {
-          // Fallback auf Canvas & jsQR
           detector = null;
         }
       }
 
-      // 2. Lokaler Fallback: jsQR (vollständig offline auf Canvas für iOS / Safari)
       if (!detectedCode) {
         let canvas = canvasRef.current;
         if (!canvas) {
@@ -182,7 +173,6 @@ export function QrScannerModal({
         }
       }
 
-      // Wenn ein valider Lobby-Code erkannt wurde
       if (detectedCode) {
         setHasScanned(true);
         try {
@@ -209,133 +199,69 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in p-4"
     >
-      {/* ─── KOPFZEILE MIT SCHLIESSEN-BUTTON ─── */}
-      <header
-        style={{ paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))' }}
-        className="w-full flex items-center justify-between px-5 z-20"
-      >
-        <div className="flex items-center gap-2">
-          <div className="grid h-8 w-8 place-items-center rounded-xl bg-purple-500/20 text-purple-300 ring-1 ring-purple-500/30">
-            <Camera className="h-4 w-4" />
-          </div>
-          <div>
-            <h2 className="text-sm font-black text-white leading-tight">QR-Code scannen</h2>
-            <p className="text-[11px] text-[#8E8E93]">Halte die Kamera auf den Fernseher</p>
-          </div>
-        </div>
+      <IslandBackground />
 
-        <button
-          type="button"
-          onClick={onClose}
-          className="grid h-9 w-9 place-items-center rounded-full bg-white/10 text-white ring-1 ring-white/15 active:scale-95 cursor-pointer backdrop-blur-md"
-        >
-          <X className="h-4 w-4" />
-        </button>
+      <header className="relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
+        <CrystalButton size="sm" tilt="left" onClick={onClose}>
+          EXIT
+        </CrystalButton>
+        <span className="font-arcade text-lg tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(14,62,96,0.65)]">
+          QR SCANNER
+        </span>
       </header>
 
-      {/* ─── MITTE: KAMERA-VIEWFINDER ODER FEHLERMELDUNG ─── */}
-      <main className="relative flex-1 min-h-0 w-full overflow-y-auto flex flex-col items-center justify-center p-5">
+      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center p-3">
         {errorType !== 'none' ? (
-          /* Fehlermeldung mit sauberer Alternative per Code-Eingabe */
-          <div className="w-full max-w-sm rounded-3xl bg-[#161622]/95 p-6 ring-1 ring-rose-500/30 backdrop-blur-2xl text-center flex flex-col items-center shadow-2xl animate-fade-in">
-            <div className="grid h-14 w-14 place-items-center rounded-2xl bg-rose-500/15 text-rose-400 mb-4 ring-1 ring-rose-500/30">
-              <CameraOff className="h-7 w-7" />
-            </div>
-
-            <h3 className="text-base font-black text-white">Kamera nicht verfügbar</h3>
-            <p className="mt-2 text-xs leading-relaxed text-[#AEAEB2]">{errorMessage}</p>
-
-            <button
-              type="button"
-              onClick={onSwitchToCodeEntry}
-              className={`mt-6 ${BTN_PRIMARY_BASE} ${BTN_PRIMARY_ENABLED}`}
-            >
-              <KeyRound className="h-4 w-4" />
-              <span>Stattdessen Code manuell eingeben</span>
-            </button>
+          <div className="w-full max-w-sm">
+            <CrystalPanel topTabLabel="CAMERA" title="NO CAMERA" contentClassName="gap-4">
+              <CameraOff className="h-10 w-10 text-[#15608E]" />
+              <p className="text-center text-sm font-bold text-[#15608E]">{errorMessage}</p>
+              <CrystalButton fullWidth size="md" onClick={onSwitchToCodeEntry}>
+                ENTER CODE
+              </CrystalButton>
+            </CrystalPanel>
           </div>
         ) : (
-          /* Aktiver Scanner mit dezentem Fadenkreuz */
-          <div className="flex flex-col items-center">
-            <div className="relative w-full max-w-xs sm:max-w-sm aspect-square rounded-[32px] overflow-hidden ring-1 ring-white/15 bg-black flex items-center justify-center shadow-2xl">
-              {/* Live Video */}
-              <video
-                ref={videoRef}
-                className="absolute inset-0 h-full w-full object-cover"
-                muted
-                playsInline
-              />
-
-              {/* Dezente Zielhilfe: Schlichte, elegante Eckwinkel im ProjektBox Neonstil */}
-              <div className="relative z-10 w-52 h-52 sm:w-60 sm:h-60 flex items-center justify-center pointer-events-none">
-                {/* 4 saubere Neon-Eckwinkel (keine Doppel-Linien, kein wandernder Laser) */}
-                <div
-                  className={`absolute top-0 left-0 w-7 h-7 sm:w-8 sm:h-8 border-t-2 border-l-2 rounded-tl-xl transition-colors duration-200 ${
-                    hasScanned
-                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
-                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
-                  }`}
-                />
-                <div
-                  className={`absolute top-0 right-0 w-7 h-7 sm:w-8 sm:h-8 border-t-2 border-r-2 rounded-tr-xl transition-colors duration-200 ${
-                    hasScanned
-                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
-                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
-                  }`}
-                />
-                <div
-                  className={`absolute bottom-0 left-0 w-7 h-7 sm:w-8 sm:h-8 border-b-2 border-l-2 rounded-bl-xl transition-colors duration-200 ${
-                    hasScanned
-                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
-                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
-                  }`}
-                />
-                <div
-                  className={`absolute bottom-0 right-0 w-7 h-7 sm:w-8 sm:h-8 border-b-2 border-r-2 rounded-br-xl transition-colors duration-200 ${
-                    hasScanned
-                      ? 'border-emerald-400 shadow-[0_0_12px_rgba(52,211,153,0.7)]'
-                      : 'border-purple-400/90 shadow-[0_0_10px_rgba(168,85,247,0.45)]'
-                  }`}
+          <div className="w-full max-w-sm">
+            <CrystalPanel topTabLabel="SCAN QR" contentClassName="gap-3">
+              <div className="relative w-full aspect-square overflow-hidden border-[4px] border-[#17608E] bg-[#124B70] flex items-center justify-center">
+                <video
+                  ref={videoRef}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  playsInline
                 />
 
-                {hasScanned && (
-                  <div className="rounded-full px-4 py-2 bg-emerald-500/90 text-white font-bold text-xs sm:text-sm shadow-lg backdrop-blur-md flex items-center gap-1.5 animate-fade-in">
-                    <span>✓</span>
-                    <span>Lobby erkannt</span>
+                <div className="relative z-10 w-48 h-48 border-[3px] border-[#9CE0FA] pointer-events-none flex items-center justify-center">
+                  {hasScanned && (
+                    <span className="font-arcade bg-[#2B9FD6] border-2 border-[#0E5A8A] px-4 py-1.5 text-sm text-white uppercase">
+                      FOUND!
+                    </span>
+                  )}
+                </div>
+
+                {isInitializing && (
+                  <div className="font-arcade absolute inset-0 bg-[#17608E]/85 flex items-center justify-center text-sm text-white uppercase">
+                    STARTING CAMERA...
                   </div>
                 )}
               </div>
 
-              {isInitializing && (
-                <div className="absolute inset-0 bg-black/80 flex items-center justify-center text-xs text-[#8E8E93] font-semibold">
-                  Kamera wird gestartet...
-                </div>
-              )}
-            </div>
-
-            <p className="mt-4 text-xs font-medium text-[#8E8E93] text-center">
-              QR-Code auf dem Fernseher anvisieren
-            </p>
+              <CrystalButton
+                fullWidth
+                size="sm"
+                variant="secondary"
+                tilt="right"
+                onClick={onSwitchToCodeEntry}
+              >
+                ENTER CODE
+              </CrystalButton>
+            </CrystalPanel>
           </div>
         )}
       </main>
-
-      {/* ─── FUSSZEILE MIT ALTERNATIVE PER CODE ─── */}
-      <footer
-        style={{ paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))' }}
-        className="w-full max-w-sm px-6 z-20 flex flex-col items-center gap-2"
-      >
-        <button
-          type="button"
-          onClick={onSwitchToCodeEntry}
-          className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-        >
-          <KeyRound className="h-4 w-4" />
-          <span>Lieber 5-stelligen Code eingeben</span>
-        </button>
-      </footer>
     </div>
   );
 }

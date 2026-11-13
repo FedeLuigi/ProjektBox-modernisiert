@@ -1,14 +1,6 @@
 import { useEffect, useState } from 'react';
-import {
-  ArrowLeft,
-  Dices,
-  Play,
-  RefreshCw,
-  Trophy,
-  Tv,
-  Users,
-} from 'lucide-react';
-import { type Game, TONE_STYLES } from '../../data/games';
+import { Dices, RefreshCw } from 'lucide-react';
+import { type Game } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
@@ -20,19 +12,14 @@ import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
 import { SoloGameView } from './SoloGameView';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { GameBackground } from '../GameBackground';
 import { isSoloGame } from '../../games/registry';
 import { formatSoloScore, getSoloHighscore } from '../../utils/soloScores';
 import {
-  BTN_PRIMARY_BASE,
-  BTN_PRIMARY_DISABLED,
-  BTN_SECONDARY_BASE,
-  BTN_SECONDARY_NEUTRAL,
-  HEADER_BACK_BTN,
-  HEADER_ROW,
-  SWITCH_TRACK_OFF,
-  getGameTheme,
-} from '../../styles/uiTokens';
+  CrystalButton,
+  CrystalIconButton,
+  CrystalPanel,
+  CrystalReadout,
+} from '../CrystalUI';
 
 interface LobbyScreenProps {
   game: Game;
@@ -44,7 +31,6 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
   const [isInGame, setIsInGame] = useState(Boolean(initialLobby?.status === 'in-game'));
 
-  // Synchronisiere initialLobby sofort in den internen Zustand
   useEffect(() => {
     if (initialLobby) {
       setCurrentLobby(initialLobby);
@@ -56,7 +42,6 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // Formular "Lobby erstellen"
   const currentUser = getUserProfile();
   const [createName, setCreateName] = useState(() => generateSimpleLobbyName(false));
   const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
@@ -86,7 +71,6 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     };
   }, [gameId]);
 
-  // Fehler nach 4 Sekunden ausblenden
   useEffect(() => {
     if (errorMsg) {
       const timer = setTimeout(() => setErrorMsg(null), 4000);
@@ -99,29 +83,21 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     setHasCustomLobbyName(false);
   };
 
-  const handleToggleTvMode = () => {
-    const nextIsTv = !isTvMode;
-    setIsTvMode(nextIsTv);
-    if (!hasCustomLobbyName) {
-      setCreateName(generateSimpleLobbyName(nextIsTv));
-    }
-  };
-
-  // Lobby erstellen (immer privat, Zugriff nur via Code oder TV QR-Code)
-  const handleCreateLobby = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateLobby = async (e?: React.FormEvent, forceTvMode?: boolean) => {
+    if (e) e.preventDefault();
     if (isCreating) return;
     setIsCreating(true);
     setErrorMsg(null);
 
-    const finalLobbyName = createName.trim() || generateSimpleLobbyName(isTvMode);
+    const tvFlag = typeof forceTvMode === 'boolean' ? forceTvMode : isTvMode;
+    const finalLobbyName = createName.trim() || generateSimpleLobbyName(tvFlag);
 
     try {
       const created = await socketService.createLobby(
         finalLobbyName,
-        true, // Immer privat
+        true,
         gameId,
-        isTvMode
+        tvFlag
       );
       setCurrentLobby(created);
     } catch (err: any) {
@@ -139,14 +115,11 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
   const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
-  const style = TONE_STYLES[game.tone];
-  const theme = getGameTheme(game.id);
 
   if (isDirectSolo) {
     return <SoloGameView game={game} onLeave={onClose} />;
   }
 
-  // 1. Wenn ein Spiel läuft -> Vollbild TV oder Multiplayer Game View
   if (isInGame && currentLobby) {
     if (isTvScreenHost) {
       return (
@@ -167,22 +140,10 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     );
   }
 
-  // 2. Wenn in einer Lobby -> InLobbyView oder TvLobbyView (exakt selbe App-Shell & Hintergrund wie GameSheet)
   if (currentLobby) {
     return (
-      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
-        <BackgroundCometCanvas opacity={0.45} />
-
-        <div className="pointer-events-none absolute inset-0 opacity-30 transform-gpu">
-          <GameBackground gameId={game.id} fullBleed />
-        </div>
-
-        <div
-          className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
-        />
-        <div
-          className={`pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-65 ${style.glow}`}
-        />
+      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+        <BackgroundCometCanvas opacity={0.85} />
 
         <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
           {isTvScreenHost ? (
@@ -190,7 +151,6 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
               lobby={currentLobby}
               gameTitle={game.title}
               categoryLabel={game.category}
-              categoryBadgeClass={style.badge}
               onLeave={handleLeaveLobby}
               onGameStart={(startedLobby) => {
                 if (startedLobby) setCurrentLobby(startedLobby);
@@ -213,196 +173,183 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
     );
   }
 
-  // 3. Lobby Auswahl / Erstellen Screen
-  const Icon = game.icon;
-
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-labelledby="lobby-screen-title"
-      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in"
     >
-      {/* ─── Vollbild-Kometen-Animation hinter Spiel-Details (exakt wie in GameSheet) ─── */}
-      <BackgroundCometCanvas opacity={0.45} />
+      <BackgroundCometCanvas opacity={0.85} />
 
-      {/* ─── Spezifischer illustrierter Spiel-Hintergrund (Vollbild) ─── */}
-      <div className="absolute inset-0 pointer-events-none opacity-30 transform-gpu">
-        <GameBackground gameId={game.id} fullBleed />
-      </div>
-
-      {/* ─── Sanftes Ambient-Hintergrundlicht passend zum Spielton ─── */}
-      <div
-        className={`pointer-events-none absolute -top-20 -right-20 h-96 w-96 rounded-full blur-3xl opacity-70 ${style.glow}`}
-      />
-      <div
-        className={`pointer-events-none absolute -bottom-16 -left-16 h-96 w-96 rounded-full blur-3xl opacity-65 ${style.glow}`}
-      />
-
-      {/* ─── Vollbild-Container mit einheitlichem Raster (.app-shell) ─── */}
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
-        {/* 1. OBERE LEISTE: Zurück-Pille links, Verbindungsstatus rechts */}
-        <header className={HEADER_ROW}>
-          <button
-            type="button"
-            onClick={onClose}
-            className={HEADER_BACK_BTN}
-          >
-            <ArrowLeft className="h-4 w-4" />
-            <span>Zurück</span>
-          </button>
+        {/* 1. OBERE LEISTE: "HOME" / "EXIT" Crystal-Button links, Verbindungsstatus rechts */}
+        <header className="flex shrink-0 items-center justify-between gap-2 pb-2">
+          <CrystalButton size="sm" tilt="left" onClick={onClose}>
+            HOME
+          </CrystalButton>
 
           <ConnectionStatusBadge />
         </header>
 
-        {/* 2. MITTE: Ausgewogene Party-Bühne (Auf Desktop/Tablet & Smartphone-Querformat 2-Spalten) */}
-        <main className="mx-auto flex w-full max-w-md md:max-w-3xl lg:max-w-4xl landscape:max-w-3xl flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4 landscape:py-1">
-          <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-[0.9fr_1.1fr] md:gap-8 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8">
-            <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left">
-              <div
-                className={`grid h-16 w-16 sm:h-20 sm:w-20 landscape:h-16 landscape:w-16 place-items-center rounded-[22px] sm:rounded-[26px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}
-              >
-                <Icon
-                  className="h-8 w-8 sm:h-10 sm:w-10 landscape:h-8 landscape:w-8"
-                  strokeWidth={2.1}
-                />
+        {/* 2. MITTE: Links "LEVEL 16"-Stil Spiel-Info-Panel, Rechts "DIFFICULTY"-Stil Modus-Auswahl */}
+        <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col justify-center overflow-y-auto px-2.5 py-3">
+          <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
+            {/* Linkes Panel: 1:1 wie "LEVEL 16" im Referenzbild */}
+            <CrystalPanel stars={3} title={game.title} contentClassName="gap-3.5 py-6">
+              <CrystalReadout
+                label="SCORE"
+                value={soloBest !== null ? formatSoloScore(game.id, soloBest) : '25873'}
+              />
+              <CrystalReadout label="REWARD" value={game.players.toUpperCase()} />
+
+              <div className="mt-2">
+                <CrystalButton size="md" variant="secondary" onClick={onClose} className="min-w-[130px]">
+                  EXIT
+                </CrystalButton>
               </div>
+            </CrystalPanel>
 
-              <h1
-                id="lobby-screen-title"
-                className="mt-3 landscape:mt-2.5 text-2xl sm:text-3xl font-black tracking-tight leading-tight text-white"
-              >
-                {game.title}
-              </h1>
-              {isSoloCapable && soloBest !== null && (
-                <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-amber-500/12 px-3 py-1 text-xs font-bold text-amber-300 ring-1 ring-amber-500/25">
-                  <Trophy className="h-3.5 w-3.5" />
-                  <span>Rekord: {formatSoloScore(game.id, soloBest)}</span>
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col w-full">
+            {/* Rechtes Panel: 1:1 wie "DIFFICULTY" ("EASY / NORMAL / HARD") im Referenzbild */}
+            <CrystalPanel title="DIFFICULTY" contentClassName="gap-3.5 py-6 px-5">
               {errorMsg && (
-                <div className="mb-4 landscape:mb-2.5 rounded-2xl bg-rose-500/20 px-3.5 py-2 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+                <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">
                   {errorMsg}
                 </div>
               )}
 
               {isSoloCapable && !showLobbyForm ? (
-                <div className="flex flex-col gap-3">
-                  <button
-                    type="button"
+                <div className="flex w-full flex-col gap-3">
+                  <CrystalButton
+                    fullWidth
+                    size="lg"
+                    tilt="left"
                     onClick={() => setIsDirectSolo(true)}
-                    className={`${BTN_PRIMARY_BASE} ${theme.primaryBtn}`}
                   >
-                    <Play className="h-4 w-4 fill-current" />
-                    <span>Solo starten</span>
-                  </button>
+                    SOLO PLAY
+                  </CrystalButton>
 
-                  <button
-                    type="button"
-                    onClick={() => setShowLobbyForm(true)}
-                    className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+                  <CrystalButton
+                    fullWidth
+                    size="lg"
+                    tilt="right"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsTvMode(false);
+                      setShowLobbyForm(true);
+                    }}
                   >
-                    <Users className="h-4 w-4" />
-                    <span>Mit Lobby / TV spielen</span>
-                  </button>
+                    MULTIPLAYER
+                  </CrystalButton>
+
+                  <CrystalButton
+                    fullWidth
+                    size="lg"
+                    tilt="left"
+                    variant="secondary"
+                    onClick={() => {
+                      setIsTvMode(true);
+                      handleCreateLobby(undefined, true);
+                    }}
+                  >
+                    TV MODE
+                  </CrystalButton>
                 </div>
               ) : (
-                <form onSubmit={handleCreateLobby} className="flex flex-col gap-3.5 landscape:gap-2.5">
-                  <div>
-                    <label className="text-xs font-bold text-white/70 block mb-1.5 landscape:mb-1 px-1">
-                      Lobby-Name
-                    </label>
-                    <div className="relative flex items-center">
-                      <input
-                        type="text"
-                        maxLength={30}
-                        value={createName}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          setCreateName(val);
-                          setHasCustomLobbyName(val.trim().length > 0);
-                        }}
-                        placeholder={isTvMode ? 'z. B. TV-Runde' : 'z. B. Spielrunde'}
-                        className={`w-full text-sm font-semibold pl-4 pr-11 py-3 landscape:py-2.5 rounded-2xl bg-[#16161E] ring-1 ring-white/12 ${theme.focusRing} outline-none text-white placeholder:text-white/25`}
-                      />
-                      <button
-                        type="button"
+                <form onSubmit={handleCreateLobby} className="flex w-full flex-col gap-3.5">
+                  {/* Lobby-Name im SCORE/REWARD Readout-Stil */}
+                  <div className="flex flex-col items-center w-full">
+                    <span className="font-arcade mb-1 text-sm tracking-wider text-[#15608E] uppercase">
+                      LOBBY NAME
+                    </span>
+                    <div className="flex items-center gap-2 w-full justify-center">
+                      <div
+                        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
+                        className="flex-1 bg-[#17689A] p-[2.5px]"
+                      >
+                        <input
+                          type="text"
+                          maxLength={30}
+                          value={createName}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setCreateName(val);
+                            setHasCustomLobbyName(val.trim().length > 0);
+                          }}
+                          placeholder="LOBBY..."
+                          style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
+                          className="font-arcade w-full bg-[#39A9DD] px-4 py-2 text-center text-base tracking-wider text-white uppercase focus:outline-none"
+                        />
+                      </div>
+
+                      <CrystalIconButton
+                        size="sm"
+                        tilt="right"
                         onClick={handleRollLobbyName}
                         title="Neuen Namen würfeln"
-                        aria-label="Neuen Namen würfeln"
-                        className="absolute right-2 grid h-8 w-8 place-items-center rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white/75 hover:text-white ring-1 ring-white/10 transition-colors active:scale-90 cursor-pointer"
                       >
-                        <Dices className="h-4 w-4" />
-                      </button>
+                        <Dices className="h-5 w-5" />
+                      </CrystalIconButton>
                     </div>
                   </div>
 
-                  {/* Kompakter TV-Modus Toggle */}
-                  <div
-                    onClick={handleToggleTvMode}
-                    role="switch"
-                    aria-checked={isTvMode}
-                    className={`flex items-center justify-between px-4 py-3 landscape:py-2.5 rounded-2xl ring-1 cursor-pointer select-none transition-all ${
-                      isTvMode
-                        ? theme.activeSurface
-                        : 'bg-[#16161E]/80 hover:bg-[#16161E] ring-white/10'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Tv
-                        className={`h-4 w-4 transition-colors ${
-                          isTvMode ? theme.accentText : 'text-[#8E8E93]'
-                        }`}
-                      />
-                      <span className="text-sm font-bold text-white">TV-Modus</span>
-                    </div>
-
-                    <div
-                      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors ${
-                        isTvMode ? theme.switchOn : SWITCH_TRACK_OFF
-                      }`}
+                  {/* Modus-Auswahl als "NORMAL" vs "HARD" Crystal-Buttons */}
+                  <div className="grid grid-cols-2 gap-2.5">
+                    <CrystalButton
+                      size="sm"
+                      tilt="left"
+                      variant={!isTvMode ? 'primary' : 'secondary'}
+                      onClick={() => {
+                        setIsTvMode(false);
+                        if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(false));
+                      }}
                     >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isTvMode ? 'translate-x-6' : 'translate-x-1'
-                        }`}
-                      />
-                    </div>
+                      STANDARD
+                    </CrystalButton>
+                    <CrystalButton
+                      size="sm"
+                      tilt="right"
+                      variant={isTvMode ? 'primary' : 'secondary'}
+                      onClick={() => {
+                        setIsTvMode(true);
+                        if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(true));
+                      }}
+                    >
+                      TV SCREEN
+                    </CrystalButton>
                   </div>
 
-                  {/* Ein klarer Start-Button */}
-                  <button
+                  <CrystalButton
                     type="submit"
+                    fullWidth
+                    size="lg"
+                    tilt="left"
                     disabled={isCreating}
-                    className={`mt-1 landscape:mt-0.5 ${BTN_PRIMARY_BASE} ${
-                      !isCreating ? theme.primaryBtn : BTN_PRIMARY_DISABLED
-                    }`}
                   >
                     {isCreating ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
                       <>
-                        {isTvMode && <Tv className="h-4 w-4" />}
-                        <span>{isTvMode ? 'TV-Lobby starten' : 'Lobby starten'}</span>
+                        <RefreshCw className="h-5 w-5 animate-spin" />
+                        <span>STARTING...</span>
                       </>
+                    ) : (
+                      <span>PLAY</span>
                     )}
-                  </button>
+                  </CrystalButton>
 
                   {isSoloCapable && (
-                    <button
-                      type="button"
+                    <CrystalButton
+                      fullWidth
+                      size="sm"
+                      variant="secondary"
+                      tilt="right"
                       onClick={() => setShowLobbyForm(false)}
-                      className="mx-auto mt-1 landscape:mt-0 text-xs font-bold text-white/55 hover:text-white transition-colors cursor-pointer py-1 px-2"
                     >
-                      Oder direkt Solo starten
-                    </button>
+                      BACK
+                    </CrystalButton>
                   )}
                 </form>
               )}
-            </div>
+            </CrystalPanel>
           </div>
         </main>
       </div>

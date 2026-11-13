@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Rocket } from 'lucide-react';
 import type { GameRendererProps } from '../types';
-import { getGameTheme } from '../../styles/uiTokens';
+import { CrystalButton, CrystalReadout, CrystalStar } from '../../components/CrystalUI';
 
 interface Obstacle {
   id: number;
@@ -11,12 +11,10 @@ interface Obstacle {
 }
 
 export function SpaceDodgeBoard({
-  gameId = 'space-dodge',
   isGameOver,
   disabled,
   onMove,
 }: GameRendererProps) {
-  const theme = getGameTheme(gameId);
   const [shipX, setShipX] = useState(50);
   const [obstacles, setObstacles] = useState<Obstacle[]>([]);
   const [score, setScore] = useState(0);
@@ -100,36 +98,47 @@ export function SpaceDodgeBoard({
   return (
     <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[1fr_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2 select-none">
       {/* Hochformat Info-Zeile */}
-      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
-        <span>Punkte: <strong className={theme.accentText}>{score}</strong></span>
-        {!started && <span className="text-[11px] text-white/60">Feld ziehen zum Starten</span>}
+      <div className="flex landscape:hidden items-center justify-between w-full px-2 py-1.5 bg-[#9CE0FA] border-2 border-[#17608E] text-xs font-arcade uppercase text-[#15608E]">
+        <span>SCORE: <strong className="text-[#0E486C]">{score}</strong></span>
+        {!started && <span className="text-[10px] text-[#17608E]">DRAG TO START</span>}
       </div>
 
-      {/* Weltraum-Arena */}
+      {/* Kristall-Arena */}
       <div
         ref={stageRef}
         onPointerDown={(e) => updateShipFromClientX(e.clientX)}
         onPointerMove={(e) => {
           if (e.buttons > 0 || e.pointerType === 'touch') updateShipFromClientX(e.clientX);
         }}
-        className={`relative w-full h-72 sm:h-80 landscape:h-[min(calc(100dvh-5.2rem),21rem)] landscape:max-w-[20rem] landscape:mx-auto rounded-3xl bg-[#0D1322]/95 ${theme.softRing} overflow-hidden touch-none cursor-ew-resize`}
+        className="relative w-full h-72 sm:h-80 landscape:h-[min(calc(100dvh-5.2rem),21rem)] landscape:max-w-[20rem] landscape:mx-auto bg-[#2B82B8] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)] overflow-hidden touch-none cursor-ew-resize"
       >
+        {/* Diagonal crystal sheen */}
+        <div
+          className="pointer-events-none absolute inset-0 bg-[#52A9D6]/40"
+          style={{ clipPath: 'polygon(0 0, 58% 0, 32% 100%, 0 100%)' }}
+        />
+
         {obstacles.map((o) => (
           <div
             key={o.id}
             style={{ left: `${o.x}%`, top: `${o.y}%` }}
-            className={`absolute -translate-x-1/2 -translate-y-1/2 rounded-full ${
-              o.isCore
-                ? 'h-4 w-4 bg-amber-300 shadow-[0_0_12px_#fcd34d]'
-                : 'h-6 w-6 bg-slate-400/90 ring-2 ring-slate-200/30 shadow-md'
-            }`}
-          />
+            className="absolute -translate-x-1/2 -translate-y-1/2"
+          >
+            {o.isCore ? (
+              <CrystalStar size={22} active />
+            ) : (
+              <div
+                className="h-6 w-6 bg-[#17608E] border-2 border-[#9CE0FA] shadow-md"
+                style={{ clipPath: 'polygon(15% 0%, 88% 8%, 100% 75%, 72% 100%, 0% 82%)' }}
+              />
+            )}
+          </div>
         ))}
 
-        {/* Raumschiff */}
+        {/* Raumschiff im Crystal-Look */}
         <div
           style={{ left: `${shipX}%`, top: '84%' }}
-          className="absolute -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center rounded-2xl bg-sky-500/25 text-sky-300 ring-1 ring-sky-400/60 shadow-[0_0_18px_rgba(56,189,248,0.45)]"
+          className="absolute -translate-x-1/2 -translate-y-1/2 grid h-10 w-10 place-items-center bg-[#9CE0FA] text-[#15608E] border-[3px] border-[#17608E] shadow-[inset_0_0_0_2px_#DDF6FF,0_4px_0_rgba(14,62,96,0.45)]"
         >
           <Rocket className="h-5 w-5 -rotate-45" />
         </div>
@@ -137,31 +146,20 @@ export function SpaceDodgeBoard({
 
       {/* Rechte Seitenleiste im Querformat */}
       <div className="hidden landscape:flex flex-col gap-3 w-full">
-        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-2.5 ring-1 ring-white/10 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Punkte</span>
-          <strong className={`text-2xl font-black tabular-nums ${theme.accentText}`}>{score}</strong>
+        <div className="flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-2.5 text-center">
+          <CrystalReadout label="SCORE" value={score} />
           {!started && (
-            <span className="mt-1 text-[10px] text-white/55">Ziehen oder steuern</span>
+            <span className="mt-1.5 text-[10px] font-arcade uppercase text-[#15608E]">DRAG OR STEER</span>
           )}
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <button
-            type="button"
-            aria-label="Nach links steuern"
-            onClick={() => nudgeShip(-14)}
-            className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 text-sm font-black ring-1 ring-white/10 cursor-pointer"
-          >
+          <CrystalButton size="sm" onClick={() => nudgeShip(-14)}>
             ◀
-          </button>
-          <button
-            type="button"
-            aria-label="Nach rechts steuern"
-            onClick={() => nudgeShip(14)}
-            className="h-11 rounded-xl bg-white/[0.08] hover:bg-white/15 active:scale-90 text-sm font-black ring-1 ring-white/10 cursor-pointer"
-          >
+          </CrystalButton>
+          <CrystalButton size="sm" onClick={() => nudgeShip(14)}>
             ▶
-          </button>
+          </CrystalButton>
         </div>
       </div>
     </div>

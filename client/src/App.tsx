@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
+  CATEGORIES,
   type Category,
   GAMES,
   type Game,
@@ -12,35 +13,24 @@ import {
   ArcadeLogoHeader,
   ArcadeMenuModal,
   CoinCounterPill,
-  ComingSoonBanner,
-  IslandMascotWidget,
+  CrystalQuickIconGrid,
   PlayerProfileBar,
-  PurpleActionCircleButton,
   UnlockEpisodeModal,
 } from './components/ArcadeHudElements';
+import { CrystalButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import { getUserProfile } from './utils/userProfile';
 import { socketService } from './services/socket';
 import { parseLobbyCode } from './utils/qrCodeHelper';
 import type { Lobby } from './types/multiplayer';
-import { Tv } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
 
-const MASCOT_QUOTES = [
-  'Impress me.',
-  'Schaffst du 3 Sterne?',
-  'Zeig dein Talent!',
-  'Knack den Highscore!',
-  'Bereit für die Insel?',
-];
-
 export function App() {
-  // Deep-Link Prüfung sofort beim ersten Render (verhindert Reload / Splash-Flackern)
   const initialDeepLinkCode = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return parseLobbyCode(window.location.href);
@@ -63,20 +53,15 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
-  // Arcade-Zustände aus dem Redesign
   const [activeIndex, setActiveIndex] = useState(0);
   const [unlockModalGame, setUnlockModalGame] = useState<Game | null>(null);
   const [modalMode, setModalMode] = useState<'menu' | 'shop' | 'settings' | null>(null);
-  const [coins, setCoins] = useState(72);
-  const [unlockedIds, setUnlockedIds] = useState<string[]>(() =>
-    GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id)
-  );
+  const [coins, setCoins] = useState(63581);
+  const [unlockedIds, setUnlockedIds] = useState<string[]>(() => GAMES.map((g) => g.id));
   const [starsByGame, setStarsByGame] = useState<Record<string, number>>(() =>
     Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22]))
   );
-  const [quoteIndex, setQuoteIndex] = useState(0);
 
-  // Einstellungen mit localStorage-Persistenz
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
       const saved = localStorage.getItem('projektbox_sound_enabled');
@@ -95,7 +80,6 @@ export function App() {
     }
   });
 
-  // Horizontales Maus-Drag & Scroll-Handling für die Episoden-Kartenreihe
   const cardsScrollRef = useRef<HTMLDivElement | null>(null);
   const isPointerDown = useRef(false);
   const dragMoved = useRef(false);
@@ -111,15 +95,6 @@ export function App() {
   const activeGame = games[safeIndex] || games[0];
   const allUnlocked = unlockedIds.length === GAMES.length;
 
-  const progressPercent = useMemo(() => {
-    const unlockedStars = GAMES.reduce((sum, g) => {
-      if (!unlockedIds.includes(g.id)) return sum;
-      return sum + (starsByGame[g.id] ?? g.starsEarned ?? 22);
-    }, 0);
-    const maxStars = GAMES.reduce((sum, g) => sum + (g.starsTotal ?? 135), 0);
-    return Math.max(3, Math.min(100, Math.round((unlockedStars / maxStars) * 100)));
-  }, [unlockedIds, starsByGame]);
-
   const triggerHaptic = useCallback(() => {
     if (!vibrationEnabled) return;
     try {
@@ -127,7 +102,7 @@ export function App() {
         navigator.vibrate(10);
       }
     } catch {
-      // Ignorieren
+      // ignore
     }
   }, [vibrationEnabled]);
 
@@ -215,22 +190,17 @@ export function App() {
 
   const handleToggleAllUnlocked = () => {
     triggerHaptic();
-    if (allUnlocked) {
-      setUnlockedIds(GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id));
-    } else {
-      setUnlockedIds(GAMES.map((g) => g.id));
-    }
+    setUnlockedIds(GAMES.map((g) => g.id));
   };
 
   const handleResetProgress = () => {
     triggerHaptic();
-    setCoins(72);
-    setUnlockedIds(GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id));
+    setCoins(63581);
+    setUnlockedIds(GAMES.map((g) => g.id));
     setStarsByGame(Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22])));
     setCategory('Alle');
   };
 
-  // Zentraler Beitritt per Code / QR-Code: leitet sofort in die Lobby des jeweiligen Spiels weiter
   const joinByCode = async (code: string) => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return;
@@ -256,7 +226,6 @@ export function App() {
     }
   };
 
-  // Beim Start Nutzerprofil sicherstellen und Deep-Link (?join=CODE) prüfen
   useEffect(() => {
     getUserProfile();
 
@@ -321,11 +290,7 @@ export function App() {
         handlePrev();
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
-        if (unlockedIds.includes(activeGame.id)) {
-          setMultiplayerGame(activeGame);
-        } else {
-          setUnlockModalGame(activeGame);
-        }
+        setMultiplayerGame(activeGame);
       }
     };
 
@@ -354,12 +319,10 @@ export function App() {
     unlockModalGame,
     modalMode,
     activeGame,
-    unlockedIds,
     handleNext,
     handlePrev,
   ]);
 
-  // Maus-Ziehen zum horizontalen Scrollen der Kartenleiste
   const onPointerDownStrip = (e: React.PointerEvent<HTMLDivElement>) => {
     if (!cardsScrollRef.current) return;
     isPointerDown.current = true;
@@ -379,41 +342,45 @@ export function App() {
     isPointerDown.current = false;
   };
 
+  const profileName = useMemo(() => {
+    try {
+      return getUserProfile().name;
+    } catch {
+      return 'PLAYER 1';
+    }
+  }, [showSettings]);
+
   return (
-    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#2979B5] text-white select-none">
-      {/* ─── 0. Animierter Ladebildschirm beim Start ─── */}
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none">
+      {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
-      {/* ─── 1. Illustrierter Tropen-Insel & Ozean-Karten-Hintergrund ─── */}
+      {/* ─── 1. Globaler Crystal-Facetten-Hintergrund (#3B82B6) ─── */}
       <IslandBackground />
 
-      {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}
+      {/* ─── Verbindungs-Overlay bei QR-Code Beitritt im "LEVEL 16" Crystal-Panel-Stil ─── */}
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0B0B0F]/90 backdrop-blur-md text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-          <div className="relative z-10 flex flex-col items-center p-6 text-center max-w-sm mx-auto animate-fade-in">
-            <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-purple-600/25 text-purple-300 ring-2 ring-purple-500/40 mb-4 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-pulse">
-              <Tv className="h-8 w-8 text-purple-300" />
-            </div>
-            <h2 className="text-xl sm:text-2xl font-black text-white">Verbinde mit Fernseher...</h2>
-            <p className="mt-1.5 text-xs text-[#8E8E93]">
-              Lobby-Code: <strong className="text-purple-300 tracking-widest">{initialDeepLinkCode}</strong>
-            </p>
-            <div className="mt-6 inline-flex items-center gap-2 rounded-full bg-white/[0.08] px-4 py-1.5 text-xs font-bold text-white ring-1 ring-white/10">
-              <span className="flex h-2 w-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Tritt der TV-Lobby bei...</span>
-            </div>
+        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#103858]/70 backdrop-blur-xs select-none p-4">
+          <div className="w-full max-w-sm animate-fade-in">
+            <CrystalPanel stars={3} title="TV CONNECT" contentClassName="gap-3">
+              <CrystalReadout label="LOBBY CODE" value={initialDeepLinkCode ?? '----'} />
+              <p className="font-arcade text-sm tracking-wider text-[#15608E] uppercase mt-1">
+                JOINING TV LOBBY...
+              </p>
+            </CrystalPanel>
           </div>
         </div>
       )}
 
-      {/* ─── 2. Haupt-HUD & Episoden-Bühne ─── */}
+      {/* ─── 2. Haupt-HUD & Crystal-Bühne ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
-        {/* ═══ OBERE LEISTE: Münzen links (72) • PROJEKT BOX RELOADED Mitte • Player 1949 + ≡ rechts ═══ */}
+        {/* ═══ OBERE LEISTE: Stern- & Münz-Leisten links • PROJEKT BOX Mitte • Spieler & Icon-Buttons rechts ═══ */}
         <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-3 pt-0.5">
-          {/* Links: Goldmünzen-Zähler ("72") */}
+          {/* Links: Stern- & Münz-Fortschrittsleisten (exakt wie im Referenzbild) */}
           <div className="shrink-0">
             <CoinCounterPill
               coins={coins}
+              starsTotal={25873}
               onClick={() => {
                 triggerHaptic();
                 setModalMode('shop');
@@ -421,30 +388,32 @@ export function App() {
             />
           </div>
 
-          {/* Mitte: Großes Arcade-Logo ("PROJEKT BOX RELOADED") */}
-          <div className="mx-auto">
+          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
+          <div className="mx-auto hidden md:block">
             <ArcadeLogoHeader />
           </div>
 
-          {/* Rechts: Roter Charakter-Avatar + "Player 1949" + Türkiser Menü-Button */}
-          <div className="shrink-0 pr-1 flex items-center gap-2">
-            <button
-              type="button"
+          {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen & Menü Icon-Buttons */}
+          <div className="shrink-0 flex items-center gap-2">
+            <CrystalButton
+              size="sm"
+              tilt="right"
               onClick={() => {
                 triggerHaptic();
                 setTvJoinError(null);
                 setShowTvJoinModal(true);
               }}
-              title="Mit TV-Code beitreten"
-              className="hidden md:inline-flex h-9 items-center justify-center gap-1.5 px-3 rounded-full bg-[#2B337A] hover:bg-[#3C4696] text-[#67E8F9] ring-2 ring-[#3C4696] font-bold text-xs shadow-md transition-transform active:scale-95 cursor-pointer"
             >
-              <Tv className="h-4 w-4" />
-              <span>TV-Code</span>
-            </button>
+              TV CODE
+            </CrystalButton>
 
             <PlayerProfileBar
-              playerName="Player 1949"
+              playerName={profileName}
               activeCategory={category}
+              onOpenSettings={() => {
+                triggerHaptic();
+                setShowSettings(true);
+              }}
               onOpenMenu={() => {
                 triggerHaptic();
                 setModalMode('menu');
@@ -453,160 +422,138 @@ export function App() {
           </div>
         </header>
 
-        {/* ═══ HAUPTBEREICH: Links Insel-Buttons & Maskottchen • Rechts Horizontale Episoden-Poster ═══ */}
-        <div className="relative flex flex-1 min-h-0 w-full items-center justify-between gap-2 sm:gap-4 pt-1 pb-1">
-          {/* ─── LINKE SPALTE: Shop-Button, "Coming Soon!" Pfeil, "Impress me." Maskottchen & Zahnrad-Button ─── */}
-          <aside className="relative z-20 flex h-full shrink-0 flex-col justify-between py-1 pl-1 sm:pl-2 w-[135px] sm:w-[235px] md:w-[285px] landscape:w-[175px] landscape:sm:w-[245px] landscape:md:w-[295px] portrait:hidden sm:portrait:flex">
-            {/* Oben links: Lila Einkaufswagen-Button */}
-            <div className="flex items-start">
-              <PurpleActionCircleButton
-                variant="shop"
-                label="Insel-Shop öffnen"
-                onClick={() => {
+        {/* ═══ HAUPTBEREICH: Links 6er-Icon-Grid + "DIFFICULTY"-Stil Kategorie-Panel • Rechts "LEVEL 16"-Stil Spielkarten ═══ */}
+        <div className="relative flex flex-1 min-h-0 w-full items-center justify-between gap-3 sm:gap-5 pt-1 pb-1">
+          {/* ─── LINKE SPALTE (wie linke & obere rechte Seite des Referenzbildes) ─── */}
+          <aside className="relative z-20 hidden lg:flex h-full shrink-0 flex-col justify-center gap-4 pl-2 w-[265px]">
+            {/* Die 6 quadratischen Icon-Buttons (||, ↻, ▶, ⚙, ■, ≡) wie oben links im Referenzbild */}
+            <div className="flex flex-col items-center gap-2.5">
+              <CrystalQuickIconGrid
+                onPlayRandom={() => {
                   triggerHaptic();
-                  setModalMode('shop');
+                  setMultiplayerGame(activeGame);
                 }}
-              />
-            </div>
-
-            {/* Mitte links über der Insel: Schräger "Coming Soon!" Pfeil */}
-            <div className="my-auto self-center pl-4 sm:pl-8">
-              <ComingSoonBanner
-                onClick={() => {
-                  triggerHaptic();
-                  setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
-                }}
-              />
-            </div>
-
-            {/* Unten links: Maskottchen mit "Impress me." + "3%" & darunter der lila Zahnrad-Button */}
-            <div className="flex flex-col items-start gap-1">
-              <div className="self-center sm:self-end pr-1 sm:pr-3">
-                <IslandMascotWidget
-                  quote={MASCOT_QUOTES[quoteIndex]}
-                  progressPercent={progressPercent}
-                  onClickMascot={() => {
-                    triggerHaptic();
-                    setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
-                  }}
-                />
-              </div>
-
-              <PurpleActionCircleButton
-                variant="settings"
-                label="Einstellungen öffnen"
-                onClick={() => {
+                onOpenSettings={() => {
                   triggerHaptic();
                   setShowSettings(true);
                 }}
+                onOpenMenu={() => {
+                  triggerHaptic();
+                  setModalMode('menu');
+                }}
+                onOpenTvJoin={() => {
+                  triggerHaptic();
+                  setTvJoinError(null);
+                  setShowTvJoinModal(true);
+                }}
+                onResetFilter={() => {
+                  triggerHaptic();
+                  setCategory('Alle');
+                  setActiveIndex(0);
+                }}
               />
             </div>
+
+            {/* "DIFFICULTY" / "MODUS" Kristall-Panel mit "EASY / NORMAL / HARD" gestylten Kategorie-Buttons */}
+            <CrystalPanel title="MODUS" contentClassName="gap-2.5 py-4 px-4">
+              {CATEGORIES.map((cat, idx) => (
+                <CrystalButton
+                  key={cat}
+                  fullWidth
+                  size="sm"
+                  tilt={idx % 2 === 0 ? 'left' : 'right'}
+                  variant={category === cat ? 'primary' : 'secondary'}
+                  onClick={() => {
+                    triggerHaptic();
+                    setCategory(cat);
+                    setActiveIndex(0);
+                  }}
+                >
+                  {cat}
+                </CrystalButton>
+              ))}
+            </CrystalPanel>
           </aside>
 
-          {/* ─── RECHTER / HAUPT-BEREICH: Horizontale Reihe der hohen Episoden-Karten ─── */}
+          {/* ─── HAUPT-BÜHNE: Horizontale Reihe der "LEVEL 16" Kristall-Spielkarten ─── */}
           <main className="relative flex h-full flex-1 min-w-0 flex-col justify-center">
-            <div className="relative flex items-center w-full">
-              <div className="pointer-events-none hidden sm:block absolute left-1 bottom-0 top-[46%] w-5 border-l-2 border-b-2 border-white/75 z-0" />
-
-              <div
-                ref={cardsScrollRef}
-                onPointerDown={onPointerDownStrip}
-                onPointerMove={onPointerMoveStrip}
-                onPointerUp={onPointerUpStrip}
-                onPointerCancel={onPointerUpStrip}
-                className="no-scrollbar relative z-10 flex w-full items-center gap-3.5 sm:gap-5 md:gap-6 overflow-x-auto px-3 sm:px-5 py-3 scroll-smooth"
-              >
-                {games.map((game, index) => {
-                  const isUnlocked = unlockedIds.includes(game.id);
-                  const currentStars = starsByGame[game.id] ?? game.starsEarned ?? 22;
-
-                  return (
-                    <GameCard
-                      key={game.id}
-                      game={game}
-                      isActive={index === safeIndex}
-                      isUnlocked={isUnlocked}
-                      starsEarned={currentStars}
-                      onSelect={() => {
-                        if (!dragMoved.current) handleSelectGame(index);
-                      }}
-                      onPlay={() => {
-                        if (!dragMoved.current) setMultiplayerGame(game);
-                      }}
-                      onUnlockRequest={() => {
-                        if (!dragMoved.current) setUnlockModalGame(game);
-                      }}
-                    />
-                  );
-                })}
-              </div>
+            {/* Kompakte Kategorie-Buttons für Mobile / Tablet oberhalb der Karten */}
+            <div className="mb-2 flex lg:hidden items-center justify-center gap-2 overflow-x-auto px-2 py-1 no-scrollbar">
+              {CATEGORIES.map((cat, idx) => (
+                <CrystalButton
+                  key={cat}
+                  size="sm"
+                  tilt={idx % 2 === 0 ? 'left' : 'right'}
+                  variant={category === cat ? 'primary' : 'secondary'}
+                  onClick={() => {
+                    triggerHaptic();
+                    setCategory(cat);
+                    setActiveIndex(0);
+                  }}
+                >
+                  {cat}
+                </CrystalButton>
+              ))}
             </div>
 
-            {/* Kompakte Portrait-Leiste unten (nur auf schmalen Hochformat-Smartphones sichtbar) */}
-            <div className="mt-2 flex sm:portrait:hidden landscape:hidden items-center justify-between px-2">
-              <div className="flex items-center gap-2">
-                <PurpleActionCircleButton
-                  variant="shop"
-                  label="Insel-Shop öffnen"
-                  onClick={() => {
-                    triggerHaptic();
-                    setModalMode('shop');
-                  }}
-                />
-                <PurpleActionCircleButton
-                  variant="settings"
-                  label="Einstellungen öffnen"
-                  onClick={() => {
-                    triggerHaptic();
-                    setShowSettings(true);
-                  }}
-                />
-              </div>
+            {/* Horizontale Kartenreihe */}
+            <div
+              ref={cardsScrollRef}
+              onPointerDown={onPointerDownStrip}
+              onPointerMove={onPointerMoveStrip}
+              onPointerUp={onPointerUpStrip}
+              onPointerCancel={onPointerUpStrip}
+              className="no-scrollbar relative z-10 flex w-full items-center gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-6 py-5 scroll-smooth"
+            >
+              {games.map((game, index) => {
+                const isUnlocked = unlockedIds.includes(game.id);
+                const currentStars = starsByGame[game.id] ?? game.starsEarned ?? 22;
 
-              <div className="scale-90 origin-bottom-right">
-                <IslandMascotWidget
-                  quote={MASCOT_QUOTES[quoteIndex]}
-                  progressPercent={progressPercent}
-                  onClickMascot={() => {
-                    triggerHaptic();
-                    setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
-                  }}
-                />
-              </div>
+                return (
+                  <GameCard
+                    key={game.id}
+                    game={game}
+                    isActive={index === safeIndex}
+                    isUnlocked={isUnlocked}
+                    starsEarned={currentStars}
+                    onSelect={() => {
+                      if (!dragMoved.current) handleSelectGame(index);
+                    }}
+                    onPlay={() => {
+                      if (!dragMoved.current) setMultiplayerGame(game);
+                    }}
+                    onUnlockRequest={() => {
+                      if (!dragMoved.current) setUnlockModalGame(game);
+                    }}
+                  />
+                );
+              })}
+            </div>
+
+            {/* Untere Schnell-Steuerleiste (wie "EXIT / REPLAY / HOME / RESUME / PLAY / CONTINUE" im Referenzbild) */}
+            <div className="mt-1 flex items-center justify-center gap-2.5 sm:gap-4 px-3">
+              <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handlePrev}>
+                PREV
+              </CrystalButton>
+              <CrystalButton
+                size="md"
+                tilt="right"
+                onClick={() => {
+                  triggerHaptic();
+                  setMultiplayerGame(activeGame);
+                }}
+              >
+                PLAY {activeGame?.title}
+              </CrystalButton>
+              <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handleNext}>
+                NEXT
+              </CrystalButton>
             </div>
           </main>
         </div>
-
-        {/* ═══ UNTEN RECHTS: Runde "EC" Plakette & Lila Pfeil-Button (wie im Vorbild) ═══ */}
-        <div className="pointer-events-none absolute right-3 sm:right-6 bottom-2 sm:bottom-3 z-30 flex flex-col items-center gap-2">
-          {/* Dunkler runder "EC" Badge-Button (Schaltet bei Klick bequem alle Schlösser frei/zu) */}
-          <button
-            type="button"
-            onClick={handleToggleAllUnlocked}
-            title={
-              allUnlocked
-                ? 'Karten-Schlösser wieder anzeigen'
-                : 'Alle Episoden-Schlösser sofort öffnen'
-            }
-            className="pointer-events-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border-[4px] border-[#3E5866] bg-[#647D89] text-white shadow-[0_5px_14px_rgba(0,0,0,0.45)] transition-transform active:scale-90 hover:scale-105 cursor-pointer"
-          >
-            <span className="font-arcade text-sm sm:text-base tracking-wider text-white/95">
-              EC
-            </span>
-          </button>
-
-          {/* Kleiner lila Pfeil-Button ganz unten rechts am Rand */}
-          <div className="pointer-events-auto -mb-4 sm:-mb-5">
-            <PurpleActionCircleButton
-              variant="up"
-              label="Nächste Episode zeigen"
-              onClick={handleNext}
-            />
-          </div>
-        </div>
       </div>
 
-      {/* ─── 3. Episode-Freischalten / Direkt-Spielen Popup bei Klick auf ein Schloss ─── */}
+      {/* ─── 3. Episode-Freischalten / Direkt-Spielen Popup ─── */}
       <UnlockEpisodeModal
         game={unlockModalGame}
         coins={coins}
@@ -615,7 +562,7 @@ export function App() {
         onPlayDirectly={handlePlayDirectly}
       />
 
-      {/* ─── 4. Menü-, Shop- & Einstellungs-Modal ─── */}
+      {/* ─── 4. Menü-, Bonus- & Einstellungs-Modal ─── */}
       <ArcadeMenuModal
         mode={modalMode}
         onClose={() => setModalMode(null)}
@@ -662,7 +609,7 @@ export function App() {
         errorMessage={tvJoinError}
       />
 
-      {/* ─── Einstellungen ─── */}
+      {/* ─── Einstellungen ("OPTIONS" Panel) ─── */}
       <SettingsSheet
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}

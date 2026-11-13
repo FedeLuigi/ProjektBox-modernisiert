@@ -1,10 +1,5 @@
 import { useEffect, useState } from 'react';
-import {
-  ArrowLeft,
-  RotateCcw,
-  Trophy,
-  WifiOff,
-} from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { getUserProfile } from '../../utils/userProfile';
@@ -12,19 +7,18 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry, isSoloGame } from '../../games/registry';
 import {
-  BTN_PRIMARY_BASE,
-  BTN_PRIMARY_DISABLED,
-  BTN_SECONDARY_BASE,
-  BTN_SECONDARY_NEUTRAL,
-  getGameTheme,
-} from '../../styles/uiTokens';
-import {
   formatSoloScore,
   getSoloHighscore,
   isLowerBetterGame,
   saveSoloHighscore,
 } from '../../utils/soloScores';
 import { SoloResultCard } from './SoloResultCard';
+import {
+  CrystalButton,
+  CrystalPanel,
+  CrystalReadout,
+  CrystalStatBar,
+} from '../CrystalUI';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -66,7 +60,6 @@ export function MultiplayerGameView({
     setLobby(initialLobby);
   }, [initialLobby]);
 
-  // Socket Events für Live-Spielzug-Updates
   useEffect(() => {
     const unsubState = socketService.onGameState(({ gameState: newState, status, lobby: updatedLobby }) => {
       setLobby((prev) => ({
@@ -122,7 +115,6 @@ export function MultiplayerGameView({
     };
   }, []);
 
-  // Fehler nach 3 Sekunden ausblenden
   useEffect(() => {
     if (errorMsg) {
       const timer = setTimeout(() => setErrorMsg(null), 3000);
@@ -130,7 +122,6 @@ export function MultiplayerGameView({
     }
   }, [errorMsg]);
 
-  // Zentraler generischer Spielzug-Handler (für alle Spiele)
   const handleSendMove = async (moveData: any) => {
     if (!isMyTurn || isSubmitting) return;
 
@@ -156,115 +147,68 @@ export function MultiplayerGameView({
 
   const isGameOver = gameState?.status === 'won' || gameState?.status === 'draw';
   const isWinner = gameState?.status === 'won' && gameState.winnerId === currentUser.id;
-  const isLoser = gameState?.status === 'won' && gameState.winnerId !== currentUser.id;
   const isDraw = gameState?.status === 'draw';
 
-  // Dynamischer Game-Board Renderer aus der zentralen Registry
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
-  const theme = getGameTheme(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none animate-fade-in">
-      {/* ─── Dynamischer Hintergrund ─── */}
-      <BackgroundCometCanvas opacity={0.35} />
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none animate-fade-in">
+      <BackgroundCometCanvas opacity={0.85} />
 
-      {/* ─── Ambient Glow ─── */}
-      <div className={`pointer-events-none absolute -top-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-45 ${theme.ambientTop}`} />
-      <div className={`pointer-events-none absolute -bottom-16 -right-16 h-96 w-96 rounded-full blur-3xl opacity-50 ${theme.ambientBottom}`} />
-
-      {/* ─── Vollbild-Container mit Safe-Area ─── */}
       <div
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] landscape:pt-[calc(6px+env(safe-area-inset-top,0px))] landscape:pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
       >
-        {/* 1. EINZIGE SCHMALE TOP-BAR: Verlassen links, Score/Zug-Status exakt mittig, Raum-Code rechts */}
-        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5 landscape:pb-1">
-          <button
-            type="button"
-            onClick={onLeave}
-            className="justify-self-start inline-flex h-8 sm:h-9 landscape:h-7 items-center gap-1.5 rounded-full bg-white/10 hover:bg-white/15 px-3 landscape:px-2.5 text-xs font-bold text-white ring-1 ring-white/10 backdrop-blur-md transition-all active:scale-95 cursor-pointer"
-          >
-            <ArrowLeft className="h-3.5 w-3.5" />
-            <span className="hidden sm:inline">Verlassen</span>
-          </button>
+        {/* 1. CRYSTAL TOP-BAR: EXIT links, Spielstatus Mitte, Code rechts */}
+        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
+          <div className="justify-self-start">
+            <CrystalButton size="sm" tilt="left" onClick={onLeave}>
+              EXIT
+            </CrystalButton>
+          </div>
 
           {isDrawAndGuess ? (
-            <div className="justify-self-center flex items-center gap-2 rounded-full bg-white/[0.06] px-2.5 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Avatar config={currentUser.avatar} size={22} />
-                <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
-                  {currentUser.name}
-                </span>
-                <span className={`font-black tabular-nums ${theme.accentText}`}>
-                  {gameState?.scores?.[currentUser.id] || 0}
-                </span>
-              </div>
-              <span className="text-white/30 font-bold">:</span>
-              <div className="flex items-center gap-1.5 min-w-0">
-                <span className={`font-black tabular-nums ${theme.secondaryAccentText}`}>
-                  {gameState?.scores?.[opponent?.id || ''] || 0}
-                </span>
-                <span className="hidden sm:inline font-bold text-white truncate max-w-[80px]">
-                  {opponent?.name || 'Gegner'}
-                </span>
-                <Avatar config={opponent?.avatar || ({} as any)} size={22} />
-              </div>
+            <div className="justify-self-center flex items-center gap-2 border-[3px] border-[#17608E] bg-[#9CE0FA] px-3 py-1 shadow-[inset_0_2px_0_#DDF6FF]">
+              <Avatar config={currentUser.avatar} size={22} />
+              <span className="font-arcade text-sm text-[#15608E]">
+                {gameState?.scores?.[currentUser.id] || 0} : {gameState?.scores?.[opponent?.id || ''] || 0}
+              </span>
+              <Avatar config={opponent?.avatar || ({} as any)} size={22} />
             </div>
           ) : soloMode ? (
-            <div className="justify-self-center inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-3 py-1 landscape:py-0.5 ring-1 ring-white/10 text-xs font-bold">
-              <span className="text-white/80">Punkte:</span>
-              <span className={`font-black tabular-nums ${theme.accentText}`}>
-                {formatSoloScore(lobby.gameId, gameState?.scores?.[currentUser.id] || 0)}
-              </span>
-              {soloBestScore !== null && (
-                <>
-                  <span className="text-white/25">•</span>
-                  <span className="text-amber-300 font-bold tabular-nums">
-                    🏆 {formatSoloScore(lobby.gameId, soloBestScore)}
-                  </span>
-                </>
-              )}
+            <div className="justify-self-center">
+              <CrystalReadout
+                value={formatSoloScore(lobby.gameId, gameState?.scores?.[currentUser.id] || 0)}
+              />
             </div>
           ) : (
-            <div
-              className={`justify-self-center inline-flex items-center gap-2 rounded-full px-3 py-1 landscape:py-0.5 ring-1 text-xs font-bold transition-colors ${
-                isMyTurn
-                  ? theme.turnPill
-                  : 'bg-white/[0.06] text-white/75 ring-white/10'
-              }`}
-            >
-              <Avatar
-                config={(isMyTurn ? currentUser.avatar : opponent?.avatar) || ({} as any)}
-                size={20}
+            <div className="justify-self-center">
+              <CrystalReadout
+                value={isMyTurn ? 'YOUR TURN' : `${opponent?.name || 'OPPONENT'}`}
               />
-              <span className="truncate max-w-[160px]">
-                {isMyTurn ? 'Du bist dran' : `${opponent?.name || 'Gegner'} ist dran`}
-              </span>
             </div>
           )}
 
-          <span className="justify-self-end inline-flex h-8 sm:h-9 landscape:h-7 items-center rounded-full bg-white/[0.06] px-2.5 text-[11px] font-mono font-bold tracking-widest text-white/65 ring-1 ring-white/10">
-            {lobby.code}
-          </span>
+          <div className="justify-self-end">
+            <CrystalStatBar type="coin" value={lobby.code} />
+          </div>
         </header>
 
-        {/* ─── Fehler-Banner ─── */}
         {errorMsg && (
-          <div className="mx-auto my-1 max-w-sm rounded-xl bg-rose-500/20 px-3 py-1.5 text-center text-xs font-bold text-rose-300 ring-1 ring-rose-500/30">
+          <div className="font-arcade mx-auto my-1 max-w-sm border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-1.5 text-center text-xs text-white uppercase">
             {errorMsg}
           </div>
         )}
 
-        {/* ─── Gegner getrennt Banner ─── */}
         {disconnectedOpponent && (
-          <div className="mx-auto my-1 flex items-center gap-2 rounded-xl bg-amber-500/20 px-3.5 py-2 text-center text-xs font-bold text-amber-300 ring-1 ring-amber-500/30 animate-pulse">
+          <div className="font-arcade mx-auto my-1 flex items-center gap-2 border-2 border-[#9E5D19] bg-[#F6B969] px-3.5 py-2 text-center text-xs text-[#15608E] uppercase animate-pulse">
             <WifiOff className="h-4 w-4 shrink-0" />
-            <span>Verbindung zu {disconnectedOpponent} unterbrochen. Warte auf Wiederverbindung...</span>
+            <span>WAITING FOR {disconnectedOpponent}...</span>
           </div>
         )}
 
-        {/* 3. MITTE: ENTWEDER ZENTRIERTE ERGEBNIS-KARTE (BEI SPIELENDE) ODER DYNAMISCHES SPIELFELD */}
+        {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SPIELFELD */}
         {isGameOver ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4 landscape:py-2">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4">
             {soloMode ? (
               <SoloResultCard
                 gameId={lobby.gameId}
@@ -272,62 +216,51 @@ export function MultiplayerGameView({
                 bestScore={soloBestScore}
                 isNewRecord={isNewSoloRecord}
                 resultLabel={gameState?.lastMove?.label}
-                secondaryLabel="Zurück zur Lobby"
+                secondaryLabel="EXIT"
                 onPlayAgain={handleRematch}
                 onExit={onLeave}
               />
             ) : (
-              <div className={`max-w-sm sm:max-w-md md:max-w-lg landscape:max-w-xl mx-auto w-full p-6 sm:p-8 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}>
-                <div className="flex flex-col items-center landscape:items-start">
-                  <div className="flex justify-center landscape:justify-start mb-2.5 landscape:mb-2">
-                    {isWinner && <Trophy className="h-11 w-11 landscape:h-9 landscape:w-9 text-amber-400 animate-bounce" />}
-                    {isLoser && <span className="text-3xl landscape:text-2xl">😔</span>}
-                    {isDraw && <span className="text-3xl landscape:text-2xl">🤝</span>}
+              <div className="w-full max-w-sm animate-fade-in">
+                <CrystalPanel
+                  stars={isWinner ? 3 : isDraw ? 2 : 1}
+                  title={isWinner ? 'VICTORY!' : isDraw ? 'DRAW!' : 'GAME OVER'}
+                  contentClassName="gap-3.5 py-6"
+                >
+                  <CrystalReadout
+                    label="SCORE"
+                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 25873 : 12450))}
+                  />
+                  <CrystalReadout
+                    label={isDrawAndGuess && gameState?.secretWord ? 'WORD' : 'REWARD'}
+                    value={
+                      isDrawAndGuess && gameState?.secretWord
+                        ? gameState.secretWord
+                        : `${lobby.rematchVotes.length}/${activePlayers.length} READY`
+                    }
+                  />
+
+                  <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
+                    <CrystalButton
+                      fullWidth
+                      size="md"
+                      tilt="left"
+                      disabled={hasVotedRematch}
+                      onClick={handleRematch}
+                    >
+                      {hasVotedRematch ? 'WAITING...' : 'REPLAY'}
+                    </CrystalButton>
+                    <CrystalButton
+                      size="md"
+                      variant="secondary"
+                      tilt="right"
+                      onClick={onLeave}
+                      className="min-w-[130px]"
+                    >
+                      OK
+                    </CrystalButton>
                   </div>
-
-                  <h2 className="text-xl sm:text-2xl landscape:text-xl font-black">
-                    {isWinner && <span className="text-emerald-400">Du hast gewonnen! 🎉</span>}
-                    {isLoser && <span className="text-rose-400">{opponent?.name || 'Gegner'} gewinnt!</span>}
-                    {isDraw && <span className="text-amber-400">Unentschieden!</span>}
-                  </h2>
-
-                  {isDrawAndGuess && gameState?.secretWord && (
-                    <div className="mt-2.5 inline-flex items-center gap-1.5 rounded-full bg-white/[0.07] px-3.5 py-1 ring-1 ring-white/12 text-xs">
-                      <span className="text-[#8E8E93]">Lösung:</span>
-                      <strong className={`font-black uppercase tracking-wider ${theme.accentText}`}>
-                        {gameState.secretWord}
-                      </strong>
-                    </div>
-                  )}
-
-                  {lobby.rematchVotes.length > 0 && (
-                    <p className="mt-2 text-xs font-semibold text-[#AEAEB2]">
-                      {lobby.rematchVotes.length}/{activePlayers.length} Spieler möchten Revanche
-                    </p>
-                  )}
-                </div>
-
-                <div className="mt-5 landscape:mt-0 flex flex-col gap-2.5">
-                  <button
-                    type="button"
-                    onClick={handleRematch}
-                    disabled={hasVotedRematch}
-                    className={`${BTN_PRIMARY_BASE} ${
-                      hasVotedRematch ? BTN_PRIMARY_DISABLED : theme.primaryBtn
-                    }`}
-                  >
-                    <RotateCcw className="h-4 w-4" />
-                    <span>{hasVotedRematch ? 'Warte auf Gegner...' : 'Revanche'}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={onLeave}
-                    className={`${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
-                  >
-                    Zurück zur Lobby
-                  </button>
-                </div>
+                </CrystalPanel>
               </div>
             )}
           </main>
@@ -335,8 +268,8 @@ export function MultiplayerGameView({
           <main
             className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
               lobby.gameId === 'draw-and-guess'
-                ? 'max-w-2xl landscape:max-w-5xl p-1.5 sm:p-2 landscape:py-0.5'
-                : 'max-w-md landscape:max-w-5xl p-2 sm:p-3 landscape:px-2 landscape:py-1'
+                ? 'max-w-2xl landscape:max-w-5xl p-1.5 sm:p-2'
+                : 'max-w-md landscape:max-w-5xl p-2 sm:p-3'
             }`}
           >
             {BoardComponent && myPlayer ? (
@@ -354,9 +287,11 @@ export function MultiplayerGameView({
                 isTvMode={lobby.isTvMode}
               />
             ) : (
-              <div className="text-center p-8 rounded-2xl bg-white/5 ring-1 ring-white/10 text-xs text-[#8E8E93]">
-                Spielfeld wird initialisiert...
-              </div>
+              <CrystalPanel title="LOADING..." contentClassName="py-8">
+                <span className="font-arcade text-sm text-[#15608E] uppercase">
+                  PREPARING BOARD...
+                </span>
+              </CrystalPanel>
             )}
           </main>
         )}

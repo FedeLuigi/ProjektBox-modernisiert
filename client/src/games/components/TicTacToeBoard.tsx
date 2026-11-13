@@ -1,5 +1,4 @@
 import type { GameRendererProps } from '../types';
-import { getGameTheme } from '../../styles/uiTokens';
 
 export interface TicTacToeState {
   board: (string | null)[];
@@ -7,7 +6,6 @@ export interface TicTacToeState {
 }
 
 export function TicTacToeBoard({
-  gameId = 'tic-tac-toe',
   gameState,
   isMyTurn,
   isGameOver,
@@ -15,7 +13,6 @@ export function TicTacToeBoard({
   disabled,
 }: GameRendererProps<TicTacToeState>) {
   const { board, winningLine } = gameState || { board: Array(9).fill(null), winningLine: null };
-  const theme = getGameTheme(gameId);
 
   const handleCellClick = (idx: number) => {
     if (!isMyTurn || isGameOver || disabled) return;
@@ -24,7 +21,7 @@ export function TicTacToeBoard({
   };
 
   return (
-    <div className="grid grid-cols-3 gap-3 landscape:gap-2.5 p-4 landscape:p-3 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] landscape:w-[min(calc(100dvh-5.2rem),20rem)] max-h-[65dvh] landscape:max-h-[calc(100dvh-5.2rem)] aspect-square">
+    <div className="relative grid grid-cols-3 gap-3 landscape:gap-2.5 p-4 landscape:p-3 bg-[#9CE0FA] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#66C4EE,0_8px_0_rgba(14,62,96,0.38)] w-[min(78vw,20rem)] sm:w-[min(78vw,21rem)] landscape:w-[min(calc(100dvh-5.2rem),20rem)] max-h-[65dvh] landscape:max-h-[calc(100dvh-5.2rem)] aspect-square">
       {board.map((cell, idx) => {
         const isWinningCell = winningLine?.includes(idx);
         const canClick = isMyTurn && !isGameOver && !disabled && cell === null;
@@ -35,25 +32,33 @@ export function TicTacToeBoard({
             type="button"
             disabled={!canClick}
             onClick={() => handleCellClick(idx)}
-            className={`relative flex items-center justify-center rounded-2xl text-4xl sm:text-5xl font-black transition-all ${
+            className={`relative flex items-center justify-center text-4xl sm:text-5xl font-arcade uppercase transition-all border-[3px] border-[#17608E] overflow-hidden ${
               cell === null
                 ? canClick
-                  ? `bg-white/5 hover:bg-white/10 active:scale-95 cursor-pointer ring-1 ring-white/10 ${theme.hoverRing}`
-                  : 'bg-white/[0.03] cursor-not-allowed opacity-60'
+                  ? 'bg-[#52A9D6] hover:bg-[#38ACE0] active:scale-95 cursor-pointer shadow-[inset_0_0_0_2px_#8AD8F8]'
+                  : 'bg-[#52A9D6]/60 cursor-not-allowed opacity-75'
                 : isWinningCell
-                  ? 'bg-sky-500/35 text-sky-200 ring-2 ring-sky-400 shadow-[0_0_20px_rgba(56,189,248,0.55)] animate-pulse'
+                  ? 'bg-[#F6B969] text-white border-[#C48232] shadow-[inset_0_0_0_3px_#FDE0A6,0_0_16px_rgba(246,185,105,0.75)] animate-pulse'
                   : cell === 'X'
-                    ? 'bg-sky-500/15 text-sky-400 ring-1 ring-sky-500/30'
-                    : 'bg-amber-500/15 text-amber-300 ring-1 ring-amber-500/30'
+                    ? 'bg-[#2B9FD6] text-white shadow-[inset_0_0_0_2px_#7DD3FA]'
+                    : 'bg-[#F3AC58] text-white border-[#C48232] shadow-[inset_0_0_0_2px_#FDE0A6]'
             }`}
+            style={{
+              clipPath: 'polygon(0% 3%, 100% 0%, 98% 97%, 2% 100%)',
+            }}
           >
+            {/* Diagonal crystal facet */}
+            <div
+              className="pointer-events-none absolute inset-0 bg-white/15"
+              style={{ clipPath: 'polygon(0 0, 62% 0, 35% 100%, 0 100%)' }}
+            />
             {cell === 'X' && (
-              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#38bdf8]">
+              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(14,90,138,0.65)]">
                 X
               </span>
             )}
             {cell === 'O' && (
-              <span className="transform-gpu scale-110 drop-shadow-[0_0_10px_#fbbf24]">
+              <span className="relative z-10 transform-gpu scale-110 drop-shadow-[0_2px_0_rgba(140,78,12,0.65)]">
                 O
               </span>
             )}

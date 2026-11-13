@@ -1,14 +1,7 @@
 import { useState } from 'react';
-import { KeyRound, QrCode, RefreshCw, Tv, X } from 'lucide-react';
+import { QrCode, RefreshCw } from 'lucide-react';
 import { QrScannerModal } from './QrScannerModal';
-import {
-  BTN_PRIMARY_BASE,
-  BTN_PRIMARY_DISABLED,
-  BTN_PRIMARY_ENABLED,
-  BTN_SECONDARY_BASE,
-  BTN_SECONDARY_NEUTRAL,
-  SURFACE_CARD,
-} from '../../styles/uiTokens';
+import { CrystalButton, CrystalPanel } from '../CrystalUI';
 
 interface TvJoinModalProps {
   isOpen: boolean;
@@ -49,88 +42,77 @@ export function TvJoinModal({
       <div
         role="dialog"
         aria-modal="true"
-        style={{
-          paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-        }}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center px-4 overflow-y-auto overscroll-y-contain bg-[#0B0B0F]/85 backdrop-blur-xl text-white select-none animate-fade-in"
+        onClick={onClose}
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center p-4 bg-[#103858]/70 backdrop-blur-xs select-none animate-fade-in"
       >
-        <div className={`relative w-full max-w-sm landscape:max-w-xl ${SURFACE_CARD} landscape:grid landscape:grid-cols-[0.85fr_1.15fr] landscape:items-center landscape:gap-5 flex flex-col items-center text-center landscape:text-left`}>
-          {/* Schließen Button */}
-          <button
-            type="button"
-            onClick={onClose}
-            className="absolute top-4 right-4 grid h-8 w-8 place-items-center rounded-full bg-white/10 text-[#AEAEB2] hover:text-white ring-1 ring-white/10 transition-transform active:scale-95 cursor-pointer"
-          >
-            <X className="h-4 w-4" />
-          </button>
-
-          <div className="flex flex-col items-center landscape:items-start w-full">
-            {/* Icon Badge */}
-            <div className="flex h-14 w-14 landscape:h-12 landscape:w-12 items-center justify-center rounded-2xl bg-purple-500/15 text-purple-300 ring-1 ring-purple-400/30 mb-3 landscape:mb-2 shadow-xs">
-              <Tv className="h-7 w-7 landscape:h-6 landscape:w-6 text-purple-300" />
-            </div>
-
-            <h2 className="text-xl font-black text-white">Mit Code beitreten</h2>
-
-            {/* Fehlermeldung */}
+        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
+          <CrystalPanel topTabLabel="TV JOIN" title="ENTER CODE" contentClassName="gap-4 py-6">
             {errorMessage && (
-              <div className="mt-3 w-full rounded-2xl bg-rose-500/20 px-3.5 py-2 text-xs font-bold text-rose-300 ring-1 ring-rose-500/30 animate-fade-in">
+              <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">
                 {errorMessage}
               </div>
             )}
-          </div>
 
-          <div className="w-full flex flex-col">
-            {/* Direkte Code-Eingabe + Beitritt */}
-            <form onSubmit={handleSubmit} className="mt-4 landscape:mt-0 w-full flex flex-col gap-2.5">
-              <input
-                type="text"
-                maxLength={6}
-                value={code}
-                onChange={(e) => setCode(e.target.value.toUpperCase())}
-                placeholder="CODE"
-                className="w-full text-center text-xl landscape:text-lg font-mono font-black tracking-[0.25em] px-4 py-3 landscape:py-2.5 rounded-2xl bg-black/50 ring-1 ring-white/15 focus:ring-2 focus:ring-purple-500 outline-none uppercase text-white placeholder:text-white/25"
-              />
+            <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-3">
+              {/* Abgeschrägtes Code-Eingabefeld im SCORE/REWARD Readout-Stil */}
+              <div
+                style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
+                className="w-full max-w-[230px] bg-[#17689A] p-[3px]"
+              >
+                <input
+                  type="text"
+                  maxLength={6}
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  placeholder="CODE"
+                  style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
+                  className="font-arcade w-full bg-[#39A9DD] py-2.5 text-center text-2xl tracking-[0.25em] text-white placeholder:text-white/50 focus:outline-none uppercase"
+                />
+              </div>
 
-              <button
+              <CrystalButton
                 type="submit"
+                fullWidth
+                size="md"
+                tilt="left"
                 disabled={code.trim().length < 3 || isJoining}
-                className={`${BTN_PRIMARY_BASE} ${
-                  code.trim().length >= 3 && !isJoining
-                    ? BTN_PRIMARY_ENABLED
-                    : BTN_PRIMARY_DISABLED
-                }`}
               >
                 {isJoining ? (
                   <>
                     <RefreshCw className="h-4 w-4 animate-spin" />
-                    <span>Verbinde...</span>
+                    <span>JOINING...</span>
                   </>
                 ) : (
-                  <>
-                    <KeyRound className="h-4 w-4" />
-                    <span>Beitreten</span>
-                  </>
+                  <span>PLAY</span>
                 )}
-              </button>
+              </CrystalButton>
             </form>
 
-            {/* Alternative: QR-Scanner */}
-            <button
-              type="button"
-              onClick={() => setShowScanner(true)}
+            <CrystalButton
+              fullWidth
+              size="sm"
+              variant="secondary"
+              tilt="right"
               disabled={isJoining}
-              className={`mt-2.5 landscape:mt-2 ${BTN_SECONDARY_BASE} ${BTN_SECONDARY_NEUTRAL}`}
+              onClick={() => setShowScanner(true)}
             >
               <QrCode className="h-4 w-4" />
-              <span>QR-Code scannen</span>
-            </button>
-          </div>
+              <span>SCAN QR</span>
+            </CrystalButton>
+
+            <CrystalButton
+              size="sm"
+              variant="secondary"
+              tilt="left"
+              onClick={onClose}
+              className="min-w-[120px]"
+            >
+              EXIT
+            </CrystalButton>
+          </CrystalPanel>
         </div>
       </div>
 
-      {/* QR-Kamera-Scanner Modal */}
       <QrScannerModal
         isOpen={showScanner}
         onClose={() => setShowScanner(false)}

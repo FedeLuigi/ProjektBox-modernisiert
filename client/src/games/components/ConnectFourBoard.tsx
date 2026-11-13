@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import type { GameRendererProps } from '../types';
-import { getGameTheme } from '../../styles/uiTokens';
 
 export interface ConnectFourState {
   board: (string | null)[][];
@@ -9,7 +8,6 @@ export interface ConnectFourState {
 }
 
 export function ConnectFourBoard({
-  gameId = 'connect',
   gameState,
   isMyTurn,
   isGameOver,
@@ -17,7 +15,6 @@ export function ConnectFourBoard({
   disabled,
 }: GameRendererProps<ConnectFourState>) {
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
-  const theme = getGameTheme(gameId);
 
   const { board, winningCoords } = gameState || {
     board: Array.from({ length: 6 }, () => Array(7).fill(null)),
@@ -47,11 +44,11 @@ export function ConnectFourBoard({
               onClick={() => handleColClick(c)}
               onMouseEnter={() => setHoveredCol(c)}
               onMouseLeave={() => setHoveredCol(null)}
-              className={`h-6 landscape:h-5 flex items-center justify-center rounded-t-lg transition-all ${
+              className={`h-6 landscape:h-5 flex items-center justify-center font-arcade transition-all ${
                 canClick
                   ? isHovered
-                    ? `${theme.accentIcon} scale-125`
-                    : 'text-white/40 hover:text-white'
+                    ? 'text-[#FDE0A6] scale-125 drop-shadow-[0_2px_0_#17608E]'
+                    : 'text-[#9CE0FA] hover:text-white'
                   : 'opacity-0 pointer-events-none'
               }`}
             >
@@ -61,8 +58,8 @@ export function ConnectFourBoard({
         })}
       </div>
 
-      {/* 7 Spalten x 6 Zeilen Raster */}
-      <div className="p-3 landscape:p-2 rounded-3xl bg-[#141526] ring-2 ring-[#2A2B45] shadow-2xl backdrop-blur-xl w-full">
+      {/* 7 Spalten x 6 Zeilen Raster im Crystal-Rahmen */}
+      <div className="p-3 landscape:p-2 bg-[#52A9D6] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#8AD8F8,0_8px_0_rgba(14,62,96,0.38)] w-full">
         <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
           {Array.from({ length: 7 }).map((_, colIdx) => {
             const isColFull = board[0] && board[0][colIdx] !== null;
@@ -74,8 +71,8 @@ export function ConnectFourBoard({
                 onClick={() => handleColClick(colIdx)}
                 onMouseEnter={() => setHoveredCol(colIdx)}
                 onMouseLeave={() => setHoveredCol(null)}
-                className={`flex flex-col gap-1.5 sm:gap-2 p-0.5 rounded-xl transition-colors ${
-                  canClick && hoveredCol === colIdx ? 'bg-white/5 cursor-pointer' : ''
+                className={`flex flex-col gap-1.5 sm:gap-2 p-0.5 transition-colors ${
+                  canClick && hoveredCol === colIdx ? 'bg-[#9CE0FA]/40 cursor-pointer' : ''
                 }`}
               >
                 {Array.from({ length: 6 }).map((_, rowIdx) => {
@@ -87,20 +84,20 @@ export function ConnectFourBoard({
                   return (
                     <div
                       key={rowIdx}
-                      className={`aspect-square w-full rounded-full transition-transform flex items-center justify-center ${
+                      className={`aspect-square w-full rounded-full transition-transform flex items-center justify-center border-2 ${
                         cellColor === null
-                          ? 'bg-[#0B0B14] shadow-inner ring-1 ring-white/5'
+                          ? 'bg-[#17608E] border-[#0E486C] shadow-inner'
                           : cellColor === 'red'
                             ? isWinningCell
-                              ? 'bg-rose-500 shadow-[0_0_16px_#f43f5e] ring-2 ring-white scale-105 animate-pulse'
-                              : 'bg-gradient-to-br from-rose-400 to-rose-600 shadow-[0_2px_8px_rgba(244,63,94,0.4)] ring-1 ring-rose-400/50'
+                              ? 'bg-[#E14B5A] border-white shadow-[0_0_14px_#F43F5E] scale-105 animate-pulse'
+                              : 'bg-gradient-to-br from-[#FF7582] to-[#D93848] border-[#8F1D28] shadow-[inset_0_2px_0_rgba(255,255,255,0.45)]'
                             : isWinningCell
-                              ? 'bg-amber-400 shadow-[0_0_16px_#fbbf24] ring-2 ring-white scale-105 animate-pulse'
-                              : 'bg-gradient-to-br from-amber-300 to-amber-500 shadow-[0_2px_8px_rgba(251,191,36,0.4)] ring-1 ring-amber-300/50'
+                              ? 'bg-[#FDE0A6] border-white shadow-[0_0_14px_#F6B969] scale-105 animate-pulse'
+                              : 'bg-gradient-to-br from-[#FDE0A6] to-[#EAA14B] border-[#B47122] shadow-[inset_0_2px_0_rgba(255,255,255,0.55)]'
                       }`}
                     >
                       {cellColor && (
-                        <div className="h-2 w-2 rounded-full bg-white/40 -translate-y-1.5 -translate-x-1.5" />
+                        <div className="h-2 w-2 rounded-full bg-white/55 -translate-y-1 -translate-x-1" />
                       )}
                     </div>
                   );

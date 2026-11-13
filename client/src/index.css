@@ -2,7 +2,7 @@
 
 @custom-variant landscape (@media (orientation: landscape) and (max-height: 520px));
 
-/* ─── Basis-Regeln für natives iOS-App-Verhalten (Single-Screen, kein Zoom/Bounce) ─── */
+/* ─── Basis-Regeln für natives iOS-App-Verhalten & globales Crystal-UI Design ─── */
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -18,7 +18,7 @@
     min-height: 100dvh;
     min-height: 100lvh;
     min-height: -webkit-fill-available;
-    background-color: #0B0B0F;
+    background-color: #3B82B6;
   }
 
   body, #root {
@@ -29,14 +29,14 @@
     min-height: 100dvh;
     min-height: 100lvh;
     min-height: -webkit-fill-available;
-    background-color: #0B0B0F;
-    color: #FFFFFF;
+    background-color: #3B82B6;
+    color: #15608E;
     overflow: hidden;
     overscroll-behavior: none;
     -webkit-user-select: none;
     user-select: none;
     -webkit-font-smoothing: antialiased;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Inter", system-ui, sans-serif;
+    font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
   }
 }
 
@@ -100,7 +100,6 @@
     }
   }
 
-  /* Legacy-Alias innerhalb @layer components, überschreibt keine Utilities */
   .safe-screen {
     padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
     padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
@@ -141,22 +140,22 @@
   animation: shakeEffect 0.5s cubic-bezier(0.36, 0.07, 0.19, 0.97) both;
 }
 
-/* Weiche iOS Screen-Einblendung */
+/* Kristall-Screen-Einblendung */
 @keyframes screenFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.97);
+    transform: scale(0.95) translateY(6px);
   }
   to {
     opacity: 1;
-    transform: scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 .animate-fade-in {
   animation: screenFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── Moderner ProjektBox Startbildschirm (GPU transform + opacity, 0 Lag) ─── */
+/* ─── ProjektBox Crystal Startbildschirm Animationen ─── */
 @keyframes pbSplashLetterPop {
   0% {
     opacity: 0;
@@ -315,38 +314,39 @@
   animation: pbSplashFigureBurst 1.9s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-
-/* ─── Arcade Display-Schriftart (Chunky Cartoon Look wie im Vorbild) ─── */
+/* ─── Crystal UI Display-Typografie (Exakt wie "DIFFICULTY", "LEVEL 16", "OPTIONS") ─── */
 .font-arcade {
   font-family: 'Lilita One', 'Fredoka', Impact, 'Arial Black', sans-serif;
-  letter-spacing: 0.02em;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .arcade-text-shadow {
-  text-shadow: 0 2px 0 rgba(16, 22, 58, 0.75), 0 4px 8px rgba(0, 0, 0, 0.35);
+  text-shadow: 0 2px 0 rgba(12, 62, 96, 0.65);
 }
 
 .arcade-title-shadow {
   text-shadow:
-    0 3px 0 #1A4E7A,
-    0 5px 10px rgba(10, 32, 56, 0.45);
+    0 2.5px 0 #0E4D78,
+    0 4px 8px rgba(10, 42, 68, 0.35);
 }
 
-@keyframes cloudDrift {
+/* Kristall-Schimmer & Float-Animationen */
+@keyframes crystalFloat {
   0%, 100% {
-    transform: translateX(0px);
+    transform: translateY(0px);
   }
   50% {
-    transform: translateX(14px);
+    transform: translateY(-4px);
   }
 }
 
-@keyframes mascotBounce {
+@keyframes crystalShimmer {
   0%, 100% {
-    transform: translateY(0px) scale(1);
+    opacity: 0.55;
   }
   50% {
-    transform: translateY(-3px) scale(1.02, 0.98);
+    opacity: 0.95;
   }
 }
 
@@ -368,12 +368,12 @@
   }
 }
 
-.animate-cloud-drift {
-  animation: cloudDrift 9s ease-in-out infinite;
+.animate-crystal-float {
+  animation: crystalFloat 4s ease-in-out infinite;
 }
 
-.animate-mascot-bounce {
-  animation: mascotBounce 3.2s ease-in-out infinite;
+.animate-crystal-shimmer {
+  animation: crystalShimmer 3s ease-in-out infinite;
 }
 
 .animate-lock-wiggle {

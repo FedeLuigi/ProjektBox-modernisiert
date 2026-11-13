@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Bomb, Flag } from 'lucide-react';
 import type { GameRendererProps } from '../types';
-import { getGameTheme } from '../../styles/uiTokens';
+import { CrystalButton, CrystalReadout } from '../../components/CrystalUI';
 
 const SIZE = 7;
 const MINES = 7;
@@ -74,12 +74,10 @@ function revealFlood(board: Cell[][], r: number, c: number) {
 }
 
 export function MinesweeperBoard({
-  gameId = 'minesweeper',
   isGameOver,
   disabled,
   onMove,
 }: GameRendererProps) {
-  const theme = getGameTheme(gameId);
   const [board, setBoard] = useState<Cell[][]>(() => createBoard());
   const [flagMode, setFlagMode] = useState(false);
   const [ended, setEnded] = useState(false);
@@ -102,7 +100,6 @@ export function MinesweeperBoard({
     if (target.flagged) return;
 
     if (target.isMine) {
-      // Alle Minen kurz sichtbar machen und mit aktuellem Punktestand beenden
       for (const row of next) {
         for (const cell of row) {
           if (cell.isMine) cell.revealed = true;
@@ -132,36 +129,36 @@ export function MinesweeperBoard({
   return (
     <div className="flex flex-col items-center w-full max-w-[18.5rem] sm:max-w-xs landscape:max-w-xl landscape:grid landscape:grid-cols-[auto_11.5rem] landscape:items-center landscape:justify-center landscape:gap-5 gap-2.5 select-none">
       {/* Hochformat Status & Modus */}
-      <div className="flex landscape:hidden items-center justify-between w-full px-1 text-xs font-bold text-[#AEAEB2]">
-        <span>Aufgedeckt: <strong className="text-white">{revealedSafe}/{safeCells}</strong></span>
+      <div className="flex landscape:hidden items-center justify-between w-full px-2 py-1.5 bg-[#9CE0FA] border-2 border-[#17608E] text-xs font-arcade uppercase text-[#15608E]">
+        <span>SAFE: <strong className="text-[#0E486C]">{revealedSafe}/{safeCells}</strong></span>
         <button
           type="button"
           onClick={() => setFlagMode((v) => !v)}
-          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[11px] font-bold ring-1 transition-all cursor-pointer ${
-            flagMode ? `${theme.activeSurface} ${theme.accentText}` : 'bg-white/[0.07] text-white/75 ring-white/10'
+          className={`inline-flex items-center gap-1.5 px-2.5 py-0.5 text-[11px] font-arcade uppercase border-2 transition-all cursor-pointer ${
+            flagMode ? 'bg-[#F6B969] text-white border-[#C48232]' : 'bg-[#2B9FD6] text-white border-[#0E5A8A]'
           }`}
         >
           <Flag className="h-3 w-3" />
-          <span>{flagMode ? 'Flagge aktiv' : 'Aufdecken'}</span>
+          <span>{flagMode ? 'FLAG ON' : 'REVEAL'}</span>
         </button>
       </div>
 
-      {/* 7x7 Minenfeld */}
-      <div className={`grid grid-cols-7 gap-1.5 landscape:gap-1 p-2.5 landscape:p-2 rounded-3xl bg-[#161620]/95 ${theme.softRing} w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square`}>
+      {/* 7x7 Minenfeld im Crystal-Design */}
+      <div className="grid grid-cols-7 gap-1.5 landscape:gap-1 p-2.5 landscape:p-2 bg-[#52A9D6] border-[4px] border-[#17608E] shadow-[inset_0_0_0_4px_#8AD8F8,0_8px_0_rgba(14,62,96,0.38)] w-full landscape:w-[min(46vw,calc(100dvh-5.2rem),21rem)] aspect-square">
         {board.map((row, r) =>
           row.map((cell, c) => (
             <button
               key={`${r}-${c}`}
               type="button"
               onClick={() => handleCellTap(r, c)}
-              className={`rounded-lg flex items-center justify-center text-xs sm:text-sm font-black transition-all cursor-pointer active:scale-90 ${
+              className={`flex items-center justify-center text-xs sm:text-sm font-arcade border-2 transition-all cursor-pointer active:scale-90 ${
                 cell.revealed
                   ? cell.isMine
-                    ? 'bg-rose-500/35 text-rose-300 ring-1 ring-rose-400'
-                    : 'bg-white/[0.06] text-white/90'
+                    ? 'bg-[#E14B5A] text-white border-[#8F1D28]'
+                    : 'bg-[#DDF6FF] text-[#15608E] border-[#52A9D6]'
                   : cell.flagged
-                  ? `${theme.activeSurface} ${theme.accentText} ring-1`
-                  : `bg-[#222230] hover:bg-[#2C2C3E] ring-1 ring-white/10 ${theme.hoverRing}`
+                  ? 'bg-[#F6B969] text-white border-[#C48232] shadow-[inset_0_0_0_1px_#FDE0A6]'
+                  : 'bg-[#9CE0FA] hover:bg-[#B6ECFD] text-[#15608E] border-[#17608E] shadow-[inset_0_0_0_1px_#DDF6FF]'
               }`}
             >
               {cell.revealed ? (
@@ -184,25 +181,18 @@ export function MinesweeperBoard({
 
       {/* Rechte Seitenleiste im Querformat */}
       <div className="hidden landscape:flex flex-col gap-3 w-full">
-        <div className="flex flex-col items-center rounded-2xl bg-white/[0.04] px-3 py-3 ring-1 ring-white/10 text-center">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-[#8E8E93]">Aufgedeckt</span>
-          <strong className="text-2xl font-black text-white tabular-nums">
-            {revealedSafe}/{safeCells}
-          </strong>
+        <div className="flex flex-col items-center bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] px-3 py-3 text-center">
+          <CrystalReadout label="SAFE" value={`${revealedSafe}/${safeCells}`} />
         </div>
 
-        <button
-          type="button"
+        <CrystalButton
+          size="sm"
+          fullWidth
+          variant={flagMode ? 'success' : 'primary'}
           onClick={() => setFlagMode((v) => !v)}
-          className={`flex items-center justify-center gap-2 rounded-2xl px-4 py-3 text-xs font-bold ring-1 transition-all cursor-pointer active:scale-95 ${
-            flagMode
-              ? `${theme.activeSurface} ${theme.accentText}`
-              : 'bg-white/[0.07] hover:bg-white/[0.12] text-white/85 ring-white/12'
-          }`}
         >
-          <Flag className="h-4 w-4" />
-          <span>{flagMode ? 'Flagge aktiv' : 'Modus: Aufdecken'}</span>
-        </button>
+          {flagMode ? 'FLAG ON' : 'REVEAL'}
+        </CrystalButton>
       </div>
     </div>
   );
