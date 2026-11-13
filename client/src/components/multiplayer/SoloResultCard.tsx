@@ -34,7 +34,7 @@ export function SoloResultCard({
 
   return (
     <div
-      className={`max-w-sm landscape:max-w-xl mx-auto w-full p-5 sm:p-6 landscape:p-5 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}
+      className={`max-w-sm sm:max-w-md md:max-w-lg landscape:max-w-xl mx-auto w-full p-6 sm:p-8 landscape:p-4 rounded-3xl bg-[#181824]/95 ${theme.softRing} shadow-2xl backdrop-blur-2xl text-center landscape:text-left landscape:grid landscape:grid-cols-[1.05fr_0.95fr] landscape:items-center landscape:gap-5 animate-fade-in`}
     >
       <div className="flex flex-col items-center landscape:items-start">
         <div className="flex justify-center landscape:justify-start mb-2.5 landscape:mb-2">

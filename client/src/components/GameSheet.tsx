@@ -8,7 +8,6 @@ import {
   HEADER_BACK_BTN,
   HEADER_BADGE_PILL,
   HEADER_ROW,
-  STAGE_TWO_COL,
   SURFACE_CARD,
   getGameTheme,
 } from '../styles/uiTokens';
@@ -78,19 +77,19 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
           </span>
         </header>
 
-        {/* 2. MITTE: Großzügige, luftige Spiel-Präsentation über den ganzen Bildschirm */}
-        <main className={`${STAGE_TWO_COL} min-h-0 overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 sm:px-3 py-3`}>
-          <div className="grid w-full items-center gap-6 sm:gap-10 portrait:grid-cols-1 portrait:text-center landscape:grid-cols-[1fr_1.2fr] landscape:text-left">
+        {/* 2. MITTE: Großzügige, ausgewogene Spiel-Präsentation */}
+        <main className="my-auto mx-auto flex w-full max-w-xl landscape:max-w-4xl flex-1 min-h-0 items-center justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-3 py-4 landscape:py-1">
+          <div className="grid w-full items-center gap-6 sm:gap-8 grid-cols-1 text-center landscape:grid-cols-[1fr_1.2fr] landscape:text-left">
             {/* Linke / Obere Seite: Großes Squircle-Icon & Titel */}
-            <div className="flex flex-col portrait:items-center landscape:items-start">
+            <div className="flex flex-col items-center landscape:items-start">
               <div
-                className={`grid h-22 w-22 sm:h-28 sm:w-28 landscape:h-20 landscape:w-20 landscape:sm:h-24 landscape:sm:w-24 place-items-center rounded-[28px] sm:rounded-[32px] shadow-md ring-1 ring-black/[0.05] dark:ring-white/[0.12] ${style.artBg} ${style.accentText}`}
+                className={`grid h-22 w-22 sm:h-28 sm:w-28 landscape:h-18 landscape:w-18 place-items-center rounded-[28px] sm:rounded-[32px] shadow-md ring-1 ring-black/[0.05] dark:ring-white/[0.12] ${style.artBg} ${style.accentText}`}
               >
-                <Icon className="h-11 w-11 sm:h-14 sm:w-14 landscape:h-10 landscape:w-10 landscape:sm:h-12 landscape:sm:w-12" strokeWidth={2.1} />
+                <Icon className="h-11 w-11 sm:h-14 sm:w-14 landscape:h-9 landscape:w-9" strokeWidth={2.1} />
               </div>
 
               <div
-                className={`mt-5 landscape:mt-4 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${style.accentText}`}
+                className={`mt-4 landscape:mt-3 inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-widest ${style.accentText}`}
               >
                 <Sparkles className="h-3.5 w-3.5" />
                 <span>{game.subtitle}</span>
@@ -98,13 +97,13 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
 
               <h1
                 id="game-screen-title"
-                className="mt-1.5 text-3xl sm:text-5xl landscape:text-3xl landscape:sm:text-4xl font-black tracking-tight leading-tight"
+                className="mt-1.5 text-3xl sm:text-4xl landscape:text-2xl font-black tracking-tight leading-tight"
               >
                 {game.title}
               </h1>
 
               {/* Luftige Info-Pillen */}
-              <div className="mt-4 flex flex-wrap items-center portrait:justify-center landscape:justify-start gap-2.5 text-xs font-semibold text-[#6C6C70] dark:text-[#AEAEB2]">
+              <div className="mt-4 flex flex-wrap items-center justify-center landscape:justify-start gap-2.5 text-xs font-semibold text-[#6C6C70] dark:text-[#AEAEB2]">
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/75 dark:bg-white/[0.07] px-3.5 py-1.5 ring-1 ring-black/[0.05] dark:ring-white/[0.08] backdrop-blur-md">
                   <Users className="h-3.5 w-3.5" />
                   {game.players}
@@ -121,7 +120,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
             </div>
 
             {/* Rechte / Untere Seite: Luftige Beschreibung & Start-Aktion */}
-            <div className={`flex flex-col portrait:items-center landscape:items-start justify-center ${SURFACE_CARD}`}>
+            <div className={`flex flex-col items-center landscape:items-start justify-center ${SURFACE_CARD}`}>
               <p className="text-sm sm:text-base leading-relaxed text-[#E5E5EA]">
                 {game.description}
               </p>
@@ -133,7 +132,7 @@ export function GameSheet({ game, onClose, onPlay }: GameSheetProps) {
               <button
                 type="button"
                 onClick={handlePlayClick}
-                className={`mt-6 landscape:mt-5 ${BTN_PRIMARY_BASE} ${theme.primaryBtn} sm:w-auto sm:min-w-[220px]`}
+                className={`mt-6 landscape:mt-4 ${BTN_PRIMARY_BASE} ${theme.primaryBtn} w-full sm:w-auto sm:min-w-[220px]`}
               >
                 <Play className="h-4 w-4 fill-current" />
                 <span>Jetzt losspielen</span>

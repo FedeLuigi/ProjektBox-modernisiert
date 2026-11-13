@@ -216,8 +216,8 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="mx-auto flex w-full max-w-md landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
-        {/* Scrollbarer Mittelbereich: Hochformat zentriert, Querformat 2-Spalten (Code links, Spieler & Start rechts) */}
+      <div className="mx-auto flex w-full max-w-md sm:max-w-lg landscape:max-w-4xl flex-1 flex-col justify-between min-h-0">
+        {/* Scrollbarer Mittelbereich: Auf großen Screens vertikal zentriert, auf Smartphone-Querformat 2-Spalten */}
         <div className="flex flex-1 min-h-0 flex-col overflow-y-auto overscroll-y-contain px-2.5 py-3 landscape:py-1 scrollbar-none">
           {errorMsg && (
             <div className={`mb-3 rounded-2xl p-3 text-center text-xs font-bold animate-fade-in shrink-0 ${theme.infoBox}`}>
@@ -225,7 +225,7 @@ export function InLobbyView({
             </div>
           )}
 
-          <div className="my-auto grid w-full items-start gap-4 sm:gap-6 landscape:grid-cols-[1fr_1fr] landscape:gap-6 py-2 landscape:py-0">
+          <div className="my-auto grid w-full items-start gap-4 sm:gap-6 grid-cols-1 landscape:grid-cols-[1fr_1fr] landscape:gap-6 py-2 landscape:py-0">
             {/* Linke Spalte oben: Spiel-Titel, großer Beitrittscode & Status */}
             <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left landscape:col-start-1 landscape:row-start-1">
               <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest mb-1 ${theme.accentTextSoft}`}>

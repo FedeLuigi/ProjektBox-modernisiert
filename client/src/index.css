@@ -1,5 +1,7 @@
 @import "tailwindcss";
 
+@custom-variant landscape (@media (orientation: landscape) and (max-height: 520px));
+
 /* ─── Basis-Regeln für natives iOS-App-Verhalten (Single-Screen, kein Zoom/Bounce) ─── */
 @layer base {
   *, *::before, *::after {

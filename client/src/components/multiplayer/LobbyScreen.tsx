@@ -255,9 +255,9 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
           <ConnectionStatusBadge />
         </header>
 
-        {/* 2. MITTE: Offene Party-Bühne (Hochformat gestapelt, Querformat 2-Spalten) */}
-        <main className="mx-auto flex w-full max-w-md landscape:max-w-3xl flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4 landscape:py-1">
-          <div className="grid w-full items-center gap-6 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8">
+        {/* 2. MITTE: Ausgewogene Party-Bühne (Auf Desktop/Tablet zentrierte Card-Struktur, auf Smartphone-Querformat 2-Spalten) */}
+        <main className="mx-auto flex w-full max-w-md sm:max-w-lg landscape:max-w-3xl flex-1 min-h-0 flex-col justify-center overflow-y-auto overscroll-y-contain scrollbar-none px-2.5 py-4 landscape:py-1">
+          <div className="grid w-full items-center gap-6 grid-cols-1 landscape:grid-cols-[0.9fr_1.1fr] landscape:gap-8">
             <div className="flex flex-col items-center text-center landscape:items-start landscape:text-left">
               <div
                 className={`grid h-16 w-16 sm:h-20 sm:w-20 landscape:h-16 landscape:w-16 place-items-center rounded-[22px] sm:rounded-[26px] shadow-md ring-1 ring-white/[0.12] ${style.artBg} ${style.accentText}`}

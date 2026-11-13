@@ -711,8 +711,8 @@ export function DrawAndGuessBoard({
   // ═════════════════════════════════════════════════════════════════════════════
   if (isRoundOver && !isTv) {
     return (
-      <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 animate-fade-in select-none">
-        <div className="relative w-full max-w-sm rounded-3xl bg-[#14141E]/95 p-6 text-center ring-1 ring-white/15 shadow-2xl backdrop-blur-2xl flex flex-col items-center gap-4 overflow-hidden">
+      <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 sm:p-4 animate-fade-in select-none">
+        <div className="relative w-full max-w-sm sm:max-w-md md:max-w-lg rounded-3xl bg-[#14141E]/95 p-6 sm:p-8 text-center ring-1 ring-white/15 shadow-2xl backdrop-blur-2xl flex flex-col items-center gap-4 overflow-hidden">
           {/* Typischer Farb-Glow im einheitlichen App-Design */}
           <div className={`pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full blur-2xl opacity-40 ${theme.ambientTop}`} />
           <div className={`pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full blur-2xl opacity-35 ${theme.ambientBottom}`} />

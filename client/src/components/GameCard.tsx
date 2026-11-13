@@ -26,7 +26,7 @@ export function GameCard({
           onSelect();
         }
       }}
-      className={`group relative flex flex-col justify-between overflow-hidden rounded-[clamp(22px,3vh,30px)] p-3 sm:p-3.5 landscape:p-3 portrait:w-[clamp(245px,74vw,315px)] portrait:h-[clamp(360px,64dvh,490px)] landscape:w-[clamp(340px,56vw,450px)] landscape:h-[clamp(170px,68dvh,240px)] landscape:flex-row landscape:gap-3.5 shrink-0 transition-all duration-300 cursor-pointer select-none backdrop-blur-xl ${
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-[clamp(22px,3vh,30px)] p-3 sm:p-3.5 landscape:p-3 w-[clamp(245px,74vw,315px)] h-[clamp(360px,64dvh,490px)] sm:w-[280px] sm:h-[420px] md:w-[310px] md:h-[460px] landscape:w-[clamp(340px,56vw,450px)] landscape:h-[clamp(170px,68dvh,240px)] landscape:flex-row landscape:gap-3.5 shrink-0 transition-all duration-300 cursor-pointer select-none backdrop-blur-xl ${
         isActive
           ? `${style.cardActiveBg} ${style.cardRing} scale-100 opacity-100 z-20 shadow-xl`
           : `${style.cardBg} ring-1 ring-black/[0.06] dark:ring-white/[0.08] scale-90 opacity-60 hover:opacity-85 z-10`
