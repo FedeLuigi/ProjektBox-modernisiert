@@ -86,9 +86,9 @@ export function LobbyGameSettings({
                   <span>Host</span>
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#8E8E93] bg-white/[0.06] px-1.5 py-0.5 rounded-full ring-1 ring-white/10">
-                  <Lock className="h-2.5 w-2.5" />
-                  <span>Schreibgeschützt</span>
+                <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-[#AEAEB2] bg-white/[0.06] px-1.5 py-0.5 rounded-full ring-1 ring-white/10">
+                  <Lock className="h-2.5 w-2.5 text-amber-400/80" />
+                  <span>Nur Host kann anpassen</span>
                 </span>
               )}
             </div>
@@ -134,7 +134,7 @@ export function LobbyGameSettings({
                             ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                             : isHost
                             ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                            : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                            : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                         }`}
                       >
                         {opt} Runden
@@ -164,7 +164,7 @@ export function LobbyGameSettings({
                             ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                             : isHost
                             ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                            : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                            : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                         }`}
                       >
                         {opt}s
@@ -190,7 +190,7 @@ export function LobbyGameSettings({
                         ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                         : isHost
                         ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                        : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                        : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                     }`}
                   >
                     Tipps an
@@ -204,7 +204,7 @@ export function LobbyGameSettings({
                         ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                         : isHost
                         ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                        : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                        : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                     }`}
                   >
                     Ohne Tipps
@@ -232,7 +232,7 @@ export function LobbyGameSettings({
                             ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                             : isHost
                             ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                            : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                            : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                         }`}
                       >
                         {cat}
@@ -267,7 +267,7 @@ export function LobbyGameSettings({
                           ? `${theme.brushActive} ring-1 ring-white/30 scale-102`
                           : isHost
                           ? 'bg-white/[0.06] hover:bg-white/[0.12] text-white/70 hover:text-white cursor-pointer ring-1 ring-white/5'
-                          : 'bg-white/[0.03] text-white/40 ring-1 ring-transparent cursor-default'
+                          : 'bg-white/[0.03] text-white/30 ring-1 ring-transparent cursor-default pointer-events-none opacity-40'
                       }`}
                     >
                       {label}
@@ -280,7 +280,7 @@ export function LobbyGameSettings({
 
           {!isHost && (
             <p className="text-[10px] text-[#8E8E93] text-center pt-1 border-t border-white/[0.04]">
-              Nur der Host kann diese Einstellungen vor dem Start anpassen.
+              Nur der Host kann diese Einstellungen anpassen. Alle Änderungen werden live synchronisiert.
             </p>
           )}
         </div>

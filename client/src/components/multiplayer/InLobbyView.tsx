@@ -68,6 +68,10 @@ export function InLobbyView({
   // Im TV-Modus: Der Raumleiter (Spieler 1 auf Handy) oder jeder Smartphone-Spieler, sobald alle bereit sind!
   const canStartGame = lobby.isTvMode ? (isRoomLeader || allReady) : isHost;
 
+  // Wer darf die Spieleinstellungen ändern?
+  // Ausschließlich der Host (bzw. im TV-Modus der Raumleiter auf dem Smartphone)
+  const canEditSettings = lobby.isTvMode ? isRoomLeader : isHost;
+
   useEffect(() => {
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
       setLobby(updatedLobby);
@@ -127,6 +131,7 @@ export function InLobbyView({
   };
 
   const handleUpdateSettings = async (newSettings: Record<string, any>) => {
+    if (!canEditSettings) return;
     try {
       await socketService.updateLobbySettings(newSettings);
     } catch (err: any) {
@@ -279,7 +284,7 @@ export function InLobbyView({
               <LobbyGameSettings
                 gameId={lobby.gameId}
                 settings={lobby.settings}
-                isHost={canStartGame}
+                isHost={canEditSettings}
                 onUpdate={handleUpdateSettings}
               />
             </div>
