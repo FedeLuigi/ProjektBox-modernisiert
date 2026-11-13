@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { type AvatarConfig, DEFAULT_AVATAR } from '../components/Avatar';
 import { generateUniquePlayerName } from './nameGenerator';
 
@@ -12,6 +13,8 @@ export const STORAGE_KEYS = {
   PLAYER_NAME: 'projektbox_player_name',
   PLAYER_AVATAR: 'projektbox_player_avatar',
   SOCKET_URL: 'projektbox_socket_url',
+  SOUND_ENABLED: 'projektbox_sound_enabled',
+  VIBRATION_ENABLED: 'projektbox_vibration_enabled',
 } as const;
 
 export function generateUserId(): string {
@@ -43,7 +46,6 @@ export function validatePlayerName(rawName: string): {
   return { valid: true, cleaned };
 }
 
-// Globaler Event-Bus für Profil-Updates
 type ProfileListener = (profile: UserProfile) => void;
 const listeners = new Set<ProfileListener>();
 
@@ -82,7 +84,7 @@ export function getUserProfile(): UserProfile {
     const rawAvatar = localStorage.getItem(STORAGE_KEYS.PLAYER_AVATAR);
     if (rawAvatar) {
       try {
-        avatar = JSON.parse(rawAvatar);
+        avatar = { ...DEFAULT_AVATAR, ...JSON.parse(rawAvatar) };
       } catch {
         avatar = DEFAULT_AVATAR;
       }
@@ -107,11 +109,26 @@ export function saveUserProfile(updates: Partial<UserProfile>): UserProfile {
   try {
     if (updates.id) localStorage.setItem(STORAGE_KEYS.USER_ID, updated.id);
     if (updates.name) localStorage.setItem(STORAGE_KEYS.PLAYER_NAME, updated.name);
-    if (updates.avatar) localStorage.setItem(STORAGE_KEYS.PLAYER_AVATAR, JSON.stringify(updated.avatar));
+    if (updates.avatar) {
+      localStorage.setItem(STORAGE_KEYS.PLAYER_AVATAR, JSON.stringify(updated.avatar));
+    }
   } catch {
     // LocalStorage fallback
   }
 
   notifyListeners(updated);
   return updated;
+}
+
+/**
+ * Reaktiver Hook für das aktuelle Spielerprofil über alle Komponenten hinweg.
+ */
+export function useUserProfile(): UserProfile {
+  const [profile, setProfile] = useState<UserProfile>(getUserProfile);
+
+  useEffect(() => {
+    return subscribeUserProfile(setProfile);
+  }, []);
+
+  return profile;
 }

@@ -4,10 +4,9 @@ import { Avatar, type AvatarConfig } from './Avatar';
 import { AvatarCustomizerModal } from './AvatarCustomizerModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
 import {
-  getUserProfile,
   saveUserProfile,
+  useUserProfile,
   validatePlayerName,
-  type UserProfile,
 } from '../utils/userProfile';
 import { IslandBackground } from './IslandBackground';
 import {
@@ -36,7 +35,7 @@ export function SettingsSheet({
   onToggleVibration,
   onInstall,
 }: SettingsSheetProps) {
-  const [profile, setProfile] = useState<UserProfile>(getUserProfile);
+  const profile = useUserProfile();
   const [nameInput, setNameInput] = useState(profile.name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
@@ -44,12 +43,10 @@ export function SettingsSheet({
 
   useEffect(() => {
     if (isOpen) {
-      const current = getUserProfile();
-      setProfile(current);
-      setNameInput(current.name);
+      setNameInput(profile.name);
       setNameError(null);
     }
-  }, [isOpen]);
+  }, [isOpen, profile.name]);
 
   if (!isOpen) return null;
 
@@ -57,8 +54,7 @@ export function SettingsSheet({
     const newName = generateUniquePlayerName();
     setNameInput(newName);
     setNameError(null);
-    const updated = saveUserProfile({ name: newName });
-    setProfile(updated);
+    saveUserProfile({ name: newName });
 
     if (vibrationEnabled && typeof navigator !== 'undefined' && 'vibrate' in navigator) {
       navigator.vibrate(15);
@@ -74,8 +70,7 @@ export function SettingsSheet({
       setNameError(validation.error || 'Ungültiger Name');
     } else {
       setNameError(null);
-      const updated = saveUserProfile({ name: validation.cleaned });
-      setProfile(updated);
+      saveUserProfile({ name: validation.cleaned });
     }
   };
 
@@ -86,14 +81,12 @@ export function SettingsSheet({
       setNameError(null);
     } else {
       setNameInput(validation.cleaned);
-      const updated = saveUserProfile({ name: validation.cleaned });
-      setProfile(updated);
+      saveUserProfile({ name: validation.cleaned });
     }
   };
 
   const handleSaveAvatar = (newConfig: AvatarConfig) => {
-    const updated = saveUserProfile({ avatar: newConfig });
-    setProfile(updated);
+    saveUserProfile({ avatar: newConfig });
   };
 
   const handleCopyId = async () => {
@@ -129,7 +122,7 @@ export function SettingsSheet({
         </header>
 
         {/* Hauptbereich: 1:1 Umsetzung des "OPTIONS" Kristall-Fensters + Spieler-Profil-Kristallfenster */}
-        <main className="my-auto mx-auto flex w-full max-w-4xl flex-1 items-center justify-center py-2">
+        <main className="my-auto mx-auto flex w-full max-w-4xl flex-1 items-center justify-center pt-4 pb-2">
           <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
             {/* 1. "OPTIONS" Kristall-Panel (Exakt wie rechts unten im Referenzbild mit "OPTIONS" Trapez-Tab, "MUSIC" & "SOUND" Reglern) */}
             <CrystalPanel topTabLabel="OPTIONS" contentClassName="gap-6 py-7 px-6">

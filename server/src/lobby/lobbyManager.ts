@@ -56,6 +56,28 @@ export class LobbyManager {
   private socketToLobby = new Map<string, string>(); // socketId -> lobbyId
   private disconnectTimers = new Map<string, NodeJS.Timeout>(); // userId -> Timer
 
+  constructor() {
+    const cleanupTimer = setInterval(() => {
+      this.cleanupExpiredLobbies();
+    }, 10 * 60 * 1000);
+    cleanupTimer.unref?.();
+  }
+
+  private deleteLobby(lobbyId: string): void {
+    const lobby = this.lobbies.get(lobbyId);
+    if (lobby) {
+      for (const p of lobby.players) {
+        this.socketToLobby.delete(p.socketId);
+        const timer = this.disconnectTimers.get(p.id);
+        if (timer) {
+          clearTimeout(timer);
+          this.disconnectTimers.delete(p.id);
+        }
+      }
+    }
+    this.lobbies.delete(lobbyId);
+  }
+
   private getExistingCodes(): Set<string> {
     const codes = new Set<string>();
     for (const lobby of this.lobbies.values()) {
@@ -69,7 +91,7 @@ export class LobbyManager {
     const now = Date.now();
     for (const [id, lobby] of this.lobbies.entries()) {
       if (lobby.expiresAt && now > lobby.expiresAt) {
-        this.lobbies.delete(id);
+        this.deleteLobby(id);
       }
     }
   }
@@ -88,7 +110,7 @@ export class LobbyManager {
     socketId: string;
     isTvMode?: boolean;
   }): { lobby: Lobby | null; error?: string } {
-    const { name, isPrivate, gameId, userProfile, socketId, isTvMode } = params;
+    const { name, gameId, userProfile, socketId, isTvMode } = params;
 
     const gameDef = gameRegistry.get(gameId);
     if (!gameDef) {
@@ -177,13 +199,21 @@ export class LobbyManager {
     }
 
     if (lobby.expiresAt && Date.now() > lobby.expiresAt) {
-      this.lobbies.delete(lobby.id);
+      this.deleteLobby(lobby.id);
       return { lobby: null, error: 'Diese Lobby ist abgelaufen.' };
     }
 
     // Spieler-Reconnect / Refresh
     const existingPlayer = lobby.players.find((p) => p.id === userProfile.id);
     if (existingPlayer) {
+      if (existingPlayer.socketId && existingPlayer.socketId !== socketId) {
+        this.socketToLobby.delete(existingPlayer.socketId);
+      }
+      const timer = this.disconnectTimers.get(existingPlayer.id);
+      if (timer) {
+        clearTimeout(timer);
+        this.disconnectTimers.delete(existingPlayer.id);
+      }
       existingPlayer.socketId = socketId;
       existingPlayer.connected = true;
       existingPlayer.name = userProfile.name;
@@ -434,9 +464,15 @@ export class LobbyManager {
     const leavingPlayer = lobby.players[leavingPlayerIndex];
     const wasHost = leavingPlayer.isHost;
 
+    const existingTimer = this.disconnectTimers.get(leavingPlayer.id);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
+      this.disconnectTimers.delete(leavingPlayer.id);
+    }
+
     // Wenn der Fernseher im TV-Modus die Lobby verlässt, wird die TV-Lobby geschlossen
     if (leavingPlayer.isTvScreen) {
-      this.lobbies.delete(lobbyId);
+      this.deleteLobby(lobbyId);
       return { lobbyId, lobby: null, wasHost: true, deleted: true };
     }
 
@@ -445,7 +481,7 @@ export class LobbyManager {
 
     // Wenn keine Spieler mehr da sind -> Lobby sofort löschen
     if (lobby.players.length === 0) {
-      this.lobbies.delete(lobbyId);
+      this.deleteLobby(lobbyId);
       return { lobbyId, lobby: null, wasHost, deleted: true };
     }
 
@@ -491,6 +527,11 @@ export class LobbyManager {
 
     player.connected = false;
 
+    const oldTimer = this.disconnectTimers.get(player.id);
+    if (oldTimer) {
+      clearTimeout(oldTimer);
+    }
+
     // Grace Period: 45 Sekunden zum Wiederverbinden
     const timer = setTimeout(() => {
       this.disconnectTimers.delete(player.id);
@@ -498,6 +539,7 @@ export class LobbyManager {
         this.leaveCurrentLobby(socketId);
       }
     }, 45000);
+    timer.unref?.();
 
     this.disconnectTimers.set(player.id, timer);
 
@@ -520,6 +562,9 @@ export class LobbyManager {
     for (const lobby of this.lobbies.values()) {
       const player = lobby.players.find((p) => p.id === userId);
       if (player) {
+        if (player.socketId && player.socketId !== socketId) {
+          this.socketToLobby.delete(player.socketId);
+        }
         player.socketId = socketId;
         player.connected = true;
         this.socketToLobby.set(socketId, lobby.id);

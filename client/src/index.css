@@ -2,7 +2,7 @@
 
 @custom-variant landscape (@media (orientation: landscape) and (max-height: 520px));
 
-/* ─── Basis-Regeln für natives iOS-App-Verhalten & globales Crystal-UI Design ─── */
+/* ─── Basis-Regeln für natives App-Verhalten & globales Crystal-UI Design ─── */
 @layer base {
   *, *::before, *::after {
     box-sizing: border-box;
@@ -47,17 +47,17 @@
     max-width: 80rem;
     margin-left: auto;
     margin-right: auto;
-    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-top: calc(0.65rem + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
   }
 
   .app-shell-x {
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
-    scroll-padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    scroll-padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+    scroll-padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    scroll-padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
   }
 
   @media (min-width: 640px) {
@@ -74,62 +74,57 @@
 
   @media (min-width: 1024px) {
     .app-shell {
-      padding-top: calc(1.5rem + env(safe-area-inset-top, 0px));
-      padding-bottom: calc(1.5rem + env(safe-area-inset-bottom, 0px));
+      padding-top: calc(1.25rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(1.25rem + env(safe-area-inset-bottom, 0px));
     }
     .app-shell,
     .app-shell-x {
-      padding-left: max(3rem, env(safe-area-inset-left, 0px));
-      padding-right: max(3rem, env(safe-area-inset-right, 0px));
+      padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+      padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
     }
     .app-shell-x {
-      scroll-padding-left: max(3rem, env(safe-area-inset-left, 0px));
-      scroll-padding-right: max(3rem, env(safe-area-inset-right, 0px));
-    }
-  }
-
-  @media (min-width: 1280px) {
-    .app-shell,
-    .app-shell-x {
-      padding-left: max(4rem, env(safe-area-inset-left, 0px));
-      padding-right: max(4rem, env(safe-area-inset-right, 0px));
-    }
-    .app-shell-x {
-      scroll-padding-left: max(4rem, env(safe-area-inset-left, 0px));
-      scroll-padding-right: max(4rem, env(safe-area-inset-right, 0px));
+      scroll-padding-left: max(2.5rem, env(safe-area-inset-left, 0px));
+      scroll-padding-right: max(2.5rem, env(safe-area-inset-right, 0px));
     }
   }
 
   .safe-screen {
-    padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
-    padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
-    padding-left: max(1rem, env(safe-area-inset-left, 0px));
-    padding-right: max(1rem, env(safe-area-inset-right, 0px));
+    padding-top: calc(0.5rem + env(safe-area-inset-top, 0px));
+    padding-bottom: calc(0.65rem + env(safe-area-inset-bottom, 0px));
+    padding-left: max(0.65rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.65rem, env(safe-area-inset-right, 0px));
+  }
+
+  @media (min-width: 640px) {
+    .safe-screen {
+      padding-top: calc(0.75rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(1rem + env(safe-area-inset-bottom, 0px));
+      padding-left: max(1.25rem, env(safe-area-inset-left, 0px));
+      padding-right: max(1.25rem, env(safe-area-inset-right, 0px));
+    }
   }
 
   @media (orientation: landscape) and (max-height: 540px) {
-    .app-shell {
-      padding-top: calc(0.45rem + env(safe-area-inset-top, 0px));
-      padding-bottom: calc(0.5rem + env(safe-area-inset-bottom, 0px));
+    .app-shell,
+    .safe-screen {
+      padding-top: calc(0.35rem + env(safe-area-inset-top, 0px));
+      padding-bottom: calc(0.35rem + env(safe-area-inset-bottom, 0px));
     }
   }
 }
 
-/* ─── Bei sehr geringer Bildschirmhöhe Elemente noch kompakter halten ─── */
-@media (max-height: 600px) {
-  .game-card-desc {
-    display: none;
-  }
+/* Scrollbar ausblenden für horizontale Karussells & Leisten */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
-/* ─── Auf Touchscreens Pfeile vollständig ausblenden (Wischgeste wird genutzt) ─── */
-@media (pointer: coarse), (hover: none) {
-  .carousel-nav-btn {
-    display: none !important;
-  }
-}
-
-/* Shaking screen effect during blast */
+/* Shaking screen effect bei falschem Tipp */
 @keyframes shakeEffect {
   10%, 90% { transform: translate3d(-3px, 2px, 0); }
   20%, 80% { transform: translate3d(4px, -3px, 0); }
@@ -144,7 +139,7 @@
 @keyframes screenFadeIn {
   from {
     opacity: 0;
-    transform: scale(0.95) translateY(6px);
+    transform: scale(0.96) translateY(5px);
   }
   to {
     opacity: 1;
@@ -152,113 +147,10 @@
   }
 }
 .animate-fade-in {
-  animation: screenFadeIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: screenFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* ─── ProjektBox Crystal Startbildschirm Animationen ─── */
-@keyframes pbSplashLetterPop {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 22px, 0) scale(0.2) rotate(-8deg);
-  }
-  58% {
-    opacity: 1;
-    transform: translate3d(0, -6px, 0) scale(1.14) rotate(2deg);
-  }
-  80% {
-    opacity: 1;
-    transform: translate3d(0, 2px, 0) scale(0.96) rotate(0deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
-  }
-}
-
-@keyframes pbSplashAccentLine {
-  0% {
-    opacity: 0;
-    transform: scaleX(0);
-  }
-  30% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0.9;
-    transform: scaleX(1);
-  }
-}
-
-@keyframes pbSplashBoxChargeBurst {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, -18px, 0) scale(0.45);
-  }
-  20% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-  42% {
-    opacity: 1;
-    transform: translate3d(0, 4px, 0) scale(1.12, 0.84);
-  }
-  52% {
-    opacity: 1;
-    transform: translate3d(-4px, -2px, 0) scale(0.92, 1.1) rotate(-4deg);
-  }
-  60% {
-    opacity: 1;
-    transform: translate3d(4px, 2px, 0) scale(1.16, 0.84) rotate(4deg);
-  }
-  72% {
-    opacity: 1;
-    transform: translate3d(0, -4px, 0) scale(1.38);
-  }
-  88%, 100% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) scale(1.85);
-  }
-}
-
-@keyframes pbSplashLidFly {
-  0%, 62% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) rotate(0deg);
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(0, -64px, 0) rotate(-22deg) scale(0.75);
-  }
-}
-
-@keyframes pbSplashShockwave {
-  0% {
-    opacity: 0;
-    transform: scale(0.2);
-  }
-  18% {
-    opacity: 0.95;
-  }
-  100% {
-    opacity: 0;
-    transform: scale(3.1);
-  }
-}
-
-@keyframes pbSplashParticleBurst {
-  0% {
-    opacity: 0;
-    transform: translate3d(0, 0, 0) scale(0.3) rotate(0deg);
-  }
-  15% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-    transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(0.95) rotate(var(--pr, 90deg));
-  }
-}
-
+/* ProjektBox Crystal Startbildschirm Partikel-Burst */
 @keyframes pbSplashFigureBurst {
   0% {
     opacity: 0;
@@ -282,100 +174,13 @@
   }
 }
 
-.pb-splash-letter {
-  display: inline-block;
-  animation: pbSplashLetterPop 0.62s cubic-bezier(0.22, 1.25, 0.36, 1) both;
-}
-
-.pb-splash-accent-line {
-  transform-origin: center;
-  animation: pbSplashAccentLine 0.55s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.pb-splash-box {
-  animation: pbSplashBoxChargeBurst 1.05s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-}
-
-.pb-splash-lid {
-  transform-box: fill-box;
-  transform-origin: center;
-  animation: pbSplashLidFly 0.95s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.pb-splash-shockwave {
-  animation: pbSplashShockwave 0.78s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
-.pb-splash-particle {
-  animation: pbSplashParticleBurst 0.85s cubic-bezier(0.16, 1, 0.3, 1) both;
-}
-
 .pb-splash-figure {
   animation: pbSplashFigureBurst 1.9s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
-/* ─── Crystal UI Display-Typografie (Exakt wie "DIFFICULTY", "LEVEL 16", "OPTIONS") ─── */
+/* ─── Crystal UI Display-Typografie ("DIFFICULTY", "LEVEL 16", "OPTIONS") ─── */
 .font-arcade {
   font-family: 'Lilita One', 'Fredoka', Impact, 'Arial Black', sans-serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
-}
-
-.arcade-text-shadow {
-  text-shadow: 0 2px 0 rgba(12, 62, 96, 0.65);
-}
-
-.arcade-title-shadow {
-  text-shadow:
-    0 2.5px 0 #0E4D78,
-    0 4px 8px rgba(10, 42, 68, 0.35);
-}
-
-/* Kristall-Schimmer & Float-Animationen */
-@keyframes crystalFloat {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-4px);
-  }
-}
-
-@keyframes crystalShimmer {
-  0%, 100% {
-    opacity: 0.55;
-  }
-  50% {
-    opacity: 0.95;
-  }
-}
-
-@keyframes lockWiggle {
-  0%, 100% {
-    transform: rotate(0deg) scale(1);
-  }
-  20% {
-    transform: rotate(-8deg) scale(1.06);
-  }
-  40% {
-    transform: rotate(8deg) scale(1.06);
-  }
-  60% {
-    transform: rotate(-5deg) scale(1.03);
-  }
-  80% {
-    transform: rotate(4deg) scale(1.01);
-  }
-}
-
-.animate-crystal-float {
-  animation: crystalFloat 4s ease-in-out infinite;
-}
-
-.animate-crystal-shimmer {
-  animation: crystalShimmer 3s ease-in-out infinite;
-}
-
-.animate-lock-wiggle {
-  animation: lockWiggle 0.45s ease-in-out;
 }

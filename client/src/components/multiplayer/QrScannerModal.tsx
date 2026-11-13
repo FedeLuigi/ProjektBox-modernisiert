@@ -30,6 +30,20 @@ export function QrScannerModal({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
 
+  const stopCamera = () => {
+    if (animFrameRef.current) {
+      cancelAnimationFrame(animFrameRef.current);
+      animFrameRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((track) => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
+
   useEffect(() => {
     if (!isOpen) return;
 
@@ -39,6 +53,82 @@ export function QrScannerModal({
     setIsInitializing(true);
 
     let active = true;
+
+    const startScanningLoop = () => {
+      let detector: any = null;
+      if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+        try {
+          detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
+        } catch {
+          detector = null;
+        }
+      }
+
+      const scanFrame = async () => {
+        const video = videoRef.current;
+        if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
+          animFrameRef.current = requestAnimationFrame(scanFrame);
+          return;
+        }
+
+        let detectedCode: string | null = null;
+
+        if (detector) {
+          try {
+            const barcodes = await detector.detect(video);
+            if (barcodes && barcodes.length > 0) {
+              detectedCode = parseLobbyCode(barcodes[0].rawValue);
+            }
+          } catch {
+            detector = null;
+          }
+        }
+
+        if (!detectedCode) {
+          let canvas = canvasRef.current;
+          if (!canvas) {
+            canvas = document.createElement('canvas');
+            canvasRef.current = canvas;
+          }
+
+          const width = video.videoWidth;
+          const height = video.videoHeight;
+          if (width > 0 && height > 0) {
+            canvas.width = Math.min(width, 640);
+            canvas.height = Math.min(height, 480);
+            const ctx = canvas.getContext('2d', { willReadFrequently: true });
+            if (ctx) {
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+              const qrResult = jsQR(imgData.data, canvas.width, canvas.height, {
+                inversionAttempts: 'dontInvert',
+              });
+              if (qrResult && qrResult.data) {
+                detectedCode = parseLobbyCode(qrResult.data);
+              }
+            }
+          }
+        }
+
+        if (detectedCode) {
+          setHasScanned(true);
+          try {
+            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+              navigator.vibrate(25);
+            }
+          } catch {
+            // ignore
+          }
+          stopCamera();
+          onScanSuccess(detectedCode);
+          return;
+        }
+
+        animFrameRef.current = requestAnimationFrame(scanFrame);
+      };
+
+      animFrameRef.current = requestAnimationFrame(scanFrame);
+    };
 
     async function startCamera() {
       try {
@@ -101,97 +191,7 @@ export function QrScannerModal({
       active = false;
       stopCamera();
     };
-  }, [isOpen]);
-
-  const stopCamera = () => {
-    if (animFrameRef.current) {
-      cancelAnimationFrame(animFrameRef.current);
-      animFrameRef.current = null;
-    }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
-    }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-  };
-
-  const startScanningLoop = () => {
-    let detector: any = null;
-    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
-      try {
-        detector = new (window as any).BarcodeDetector({ formats: ['qr_code'] });
-      } catch {
-        detector = null;
-      }
-    }
-
-    const scanFrame = async () => {
-      const video = videoRef.current;
-      if (!video || video.readyState !== video.HAVE_ENOUGH_DATA) {
-        animFrameRef.current = requestAnimationFrame(scanFrame);
-        return;
-      }
-
-      let detectedCode: string | null = null;
-
-      if (detector) {
-        try {
-          const barcodes = await detector.detect(video);
-          if (barcodes && barcodes.length > 0) {
-            detectedCode = parseLobbyCode(barcodes[0].rawValue);
-          }
-        } catch {
-          detector = null;
-        }
-      }
-
-      if (!detectedCode) {
-        let canvas = canvasRef.current;
-        if (!canvas) {
-          canvas = document.createElement('canvas');
-          canvasRef.current = canvas;
-        }
-
-        const width = video.videoWidth;
-        const height = video.videoHeight;
-        if (width > 0 && height > 0) {
-          canvas.width = Math.min(width, 640);
-          canvas.height = Math.min(height, 480);
-          const ctx = canvas.getContext('2d', { willReadFrequently: true });
-          if (ctx) {
-            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-            const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const qrResult = jsQR(imgData.data, canvas.width, canvas.height, {
-              inversionAttempts: 'dontInvert',
-            });
-            if (qrResult && qrResult.data) {
-              detectedCode = parseLobbyCode(qrResult.data);
-            }
-          }
-        }
-      }
-
-      if (detectedCode) {
-        setHasScanned(true);
-        try {
-          if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-            navigator.vibrate(25);
-          }
-        } catch {
-          // ignore
-        }
-        stopCamera();
-        onScanSuccess(detectedCode);
-        return;
-      }
-
-      animFrameRef.current = requestAnimationFrame(scanFrame);
-    };
-
-    animFrameRef.current = requestAnimationFrame(scanFrame);
-  };
+  }, [isOpen, onScanSuccess]);
 
   if (!isOpen) return null;
 
@@ -212,9 +212,9 @@ export function QrScannerModal({
         </span>
       </header>
 
-      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center p-3">
+      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3">
         {errorType !== 'none' ? (
-          <div className="w-full max-w-sm">
+          <div className="my-auto w-full max-w-sm pt-3">
             <CrystalPanel topTabLabel="CAMERA" title="NO CAMERA" contentClassName="gap-4">
               <CameraOff className="h-10 w-10 text-[#15608E]" />
               <p className="text-center text-sm font-bold text-[#15608E]">{errorMessage}</p>
@@ -224,9 +224,9 @@ export function QrScannerModal({
             </CrystalPanel>
           </div>
         ) : (
-          <div className="w-full max-w-sm">
+          <div className="my-auto w-full max-w-sm pt-3">
             <CrystalPanel topTabLabel="SCAN QR" contentClassName="gap-3">
-              <div className="relative w-full aspect-square overflow-hidden border-[4px] border-[#17608E] bg-[#124B70] flex items-center justify-center">
+              <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#17608E] bg-[#124B70] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   className="absolute inset-0 h-full w-full object-cover"

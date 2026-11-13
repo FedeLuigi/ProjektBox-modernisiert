@@ -43,9 +43,9 @@ export function TvJoinModal({
         role="dialog"
         aria-modal="true"
         onClick={onClose}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center p-4 bg-[#103858]/70 backdrop-blur-xs select-none animate-fade-in"
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto p-4 bg-[#103858]/70 backdrop-blur-xs select-none animate-fade-in"
       >
-        <div onClick={(e) => e.stopPropagation()} className="w-full max-w-sm">
+        <div onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-sm pt-3">
           <CrystalPanel topTabLabel="TV JOIN" title="ENTER CODE" contentClassName="gap-4 py-6">
             {errorMessage && (
               <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">

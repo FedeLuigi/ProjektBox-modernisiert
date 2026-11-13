@@ -21,9 +21,10 @@ export default defineConfig({
       manifest: {
         name: 'ProjektBox – Dein Spielplatz',
         short_name: 'ProjektBox',
-        description: 'Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.',
-        theme_color: '#120e1d',
-        background_color: '#120e1d',
+        description:
+          'Entdecke kleine Spiele, probiere Neues aus und finde deinen nächsten Lieblingszeitvertreib.',
+        theme_color: '#3B82B6',
+        background_color: '#3B82B6',
         display: 'fullscreen',
         display_override: ['fullscreen', 'standalone', 'window-controls-overlay'],
         orientation: 'any',
@@ -82,7 +83,7 @@ export default defineConfig({
               cacheName: 'projektbox-static-cache',
               expiration: {
                 maxEntries: 60,
-                maxAgeSeconds: 30 * 24 * 60 * 60, // 30 Tage
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
             },
           },
@@ -93,10 +94,12 @@ export default defineConfig({
       },
     }),
   ],
+  build: {
+    chunkSizeWarningLimit: 650,
+  },
   server: {
     host: true,
     port: 5173,
-    // Proxy leitet /api Anfragen lokal an das Express-Backend (Port 5001) weiter
     proxy: {
       '/api': {
         target: 'http://localhost:5001',

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Check, Copy, Crown } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
-import { getUserProfile } from '../../utils/userProfile';
+import { useUserProfile } from '../../utils/userProfile';
 import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
 import { Avatar } from '../Avatar';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
@@ -36,7 +36,7 @@ export function InLobbyView({
   const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const joinUrl = getLobbyJoinUrl(lobby.code);
 
-  const currentUser = getUserProfile();
+  const currentUser = useUserProfile();
 
   const activePlayers = lobby.isTvMode
     ? lobby.players.filter((p) => !p.isTvScreen)
@@ -178,14 +178,14 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col justify-center min-h-0 overflow-y-auto px-2 py-2">
+      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto px-2 pt-3 pb-2">
         {errorMsg && (
           <div className="font-arcade mb-3 border-[3px] border-[#17608E] bg-[#88D6F8] p-2.5 text-center text-xs text-[#15608E] uppercase">
             {errorMsg}
           </div>
         )}
 
-        <div className="grid w-full items-center gap-5 grid-cols-1 md:grid-cols-[0.9fr_1.1fr]">
+        <div className="my-auto grid w-full items-center gap-5 grid-cols-1 md:grid-cols-[0.9fr_1.1fr]">
           {/* Linkes Kristall-Panel: Beitrittscode & QR-Code */}
           <CrystalPanel topTabLabel="LOBBY CODE" contentClassName="gap-3.5 py-5">
             <div onClick={handleCopyCode} className="cursor-pointer">

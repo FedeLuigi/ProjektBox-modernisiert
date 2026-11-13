@@ -15,28 +15,6 @@ export type Category = 'Alle' | 'Strategie' | 'Denken' | 'Arcade';
 
 export type Tone = 'sunset' | 'indigo' | 'emerald' | 'ocean';
 
-export interface ToneStyle {
-  cardBg: string;
-  cardActiveBg: string;
-  cardRing: string;
-  artBg: string;
-  iconBox: string;
-  badge: string;
-  accentText: string;
-  playBtn: string;
-  dot: string;
-  glow: string;
-  headerBg?: string;
-  unlockedHeaderBg?: string;
-}
-
-export type ArtVariant =
-  | 'jungleSunset'
-  | 'mountainFlight'
-  | 'nightParty'
-  | 'palmBeach'
-  | 'cyberLagoon';
-
 export interface Game {
   id: string;
   title: string;
@@ -48,111 +26,22 @@ export interface Game {
   duration: string;
   icon: LucideIcon;
   tone: Tone;
-  episodeLines?: [string, string];
-  artVariant?: ArtVariant;
-  starsEarned?: number;
-  starsTotal?: number;
-  defaultUnlocked?: boolean;
+  starsEarned: number;
+  starsTotal: number;
+  defaultScore: number;
+  defaultReward: number;
   unlockCost?: number;
 }
 
 export const CATEGORIES: Category[] = ['Alle', 'Strategie', 'Denken', 'Arcade'];
 
-export const TONE_STYLES: Record<Tone, ToneStyle> = {
-  sunset: {
-    headerBg: '#549390',
-    unlockedHeaderBg: '#549390',
-    cardBg:
-      'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
-    cardActiveBg:
-      'bg-gradient-to-br from-white via-[#FFF7F3] to-[#FFEDE5] dark:from-[#241A1D] dark:via-[#1E171B] dark:to-[#18151A]',
-    cardRing:
-      'ring-2 ring-[#F97316] dark:ring-[#FB923C] shadow-[0_14px_34px_-8px_rgba(249,115,22,0.22)]',
-    artBg:
-      'bg-gradient-to-br from-[#FFEDD5] via-[#FED7AA] to-[#FBCFE8] dark:from-[#43202A] dark:via-[#361C28] dark:to-[#271824]',
-    iconBox:
-      'bg-white/90 text-[#EA580C] dark:bg-white/15 dark:text-[#FDBA74] shadow-xs',
-    badge:
-      'bg-[#FFF0E6] text-[#C2410C] dark:bg-[#F97316]/15 dark:text-[#FDBA74]',
-    accentText: 'text-[#EA580C] dark:text-[#FB923C]',
-    playBtn:
-      'bg-[#EA580C] text-white hover:bg-[#D94E07] dark:bg-[#FB923C] dark:text-[#18181B]',
-    dot: 'bg-[#F97316] dark:bg-[#FB923C]',
-    glow: 'bg-orange-400/25 dark:bg-orange-500/20',
-  },
-  indigo: {
-    headerBg: '#4C538E',
-    unlockedHeaderBg: '#5A489C',
-    cardBg:
-      'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
-    cardActiveBg:
-      'bg-gradient-to-br from-white via-[#F7F5FF] to-[#EDE9FE] dark:from-[#1F1B33] dark:via-[#1A1829] dark:to-[#161521]',
-    cardRing:
-      'ring-2 ring-[#7C3AED] dark:ring-[#A78BFA] shadow-[0_14px_34px_-8px_rgba(124,58,237,0.22)]',
-    artBg:
-      'bg-gradient-to-br from-[#E0E7FF] via-[#DDD6FE] to-[#F3E8FF] dark:from-[#2E2352] dark:via-[#251E42] dark:to-[#1C1833]',
-    iconBox:
-      'bg-white/90 text-[#6D28D9] dark:bg-white/15 dark:text-[#C4B5FD] shadow-xs',
-    badge:
-      'bg-[#F3EFFE] text-[#6D28D9] dark:bg-[#8B5CF6]/15 dark:text-[#C4B5FD]',
-    accentText: 'text-[#7C3AED] dark:text-[#A78BFA]',
-    playBtn:
-      'bg-[#7C3AED] text-white hover:bg-[#6D28D9] dark:bg-[#A78BFA] dark:text-[#18181B]',
-    dot: 'bg-[#7C3AED] dark:bg-[#A78BFA]',
-    glow: 'bg-violet-400/25 dark:bg-violet-500/20',
-  },
-  emerald: {
-    headerBg: '#272F66',
-    unlockedHeaderBg: '#2A7B6F',
-    cardBg:
-      'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
-    cardActiveBg:
-      'bg-gradient-to-br from-white via-[#F2FDF8] to-[#DCFCE7] dark:from-[#162923] dark:via-[#14221E] dark:to-[#131B19]',
-    cardRing:
-      'ring-2 ring-[#10B981] dark:ring-[#34D399] shadow-[0_14px_34px_-8px_rgba(16,185,129,0.22)]',
-    artBg:
-      'bg-gradient-to-br from-[#D1FAE5] via-[#A7F3D0] to-[#CCFBF1] dark:from-[#163B30] dark:via-[#133028] dark:to-[#112420]',
-    iconBox:
-      'bg-white/90 text-[#059669] dark:bg-white/15 dark:text-[#6EE7B7] shadow-xs',
-    badge:
-      'bg-[#E6FAEE] text-[#047857] dark:bg-[#10B981]/15 dark:text-[#6EE7B7]',
-    accentText: 'text-[#059669] dark:text-[#34D399]',
-    playBtn:
-      'bg-[#059669] text-white hover:bg-[#047857] dark:bg-[#34D399] dark:text-[#18181B]',
-    dot: 'bg-[#10B981] dark:bg-[#34D399]',
-    glow: 'bg-emerald-400/25 dark:bg-emerald-500/20',
-  },
-  ocean: {
-    headerBg: '#37407A',
-    unlockedHeaderBg: '#2B79A8',
-    cardBg:
-      'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
-    cardActiveBg:
-      'bg-gradient-to-br from-white via-[#F2F9FF] to-[#E0F2FE] dark:from-[#172536] dark:via-[#151F2C] dark:to-[#131922]',
-    cardRing:
-      'ring-2 ring-[#0284C7] dark:ring-[#38BDF8] shadow-[0_14px_34px_-8px_rgba(2,132,199,0.22)]',
-    artBg:
-      'bg-gradient-to-br from-[#E0F2FE] via-[#BAE6FD] to-[#E0E7FF] dark:from-[#1B3552] dark:via-[#172B42] dark:to-[#142033]',
-    iconBox:
-      'bg-white/90 text-[#0284C7] dark:bg-white/15 dark:text-[#7DD3FC] shadow-xs',
-    badge:
-      'bg-[#E6F4FE] text-[#0369A1] dark:bg-[#0EA5E9]/15 dark:text-[#7DD3FC]',
-    accentText: 'text-[#0284C7] dark:text-[#38BDF8]',
-    playBtn:
-      'bg-[#0284C7] text-white hover:bg-[#0369A1] dark:bg-[#38BDF8] dark:text-[#18181B]',
-    dot: 'bg-[#0284C7] dark:bg-[#38BDF8]',
-    glow: 'bg-sky-400/25 dark:bg-sky-500/20',
-  },
-};
-
 export const GAMES: Game[] = [
   {
     id: 'memory',
-    episodeLines: ['HOT', 'PURSUIT'],
     title: 'Insel-Memory',
     subtitle: 'Gedächtnis & Fokus',
     description:
-      'Finde die verdeckten Tropen-Paare im Sonnenuntergang in möglichst wenigen Zügen und trainiere dein Gedächtnis.',
+      'Finde die verdeckten Paare in möglichst wenigen Zügen und trainiere dein Gedächtnis.',
     howToPlay:
       'Decke pro Zug zwei Karten auf. Stimmen die Symbole überein, bleiben sie offen.',
     category: 'Denken',
@@ -160,15 +49,14 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Brain,
     tone: 'sunset',
-    artVariant: 'jungleSunset',
     starsEarned: 22,
     starsTotal: 135,
-    defaultUnlocked: true,
+    defaultScore: 25873,
+    defaultReward: 63581,
     unlockCost: 0,
   },
   {
     id: 'connect',
-    episodeLines: ['WHEN', 'CUBES FLY'],
     title: 'Vier gewinnt',
     subtitle: 'Taktisches Duell',
     description:
@@ -180,15 +68,14 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Grid2X2,
     tone: 'indigo',
-    artVariant: 'mountainFlight',
     starsEarned: 45,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 19420,
+    defaultReward: 48200,
     unlockCost: 20,
   },
   {
     id: 'reaction',
-    episodeLines: ['PARTY', 'CRASHERS'],
     title: 'Reaktions-Test',
     subtitle: 'Reflex-Challenge',
     description:
@@ -200,15 +87,14 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Zap,
     tone: 'emerald',
-    artVariant: 'nightParty',
     starsEarned: 33,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 31050,
+    defaultReward: 75400,
     unlockCost: 20,
   },
   {
     id: 'tic-tac-toe',
-    episodeLines: ['BACON', 'BEACH'],
     title: 'Tic Tac Toe',
     subtitle: 'Schneller Klassiker',
     description:
@@ -220,15 +106,14 @@ export const GAMES: Game[] = [
     duration: '3 Min.',
     icon: Puzzle,
     tone: 'ocean',
-    artVariant: 'palmBeach',
     starsEarned: 54,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 14890,
+    defaultReward: 32150,
     unlockCost: 20,
   },
   {
     id: 'draw-and-guess',
-    episodeLines: ['SECRET', 'CANVAS'],
     title: 'Zeichnen & Raten',
     subtitle: 'Kreatives Montagsmaler',
     description:
@@ -240,15 +125,14 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Palette,
     tone: 'sunset',
-    artVariant: 'cyberLagoon',
     starsEarned: 18,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 22500,
+    defaultReward: 54000,
     unlockCost: 20,
   },
   {
     id: 'snake',
-    episodeLines: ['RETRO', 'GLIDE'],
     title: 'Snake',
     subtitle: 'Retro Wurm-Jagd',
     description:
@@ -260,15 +144,14 @@ export const GAMES: Game[] = [
     duration: '3 Min.',
     icon: Flame,
     tone: 'emerald',
-    artVariant: 'jungleSunset',
     starsEarned: 15,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 28640,
+    defaultReward: 59300,
     unlockCost: 20,
   },
   {
     id: '2048',
-    episodeLines: ['NUMBER', 'BLAST'],
     title: '2048',
     subtitle: 'Zahlenrausch',
     description:
@@ -280,15 +163,14 @@ export const GAMES: Game[] = [
     duration: '8 Min.',
     icon: Gamepad2,
     tone: 'sunset',
-    artVariant: 'mountainFlight',
     starsEarned: 28,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 42048,
+    defaultReward: 88500,
     unlockCost: 20,
   },
   {
     id: 'minesweeper',
-    episodeLines: ['DANGER', 'ZONE'],
     title: 'Minenfeld',
     subtitle: 'Logik & Spürsinn',
     description:
@@ -300,15 +182,14 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Bomb,
     tone: 'indigo',
-    artVariant: 'nightParty',
     starsEarned: 10,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 17320,
+    defaultReward: 41900,
     unlockCost: 20,
   },
   {
     id: 'space-dodge',
-    episodeLines: ['COSMIC', 'DRIFT'],
     title: 'Space Dodge',
     subtitle: 'Galaxy Überleben',
     description:
@@ -320,10 +201,10 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Rocket,
     tone: 'ocean',
-    artVariant: 'palmBeach',
     starsEarned: 12,
     starsTotal: 135,
-    defaultUnlocked: false,
+    defaultScore: 36910,
+    defaultReward: 69800,
     unlockCost: 20,
   },
 ];

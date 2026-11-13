@@ -20,7 +20,7 @@ import {
 import { CrystalButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
-import { getUserProfile } from './utils/userProfile';
+import { STORAGE_KEYS, useUserProfile } from './utils/userProfile';
 import { socketService } from './services/socket';
 import { parseLobbyCode } from './utils/qrCodeHelper';
 import type { Lobby } from './types/multiplayer';
@@ -31,6 +31,8 @@ interface BeforeInstallPromptEvent extends Event {
 }
 
 export function App() {
+  const userProfile = useUserProfile();
+
   const initialDeepLinkCode = useMemo(() => {
     if (typeof window === 'undefined') return null;
     return parseLobbyCode(window.location.href);
@@ -64,7 +66,7 @@ export function App() {
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
-      const saved = localStorage.getItem('projektbox_sound_enabled');
+      const saved = localStorage.getItem(STORAGE_KEYS.SOUND_ENABLED);
       return saved !== null ? saved === 'true' : true;
     } catch {
       return true;
@@ -73,7 +75,7 @@ export function App() {
 
   const [vibrationEnabled, setVibrationEnabled] = useState(() => {
     try {
-      const saved = localStorage.getItem('projektbox_vibration_enabled');
+      const saved = localStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
       return saved !== null ? saved === 'true' : true;
     } catch {
       return true;
@@ -109,7 +111,11 @@ export function App() {
   const handleToggleSound = (enabled: boolean) => {
     triggerHaptic();
     setSoundEnabled(enabled);
-    localStorage.setItem('projektbox_sound_enabled', String(enabled));
+    try {
+      localStorage.setItem(STORAGE_KEYS.SOUND_ENABLED, String(enabled));
+    } catch {
+      // ignore
+    }
   };
 
   const handleToggleVibration = (enabled: boolean) => {
@@ -123,7 +129,11 @@ export function App() {
       }
     }
     setVibrationEnabled(enabled);
-    localStorage.setItem('projektbox_vibration_enabled', String(enabled));
+    try {
+      localStorage.setItem(STORAGE_KEYS.VIBRATION_ENABLED, String(enabled));
+    } catch {
+      // ignore
+    }
   };
 
   const scrollToCardIndex = useCallback((idx: number) => {
@@ -201,7 +211,7 @@ export function App() {
     setCategory('Alle');
   };
 
-  const joinByCode = async (code: string) => {
+  const joinByCode = useCallback(async (code: string) => {
     const cleanCode = code.trim().toUpperCase();
     if (!cleanCode) return;
 
@@ -224,11 +234,9 @@ export function App() {
     } finally {
       setIsJoiningLobby(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
-    getUserProfile();
-
     const checkDeepLink = () => {
       const code = parseLobbyCode(window.location.href);
       if (code && !multiplayerGame) {
@@ -239,7 +247,7 @@ export function App() {
     checkDeepLink();
     window.addEventListener('popstate', checkDeepLink);
     return () => window.removeEventListener('popstate', checkDeepLink);
-  }, []);
+  }, [joinByCode, multiplayerGame]);
 
   useEffect(() => {
     const preventZoom = (e: TouchEvent) => {
@@ -342,14 +350,6 @@ export function App() {
     isPointerDown.current = false;
   };
 
-  const profileName = useMemo(() => {
-    try {
-      return getUserProfile().name;
-    } catch {
-      return 'PLAYER 1';
-    }
-  }, [showSettings]);
-
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#3B82B6] text-[#15608E] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
@@ -375,8 +375,8 @@ export function App() {
       {/* ─── 2. Haupt-HUD & Crystal-Bühne ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
         {/* ═══ OBERE LEISTE: Stern- & Münz-Leisten links • PROJEKT BOX Mitte • Spieler & Icon-Buttons rechts ═══ */}
-        <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-3 pt-0.5">
-          {/* Links: Stern- & Münz-Fortschrittsleisten (exakt wie im Referenzbild) */}
+        <header className="relative z-30 flex shrink-0 items-center justify-between gap-1.5 sm:gap-2 px-1 sm:px-2 pt-0.5">
+          {/* Links: Stern- & Münz-Fortschrittsleisten */}
           <div className="shrink-0">
             <CoinCounterPill
               coins={coins}
@@ -389,12 +389,12 @@ export function App() {
           </div>
 
           {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
-          <div className="mx-auto hidden md:block">
+          <div className="mx-auto hidden lg:block">
             <ArcadeLogoHeader />
           </div>
 
           {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen & Menü Icon-Buttons */}
-          <div className="shrink-0 flex items-center gap-2">
+          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
             <CrystalButton
               size="sm"
               tilt="right"
@@ -408,7 +408,7 @@ export function App() {
             </CrystalButton>
 
             <PlayerProfileBar
-              playerName={profileName}
+              playerName={userProfile.name}
               activeCategory={category}
               onOpenSettings={() => {
                 triggerHaptic();
@@ -426,7 +426,6 @@ export function App() {
         <div className="relative flex flex-1 min-h-0 w-full items-center justify-between gap-3 sm:gap-5 pt-1 pb-1">
           {/* ─── LINKE SPALTE (wie linke & obere rechte Seite des Referenzbildes) ─── */}
           <aside className="relative z-20 hidden lg:flex h-full shrink-0 flex-col justify-center gap-4 pl-2 w-[265px]">
-            {/* Die 6 quadratischen Icon-Buttons (||, ↻, ▶, ⚙, ■, ≡) wie oben links im Referenzbild */}
             <div className="flex flex-col items-center gap-2.5">
               <CrystalQuickIconGrid
                 onPlayRandom={() => {
@@ -454,7 +453,6 @@ export function App() {
               />
             </div>
 
-            {/* "DIFFICULTY" / "MODUS" Kristall-Panel mit "EASY / NORMAL / HARD" gestylten Kategorie-Buttons */}
             <CrystalPanel title="MODUS" contentClassName="gap-2.5 py-4 px-4">
               {CATEGORIES.map((cat, idx) => (
                 <CrystalButton
@@ -478,7 +476,7 @@ export function App() {
           {/* ─── HAUPT-BÜHNE: Horizontale Reihe der "LEVEL 16" Kristall-Spielkarten ─── */}
           <main className="relative flex h-full flex-1 min-w-0 flex-col justify-center">
             {/* Kompakte Kategorie-Buttons für Mobile / Tablet oberhalb der Karten */}
-            <div className="mb-2 flex lg:hidden items-center justify-center gap-2 overflow-x-auto px-2 py-1 no-scrollbar">
+            <div className="mb-1.5 landscape:mb-0.5 flex lg:hidden items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto px-2 py-0.5 no-scrollbar shrink-0">
               {CATEGORIES.map((cat, idx) => (
                 <CrystalButton
                   key={cat}
@@ -503,7 +501,7 @@ export function App() {
               onPointerMove={onPointerMoveStrip}
               onPointerUp={onPointerUpStrip}
               onPointerCancel={onPointerUpStrip}
-              className="no-scrollbar relative z-10 flex w-full items-center gap-4 sm:gap-6 overflow-x-auto px-4 sm:px-6 py-5 scroll-smooth"
+              className="no-scrollbar relative z-10 flex w-full items-center gap-3.5 sm:gap-6 overflow-x-auto px-3 sm:px-6 py-3 sm:py-5 landscape:py-1.5 scroll-smooth"
             >
               {games.map((game, index) => {
                 const isUnlocked = unlockedIds.includes(game.id);
@@ -530,8 +528,8 @@ export function App() {
               })}
             </div>
 
-            {/* Untere Schnell-Steuerleiste (wie "EXIT / REPLAY / HOME / RESUME / PLAY / CONTINUE" im Referenzbild) */}
-            <div className="mt-1 flex items-center justify-center gap-2.5 sm:gap-4 px-3">
+            {/* Untere Schnell-Steuerleiste (im flachen Smartphone-Querformat ausgeblendet, da die Karten direkt antippbar sind) */}
+            <div className="mt-1 landscape:hidden flex items-center justify-center gap-2 sm:gap-4 px-2 shrink-0">
               <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handlePrev}>
                 PREV
               </CrystalButton>

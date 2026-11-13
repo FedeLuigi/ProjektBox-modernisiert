@@ -77,12 +77,12 @@ export function AvatarCustomizerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center p-3 sm:p-4 bg-[#103858]/70 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-[#103858]/70 backdrop-blur-xs animate-fade-in select-none"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-lg max-h-[92dvh] flex flex-col"
+        className="my-auto w-full max-w-lg pt-3 flex flex-col"
       >
         <CrystalPanel topTabLabel="AVATAR" contentClassName="w-full gap-3 p-4 sm:p-5">
           {/* Vorschau + Würfel-Icon-Button */}

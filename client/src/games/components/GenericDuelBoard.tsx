@@ -1,9 +1,8 @@
 import { Flag, Sparkles, Swords, Zap } from 'lucide-react';
 import type { GameRendererProps } from '../types';
-import { getGameTheme } from '../../styles/uiTokens';
+import { CrystalButton, CrystalPanel, CrystalReadout } from '../../components/CrystalUI';
 
 export function GenericDuelBoard({
-  gameId,
   gameState,
   myPlayer,
   opponent,
@@ -13,14 +12,14 @@ export function GenericDuelBoard({
   onMove,
   disabled,
 }: GameRendererProps) {
-  const theme = getGameTheme(gameId || gameState?.gameId);
   const scores = gameState?.scores || {};
   const myScore = scores[myPlayer.id] || 0;
   const oppScore = opponent ? scores[opponent.id] || 0 : 0;
   const soloMode = Boolean(isSolo || !opponent);
+  const canAct = (soloMode || isMyTurn) && !isGameOver && !disabled;
 
   const handleAction = () => {
-    if ((!soloMode && !isMyTurn) || isGameOver || disabled) return;
+    if (!canAct) return;
     onMove({ score: 1, timestamp: Date.now() });
   };
 
@@ -30,105 +29,96 @@ export function GenericDuelBoard({
   };
 
   return (
-    <div className="flex flex-col landscape:grid landscape:grid-cols-[1fr_auto] landscape:items-center landscape:gap-6 items-center justify-between p-6 landscape:p-5 rounded-3xl bg-[#12121A]/90 ring-1 ring-white/15 shadow-2xl backdrop-blur-xl w-80 max-w-full landscape:w-full landscape:max-w-lg">
-      {/* ─── Linke Spalte im Querformat: Punktestand & Status ─── */}
-      <div className="w-full flex flex-col items-center landscape:items-stretch">
-        {soloMode ? (
-          <div className="w-full flex flex-col items-center py-3 px-4 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 mb-5 landscape:mb-3">
-            <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider">
-              Punktestand
-            </span>
-            <span className={`text-3xl font-black mt-0.5 tabular-nums ${theme.accentText}`}>
-              {myScore}
-            </span>
-          </div>
-        ) : (
-          <div className="w-full flex items-center justify-around py-3 px-4 rounded-2xl bg-white/[0.04] ring-1 ring-white/10 mb-6 landscape:mb-2">
-            <div className="flex flex-col items-center">
-              <span className={`text-[11px] font-bold ${theme.accentIcon} truncate max-w-[90px]`}>
-                {myPlayer.name} (Du)
-              </span>
-              <span className="text-2xl font-black text-white mt-0.5">{myScore}</span>
+    <div className="w-full max-w-sm landscape:max-w-lg">
+      <CrystalPanel
+        title={soloMode ? 'SOLO CHALLENGE' : 'CRYSTAL DUEL'}
+        contentClassName="flex flex-col landscape:grid landscape:grid-cols-[1fr_auto] landscape:items-center landscape:gap-6 items-center justify-between gap-4 py-5 px-5"
+      >
+        {/* Linke Spalte im Querformat: Punktestand & Status */}
+        <div className="w-full flex flex-col items-center landscape:items-stretch gap-3">
+          {soloMode ? (
+            <CrystalReadout label="SCORE" value={myScore} />
+          ) : (
+            <div className="w-full flex items-center justify-around py-3 px-3 bg-[#B8ECFD]/85 border-[3px] border-[#17608E] shadow-[inset_0_2px_0_#E6F8FF]">
+              <div className="flex flex-col items-center min-w-0">
+                <span className="font-arcade text-xs text-[#15608E] truncate max-w-[90px] uppercase">
+                  {myPlayer.name}
+                </span>
+                <span className="font-arcade text-2xl text-[#0E4D78] mt-0.5">{myScore}</span>
+              </div>
+
+              <div className="flex flex-col items-center px-2 text-[#17689A]">
+                <Swords className="h-5 w-5" />
+                <span className="font-arcade text-[10px] uppercase tracking-wider mt-0.5">
+                  VS
+                </span>
+              </div>
+
+              <div className="flex flex-col items-center min-w-0">
+                <span className="font-arcade text-xs text-[#17689A] truncate max-w-[90px] uppercase">
+                  {opponent?.name || 'OPPONENT'}
+                </span>
+                <span className="font-arcade text-2xl text-[#0E4D78] mt-0.5">{oppScore}</span>
+              </div>
             </div>
+          )}
 
-            <div className="flex flex-col items-center px-2">
-              <Swords className="h-5 w-5 text-[#8E8E93]" />
-              <span className="text-[10px] font-bold text-[#8E8E93] uppercase tracking-wider mt-0.5">
-                VS
-              </span>
+          {!soloMode && (
+            <p className="hidden landscape:block font-arcade text-xs text-[#15608E] text-center uppercase">
+              {isMyTurn ? 'YOUR TURN!' : `WAITING FOR ${opponent?.name || 'OPPONENT'}...`}
+            </p>
+          )}
+
+          {soloMode && (
+            <div className="hidden landscape:block">
+              <CrystalButton size="sm" variant="secondary" fullWidth onClick={handleFinishSolo}>
+                <Flag className="h-3.5 w-3.5" />
+                <span>FINISH</span>
+              </CrystalButton>
             </div>
+          )}
+        </div>
 
-            <div className="flex flex-col items-center">
-              <span className={`text-[11px] font-bold ${theme.secondaryAccentText} truncate max-w-[90px]`}>
-                {opponent?.name || 'Gegner'}
-              </span>
-              <span className="text-2xl font-black text-white mt-0.5">{oppScore}</span>
-            </div>
-          </div>
-        )}
-
-        {!soloMode && (
-          <p className="hidden landscape:block mt-1 text-xs font-semibold text-[#8E8E93] text-center">
-            {isMyTurn
-              ? 'Du bist am Zug!'
-              : `Warte auf ${opponent?.name || 'Mitspieler'}...`}
-          </p>
-        )}
-
-        {soloMode && (
+        {/* Interaktions-Button */}
+        <div className="flex flex-col items-center my-1 landscape:my-0">
           <button
             type="button"
-            onClick={handleFinishSolo}
-            className="hidden landscape:inline-flex items-center justify-center gap-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] px-4 py-2 text-xs font-bold text-white ring-1 ring-white/12 transition-all active:scale-95 cursor-pointer"
+            disabled={!canAct}
+            onClick={handleAction}
+            className={`h-28 w-28 landscape:h-24 landscape:w-24 flex flex-col items-center justify-center gap-1.5 font-arcade uppercase tracking-wide transition-all border-[4px] active:scale-95 ${
+              canAct
+                ? 'bg-[#2B9FD6] hover:bg-[#38ACE0] text-white border-[#0E5A8A] shadow-[inset_0_3px_0_#8AD8F8,0_6px_0_rgba(14,62,96,0.45)] cursor-pointer hover:scale-105'
+                : 'bg-[#74BCE0]/60 text-[#15608E]/50 border-[#17608E]/60 cursor-not-allowed opacity-70'
+            }`}
+            style={{ clipPath: 'polygon(6% 0%, 96% 4%, 100% 94%, 0% 100%)' }}
           >
-            <Flag className="h-3.5 w-3.5" />
-            <span>Runde beenden</span>
+            <Zap className="h-7 w-7 fill-current" />
+            <span className="text-xs">
+              {soloMode ? '+1 SCORE' : isMyTurn ? 'STRIKE' : 'WAIT...'}
+            </span>
           </button>
-        )}
-      </div>
 
-      {/* ─── Interaktions-Button ─── */}
-      <div className="flex flex-col items-center my-3 landscape:my-0">
-        <button
-          type="button"
-          disabled={(!soloMode && !isMyTurn) || isGameOver || disabled}
-          onClick={handleAction}
-          className={`h-28 w-28 landscape:h-24 landscape:w-24 rounded-full flex flex-col items-center justify-center gap-1.5 font-extrabold tracking-wide transition-all shadow-xl active:scale-95 ${
-            (soloMode || isMyTurn) && !isGameOver && !disabled
-              ? theme.actionOrb
-              : 'bg-white/10 text-white/40 ring-2 ring-white/10 cursor-not-allowed opacity-60'
-          }`}
-        >
-          <Zap className="h-7 w-7 fill-current" />
-          <span className="text-xs uppercase font-black">
-            {soloMode ? '+1 Punkt' : isMyTurn ? 'Zug machen' : 'Warten...'}
-          </span>
-        </button>
-
-        {!soloMode && (
-          <p className="mt-4 landscape:hidden text-xs font-semibold text-[#8E8E93] text-center">
-            {isMyTurn
-              ? 'Du bist am Zug!'
-              : `Warte auf ${opponent?.name || 'Mitspieler'}...`}
-          </p>
-        )}
-      </div>
-
-      {soloMode ? (
-        <button
-          type="button"
-          onClick={handleFinishSolo}
-          className="mt-3 landscape:hidden inline-flex items-center gap-1.5 rounded-full bg-white/[0.08] hover:bg-white/[0.14] px-4 py-2 text-xs font-bold text-white ring-1 ring-white/12 transition-all active:scale-95 cursor-pointer"
-        >
-          <Flag className="h-3.5 w-3.5" />
-          <span>Runde beenden</span>
-        </button>
-      ) : (
-        <div className={`w-full pt-4 mt-2 border-t border-white/10 landscape:hidden flex items-center justify-center gap-1.5 text-[11px] ${theme.accentText} font-medium`}>
-          <Sparkles className="h-3.5 w-3.5" />
-          <span>Echtzeit-Synchronisation aktiv</span>
+          {!soloMode && (
+            <p className="mt-3 landscape:hidden font-arcade text-xs text-[#15608E] text-center uppercase">
+              {isMyTurn ? 'YOUR TURN!' : `WAITING FOR ${opponent?.name || 'OPPONENT'}...`}
+            </p>
+          )}
         </div>
-      )}
+
+        {soloMode ? (
+          <div className="w-full landscape:hidden">
+            <CrystalButton size="sm" variant="secondary" fullWidth onClick={handleFinishSolo}>
+              <Flag className="h-3.5 w-3.5" />
+              <span>FINISH</span>
+            </CrystalButton>
+          </div>
+        ) : (
+          <div className="w-full pt-2 border-t-2 border-[#66C4EE] landscape:hidden flex items-center justify-center gap-1.5 font-arcade text-[11px] text-[#15608E] uppercase">
+            <Sparkles className="h-3.5 w-3.5" />
+            <span>LIVE SYNC ACTIVE</span>
+          </div>
+        )}
+      </CrystalPanel>
     </div>
   );
 }

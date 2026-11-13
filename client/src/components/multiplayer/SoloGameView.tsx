@@ -1,6 +1,6 @@
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Game } from '../../data/games';
-import { getUserProfile } from '../../utils/userProfile';
+import { useUserProfile } from '../../utils/userProfile';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import {
@@ -18,15 +18,20 @@ interface SoloGameViewProps {
 }
 
 export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
-  const currentUser = getUserProfile();
+  const currentUser = useUserProfile();
   const BoardComponent = clientGameRegistry.get(game.id);
 
   const [roundId, setRoundId] = useState(1);
   const [score, setScore] = useState(0);
+  const scoreRef = useRef(0);
   const [resultLabel, setResultLabel] = useState<string | undefined>(undefined);
   const [isFinished, setIsFinished] = useState(false);
   const [bestScore, setBestScore] = useState<number | null>(() => getSoloHighscore(game.id));
   const [isNewRecord, setIsNewRecord] = useState(false);
+
+  useEffect(() => {
+    scoreRef.current = score;
+  }, [score]);
 
   const handleSoloMove = useCallback(
     (moveData: any) => {
@@ -34,7 +39,8 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
         const nextScore =
           moveData?.finish || moveData?.isAbsolute
             ? moveData.score
-            : score + moveData.score;
+            : scoreRef.current + moveData.score;
+        scoreRef.current = nextScore;
         setScore(nextScore);
 
         if (moveData?.finish) {
@@ -55,7 +61,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
       } else if (moveData?.finish) {
         const { bestScore: updatedBest, isNewRecord: newRec } = saveSoloHighscore(
           game.id,
-          score
+          scoreRef.current
         );
         setBestScore(updatedBest);
         setIsNewRecord(newRec);
@@ -63,11 +69,12 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
         setIsFinished(true);
       }
     },
-    [game.id, score]
+    [game.id]
   );
 
   const handlePlayAgain = () => {
     setRoundId((r) => r + 1);
+    scoreRef.current = 0;
     setScore(0);
     setResultLabel(undefined);
     setIsFinished(false);
@@ -128,7 +135,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
 
         {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SOLO-SPIELFELD */}
         {isFinished ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4">
             <SoloResultCard
               gameId={game.id}
               score={score}
@@ -140,7 +147,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
             />
           </main>
         ) : (
-          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center p-2 sm:p-3">
+          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center overflow-y-auto p-1.5 sm:p-3">
             <BoardComponent
               key={roundId}
               gameId={game.id}

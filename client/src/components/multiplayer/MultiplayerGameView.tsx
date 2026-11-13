@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { WifiOff } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
-import { getUserProfile } from '../../utils/userProfile';
+import { useUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry, isSoloGame } from '../../games/registry';
@@ -36,7 +36,7 @@ export function MultiplayerGameView({
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
 
-  const currentUser = getUserProfile();
+  const currentUser = useUserProfile();
   const activePlayers = lobby.isTvMode
     ? lobby.players.filter((p) => !p.isTvScreen)
     : lobby.players;
@@ -208,7 +208,7 @@ export function MultiplayerGameView({
 
         {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SPIELFELD */}
         {isGameOver ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-4">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4">
             {soloMode ? (
               <SoloResultCard
                 gameId={lobby.gameId}
@@ -221,7 +221,7 @@ export function MultiplayerGameView({
                 onExit={onLeave}
               />
             ) : (
-              <div className="w-full max-w-sm animate-fade-in">
+              <div className="my-auto w-full max-w-sm animate-fade-in">
                 <CrystalPanel
                   stars={isWinner ? 3 : isDraw ? 2 : 1}
                   title={isWinner ? 'VICTORY!' : isDraw ? 'DRAW!' : 'GAME OVER'}
@@ -266,10 +266,10 @@ export function MultiplayerGameView({
           </main>
         ) : (
           <main
-            className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center ${
+            className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto ${
               lobby.gameId === 'draw-and-guess'
                 ? 'max-w-2xl landscape:max-w-5xl p-1.5 sm:p-2'
-                : 'max-w-md landscape:max-w-5xl p-2 sm:p-3'
+                : 'max-w-md landscape:max-w-5xl p-1.5 sm:p-3'
             }`}
           >
             {BoardComponent && myPlayer ? (

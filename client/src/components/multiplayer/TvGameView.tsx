@@ -102,8 +102,8 @@ export function TvGameView({
         className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-6 sm:px-12 lg:px-16 max-w-[1600px] mx-auto"
       >
         {/* 1. CRYSTAL TV HEADER */}
-        <header className="flex shrink-0 items-center justify-between pb-3">
-          <div className="flex items-center gap-3">
+        <header className="flex flex-wrap shrink-0 items-center justify-between gap-2 pb-2 sm:pb-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <CrystalButton size="sm" tilt="left" onClick={onLeave}>
               EXIT TV
             </CrystalButton>
@@ -111,7 +111,7 @@ export function TvGameView({
           </div>
 
           {isDrawAndGuess && !isGameOver && (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 sm:gap-3">
               {!isRoundOver && (
                 <CrystalReadout
                   label={gameState?.categoryName || 'WORD'}
@@ -121,7 +121,7 @@ export function TvGameView({
             </div>
           )}
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             {isDrawAndGuess && !isGameOver && !isRoundOver && (
               <CrystalStatBar type="star" value={`${timeLeft}S`} />
             )}
@@ -131,9 +131,9 @@ export function TvGameView({
 
         {/* 2. MITTE: TV-BÜHNE */}
         {isDrawAndGuess ? (
-          <main className="my-auto flex flex-1 items-center justify-between gap-6 lg:gap-10 py-2 w-full">
+          <main className="my-auto flex flex-1 min-h-0 flex-col lg:flex-row items-center justify-between gap-4 lg:gap-10 overflow-y-auto py-2 w-full">
             {/* Linke Spalte: Spieler & Punkte */}
-            <div className="w-64 lg:w-72 shrink-0">
+            <div className="w-full max-w-md lg:w-72 shrink-0">
               <CrystalPanel title="PLAYERS" contentClassName="gap-2.5 max-h-[54vh] overflow-y-auto">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
@@ -185,7 +185,7 @@ export function TvGameView({
             </div>
 
             {/* Rechte Spalte: Tipps */}
-            <div className="w-64 lg:w-72 shrink-0">
+            <div className="w-full max-w-md lg:w-72 shrink-0">
               <CrystalPanel title="GUESSES" contentClassName="gap-2 max-h-[54vh] overflow-y-auto">
                 {gameState?.guesses && gameState.guesses.length > 0 ? (
                   gameState.guesses.map((g: any) => (

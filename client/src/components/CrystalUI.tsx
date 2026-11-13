@@ -12,7 +12,6 @@ export function CrystalStar({
   size?: number;
   className?: string;
 }) {
-  // Helle Gold-Pfirsich-Facetten für aktive Sterne, dunkleres Bronze-Gold für den 3. Stern (exakt wie im Referenzbild)
   const c1 = active ? '#FFF1C9' : '#F3BE7A';
   const c2 = active ? '#FDE0A6' : '#E7A251';
   const c3 = active ? '#F6B969' : '#D48836';
@@ -27,24 +26,17 @@ export function CrystalStar({
       className={`select-none overflow-visible drop-shadow-[0_3px_0_rgba(23,96,142,0.45)] ${className}`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* 10 Facetten-Dreiecke vom Zentrum (50,53) zu den 5 Spitzen und 5 Innenecken */}
-      {/* Spitze Oben (50,5) */}
       <polygon points="50,53 36,33 50,5" fill={c1} />
       <polygon points="50,53 50,5 64,33" fill={c2} />
-      {/* Spitze Rechts-Oben (96,36) */}
       <polygon points="50,53 64,33 96,36" fill={c1} />
       <polygon points="50,53 96,36 71,59" fill={c3} />
-      {/* Spitze Rechts-Unten (79,92) */}
       <polygon points="50,53 71,59 79,92" fill={c2} />
       <polygon points="50,53 79,92 50,74" fill={c4} />
-      {/* Spitze Links-Unten (21,92) */}
       <polygon points="50,53 50,74 21,92" fill={c3} />
       <polygon points="50,53 21,92 29,59" fill={c2} />
-      {/* Spitze Links-Oben (4,36) */}
       <polygon points="50,53 29,59 4,36" fill={c3} />
       <polygon points="50,53 4,36 36,33" fill={c1} />
 
-      {/* Äußere Kontur */}
       <polygon
         points="50,5 64,33 96,36 71,59 79,92 50,74 21,92 29,59 4,36 36,33"
         fill="none"
@@ -74,20 +66,16 @@ export function CrystalCoin({
       className={`select-none overflow-visible drop-shadow-[0_3px_0_rgba(23,96,142,0.45)] ${className}`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      {/* Äußerer Münzkörper */}
       <circle cx="50" cy="50" r="45" fill="#FCD89B" stroke="#D99441" strokeWidth="3" />
-      {/* Diagonale Glanz-Facette über der Münze */}
       <path
         d="M 18 18 A 45 45 0 0 1 82 18 L 18 82 A 45 45 0 0 1 18 18 Z"
         fill="#FFE7BA"
       />
-      {/* Innerer Münzring */}
       <circle cx="50" cy="50" r="31" fill="#F5BE72" stroke="#E09B48" strokeWidth="3" />
       <path
         d="M 28 28 A 31 31 0 0 1 72 28 L 28 72 A 31 31 0 0 1 28 28 Z"
         fill="#FCD89B"
       />
-      {/* Feine weiße Glanzlinie oben links */}
       <path
         d="M 20 35 A 36 36 0 0 1 45 14"
         fill="none"
@@ -118,25 +106,37 @@ export function CrystalStatBar({
       onClick={onClick}
       role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
+      onKeyDown={
+        onClick
+          ? (e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
       className={`relative inline-flex items-center select-none ${
         onClick ? 'cursor-pointer active:scale-95 transition-transform' : ''
       } ${className}`}
     >
       {/* Überlappendes Icon links */}
-      <div className="relative z-20 -mr-4 shrink-0">
-        {type === 'star' ? <CrystalStar size={40} active /> : <CrystalCoin size={38} />}
+      <div className="relative z-20 -mr-3.5 sm:-mr-4 shrink-0">
+        {type === 'star' ? (
+          <CrystalStar size={34} active className="sm:w-[40px] sm:h-[40px]" />
+        ) : (
+          <CrystalCoin size={32} className="sm:w-[38px] sm:h-[38px]" />
+        )}
       </div>
 
       {/* Abgeschrägter Kristall-Balken rechts */}
-      <div className="relative z-10 flex h-8 sm:h-9 min-w-[96px] sm:min-w-[122px] items-center justify-center pl-6 pr-3.5 border-[3px] border-[#17608E] bg-[#52A9D6] shadow-[0_3px_0_rgba(12,62,96,0.45)] overflow-hidden">
-        {/* Linke hellere Kristall-Hälfte (diagonaler Schnitt wie im Referenzbild) */}
+      <div className="relative z-10 flex h-7 sm:h-9 landscape:h-7 min-w-[78px] sm:min-w-[116px] items-center justify-center pl-4 sm:pl-6 pr-2.5 sm:pr-3.5 border-[2.5px] sm:border-[3px] border-[#17608E] bg-[#52A9D6] shadow-[0_3px_0_rgba(12,62,96,0.45)] overflow-hidden">
         <div
           className="pointer-events-none absolute inset-0 bg-[#8DD7F7]"
           style={{ clipPath: 'polygon(0 0, 68% 0, 54% 100%, 0 100%)' }}
         />
-        {/* Innerer heller Rahmen & Glanz */}
         <div className="pointer-events-none absolute inset-[2px] border border-[#CFF2FF]/75" />
-        <span className="font-arcade relative z-10 text-sm sm:text-base tracking-wider text-[#135885] drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]">
+        <span className="font-arcade relative z-10 text-xs sm:text-base landscape:text-xs tracking-wider text-[#135885] drop-shadow-[0_1px_0_rgba(255,255,255,0.7)] truncate max-w-[110px] sm:max-w-none">
           {value}
         </span>
       </div>
@@ -160,10 +160,10 @@ export function CrystalIconButton({
 }) {
   const sizeClasses =
     size === 'sm'
-      ? 'h-9 w-10 sm:h-10 sm:w-11'
+      ? 'h-8 w-9 sm:h-9 sm:w-10'
       : size === 'lg'
-        ? 'h-12 w-14 sm:h-14 sm:w-16'
-        : 'h-10 w-12 sm:h-12 sm:w-14';
+        ? 'h-11 w-13 sm:h-14 sm:w-16'
+        : 'h-9 w-10 sm:h-11 sm:w-13 landscape:h-9 landscape:w-10';
 
   const clip =
     tilt === 'left'
@@ -174,17 +174,14 @@ export function CrystalIconButton({
     <button
       type="button"
       style={{ clipPath: clip }}
-      className={`group relative inline-flex shrink-0 items-center justify-center bg-[#1A6798] p-[3px] transition-transform duration-150 hover:scale-105 active:scale-92 cursor-pointer select-none shadow-md ${sizeClasses} ${className}`}
+      className={`group relative inline-flex shrink-0 items-center justify-center bg-[#1A6798] p-[2.5px] sm:p-[3px] transition-transform duration-150 hover:scale-105 active:scale-92 cursor-pointer select-none shadow-md ${sizeClasses} ${className}`}
       {...props}
     >
-      {/* Mittlerer Rahmen */}
       <div
         style={{ clipPath: clip }}
         className="relative flex h-full w-full items-center justify-center bg-[#5ABCE8] p-[2px]"
       >
-        {/* Innere Eis-Fläche mit diagonalen Kristall-Facetten */}
         <div className="relative flex h-full w-full items-center justify-center overflow-hidden bg-[#88D6F8]">
-          {/* Helle diagonale Kristall-Spiegelung */}
           <div
             className="pointer-events-none absolute inset-0 bg-[#B6ECFD]"
             style={{ clipPath: 'polygon(0 0, 58% 0, 18% 100%, 0 100%)' }}
@@ -193,7 +190,6 @@ export function CrystalIconButton({
             className="pointer-events-none absolute inset-0 bg-[#D4F4FE]/70"
             style={{ clipPath: 'polygon(28% 0, 48% 0, 8% 100%, 0 100%)' }}
           />
-          {/* Weiße Kristall-Risslinie oben rechts */}
           <svg
             viewBox="0 0 60 50"
             className="pointer-events-none absolute inset-0 h-full w-full"
@@ -206,7 +202,6 @@ export function CrystalIconButton({
               strokeWidth="1.5"
             />
           </svg>
-          {/* Weißes Icon im Zentrum */}
           <div className="relative z-10 text-white drop-shadow-[0_1.5px_0_rgba(22,96,142,0.45)]">
             {children}
           </div>
@@ -242,10 +237,10 @@ export function CrystalButton({
 
   const padClasses =
     size === 'sm'
-      ? 'h-9 px-4 text-xs sm:text-sm'
+      ? 'h-8 sm:h-9 landscape:h-8 px-3 sm:px-4 text-xs sm:text-sm landscape:text-xs'
       : size === 'lg'
-        ? 'h-12 sm:h-14 px-7 text-base sm:text-xl'
-        : 'h-11 sm:h-12 px-6 text-sm sm:text-lg';
+        ? 'h-11 sm:h-14 landscape:h-10 px-5 sm:px-7 text-base sm:text-xl landscape:text-sm'
+        : 'h-10 sm:h-12 landscape:h-9 px-4 sm:px-6 text-sm sm:text-lg landscape:text-sm';
 
   const palette =
     variant === 'danger'
@@ -263,7 +258,6 @@ export function CrystalButton({
             facet: '#67C1EC',
           }
         : {
-            // Exakter "EASY / NORMAL / HARD / PLAY / CONTINUE / OK" Farbton aus dem Referenzbild
             outer: '#0E5A8A',
             mid: '#5EC2EE',
             bg: '#2B9FD6',
@@ -278,7 +272,7 @@ export function CrystalButton({
         clipPath: clip,
         backgroundColor: palette.outer,
       }}
-      className={`group relative inline-flex items-center justify-center p-[3px] pb-[4px] pr-[4px] select-none transition-transform duration-150 ${
+      className={`group relative inline-flex items-center justify-center p-[2.5px] sm:p-[3px] pb-[3.5px] sm:pb-[4px] pr-[3.5px] sm:pr-[4px] select-none transition-transform duration-150 ${
         disabled
           ? 'opacity-45 cursor-not-allowed'
           : 'hover:scale-[1.02] active:scale-95 cursor-pointer'
@@ -290,9 +284,8 @@ export function CrystalButton({
           clipPath: clip,
           backgroundColor: palette.bg,
         }}
-        className={`relative flex w-full items-center justify-center gap-2 overflow-hidden border-t-2 border-l-2 border-[#7AD3F7] ${padClasses}`}
+        className={`relative flex w-full items-center justify-center gap-1.5 sm:gap-2 overflow-hidden border-t-2 border-l-2 border-[#7AD3F7] ${padClasses}`}
       >
-        {/* Diagonale hellere Kristall-Facette wie auf den Referenz-Buttons */}
         <div
           style={{
             backgroundColor: palette.facet,
@@ -301,7 +294,6 @@ export function CrystalButton({
           className="pointer-events-none absolute inset-0"
         />
 
-        {/* Charakteristischer spitzer weißer Lichtreflex oben links */}
         <svg
           viewBox="0 0 200 56"
           preserveAspectRatio="none"
@@ -320,8 +312,7 @@ export function CrystalButton({
           />
         </svg>
 
-        {/* Text im fetten weißen Arcade-Versalien-Stil */}
-        <span className="font-arcade relative z-10 flex items-center justify-center gap-2 tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(10,58,92,0.7)]">
+        <span className="font-arcade relative z-10 flex items-center justify-center gap-1.5 tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(10,58,92,0.7)] truncate">
           {children}
         </span>
       </div>
@@ -342,9 +333,9 @@ export function CrystalReadout({
   className?: string;
 }) {
   return (
-    <div className={`flex flex-col items-center ${className}`}>
+    <div className={`flex flex-col items-center min-w-0 ${className}`}>
       {label && (
-        <span className="font-arcade mb-1 text-sm sm:text-base tracking-wider text-[#15608E] uppercase">
+        <span className="font-arcade mb-0.5 sm:mb-1 text-xs sm:text-base landscape:text-xs tracking-wider text-[#15608E] uppercase">
           {label}
         </span>
       )}
@@ -352,20 +343,18 @@ export function CrystalReadout({
         style={{
           clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
         }}
-        className="relative flex min-w-[145px] sm:min-w-[175px] items-center justify-center bg-[#17689A] p-[2.5px]"
+        className="relative flex w-full min-w-[105px] sm:min-w-[165px] landscape:min-w-[110px] items-center justify-center bg-[#17689A] p-[2.5px]"
       >
         <div
           style={{
             clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
           }}
-          className="relative flex w-full items-center justify-center overflow-hidden bg-[#39A9DD] px-5 py-1.5 sm:py-2 border border-[#8AD8F8]"
+          className="relative flex w-full items-center justify-center overflow-hidden bg-[#39A9DD] px-3 sm:px-5 py-1 sm:py-2 landscape:py-1 border border-[#8AD8F8]"
         >
-          {/* Diagonale Facette */}
           <div
             className="pointer-events-none absolute inset-0 bg-[#4EB6E6]"
             style={{ clipPath: 'polygon(0 0, 52% 0, 32% 100%, 0 100%)' }}
           />
-          {/* Weißer Kristall-Glanzstreifen oben */}
           <svg
             viewBox="0 0 180 44"
             preserveAspectRatio="none"
@@ -374,7 +363,7 @@ export function CrystalReadout({
             <polygon points="6,6 155,3 95,12 6,14" fill="#B8ECFD" fillOpacity="0.6" />
             <line x1="6" y1="6" x2="155" y2="3" stroke="#E8F9FF" strokeWidth="1.8" />
           </svg>
-          <span className="font-arcade relative z-10 text-base sm:text-xl tracking-wider text-white uppercase drop-shadow-[0_1.5px_0_rgba(12,65,102,0.65)]">
+          <span className="font-arcade relative z-10 text-sm sm:text-xl landscape:text-sm tracking-wider text-white uppercase drop-shadow-[0_1.5px_0_rgba(12,65,102,0.65)] truncate max-w-[190px] sm:max-w-[260px]">
             {value}
           </span>
         </div>
@@ -401,28 +390,38 @@ export function CrystalSlider({
 
   return (
     <div className={`flex flex-col items-center w-full select-none ${className}`}>
-      <span className="font-arcade mb-2 text-lg sm:text-2xl tracking-wider text-[#15608E] uppercase">
+      <span className="font-arcade mb-1.5 sm:mb-2 text-base sm:text-2xl landscape:text-base tracking-wider text-[#15608E] uppercase">
         {label}
       </span>
 
       <div
+        role="slider"
+        tabIndex={0}
+        aria-label={label}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={value}
+        onKeyDown={(e) => {
+          if (e.key === 'ArrowLeft' || e.key === 'ArrowRight' || e.key === ' ' || e.key === 'Enter') {
+            e.preventDefault();
+            onChange(value > 50 ? 18 : 82);
+          }
+        }}
         onClick={(e) => {
           const rect = e.currentTarget.getBoundingClientRect();
           const pct = Math.round(((e.clientX - rect.left) / rect.width) * 100);
           onChange(pct > 50 ? 82 : 18);
         }}
-        className="relative flex h-10 w-full max-w-[260px] items-center cursor-pointer"
+        className="relative flex h-9 sm:h-10 w-full max-w-[260px] items-center cursor-pointer"
       >
-        {/* Horizontale dunkelblaue Schiene mit cyanfarbenem Lichtkern */}
         <div className="h-2.5 w-full border-2 border-[#12608E] bg-[#3BA8DC] shadow-xs" />
 
-        {/* Trapezförmiger Kristall-Schiebeknopf (exakt wie im OPTIONS-Fenster) */}
         <div
           style={{
             left: `${clamped}%`,
             clipPath: 'polygon(0% 0%, 100% 6%, 84% 100%, 16% 100%)',
           }}
-          className=" absolute -translate-x-1/2 h-9 w-7 bg-[#12608E] p-[2px] transition-all duration-200 hover:scale-110"
+          className="absolute -translate-x-1/2 h-8 sm:h-9 w-6 sm:w-7 bg-[#12608E] p-[2px] transition-all duration-200 hover:scale-110"
         >
           <div
             style={{
@@ -430,7 +429,6 @@ export function CrystalSlider({
             }}
             className="relative h-full w-full overflow-hidden bg-[#5AC2EE]"
           >
-            {/* Vertikaler weißer Kristall-Glanzstreifen im Griff */}
             <div
               className="absolute inset-y-0 left-1.5 w-2 bg-[#D6F4FF]"
               style={{ clipPath: 'polygon(0 0, 100% 0, 75% 100%, 15% 100%)' }}
@@ -474,13 +472,13 @@ export function CrystalPanel({
             style={{
               clipPath: 'polygon(0% 0%, 100% 6%, 92% 100%, 8% 100%)',
             }}
-            className="relative overflow-hidden border-2 border-b-0 border-[#68C5EE] bg-[#9CE0FA] px-8 py-1.5 sm:px-10 sm:py-2"
+            className="relative overflow-hidden border-2 border-b-0 border-[#68C5EE] bg-[#9CE0FA] px-6 py-1 sm:px-10 sm:py-2 landscape:py-1"
           >
             <div
               className="pointer-events-none absolute inset-0 bg-[#B6ECFD]"
               style={{ clipPath: 'polygon(0 0, 48% 0, 68% 100%, 0 100%)' }}
             />
-            <span className="font-arcade relative z-10 text-lg sm:text-2xl tracking-wider text-[#15608E] uppercase">
+            <span className="font-arcade relative z-10 text-base sm:text-2xl landscape:text-base tracking-wider text-[#15608E] uppercase">
               {topTabLabel}
             </span>
           </div>
@@ -489,37 +487,33 @@ export function CrystalPanel({
 
       {/* Optionaler 3-Sterne-Bogen auf dem oberen Panelrand (wie bei "LEVEL 16") */}
       {typeof stars === 'number' && (
-        <div className="relative z-30 -mb-5 flex items-end justify-center gap-1 sm:gap-2">
+        <div className="relative z-30 -mb-4 sm:-mb-5 landscape:-mb-3.5 flex items-end justify-center gap-1 sm:gap-2">
           <div className="-rotate-12 translate-y-1">
-            <CrystalStar size={44} active={stars >= 1} />
+            <CrystalStar size={36} active={stars >= 1} className="sm:w-[44px] sm:h-[44px] landscape:w-[32px] landscape:h-[32px]" />
           </div>
           <div className="-translate-y-1 scale-110">
-            <CrystalStar size={48} active={stars >= 2} />
+            <CrystalStar size={40} active={stars >= 2} className="sm:w-[48px] sm:h-[48px] landscape:w-[36px] landscape:h-[36px]" />
           </div>
           <div className="rotate-12 translate-y-1">
-            <CrystalStar size={44} active={stars >= 3} />
+            <CrystalStar size={36} active={stars >= 3} className="sm:w-[44px] sm:h-[44px] landscape:w-[32px] landscape:h-[32px]" />
           </div>
         </div>
       )}
 
       {/* Haupt-Kristall-Rechteck mit dunkelblauem Außenrahmen & cyanfarbenem Innenrahmen */}
-      <div className="relative w-full border-[4px] border-[#17608E] bg-[#9CE0FA] shadow-[0_12px_0_rgba(14,62,96,0.38)] overflow-hidden">
-        {/* Innerer hellblauer Kristall-Bevel-Rahmen */}
-        <div className="pointer-events-none absolute inset-0 border-[4px] border-[#66C4EE] z-20" />
+      <div className="relative w-full border-[4px] border-[#17608E] bg-[#9CE0FA] shadow-[0_10px_0_rgba(14,62,96,0.38)] overflow-hidden">
+        <div className="pointer-events-none absolute inset-0 border-[3px] sm:border-[4px] border-[#66C4EE] z-20" />
 
-        {/* Hintergrund-Facetten & Kristall-Risslinien (wie im Referenzbild) */}
         <svg
           viewBox="0 0 300 420"
           preserveAspectRatio="none"
           className="pointer-events-none absolute inset-0 h-full w-full z-0"
         >
-          {/* Helle diagonale Eis-Facetten */}
           <polygon points="0,0 165,0 95,420 0,420" fill="#ADE6FB" />
           <polygon points="0,0 65,0 135,280 0,190" fill="#BDEBFC" />
           <polygon points="210,0 300,0 300,195 145,120" fill="#8ED7F6" />
           <polygon points="110,260 300,185 300,420 65,420" fill="#92D9F7" />
 
-          {/* Charakteristische helle & türkise Kristall-Bruchlinien an den Ecken */}
           <polyline
             points="6,6 52,185 18,245 78,340"
             fill="none"
@@ -541,9 +535,9 @@ export function CrystalPanel({
         </svg>
 
         {/* Inhalt des Kristall-Fensters */}
-        <div className={`relative z-10 flex flex-col items-center p-5 sm:p-6 ${contentClassName}`}>
+        <div className={`relative z-10 flex flex-col items-center p-4 sm:p-6 landscape:p-3.5 ${contentClassName}`}>
           {title && (
-            <h2 className="font-arcade mb-4 text-center text-2xl sm:text-3xl tracking-wider text-[#15608E] uppercase">
+            <h2 className="font-arcade mb-3 sm:mb-4 landscape:mb-2 text-center text-xl sm:text-3xl landscape:text-lg tracking-wider text-[#15608E] uppercase">
               {title}
             </h2>
           )}

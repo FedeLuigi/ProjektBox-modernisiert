@@ -330,7 +330,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       };
 
       const newScores = { ...state.scores };
-      let newCorrectIds = [...state.correctGuesserIds];
+      const newCorrectIds = [...state.correctGuesserIds];
       let newRoundStatus: 'drawing' | 'round_over' | 'game_over' = state.roundStatus;
       let roundWinnerName = state.roundWinnerName;
 
@@ -367,6 +367,9 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       if (state.roundStatus !== 'drawing') {
         return { valid: true, state };
       }
+      if (!isDrawer && state.roundEndsAt && Date.now() < state.roundEndsAt - 1500) {
+        return { valid: true, state };
+      }
       return {
         valid: true,
         state: {
@@ -379,9 +382,9 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     // 4. ZUG: NÄCHSTE RUNDE (WECHSEL DES ZEICHNERS)
     if (move.type === 'next_round') {
-      // Nächste Runde darf nur eingeleitet werden, wenn die vorherige Runde auch abgeschlossen ist
+      // Idempotent, falls mehrere Clients gleichzeitig das Rundenende quittieren
       if (state.roundStatus !== 'round_over') {
-        return { valid: false, error: 'Die Runde ist noch nicht abgeschlossen.', state };
+        return { valid: true, state };
       }
 
       const currentDrawerIndex = players.findIndex((p) => p.id === state.currentDrawerId);

@@ -15,7 +15,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
         }
         try {
-          const list = lobbyManager.getPublicLobbies(data.gameId);
+          const list = lobbyManager.getPublicLobbies(data?.gameId || '');
           callback?.({ success: true, lobbies: list });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -40,9 +40,13 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Zu viele Anfragen.' });
         }
         try {
+          if (!data || typeof data.gameId !== 'string' || !data.userProfile?.id) {
+            return callback?.({ success: false, error: 'Ungültige Lobby-Daten.' });
+          }
+
           const { lobby, error } = lobbyManager.createLobby({
-            name: data.name,
-            isPrivate: data.isPrivate,
+            name: String(data.name || ''),
+            isPrivate: Boolean(data.isPrivate),
             gameId: data.gameId,
             userProfile: data.userProfile,
             socketId: socket.id,
@@ -71,6 +75,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
         try {
+          if (!data || typeof data.code !== 'string') {
+            return callback?.({ success: false, error: 'Kein gültiger Lobby-Code angegeben.' });
+          }
           const lobby = lobbyManager.findLobbyByCode(data.code);
           if (!lobby) {
             return callback?.({ success: false, error: 'Lobby wurde nicht gefunden oder ist abgelaufen.' });
@@ -96,6 +103,10 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Zu viele Anfragen.' });
         }
         try {
+          if (!data || typeof data.lobbyIdOrCode !== 'string' || !data.userProfile?.id) {
+            return callback?.({ success: false, error: 'Ungültige Beitrittsdaten.' });
+          }
+
           const { lobby, error } = lobbyManager.joinLobby({
             lobbyIdOrCode: data.lobbyIdOrCode,
             userProfile: data.userProfile,
@@ -146,6 +157,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
         try {
+          if (!data || typeof data.settings !== 'object' || data.settings === null) {
+            return callback?.({ success: false, error: 'Ungültige Einstellungen.' });
+          }
           const { lobby, error } = lobbyManager.updateSettings(socket.id, data.settings);
           if (error || !lobby) {
             return callback?.({
@@ -219,12 +233,28 @@ export function registerSocketHandlers(io: SocketIOServer) {
 
         if (!Array.isArray(data?.strokes) || data.strokes.length === 0) return;
 
+        const clamp01 = (n: unknown) =>
+          typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
+
+        const sanitized = data.strokes.slice(0, 120).map((s: any) => ({
+          x0: clamp01(s?.x0),
+          y0: clamp01(s?.y0),
+          x1: clamp01(s?.x1),
+          y1: clamp01(s?.y1),
+          color: typeof s?.color === 'string' && s.color.length <= 16 ? s.color : '#000000',
+          size:
+            typeof s?.size === 'number' && Number.isFinite(s.size)
+              ? Math.max(1, Math.min(24, s.size))
+              : 5,
+          strokeId: typeof s?.strokeId === 'number' ? s.strokeId : undefined,
+        }));
+
         const currentStrokes = (lobby.gameState as any).strokes || [];
-        (lobby.gameState as any).strokes = [...currentStrokes, ...data.strokes].slice(-3000);
+        (lobby.gameState as any).strokes = [...currentStrokes, ...sanitized].slice(-3000);
 
         // Sofort live an den Fernseher und alle anderen Spieler streamen
         socket.to(`lobby:${lobby.id}`).emit('draw:live-strokes', {
-          strokes: data.strokes,
+          strokes: sanitized,
         });
       } catch (err) {
         console.error('Fehler bei draw:strokes:', err);
@@ -317,7 +347,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
           }
         }
         callback?.({ success: true });
-      } catch (err: any) {
+      } catch {
         callback?.({ success: false });
       }
     });
@@ -327,6 +357,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
       'lobby:reconnect',
       (data: { userId: string }, callback?: (res: { success: boolean; lobby?: any }) => void) => {
         try {
+          if (!data || typeof data.userId !== 'string') {
+            return callback?.({ success: false });
+          }
           const { lobby } = lobbyManager.reconnectPlayer({
             userId: data.userId,
             socketId: socket.id,

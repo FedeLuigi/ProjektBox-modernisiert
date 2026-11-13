@@ -3,7 +3,7 @@ import { Dices, RefreshCw } from 'lucide-react';
 import { type Game } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
-import { getUserProfile } from '../../utils/userProfile';
+import { useUserProfile } from '../../utils/userProfile';
 import { generateSimpleLobbyName } from '../../utils/nameGenerator';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { InLobbyView } from './InLobbyView';
@@ -42,7 +42,7 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
 
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const currentUser = getUserProfile();
+  const currentUser = useUserProfile();
   const [createName, setCreateName] = useState(() => generateSimpleLobbyName(false));
   const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
   const [isTvMode, setIsTvMode] = useState(false);
@@ -193,13 +193,13 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
         </header>
 
         {/* 2. MITTE: Links "LEVEL 16"-Stil Spiel-Info-Panel, Rechts "DIFFICULTY"-Stil Modus-Auswahl */}
-        <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col justify-center overflow-y-auto px-2.5 py-3">
-          <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
+        <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-7 pb-3">
+          <div className="my-auto grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
             {/* Linkes Panel: 1:1 wie "LEVEL 16" im Referenzbild */}
             <CrystalPanel stars={3} title={game.title} contentClassName="gap-3.5 py-6">
               <CrystalReadout
                 label="SCORE"
-                value={soloBest !== null ? formatSoloScore(game.id, soloBest) : '25873'}
+                value={soloBest !== null ? formatSoloScore(game.id, soloBest) : String(game.defaultScore)}
               />
               <CrystalReadout label="REWARD" value={game.players.toUpperCase()} />
 

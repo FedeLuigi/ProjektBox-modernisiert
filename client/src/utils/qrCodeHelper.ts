@@ -1,4 +1,5 @@
 import QRCode from 'qrcode';
+import { STORAGE_KEYS } from './userProfile';
 
 let cachedServerOrigin: string | null = null;
 
@@ -40,21 +41,20 @@ export async function renderQrCodeToCanvas(
     },
     errorCorrectionLevel: 'M',
   });
-  // Inline-Styles entfernen, damit CSS / Tailwind-Klassen (z. B. w-32, max-w-full) die Dimensionen responsiv steuern
+  // Inline-Styles entfernen, damit CSS / Tailwind-Klassen die Dimensionen responsiv steuern
   canvas.style.removeProperty('width');
   canvas.style.removeProperty('height');
 }
 
 /**
  * Baut den vollständigen Beitritts-Link für die aktuelle Domain & Lobby
- * Funktioniert nahtlos auf Render.com, im lokalen Netzwerk (WLAN) und bei Custom-Domains
  */
 export function getLobbyJoinUrl(code: string): string {
   const cleanCode = code.toUpperCase();
 
-  // 1. Manuell in den Einstellungen hinterlegte Server-URL
+  // 1. Manuell hinterlegte Server-URL
   try {
-    const customSocket = localStorage.getItem('projektbox_custom_socket_url');
+    const customSocket = localStorage.getItem(STORAGE_KEYS.SOCKET_URL);
     if (customSocket && customSocket.startsWith('http')) {
       const url = new URL(customSocket);
       return `${url.origin}/?join=${cleanCode}`;
@@ -64,17 +64,17 @@ export function getLobbyJoinUrl(code: string): string {
   }
 
   // 2. Build-Zeit Umgebungsvariable (z. B. VITE_PUBLIC_URL)
-  const envUrl = (import.meta as any).env?.VITE_PUBLIC_URL || (import.meta as any).env?.VITE_APP_URL;
+  const envUrl = import.meta.env.VITE_PUBLIC_URL || import.meta.env.VITE_APP_URL;
   if (envUrl && typeof envUrl === 'string' && envUrl.startsWith('http')) {
     return `${envUrl.replace(/\/$/, '')}/?join=${cleanCode}`;
   }
 
-  // 3. Vom Backend ermittelte Render-URL oder LAN-IP (für Handy-Zugriff im WLAN)
+  // 3. Vom Backend ermittelte Render-URL oder LAN-IP
   if (cachedServerOrigin) {
     return `${cachedServerOrigin.replace(/\/$/, '')}/?join=${cleanCode}`;
   }
 
-  // 4. Standard Browser-Origin (auf Render.com automatisch https://<app>.onrender.com)
+  // 4. Standard Browser-Origin
   const origin = typeof window !== 'undefined' ? window.location.origin : '';
   return `${origin}/?join=${cleanCode}`;
 }
@@ -107,7 +107,7 @@ export function parseLobbyCode(rawText: string): string | null {
   const paramMatch = trimmed.match(/[?&#]join=([A-Za-z0-9]{4,6})/i);
   if (paramMatch) return paramMatch[1].toUpperCase();
 
-  // 3. Reiner 4-6 stelliger Alphanumerischer Code (Groß-/Kleinschreibung)
+  // 3. Reiner 4-6 stelliger alphanumerischer Code
   if (/^[A-Za-z0-9]{4,6}$/.test(trimmed)) {
     return trimmed.toUpperCase();
   }

@@ -163,31 +163,33 @@ export function DrawAndGuessBoard({
   useEffect(() => {
     if (gameState?.roundStatus !== 'drawing' || !gameState?.roundEndsAt) return;
 
+    let sentTimeUp = false;
     const updateTimer = () => {
       const remaining = Math.max(0, Math.ceil((gameState.roundEndsAt! - Date.now()) / 1000));
       setTimeLeft(remaining);
-      if (remaining <= 0) {
-        if (isDrawer) {
-          onMove({ type: 'time_up' });
-        }
+      if (remaining <= 0 && !sentTimeUp && !isTv) {
+        sentTimeUp = true;
+        onMove({ type: 'time_up' });
       }
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 500);
     return () => clearInterval(interval);
-  }, [gameState?.roundEndsAt, gameState?.roundStatus, isDrawer, onMove]);
+  }, [gameState?.roundEndsAt, gameState?.roundStatus, isTv, onMove]);
 
   const [transitionCountdown, setTransitionCountdown] = useState(3);
   useEffect(() => {
     if (gameState?.roundStatus !== 'round_over') return;
 
+    let sentNextRound = false;
     setTransitionCountdown(3);
     const timer = setInterval(() => {
       setTransitionCountdown((prev) => {
         if (prev <= 1) {
           clearInterval(timer);
-          if (isDrawer) {
+          if (!sentNextRound && !isTv) {
+            sentNextRound = true;
             onMove({ type: 'next_round' });
           }
           return 0;
@@ -197,7 +199,7 @@ export function DrawAndGuessBoard({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [gameState?.roundStatus, isDrawer, onMove]);
+  }, [gameState?.roundStatus, isTv, onMove]);
 
   useEffect(() => {
     const unsubStrokes = socketService.onLiveStrokes(({ strokes }) => {
@@ -799,7 +801,7 @@ export function DrawAndGuessBoard({
 
         {/* Mal-Werkzeuge im Crystal-Panel */}
         <div className="w-full mt-1.5 landscape:mt-0 p-2 sm:p-2.5 landscape:p-3 bg-[#9CE0FA] border-[3px] border-[#17608E] shadow-[inset_0_0_0_3px_#66C4EE] shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:self-center">
-          <div className="flex items-center justify-between gap-3 landscape:flex-col landscape:items-stretch landscape:gap-3.5">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 landscape:flex-col landscape:items-stretch landscape:gap-3.5">
             <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto overscroll-x-contain scrollbar-none px-1 py-1 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-2 landscape:justify-items-center landscape:overflow-visible">
               {COLORS.map((col) => {
                 const isSelected = currentColor === col;
@@ -822,7 +824,7 @@ export function DrawAndGuessBoard({
               })}
             </div>
 
-            <div className="flex items-center gap-2 shrink-0 pl-2 border-l-2 border-[#52A9D6] landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t-2 landscape:border-[#52A9D6] landscape:justify-between">
+            <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 pt-1.5 sm:pt-0 sm:pl-2 border-t-2 sm:border-t-0 sm:border-l-2 border-[#52A9D6] landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t-2 landscape:border-[#52A9D6] landscape:justify-between">
               <div className="flex items-center gap-1.5">
                 {BRUSH_SIZES.map((b) => (
                   <button

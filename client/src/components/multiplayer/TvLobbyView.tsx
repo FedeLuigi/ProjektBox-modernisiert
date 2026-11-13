@@ -93,8 +93,8 @@ export function TvLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <main className="my-auto mx-auto flex w-full max-w-5xl flex-1 items-center justify-center overflow-y-auto px-2.5 py-3">
-        <div className="grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
+      <main className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-3">
+        <div className="my-auto grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
           {/* Linkes Kristall-Panel: QR-Code & Lobby-Code */}
           <CrystalPanel topTabLabel="TV LOBBY" title={gameTitle || lobby.name} contentClassName="gap-4 py-5">
             <div className="border-[4px] border-[#17608E] bg-white p-3.5 shadow-[0_6px_0_rgba(14,62,96,0.35)]">
