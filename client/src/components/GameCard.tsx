@@ -10,17 +10,13 @@ import {
 interface GameCardProps {
   game: Game;
   isActive: boolean;
-  isUnlocked: boolean;
-  starsEarned: number;
   onSelect: () => void;
   onPlay: () => void;
-  onUnlockRequest: () => void;
 }
 
 export function GameCard({
   game,
   isActive,
-  isUnlocked,
   onSelect,
   onPlay,
 }: GameCardProps) {
@@ -28,7 +24,6 @@ export function GameCard({
   const scoreDisplay =
     savedBest !== null ? formatSoloScore(game.id, savedBest) : String(game.defaultScore);
   const rewardDisplay = String(game.defaultReward);
-  const starCount: 1 | 2 | 3 = savedBest !== null ? 3 : game.starsEarned >= 25 ? 3 : 2;
   const Icon = game.icon;
   const palette = ACCENT_PALETTES[game.accent];
 
@@ -40,14 +35,13 @@ export function GameCard({
   return (
     <article
       onClick={handleCardClick}
-      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-200 pt-2 ${
+      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-200 pt-1 ${
         isActive
           ? 'scale-[1.03] z-20 drop-shadow-[0_14px_28px_rgba(0,0,0,0.45)]'
           : 'hover:scale-[1.015] opacity-95 hover:opacity-100 z-10'
       } w-[205px] sm:w-[240px] md:w-[260px] landscape:w-[190px]`}
     >
       <CrystalPanel
-        stars={isUnlocked ? starCount : 2}
         accent={game.accent}
         contentClassName="pt-4 pb-4 px-3.5 sm:px-5 landscape:pt-3 landscape:pb-2.5 landscape:px-3 gap-2 landscape:gap-1"
       >

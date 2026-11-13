@@ -13,6 +13,12 @@ import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
 import { BTN_PRIMARY_DISABLED, getGameTheme } from '../../styles/uiTokens';
 import { CrystalPanel } from '../../components/CrystalUI';
+import {
+  playErrorSound,
+  playMoveSound,
+  playWinSound,
+  triggerHapticFeedback,
+} from '../../utils/soundEffects';
 
 export interface StrokeSegment {
   x0: number;
@@ -341,7 +347,7 @@ export function DrawAndGuessBoard({
       const target = canvasStageRef.current;
       if (!target) return;
       const rect = target.getBoundingClientRect();
-      const usableW = Math.max(120, Math.min(520, Math.floor(rect.width) - 8));
+      const usableW = Math.max(120, Math.min(880, Math.floor(rect.width) - 8));
       const usableH = Math.max(90, Math.floor(rect.height) - 8);
 
       let width = Math.min(usableW, Math.floor(usableH * (4 / 3)));
@@ -570,6 +576,7 @@ export function DrawAndGuessBoard({
   const handleKeyboardChar = useCallback(
     (char: string) => {
       if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+      playMoveSound();
       setGuessInput((prev) => (prev.length < targetLength ? prev + char : prev));
     },
     [isDrawer, hasGuessedCorrectly, isRoundOver, targetLength]
@@ -577,6 +584,7 @@ export function DrawAndGuessBoard({
 
   const handleKeyboardBackspace = useCallback(() => {
     if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+    playMoveSound();
     setGuessInput((prev) => prev.slice(0, -1));
   }, [isDrawer, hasGuessedCorrectly, isRoundOver]);
 
@@ -613,14 +621,21 @@ export function DrawAndGuessBoard({
 
   useEffect(() => {
     if (!latestGuess) return;
-    if (latestGuess.playerId === myPlayer?.id && !latestGuess.isCorrect) {
-      setIsWrongGuess(true);
-      setWrongText(`"${latestGuess.text}" ist falsch`);
-      const timer = setTimeout(() => {
-        setIsWrongGuess(false);
-        setWrongText(null);
-      }, 1500);
-      return () => clearTimeout(timer);
+    if (latestGuess.playerId === myPlayer?.id) {
+      if (latestGuess.isCorrect) {
+        playWinSound();
+        triggerHapticFeedback([18, 35, 25]);
+      } else {
+        playErrorSound();
+        triggerHapticFeedback(25);
+        setIsWrongGuess(true);
+        setWrongText(`"${latestGuess.text}" ist falsch`);
+        const timer = setTimeout(() => {
+          setIsWrongGuess(false);
+          setWrongText(null);
+        }, 1500);
+        return () => clearTimeout(timer);
+      }
     }
   }, [latestGuess, myPlayer?.id]);
 
@@ -691,7 +706,7 @@ export function DrawAndGuessBoard({
     return (
       <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 sm:p-4 animate-fade-in select-none">
         <div className="w-full max-w-sm sm:max-w-md">
-          <CrystalPanel title="ROUND OVER" accent="rose" stars={gameState?.roundWinnerName ? 3 : 1} contentClassName="p-6 text-center flex flex-col items-center gap-4">
+          <CrystalPanel title="ROUND OVER" accent="rose" contentClassName="p-6 text-center flex flex-col items-center gap-4">
             <span className="text-2xl sm:text-3xl font-arcade uppercase tracking-[0.14em] text-[#F8FAFC] bg-[#1E293B] border-[3px] border-[#0F172A] px-5 py-2 shadow-[inset_0_0_0_2px_#475569,0_4px_0_rgba(15,23,42,0.28)]">
               {gameState?.secretWord}
             </span>
@@ -731,7 +746,7 @@ export function DrawAndGuessBoard({
   if (isDrawer) {
     return (
       <div
-        className="flex flex-col items-center w-full max-w-2xl landscape:max-w-5xl mx-auto select-none h-full min-h-0 justify-between landscape:grid landscape:grid-cols-[minmax(0,1fr)_16.5rem] sm:landscape:grid-cols-[minmax(0,1fr)_18rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-2"
+        className="flex flex-col items-center w-full max-w-4xl landscape:max-w-6xl mx-auto select-none h-full min-h-0 justify-between landscape:grid landscape:grid-cols-[minmax(0,1fr)_17rem] sm:landscape:grid-cols-[minmax(0,1fr)_19rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-2"
       >
         {/* Wortanzeige & Timer im Studio-Pearl-Banner mit Rose-Akzent */}
         <div className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_4px_0_rgba(15,23,42,0.28)] shrink-0 landscape:col-start-1 landscape:row-start-1">
@@ -891,10 +906,10 @@ export function DrawAndGuessBoard({
 
   return (
     <div
-      className={`flex flex-col items-center w-full max-w-2xl ${
+      className={`flex flex-col items-center w-full max-w-4xl ${
         isRaterTwoColLandscape
-          ? 'landscape:max-w-5xl landscape:grid landscape:grid-cols-[minmax(0,0.92fr)_minmax(18.5rem,1.08fr)] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3 landscape:gap-y-1.5'
-          : 'landscape:max-w-3xl'
+          ? 'landscape:max-w-6xl landscape:grid landscape:grid-cols-[minmax(0,1fr)_minmax(19rem,1.05fr)] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-1.5'
+          : 'landscape:max-w-4xl'
       } mx-auto select-none h-full min-h-0 justify-between`}
     >
       {!isRoundOver && (

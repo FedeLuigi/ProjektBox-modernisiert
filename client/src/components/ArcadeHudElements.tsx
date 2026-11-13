@@ -8,24 +8,20 @@ import {
   CrystalStatBar,
 } from './CrystalUI';
 
-/* ─── 1. GOLDENE MÜNZEN- & STERN-LEISTE ─── */
+/* ─── 1. GOLDENE MÜNZEN-LEISTE ─── */
 export function CoinCounterPill({
   coins,
-  starsTotal = 25873,
   onClick,
 }: {
   coins: number;
-  starsTotal?: number;
   onClick: () => void;
 }) {
   return (
     <div className="flex items-center gap-2 sm:gap-3.5">
-      <CrystalStatBar type="star" value={starsTotal} onClick={onClick} />
       <CrystalStatBar
         type="coin"
         value={coins}
         onClick={onClick}
-        className="hidden sm:inline-flex"
       />
     </div>
   );
@@ -189,7 +185,7 @@ export function UnlockEpisodeModal({
       onClick={onClose}
     >
       <div onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-sm pt-3">
-        <CrystalPanel stars={3} accent={game.accent} title={game.title} contentClassName="gap-3">
+        <CrystalPanel accent={game.accent} title={game.title} contentClassName="gap-3">
           <CrystalReadout label="SCORE" value={String(game.defaultScore)} variant="neutral" />
           <CrystalReadout label="REWARD" value={`${coins} / ${cost}`} variant="gold" />
 
@@ -294,7 +290,7 @@ export function ArcadeMenuModal({
         )}
 
         {mode === 'shop' && (
-          <CrystalPanel stars={3} accent="gold" title="BONUS REWARD" contentClassName="gap-3">
+          <CrystalPanel accent="gold" title="BONUS REWARD" contentClassName="gap-3">
             <CrystalReadout label="SCORE" value="25873" variant="neutral" />
             <CrystalReadout label="REWARD" value={String(coins)} variant="gold" />
 

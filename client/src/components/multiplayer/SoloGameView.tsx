@@ -10,7 +10,7 @@ import {
   saveSoloHighscore,
 } from '../../utils/soloScores';
 import { SoloResultCard } from './SoloResultCard';
-import { CrystalButton, CrystalReadout, CrystalStatBar } from '../CrystalUI';
+import { CrystalButton, CrystalReadout } from '../CrystalUI';
 
 interface SoloGameViewProps {
   game: Game;
@@ -96,11 +96,11 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(6px+env(safe-area-inset-top,0px))] pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))] sm:px-4 lg:px-6"
       >
-        {/* 1. CRYSTAL HUD TOP-BAR ("EXIT" links, Spieltitel/Score Mitte, Stern-Highscore rechts) */}
-        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
-          <div className="justify-self-start flex items-center gap-2">
+        {/* 1. KOMPAKTE CRYSTAL HUD TOP-BAR (nimmt minimalen Platz ein, damit das Spiel die volle Fläche hat) */}
+        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1">
+          <div className="justify-self-start flex items-center gap-1.5 sm:gap-2">
             <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
               EXIT
             </CrystalButton>
@@ -109,13 +109,12 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
               variant={game.accent}
               tilt="right"
               onClick={handlePlayAgain}
-              className="hidden sm:inline-flex"
             >
-              REPLAY
+              NEUSTART
             </CrystalButton>
           </div>
 
-          <div className="justify-self-center">
+          <div className="justify-self-center hidden sm:block">
             <CrystalReadout
               value={
                 score > 0 && !isFinished
@@ -126,16 +125,16 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
           </div>
 
           <div className="justify-self-end flex items-center">
-            <CrystalStatBar
-              type="star"
-              value={bestScore !== null ? formatSoloScore(game.id, bestScore) : 'SOLO'}
+            <CrystalReadout
+              variant="gold"
+              value={bestScore !== null ? `BEST: ${formatSoloScore(game.id, bestScore)}` : game.title}
             />
           </div>
         </header>
 
-        {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SOLO-SPIELFELD */}
+        {/* 2. VOLLFLÄCHIGE SPIELBÜHNE (nutzt die gesamte verfügbare Bildschirmfläche) */}
         {isFinished ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 py-3">
             <SoloResultCard
               gameId={game.id}
               score={score}
@@ -147,7 +146,7 @@ export function SoloGameView({ game, onLeave }: SoloGameViewProps) {
             />
           </main>
         ) : (
-          <main className="my-auto mx-auto flex w-full max-w-md landscape:max-w-5xl flex-1 min-h-0 items-center justify-center overflow-y-auto p-1.5 sm:p-3">
+          <main className="mx-auto flex w-full max-w-[1400px] flex-1 min-h-0 flex-col items-center justify-center overflow-hidden p-1 sm:p-2">
             <BoardComponent
               key={roundId}
               gameId={game.id}

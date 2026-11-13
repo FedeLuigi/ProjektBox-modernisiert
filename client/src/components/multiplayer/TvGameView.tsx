@@ -273,7 +273,6 @@ export function TvGameView({
           <div className="fixed inset-0 z-50 bg-[#0F172A]/80 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
             <div className="w-full max-w-sm">
               <CrystalPanel
-                stars={3}
                 title={winner ? `${winner.name} WINS!` : 'DRAW!'}
                 accent={gameAccent}
                 contentClassName="gap-3.5 py-6"

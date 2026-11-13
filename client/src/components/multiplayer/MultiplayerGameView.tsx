@@ -224,23 +224,22 @@ export function MultiplayerGameView({
                 onExit={onLeave}
               />
             ) : (
-              <div className="my-auto w-full max-w-sm animate-fade-in">
+              <div className="my-auto w-full max-w-md animate-fade-in">
                 <CrystalPanel
-                  stars={isWinner ? 3 : isDraw ? 2 : 1}
-                  title={isWinner ? 'VICTORY!' : isDraw ? 'DRAW!' : 'GAME OVER'}
+                  title={isWinner ? 'SIEG!' : isDraw ? 'UNENTSCHIEDEN!' : 'SPIEL BEENDET'}
                   accent={isWinner ? 'emerald' : gameAccent}
                   contentClassName="gap-3.5 py-6"
                 >
                   <CrystalReadout
-                    label="SCORE"
-                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 25873 : 12450))}
+                    label="PUNKTE"
+                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
                   />
                   <CrystalReadout
-                    label={isDrawAndGuess && gameState?.secretWord ? 'WORD' : 'REWARD'}
+                    label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
                     value={
                       isDrawAndGuess && gameState?.secretWord
                         ? gameState.secretWord
-                        : `${lobby.rematchVotes.length}/${activePlayers.length} READY`
+                        : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
                     }
                   />
 
@@ -253,7 +252,7 @@ export function MultiplayerGameView({
                       disabled={hasVotedRematch}
                       onClick={handleRematch}
                     >
-                      {hasVotedRematch ? 'WAITING...' : 'REPLAY'}
+                      {hasVotedRematch ? 'WARTE AUF MITSPIELER...' : 'REVANCHE'}
                     </CrystalButton>
                     <CrystalButton
                       size="md"
@@ -262,7 +261,7 @@ export function MultiplayerGameView({
                       onClick={onLeave}
                       className="min-w-[130px]"
                     >
-                      OK
+                      ZURÜCK
                     </CrystalButton>
                   </div>
                 </CrystalPanel>
@@ -270,13 +269,7 @@ export function MultiplayerGameView({
             )}
           </main>
         ) : (
-          <main
-            className={`my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto ${
-              lobby.gameId === 'draw-and-guess'
-                ? 'max-w-2xl landscape:max-w-5xl p-1.5 sm:p-2'
-                : 'max-w-md landscape:max-w-5xl p-1.5 sm:p-3'
-            }`}
-          >
+          <main className="mx-auto flex w-full max-w-[1400px] flex-1 min-h-0 flex-col items-center justify-center overflow-hidden p-1 sm:p-2">
             {BoardComponent && myPlayer ? (
               <BoardComponent
                 gameId={lobby.gameId}

@@ -159,22 +159,22 @@ export const ACCENT_PALETTES: Record<CrystalAccent, AccentPalette> = {
 };
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   1. FACETTIERTER 3D-STERN (wie über dem "LEVEL 16" Fenster & an der Leiste)
+   1. FACETTIERTER KRISTALL-EDELSTEIN (für Kristall-Stat-Leiste & Sammelobjekte)
    ═══════════════════════════════════════════════════════════════════════════ */
-export function CrystalStar({
+export function CrystalGem({
   active = true,
-  size = 42,
+  size = 38,
   className = '',
 }: {
   active?: boolean;
   size?: number;
   className?: string;
 }) {
-  const c1 = active ? '#FFF7D6' : '#E2E8F0';
-  const c2 = active ? '#FDE08D' : '#CBD5E1';
-  const c3 = active ? '#F59E0B' : '#94A3B8';
-  const c4 = active ? '#D97706' : '#64748B';
-  const stroke = active ? '#92400E' : '#475569';
+  const c1 = active ? '#E0F2FE' : '#E2E8F0';
+  const c2 = active ? '#7DD3FC' : '#CBD5E1';
+  const c3 = active ? '#0EA5E9' : '#94A3B8';
+  const c4 = active ? '#0284C7' : '#64748B';
+  const stroke = active ? '#075985' : '#475569';
 
   return (
     <svg
@@ -184,27 +184,23 @@ export function CrystalStar({
       className={`select-none overflow-visible drop-shadow-[0_3px_0_rgba(15,23,42,0.45)] ${className}`}
       xmlns="http://www.w3.org/2000/svg"
     >
-      <polygon points="50,53 36,33 50,5" fill={c1} />
-      <polygon points="50,53 50,5 64,33" fill={c2} />
-      <polygon points="50,53 64,33 96,36" fill={c1} />
-      <polygon points="50,53 96,36 71,59" fill={c3} />
-      <polygon points="50,53 71,59 79,92" fill={c2} />
-      <polygon points="50,53 79,92 50,74" fill={c4} />
-      <polygon points="50,53 50,74 21,92" fill={c3} />
-      <polygon points="50,53 21,92 29,59" fill={c2} />
-      <polygon points="50,53 29,59 4,36" fill={c3} />
-      <polygon points="50,53 4,36 36,33" fill={c1} />
-
+      <polygon points="50,6 88,36 50,94 12,36" fill={c2} />
+      <polygon points="50,6 88,36 50,48" fill={c1} />
+      <polygon points="50,6 50,48 12,36" fill={c1} />
+      <polygon points="12,36 50,48 50,94" fill={c3} />
+      <polygon points="88,36 50,94 50,48" fill={c4} />
       <polygon
-        points="50,5 64,33 96,36 71,59 79,92 50,74 21,92 29,59 4,36 36,33"
+        points="50,6 88,36 50,94 12,36"
         fill="none"
         stroke={stroke}
-        strokeWidth="2.8"
+        strokeWidth="3.2"
         strokeLinejoin="round"
       />
     </svg>
   );
 }
+
+export const CrystalStar = CrystalGem;
 
 /* ═══════════════════════════════════════════════════════════════════════════
    2. GOLDENE KRISTALL-MÜNZE (wie links an der unteren Fortschrittsleiste)
@@ -816,7 +812,7 @@ export function CrystalPanel({
   children,
   title,
   topTabLabel,
-  stars,
+  stars: _stars,
   variant = 'frost',
   accent,
   className = '',
@@ -918,21 +914,6 @@ export function CrystalPanel({
             <span className={`font-arcade relative z-10 text-base sm:text-xl landscape:text-sm tracking-wider uppercase drop-shadow-[0_1.5px_0_rgba(15,23,42,0.5)] ${surface.tabText}`}>
               {topTabLabel}
             </span>
-          </div>
-        </div>
-      )}
-
-      {/* Optionaler 3-Sterne-Bogen auf dem oberen Panelrand (wie bei "LEVEL 16") */}
-      {typeof stars === 'number' && (
-        <div className="relative z-30 -mb-4 sm:-mb-5 landscape:-mb-3.5 flex items-end justify-center gap-1 sm:gap-2">
-          <div className="-rotate-12 translate-y-1">
-            <CrystalStar size={36} active={stars >= 1} className="sm:w-[44px] sm:h-[44px] landscape:w-[32px] landscape:h-[32px]" />
-          </div>
-          <div className="-translate-y-1 scale-110">
-            <CrystalStar size={40} active={stars >= 2} className="sm:w-[48px] sm:h-[48px] landscape:w-[36px] landscape:h-[36px]" />
-          </div>
-          <div className="rotate-12 translate-y-1">
-            <CrystalStar size={36} active={stars >= 3} className="sm:w-[44px] sm:h-[44px] landscape:w-[32px] landscape:h-[32px]" />
           </div>
         </div>
       )}

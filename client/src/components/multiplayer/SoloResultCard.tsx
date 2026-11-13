@@ -27,20 +27,18 @@ export function SoloResultCard({
   const gameAccent = GAMES.find((g) => g.id === gameId)?.accent ?? 'emerald';
 
   return (
-    <div className="mx-auto w-full max-w-sm animate-fade-in">
-      {/* 1:1 Umsetzung des "LEVEL 16" Kristall-Ergebnis-Fensters aus dem Referenzbild */}
+    <div className="mx-auto w-full max-w-md animate-fade-in">
       <CrystalPanel
-        stars={isNewRecord ? 3 : 2}
-        title={isNewRecord ? 'NEW RECORD' : 'LEVEL CLEAR'}
+        title={isNewRecord ? 'NEUER REKORD!' : 'RUNDE BEENDET'}
         accent={gameAccent}
         contentClassName="gap-4 py-6"
       >
-        <CrystalReadout label="SCORE" value={displayScore} />
-        <CrystalReadout label="REWARD" value={displayBest} />
+        <CrystalReadout label="ERGEBNIS" value={displayScore} />
+        <CrystalReadout variant="gold" label="BESTLEISTUNG" value={displayBest} />
 
         <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
           <CrystalButton fullWidth size="md" variant={gameAccent} tilt="left" onClick={onPlayAgain}>
-            REPLAY
+            NOCHMAL SPIELEN
           </CrystalButton>
           <CrystalButton
             size="md"
@@ -49,7 +47,7 @@ export function SoloResultCard({
             onClick={onExit}
             className="min-w-[130px]"
           >
-            OK
+            ZURÜCK
           </CrystalButton>
         </div>
       </CrystalPanel>

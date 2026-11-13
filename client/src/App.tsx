@@ -61,9 +61,6 @@ export function App() {
   const [modalMode, setModalMode] = useState<'menu' | 'shop' | 'settings' | null>(null);
   const [coins, setCoins] = useState(63581);
   const [unlockedIds, setUnlockedIds] = useState<string[]>(() => GAMES.map((g) => g.id));
-  const [starsByGame, setStarsByGame] = useState<Record<string, number>>(() =>
-    Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22]))
-  );
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
@@ -208,7 +205,6 @@ export function App() {
     triggerHaptic();
     setCoins(63581);
     setUnlockedIds(GAMES.map((g) => g.id));
-    setStarsByGame(Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22])));
     setCategory('Alle');
   };
 
@@ -363,7 +359,7 @@ export function App() {
       {isJoiningDeepLink && !multiplayerGame && (
         <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0F172A]/75 backdrop-blur-xs select-none p-4">
           <div className="w-full max-w-sm animate-fade-in">
-            <CrystalPanel stars={3} accent="amber" title="TV CONNECT" contentClassName="gap-3">
+            <CrystalPanel accent="amber" title="TV CONNECT" contentClassName="gap-3">
               <CrystalReadout label="LOBBY CODE" value={initialDeepLinkCode ?? '----'} />
               <p className="font-arcade text-sm tracking-wider text-[#334155] uppercase mt-1">
                 JOINING TV LOBBY...
@@ -377,11 +373,10 @@ export function App() {
       <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
         {/* ═══ OBERE LEISTE: Stern- & Münz-Leisten links • PROJEKT BOX Mitte • Spieler & Icon-Buttons rechts ═══ */}
         <header className="relative z-30 flex shrink-0 items-center justify-between gap-1.5 sm:gap-2 px-1 sm:px-2 pt-0.5">
-          {/* Links: Stern- & Münz-Fortschrittsleisten */}
+          {/* Links: Münz-Anzeige */}
           <div className="shrink-0">
             <CoinCounterPill
               coins={coins}
-              starsTotal={25873}
               onClick={() => {
                 triggerHaptic();
                 setModalMode('shop');
@@ -505,29 +500,19 @@ export function App() {
               onPointerCancel={onPointerUpStrip}
               className="no-scrollbar relative z-10 flex w-full items-center gap-3.5 sm:gap-6 overflow-x-auto px-3 sm:px-6 py-3 sm:py-5 landscape:py-1.5 scroll-smooth"
             >
-              {games.map((game, index) => {
-                const isUnlocked = unlockedIds.includes(game.id);
-                const currentStars = starsByGame[game.id] ?? game.starsEarned ?? 22;
-
-                return (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    isActive={index === safeIndex}
-                    isUnlocked={isUnlocked}
-                    starsEarned={currentStars}
-                    onSelect={() => {
-                      if (!dragMoved.current) handleSelectGame(index);
-                    }}
-                    onPlay={() => {
-                      if (!dragMoved.current) setMultiplayerGame(game);
-                    }}
-                    onUnlockRequest={() => {
-                      if (!dragMoved.current) setUnlockModalGame(game);
-                    }}
-                  />
-                );
-              })}
+              {games.map((game, index) => (
+                <GameCard
+                  key={game.id}
+                  game={game}
+                  isActive={index === safeIndex}
+                  onSelect={() => {
+                    if (!dragMoved.current) handleSelectGame(index);
+                  }}
+                  onPlay={() => {
+                    if (!dragMoved.current) setMultiplayerGame(game);
+                  }}
+                />
+              ))}
             </div>
 
             {/* Untere Schnell-Steuerleiste (im flachen Smartphone-Querformat ausgeblendet, da die Karten direkt antippbar sind) */}

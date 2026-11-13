@@ -195,8 +195,8 @@ export function LobbyScreen({ game, onClose, initialLobby }: LobbyScreenProps) {
         {/* 2. MITTE: Links "LEVEL 16"-Stil Spiel-Info-Panel, Rechts "DIFFICULTY"-Stil Modus-Auswahl */}
         <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-7 pb-3">
           <div className="my-auto grid w-full items-center gap-6 grid-cols-1 md:grid-cols-2">
-            {/* Linkes Panel: 1:1 wie "LEVEL 16" im Referenzbild mit individuellem Spiel-Akzent */}
-            <CrystalPanel stars={3} title={game.title} accent={game.accent} contentClassName="gap-3.5 py-6">
+            {/* Linkes Panel: Spiel-Info & Highscore mit individuellem Spiel-Akzent */}
+            <CrystalPanel title={game.title} accent={game.accent} contentClassName="gap-3.5 py-6">
               <CrystalReadout
                 label="SCORE"
                 value={soloBest !== null ? formatSoloScore(game.id, soloBest) : String(game.defaultScore)}
