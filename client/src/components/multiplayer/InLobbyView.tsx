@@ -115,7 +115,7 @@ export function InLobbyView({
       renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 160).catch(console.error);
     }
     if (desktopQrCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(desktopQrCanvasRef.current, joinUrl, 260).catch(console.error);
+      renderQrCodeToCanvas(desktopQrCanvasRef.current, joinUrl, 320).catch(console.error);
     }
   }, [joinUrl, lobby.code]);
 
@@ -229,8 +229,8 @@ export function InLobbyView({
             </div>
           )}
 
-          <div className="my-auto grid w-full items-start gap-6 md:grid-cols-[1fr_1.1fr] lg:grid-cols-[1fr_1.15fr] md:gap-8 lg:gap-10 landscape:grid-cols-[1fr_1fr] landscape:gap-6 py-2 landscape:py-0">
-            {/* ─── LINKE SPALTE: Titel, Raumcode, großer QR-Code & Spielerliste ─── */}
+          <div className="my-auto grid w-full items-start gap-6 md:grid-cols-[auto_1fr] lg:grid-cols-[minmax(280px,340px)_1fr] md:gap-8 lg:gap-12 landscape:grid-cols-[auto_1fr] landscape:gap-8 py-2 landscape:py-0">
+            {/* ─── LINKE SPALTE: Titel, Raumcode & großer QR-Code ─── */}
             <div className="flex flex-col items-center text-center md:items-start md:text-left landscape:items-start landscape:text-left md:col-start-1 md:row-start-1 landscape:col-start-1 landscape:row-start-1 gap-4 sm:gap-5 w-full">
               {/* Spiel-Titel */}
               <div className={`flex items-center gap-2 text-xs font-bold uppercase tracking-widest ${theme.accentTextSoft}`}>
@@ -279,80 +279,82 @@ export function InLobbyView({
                 </div>
               </div>
 
-              {/* Auf Desktop, Tablet und TV: Eigener, großzügiger QR-Code Bereich mit klarem Abstand */}
-              <div
-                onClick={() => setIsQrModalOpen(true)}
-                className="hidden md:flex items-center gap-4 p-4 rounded-3xl bg-white/[0.04] hover:bg-white/[0.07] ring-1 ring-white/10 hover:ring-white/20 backdrop-blur-md transition-all cursor-pointer group shadow-md w-full max-w-md"
-                title="Klicken zum Vergrößern"
-              >
-                <div className="rounded-2xl bg-white p-2.5 shadow-md ring-1 ring-white/15 shrink-0 group-hover:scale-105 transition-transform">
-                  <canvas ref={desktopQrCanvasRef} width={120} height={120} className="block rounded-xl" />
-                </div>
-                <div className="flex flex-col text-left">
-                  <div className="flex items-center gap-1.5 text-sm font-bold text-white">
-                    <QrCode className="h-4 w-4 text-amber-400 shrink-0" />
-                    <span>QR-Code zum Beitreten</span>
-                  </div>
-                  <p className="mt-1 text-xs text-[#8E8E93] leading-relaxed">
-                    Mitspieler können den Code einfach mit der Smartphone-Kamera scannen, um direkt der Lobby beizutreten.
-                  </p>
-                </div>
-              </div>
-
-              {/* Spielerliste mit vollständigen Namen auf großen Bildschirmen */}
-              <div className="flex flex-col items-center md:items-start w-full">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93] mb-2.5">
-                  Spieler ({activePlayers.length}/{lobby.maxPlayers})
-                </span>
-                <div className="w-full flex flex-wrap items-center justify-center md:justify-start landscape:justify-start gap-2.5">
-                  {activePlayers.map((p, idx) => {
-                    const isMe = p.id === currentUser.id;
-                    return (
-                      <div
-                        key={p.id || idx}
-                        className={`flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5 ring-1 transition-all ${
-                          p.isReady
-                            ? 'bg-emerald-500/12 ring-emerald-500/35'
-                            : 'bg-[#18181E] ring-white/12'
-                        }`}
-                      >
-                        <div className="relative shrink-0">
-                          <Avatar config={p.avatar} size={32} />
-                          {p.isHost && (
-                            <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
-                              <Crown className="h-2 w-2 fill-current" />
-                            </span>
-                          )}
-                        </div>
-                        <span className="text-xs sm:text-sm font-bold text-white max-w-[130px] sm:max-w-[200px] md:max-w-none md:truncate-none">
-                          {p.name}
-                          {isMe ? ' (Du)' : ''}
-                        </span>
-                        {p.isReady ? (
-                          <Check className="h-4 w-4 shrink-0 text-emerald-400 stroke-[2.75]" />
-                        ) : (
-                          <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+              {/* Auf Desktop, Tablet und TV: Großer, gut scanbarer QR-Code pur ohne Text */}
+              <div className="hidden md:flex flex-col items-center md:items-start pt-1">
+                <button
+                  type="button"
+                  onClick={() => setIsQrModalOpen(true)}
+                  title="Klicken zum Vergrößern"
+                  aria-label="QR-Code vergrößern"
+                  className="rounded-[28px] bg-white p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0"
+                >
+                  <canvas
+                    ref={desktopQrCanvasRef}
+                    className="w-40 h-40 lg:w-44 lg:h-44 block rounded-2xl"
+                  />
+                </button>
               </div>
             </div>
 
-            {/* ─── RECHTE SPALTE: Spieleinstellungen & Haupt-Aktion ─── */}
+            {/* ─── RECHTE SPALTE: Spieleinstellungen, Teilnehmerliste & Haupt-Aktion ─── */}
             <div className="flex flex-col justify-between w-full h-full gap-5 md:col-start-2 md:row-start-1 landscape:col-start-2 landscape:row-start-1">
-              <div className="w-full">
+              <div className="flex flex-col gap-4 sm:gap-5 w-full">
+                {/* Spieleinstellungen */}
                 <LobbyGameSettings
                   gameId={lobby.gameId}
                   settings={lobby.settings}
                   isHost={canEditSettings}
                   onUpdate={handleUpdateSettings}
                 />
+
+                {/* Teilnehmerliste prominent direkt über dem Start-Button */}
+                <div className="flex flex-col items-center md:items-start w-full gap-2.5">
+                  <div className="flex items-center justify-between w-full px-0.5">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8E93]">
+                      Teilnehmer ({activePlayers.length}/{lobby.maxPlayers})
+                    </span>
+                    <span className="text-xs font-semibold text-emerald-400">
+                      {readyCount}/{activePlayers.length} bereit
+                    </span>
+                  </div>
+                  <div className="w-full flex flex-wrap items-center justify-center md:justify-start landscape:justify-start gap-2.5">
+                    {activePlayers.map((p, idx) => {
+                      const isMe = p.id === currentUser.id;
+                      return (
+                        <div
+                          key={p.id || idx}
+                          className={`flex items-center gap-2.5 rounded-full pl-2 pr-3.5 py-1.5 ring-1 transition-all ${
+                            p.isReady
+                              ? 'bg-emerald-500/12 ring-emerald-500/35'
+                              : 'bg-[#18181E] ring-white/12'
+                          }`}
+                        >
+                          <div className="relative shrink-0">
+                            <Avatar config={p.avatar} size={32} />
+                            {p.isHost && (
+                              <span className="absolute -top-1 -right-1 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-amber-500 text-black shadow-xs">
+                                <Crown className="h-2 w-2 fill-current" />
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-xs sm:text-sm font-bold text-white max-w-[130px] sm:max-w-[200px] md:max-w-none md:truncate-none">
+                            {p.name}
+                            {isMe ? ' (Du)' : ''}
+                          </span>
+                          {p.isReady ? (
+                            <Check className="h-4 w-4 shrink-0 text-emerald-400 stroke-[2.75]" />
+                          ) : (
+                            <span className="h-2 w-2 shrink-0 rounded-full bg-amber-400 animate-pulse" />
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
 
-              {/* Haupt-Aktion auf Desktop, Tablet und Landscape direkt in der rechten Spalte */}
-              <div className="hidden md:block landscape:block w-full pt-2">
+              {/* Haupt-Aktion auf Desktop, Tablet und Landscape direkt unter der Teilnehmerliste */}
+              <div className="hidden md:block landscape:block w-full pt-1">
                 {actionButton}
               </div>
             </div>
