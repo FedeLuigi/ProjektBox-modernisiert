@@ -7,7 +7,6 @@ import {
   Paintbrush,
   Send,
   Trash2,
-  Trophy,
   Undo2,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
@@ -708,44 +707,111 @@ export function DrawAndGuessBoard({
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // B) SMARTPHONE-ANSICHT: DER ZEICHNER (HOCHFORMAT GESTAPELT, QUERFORMAT 2-SPALTIG)
+  // B) SMARTPHONE-ANSICHT: RUNDENENDE-SCREEN (ZENTRIERT, KOMPAKT, EINHEITLICHES DESIGN)
+  // ═════════════════════════════════════════════════════════════════════════════
+  if (isRoundOver && !isTv) {
+    return (
+      <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 animate-fade-in select-none">
+        <div className="relative w-full max-w-sm rounded-3xl bg-[#14141E]/95 p-6 text-center ring-1 ring-white/15 shadow-2xl backdrop-blur-2xl flex flex-col items-center gap-4 overflow-hidden">
+          {/* Typischer Farb-Glow im einheitlichen App-Design */}
+          <div className={`pointer-events-none absolute -top-12 -right-12 h-32 w-32 rounded-full blur-2xl opacity-40 ${theme.ambientTop}`} />
+          <div className={`pointer-events-none absolute -bottom-12 -left-12 h-32 w-32 rounded-full blur-2xl opacity-35 ${theme.ambientBottom}`} />
+
+          {/* Kleiner Runden-Status */}
+          <span className="text-[11px] font-bold uppercase tracking-widest text-[#8E8E93]">
+            Runde beendet
+          </span>
+
+          {/* Gesuchtes Wort groß und deutlich */}
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-3xl sm:text-4xl font-black uppercase tracking-[0.18em] text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-amber-200 to-yellow-400 drop-shadow-[0_0_25px_rgba(252,211,77,0.45)]">
+              {gameState?.secretWord}
+            </span>
+          </div>
+
+          {/* Info, wer es erraten hat – klar und ohne überflüssige Doppel-Texte */}
+          <div className="w-full">
+            {gameState?.roundWinnerName ? (
+              <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/15 px-4 py-2 ring-1 ring-emerald-500/35 text-xs sm:text-sm font-bold text-emerald-300">
+                <span>🎉</span>
+                <span>
+                  <strong className="text-white font-black">{gameState.roundWinnerName}</strong> hat das Wort erraten!
+                </span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-full bg-white/[0.06] px-4 py-2 ring-1 ring-white/10 text-xs sm:text-sm font-semibold text-zinc-300">
+                <span>⏱️</span>
+                <span>Niemand hat das Wort erraten</span>
+              </div>
+            )}
+          </div>
+
+          {/* Countdown zur nächsten Runde */}
+          {transitionCountdown > 0 && (
+            <div className="w-full max-w-xs flex flex-col items-center gap-1.5 pt-1">
+              <div className="w-full h-1.5 rounded-full bg-white/10 overflow-hidden ring-1 ring-white/15">
+                <div
+                  className={`h-full bg-gradient-to-r ${theme.progressGradient} rounded-full transition-all duration-1000 ease-linear`}
+                  style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
+                />
+              </div>
+              <span className={`text-[11px] font-semibold ${theme.accentText}`}>
+                Nächste Runde in {transitionCountdown}s...
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ═════════════════════════════════════════════════════════════════════════════
+  // C) SMARTPHONE-ANSICHT: DER ZEICHNER (HOCHFORMAT GESTAPELT, QUERFORMAT 2-SPALTIG)
   // ═════════════════════════════════════════════════════════════════════════════
   if (isDrawer) {
     return (
       <div
-        className={`flex flex-col items-center w-full max-w-2xl landscape:max-w-5xl mx-auto select-none h-full min-h-0 justify-between ${
-          !isRoundOver
-            ? 'landscape:grid landscape:grid-cols-[minmax(0,1fr)_14.5rem] sm:landscape:grid-cols-[minmax(0,1fr)_16.5rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3 landscape:gap-y-2'
-            : ''
-        }`}
+        className="flex flex-col items-center w-full max-w-2xl landscape:max-w-5xl mx-auto select-none h-full min-h-0 justify-between landscape:grid landscape:grid-cols-[minmax(0,1fr)_16.5rem] sm:landscape:grid-cols-[minmax(0,1fr)_18rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-2"
       >
-        {/* Schmale Infozeile: Geheimes Wort & Timer (im Querformat oben in der rechten Spalte) */}
-        {!isRoundOver && (
-          <div className="w-full flex items-center justify-between gap-2 px-1 pb-1.5 landscape:pb-2 landscape:px-3 landscape:py-2 landscape:rounded-2xl landscape:bg-white/[0.05] landscape:ring-1 landscape:ring-white/10 shrink-0 landscape:col-start-2 landscape:row-start-1">
-            <div className="flex items-center gap-2 min-w-0">
-              <Paintbrush className={`h-4 w-4 ${theme.accentIcon} shrink-0`} />
-              <strong className="text-white text-sm sm:text-base font-black tracking-wide uppercase truncate">
-                {gameState?.secretWord}
-              </strong>
-            </div>
+        {/* Schöne zentrierte Wortanzeige & Timer direkt über der Zeichenfläche */}
+        <div className="w-full flex items-center justify-between gap-2 px-1 pb-1 shrink-0 landscape:col-start-1 landscape:row-start-1">
+          {/* Pinsel-Icon / Status links */}
+          <div className="flex items-center gap-1.5 text-amber-400 w-14 sm:w-16 shrink-0">
+            <Paintbrush className={`h-4 w-4 ${theme.accentIcon} shrink-0`} />
+            <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider hidden xs:inline text-white/70">
+              Malt
+            </span>
+          </div>
 
+          {/* Zu malendes Wort: GROSS, VOLLSTÄNDIG LESBAR UND MITTIG */}
+          <div className="flex-1 flex flex-col items-center justify-center text-center px-1 min-w-0">
+            <span className="text-[9px] sm:text-[10px] font-bold uppercase tracking-widest text-[#8E8E93] leading-none mb-0.5">
+              Zu malendes Wort
+            </span>
+            <span className="text-lg sm:text-2xl landscape:text-xl font-black uppercase tracking-wider text-amber-300 drop-shadow-[0_0_15px_rgba(252,211,77,0.35)] break-words max-w-full leading-tight">
+              {gameState?.secretWord}
+            </span>
+          </div>
+
+          {/* Timer sauber rechts */}
+          <div className="w-14 sm:w-16 flex justify-end shrink-0">
             <div
-              className={`flex items-center gap-1.5 px-2.5 py-0.5 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full font-mono font-black text-xs ring-1 shrink-0 ${
                 timeLeft <= 10
                   ? 'bg-rose-500/30 text-rose-300 ring-rose-500/50 animate-pulse'
                   : 'bg-white/10 text-white ring-white/15'
               }`}
             >
-              <Clock className="h-3.5 w-3.5" />
+              <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{timeLeft}s</span>
             </div>
           </div>
-        )}
+        </div>
 
-        {/* Dynamisch skalierende 4:3 Zeichenfläche (im Querformat links volle Höhe!) */}
+        {/* Dynamisch skalierende 4:3 Zeichenfläche (im Querformat links) */}
         <div
           ref={canvasStageRef}
-          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 landscape:col-start-1 landscape:row-start-1 landscape:row-span-2 landscape:h-full"
+          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 landscape:col-start-1 landscape:row-start-2 landscape:h-full"
         >
           <div
             style={
@@ -769,109 +835,89 @@ export function DrawAndGuessBoard({
             />
 
             {/* Toast wenn Mitspieler rät */}
-            {latestGuess && !isRoundOver && (
+            {latestGuess && (
               <div className="pointer-events-none absolute top-2.5 right-2.5 max-w-[220px] truncate px-3 py-1 rounded-full bg-black/75 backdrop-blur-md text-white text-[11px] font-bold ring-1 ring-white/20 animate-fade-in">
                 {latestGuess.playerName}: &quot;{latestGuess.text}&quot; {latestGuess.isCorrect ? '✅' : '❌'}
-              </div>
-            )}
-
-            {/* Runden-Ende Overlay */}
-            {isRoundOver && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center animate-fade-in z-20">
-                <Trophy className="h-10 w-10 text-amber-400 mb-2 animate-bounce" />
-                <h3 className="text-xl font-black text-white">Runde vorbei!</h3>
-                <p className="mt-1 text-xs text-[#AEAEB2]">
-                  Das Wort war: <strong className="text-amber-400 text-sm uppercase">{gameState.secretWord}</strong>
-                </p>
-                {gameState.roundWinnerName && (
-                  <p className="mt-1 text-xs text-emerald-400 font-extrabold">
-                    🎉 {gameState.roundWinnerName} hat es erraten!
-                  </p>
-                )}
-                {transitionCountdown > 0 && (
-                  <div className={`mt-3 text-xs font-bold ${theme.accentText}`}>
-                    Rollenwechsel in {transitionCountdown}s...
-                  </div>
-                )}
               </div>
             )}
           </div>
         </div>
 
-        {/* Mal-Werkzeuge (Hochkant Leiste unten, Querformat 7x2 Palette & Pinsel/Undo rechts) */}
-        {!isRoundOver && (
-          <div className="w-full mt-1.5 landscape:mt-0 px-2 py-1.5 landscape:p-2.5 rounded-2xl bg-white/[0.06] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-2 landscape:self-center">
-            <div className="flex items-center justify-between gap-2 landscape:flex-col landscape:items-stretch landscape:gap-2.5">
-              {/* Farb-Palette mit 14 Farben (in Portrait horizontal scrollbar, in Landscape 7x2 Grid) */}
-              <div className="flex items-center gap-1.5 overflow-x-auto overscroll-x-contain scrollbar-none px-2 py-2 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-1.5 landscape:justify-items-center landscape:overflow-visible landscape:p-1">
-                {COLORS.map((col) => (
+        {/* Mal-Werkzeuge: Hochkant Leiste unten, Querformat rechte Spalte */}
+        <div className="w-full mt-1.5 landscape:mt-0 p-2 sm:p-2.5 landscape:p-3 rounded-3xl bg-white/[0.05] ring-1 ring-white/10 backdrop-blur-md shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:self-center">
+          <div className="flex items-center justify-between gap-3 landscape:flex-col landscape:items-stretch landscape:gap-3.5">
+            {/* Farb-Palette mit 14 Farben (mit großzügigem Abstand & Ring-Offset, kein Aneinanderkleben) */}
+            <div className="flex items-center gap-2.5 sm:gap-3 overflow-x-auto overscroll-x-contain scrollbar-none px-2 py-2 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-2 sm:landscape:gap-2.5 landscape:justify-items-center landscape:overflow-visible landscape:p-1">
+              {COLORS.map((col) => {
+                const isSelected = currentColor === col;
+                return (
                   <button
                     key={col}
                     type="button"
                     onClick={() => setCurrentColor(col)}
                     aria-label={col === '#FFFFFF' ? 'Radierer / Weiß' : `Farbe ${col}`}
-                    className={`h-7 w-7 landscape:h-7 landscape:w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
-                      currentColor === col
-                        ? 'ring-2 ring-white scale-110 shadow-md'
-                        : 'ring-1 ring-black/30 hover:scale-105'
+                    className={`h-7 w-7 sm:h-7.5 sm:w-7.5 landscape:h-7 landscape:w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center ${
+                      isSelected
+                        ? 'ring-2 ring-white ring-offset-2 ring-offset-[#14141E] scale-105 shadow-md z-10'
+                        : 'ring-1 ring-white/20 hover:scale-105'
                     }`}
                     style={{ backgroundColor: col }}
                   >
                     {col === '#FFFFFF' && <Eraser className="h-3.5 w-3.5 text-black" />}
                   </button>
+                );
+              })}
+            </div>
+
+            {/* Pinselgrößen, Undo & Löschen */}
+            <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-white/10 landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t landscape:border-white/10 landscape:justify-between">
+              <div className="flex items-center gap-1.5">
+                {BRUSH_SIZES.map((b) => (
+                  <button
+                    key={b.size}
+                    type="button"
+                    onClick={() => setCurrentSize(b.size)}
+                    className={`px-2.5 landscape:px-2.5 py-1.5 landscape:py-1 rounded-xl text-[10px] landscape:text-[11px] font-bold transition-all cursor-pointer ${
+                      currentSize === b.size
+                        ? theme.brushActive
+                        : 'bg-white/10 text-[#8E8E93] hover:text-white'
+                    }`}
+                  >
+                    {b.label}
+                  </button>
                 ))}
               </div>
 
-              {/* Pinselgrößen, Undo & Löschen */}
-              <div className="flex items-center gap-2 shrink-0 pl-2 border-l border-white/10 landscape:pl-0 landscape:border-l-0 landscape:pt-2 landscape:border-t landscape:border-white/10 landscape:justify-between">
-                <div className="flex items-center gap-1">
-                  {BRUSH_SIZES.map((b) => (
-                    <button
-                      key={b.size}
-                      type="button"
-                      onClick={() => setCurrentSize(b.size)}
-                      className={`px-2 landscape:px-2 py-1 landscape:py-1 rounded-lg text-[10px] landscape:text-[11px] font-bold transition-all cursor-pointer ${
-                        currentSize === b.size
-                          ? theme.brushActive
-                          : 'bg-white/10 text-[#8E8E93] hover:text-white'
-                      }`}
-                    >
-                      {b.label}
-                    </button>
-                  ))}
-                </div>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleUndo}
+                  title="Letzten Strich rückgängig machen"
+                  aria-label="Rückgängig"
+                  className="p-1.5 sm:p-2 landscape:p-2 rounded-xl bg-white/10 hover:bg-white/20 text-white transition-colors active:scale-90 cursor-pointer"
+                >
+                  <Undo2 className="h-4 w-4" />
+                </button>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    type="button"
-                    onClick={handleUndo}
-                    title="Letzten Strich rückgängig machen"
-                    aria-label="Rückgängig"
-                    className="p-1.5 landscape:p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors active:scale-90 cursor-pointer"
-                  >
-                    <Undo2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={handleClear}
-                    title="Leinwand leeren"
-                    aria-label="Leinwand löschen"
-                    className="p-1.5 landscape:p-1.5 rounded-lg bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
-                  >
-                    <Trash2 className="h-3.5 w-3.5 landscape:h-4 landscape:w-4" />
-                  </button>
-                </div>
+                <button
+                  type="button"
+                  onClick={handleClear}
+                  title="Leinwand leeren"
+                  aria-label="Leinwand löschen"
+                  className="p-1.5 sm:p-2 landscape:p-2 rounded-xl bg-rose-500/20 text-rose-300 hover:bg-rose-500/30 transition-colors active:scale-90 cursor-pointer"
+                >
+                  <Trash2 className="h-4 w-4" />
+                </button>
               </div>
             </div>
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
   // ═════════════════════════════════════════════════════════════════════════════
-  // C) SMARTPHONE-ANSICHT: DER RATER (HOCHFORMAT UNTEREINANDER, QUERFORMAT NEBENEINANDER)
+  // D) SMARTPHONE-ANSICHT: DER RATER (HOCHFORMAT UNTEREINANDER, QUERFORMAT NEBENEINANDER)
   // ═════════════════════════════════════════════════════════════════════════════
   const totalSlots = Math.max(targetLength, guessInput.length);
   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
@@ -955,21 +1001,6 @@ export function DrawAndGuessBoard({
               height={300}
               className="w-full h-full block"
             />
-
-            {isRoundOver && (
-              <div className="absolute inset-0 bg-black/85 backdrop-blur-md flex flex-col items-center justify-center p-4 text-center animate-fade-in z-20">
-                <Trophy className="h-9 w-9 text-amber-400 mb-1.5 animate-bounce" />
-                <span className="text-xs font-semibold text-[#AEAEB2]">Gesuchtes Wort</span>
-                <strong className="text-amber-300 text-xl font-black uppercase tracking-wider mt-0.5">
-                  {gameState.secretWord}
-                </strong>
-                {transitionCountdown > 0 && (
-                  <div className={`mt-2 text-xs font-bold ${theme.accentText}`}>
-                    Nächste Runde in {transitionCountdown}s...
-                  </div>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}

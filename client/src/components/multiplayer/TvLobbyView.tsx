@@ -9,7 +9,6 @@ import {
   Layers,
   Palette,
   Play,
-  Tv,
   Users,
 } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
@@ -21,7 +20,6 @@ import {
   BTN_PRIMARY_BASE,
   BTN_PRIMARY_DISABLED,
   HEADER_BACK_BTN,
-  HEADER_BADGE_PILL,
   HEADER_ROW,
   STAGE_TWO_COL,
   getGameTheme,
@@ -39,8 +37,6 @@ interface TvLobbyViewProps {
 export function TvLobbyView({
   lobby: initialLobby,
   gameTitle,
-  categoryLabel,
-  categoryBadgeClass,
   onLeave,
   onGameStart,
 }: TvLobbyViewProps) {
@@ -116,17 +112,7 @@ export function TvLobbyView({
           <span>Lobby beenden</span>
         </button>
 
-        <div className="flex items-center gap-2.5">
-          <ConnectionStatusBadge />
-          <span
-            className={`${HEADER_BADGE_PILL} uppercase shadow-2xs ${
-              categoryBadgeClass || theme.badgePill
-            }`}
-          >
-            <Tv className="h-3.5 w-3.5" />
-            <span>{categoryLabel ? `TV • ${categoryLabel}` : 'TV-Modus'}</span>
-          </span>
-        </div>
+        <ConnectionStatusBadge />
       </header>
 
       {/* ─── 2. ZWEIGETEILTE BÜHNE (offen, ohne verschachtelte Kästen) ─── */}
