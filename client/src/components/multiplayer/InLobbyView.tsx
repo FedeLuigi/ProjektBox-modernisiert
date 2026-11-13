@@ -109,13 +109,13 @@ export function InLobbyView({
 
   useEffect(() => {
     if (desktopQrCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(desktopQrCanvasRef.current, joinUrl, 320).catch(console.error);
+      renderQrCodeToCanvas(desktopQrCanvasRef.current, joinUrl, 400).catch(console.error);
     }
   }, [joinUrl, lobby.code]);
 
   useEffect(() => {
     if (isQrModalOpen && qrModalCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(qrModalCanvasRef.current, joinUrl, 260).catch(console.error);
+      renderQrCodeToCanvas(qrModalCanvasRef.current, joinUrl, 400).catch(console.error);
     }
   }, [isQrModalOpen, joinUrl, lobby.code]);
 
@@ -261,17 +261,17 @@ export function InLobbyView({
               </div>
 
               {/* QR-Code: Bei wenig Platz direkt unten dran, auf Desktop in der linken Spalte */}
-              <div className="flex flex-col items-center md:items-start pt-0.5 sm:pt-1">
+              <div className="flex flex-col items-center md:items-start pt-1">
                 <button
                   type="button"
                   onClick={() => setIsQrModalOpen(true)}
                   title="Klicken zum Vergrößern"
                   aria-label="QR-Code vergrößern"
-                  className="rounded-[28px] bg-white p-3 sm:p-3.5 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0 max-w-full"
+                  className="rounded-3xl bg-white p-3.5 sm:p-4 shadow-xl ring-1 ring-white/20 hover:scale-[1.03] active:scale-95 transition-all cursor-pointer group shrink-0 max-w-full"
                 >
                   <canvas
                     ref={desktopQrCanvasRef}
-                    className="w-32 h-32 sm:w-36 sm:h-36 md:w-40 md:h-40 max-w-full aspect-square block rounded-2xl"
+                    className="w-48 h-48 sm:w-52 sm:h-52 md:w-52 md:h-52 lg:w-60 lg:h-60 landscape:w-36 landscape:h-36 max-w-full aspect-square block rounded-2xl"
                   />
                 </button>
               </div>
