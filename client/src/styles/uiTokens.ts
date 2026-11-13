@@ -193,3 +193,104 @@ export const SWITCH_TRACK_ON =
   'bg-[#10B981] border-2 border-[#065F46]';
 export const SWITCH_TRACK_OFF =
   'bg-[#CBD5E1] border-2 border-[#475569]';
+
+export interface GameWorldStageTheme {
+  bgGradient: string;
+  glowPrimary: string;
+  glowSecondary: string;
+  hudBadgeBg: string;
+  hudBadgeBorder: string;
+  hudBadgeText: string;
+  worldLabel: string;
+}
+
+const GAME_WORLD_STAGES: Record<string, GameWorldStageTheme> = {
+  'tic-tac-toe': {
+    bgGradient: 'from-[#091526] via-[#0F2442] to-[#060E1A]',
+    glowPrimary: 'bg-[#06B6D4]/20',
+    glowSecondary: 'bg-[#F59E0B]/15',
+    hudBadgeBg: 'bg-[#083344]/90',
+    hudBadgeBorder: 'border-[#06B6D4]',
+    hudBadgeText: 'text-[#67E8F9]',
+    worldLabel: 'CYBER DUEL 3×3',
+  },
+  'connect-four': {
+    bgGradient: 'from-[#0A1329] via-[#132347] to-[#070D1C]',
+    glowPrimary: 'bg-[#3B82F6]/20',
+    glowSecondary: 'bg-[#F43F5E]/15',
+    hudBadgeBg: 'bg-[#1E3A8A]/90',
+    hudBadgeBorder: 'border-[#60A5FA]',
+    hudBadgeText: 'text-[#BFDBFE]',
+    worldLabel: 'GRAVITY ARENA 7×6',
+  },
+  'draw-and-guess': {
+    bgGradient: 'from-[#1F102B] via-[#2E1740] to-[#13091C]',
+    glowPrimary: 'bg-[#EC4899]/20',
+    glowSecondary: 'bg-[#F59E0B]/15',
+    hudBadgeBg: 'bg-[#831843]/90',
+    hudBadgeBorder: 'border-[#F472B6]',
+    hudBadgeText: 'text-[#FBCFE8]',
+    worldLabel: 'ATELIER LIVE STUDIO',
+  },
+  memory: {
+    bgGradient: 'from-[#14112E] via-[#211C4C] to-[#0B091B]',
+    glowPrimary: 'bg-[#8B5CF6]/22',
+    glowSecondary: 'bg-[#F59E0B]/16',
+    hudBadgeBg: 'bg-[#3B0764]/90',
+    hudBadgeBorder: 'border-[#A78BFA]',
+    hudBadgeText: 'text-[#DDD6FE]',
+    worldLabel: 'ARCANE CARD VAULT',
+  },
+  reaction: {
+    bgGradient: 'from-[#1A0D1F] via-[#2A1230] to-[#0E0611]',
+    glowPrimary: 'bg-[#F43F5E]/20',
+    glowSecondary: 'bg-[#10B981]/18',
+    hudBadgeBg: 'bg-[#881337]/90',
+    hudBadgeBorder: 'border-[#FB7185]',
+    hudBadgeText: 'text-[#FFE4E6]',
+    worldLabel: 'REFLEX SENSOR LAB',
+  },
+  snake: {
+    bgGradient: 'from-[#051B14] via-[#0A2B21] to-[#03100C]',
+    glowPrimary: 'bg-[#10B981]/22',
+    glowSecondary: 'bg-[#F59E0B]/14',
+    hudBadgeBg: 'bg-[#064E3B]/90',
+    hudBadgeBorder: 'border-[#34D399]',
+    hudBadgeText: 'text-[#A7F3D0]',
+    worldLabel: 'BIO-GRID SERPENT',
+  },
+  '2048': {
+    bgGradient: 'from-[#1E150A] via-[#2E2010] to-[#120C05]',
+    glowPrimary: 'bg-[#F59E0B]/22',
+    glowSecondary: 'bg-[#EA580C]/16',
+    hudBadgeBg: 'bg-[#78350F]/90',
+    hudBadgeBorder: 'border-[#FBBF24]',
+    hudBadgeText: 'text-[#FEF3C7]',
+    worldLabel: 'GOLDEN MATRIX 2048',
+  },
+  minesweeper: {
+    bgGradient: 'from-[#0B1420] via-[#132235] to-[#070C14]',
+    glowPrimary: 'bg-[#38BDF8]/18',
+    glowSecondary: 'bg-[#F59E0B]/15',
+    hudBadgeBg: 'bg-[#1E293B]/95',
+    hudBadgeBorder: 'border-[#94A3B8]',
+    hudBadgeText: 'text-[#E2E8F0]',
+    worldLabel: 'TACTICAL RADAR SWEEPER',
+  },
+  'space-dodge': {
+    bgGradient: 'from-[#050714] via-[#0D122B] to-[#02030A]',
+    glowPrimary: 'bg-[#8B5CF6]/24',
+    glowSecondary: 'bg-[#06B6D4]/20',
+    hudBadgeBg: 'bg-[#2E1065]/90',
+    hudBadgeBorder: 'border-[#C084FC]',
+    hudBadgeText: 'text-[#E9D5FF]',
+    worldLabel: 'DEEP COSMOS SECTOR',
+  },
+};
+
+export function getGameWorldStage(gameId?: string): GameWorldStageTheme {
+  if (gameId && GAME_WORLD_STAGES[gameId]) {
+    return GAME_WORLD_STAGES[gameId];
+  }
+  return GAME_WORLD_STAGES['tic-tac-toe'];
+}

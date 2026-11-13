@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Pause, Play, Rocket, Shield } from 'lucide-react';
+import { Flame, Pause, Play, Rocket, Shield, Sparkles } from 'lucide-react';
 import type { GameRendererProps } from '../types';
-import { CrystalButton, CrystalGem, CrystalReadout } from '../../components/CrystalUI';
+import { CrystalGem } from '../../components/CrystalUI';
 import {
   playErrorSound,
   playMoveSound,
   playScoreSound,
+  triggerHapticFeedback,
 } from '../../utils/soundEffects';
 
 interface Obstacle {
@@ -17,11 +18,12 @@ interface Obstacle {
   isCore: boolean;
 }
 
-const STARFIELD = Array.from({ length: 22 }, (_, i) => ({
+const STARFIELD = Array.from({ length: 28 }, (_, i) => ({
   id: i,
   left: `${(i * 37) % 96 + 2}%`,
   top: `${(i * 53) % 96 + 2}%`,
-  size: i % 3 === 0 ? 3 : 2,
+  size: i % 4 === 0 ? 3.5 : 2,
+  opacity: i % 3 === 0 ? 'opacity-60' : 'opacity-30',
 }));
 
 export function SpaceDodgeBoard({
@@ -116,7 +118,7 @@ export function SpaceDodgeBoard({
             id: nextIdRef.current++,
             x: 8 + Math.random() * 84,
             y: -6,
-            size: isCore ? 26 : 22 + Math.floor(Math.random() * 14),
+            size: isCore ? 28 : 24 + Math.floor(Math.random() * 14),
             speed: isCore ? 3.8 : 4.2 + Math.random() * 1.4,
             isCore,
           });
@@ -128,6 +130,7 @@ export function SpaceDodgeBoard({
         coresRef.current += 1;
         setCoresCollected(coresRef.current);
         playScoreSound(Math.min(4, coresRef.current));
+        triggerHapticFeedback(12);
       }
 
       if (tookDamage) {
@@ -135,6 +138,7 @@ export function SpaceDodgeBoard({
         shieldsRef.current = nextShields;
         setShields(nextShields);
         playErrorSound();
+        triggerHapticFeedback([30, 45]);
 
         if (nextShields <= 0 && !endedRef.current) {
           endedRef.current = true;
@@ -149,7 +153,6 @@ export function SpaceDodgeBoard({
           }, 0);
           return;
         } else {
-          // 1.2s Unverwundbarkeit nach Schildtreffer
           invulnUntilRef.current = performance.now() + 1200;
           setInvulnerable(true);
         }
@@ -176,53 +179,63 @@ export function SpaceDodgeBoard({
   };
 
   return (
-    <div className="flex h-full w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[1fr_17rem] landscape:grid landscape:grid-cols-[1fr_15.5rem] items-stretch justify-center gap-2.5 sm:gap-5 px-1 sm:px-3 py-1 select-none">
-      {/* Hochformat Info-Zeile */}
-      <div className="flex lg:hidden landscape:hidden items-center justify-between w-full px-3 py-1.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[0_4px_0_rgba(15,23,42,0.28)] text-xs sm:text-sm font-arcade uppercase text-[#1E293B] shrink-0">
-        <div className="flex items-center gap-3">
+    <div className="flex h-full w-full max-w-5xl flex-1 min-h-0 flex-col items-center justify-between gap-2 sm:gap-2.5 px-1 sm:px-3 py-1 select-none">
+      {/* INTEGRIERTES COCKPIT-TELEMETRIE-PANEL */}
+      <div className="flex flex-wrap items-center justify-between gap-2 w-full px-3 sm:px-4 py-1.5 sm:py-2 bg-[#160B2E]/95 border-[3px] border-[#C084FC] shadow-[0_8px_20px_rgba(0,0,0,0.5)] text-xs sm:text-sm font-arcade uppercase text-[#F3E8FF] shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4">
           <span>
-            SCORE: <strong className="text-[#0284C7]">{score}</strong>
+            SCORE: <strong className="text-[#38BDF8]">{score}</strong>
           </span>
-          <span>WELLE {wave}</span>
+          <span className="text-[#E9D5FF]">
+            WELLE <strong className="text-white">{wave}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1 text-[#FDE68A]">
+            <Sparkles className="h-3.5 w-3.5 text-[#FBBF24]" />
+            <strong>{coresCollected}</strong>
+          </span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-1">
+        {/* Schutzschilde & Pause */}
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-1 bg-[#090514] px-2.5 py-0.5 border border-[#7C3AED]">
+            <span className="text-[10px] text-[#C4B5FD] mr-1 hidden xs:inline">SCHILDE</span>
             {Array.from({ length: 3 }).map((_, i) => (
               <Shield
                 key={i}
-                className={`h-4 w-4 ${
+                className={`h-4 w-4 transition-all ${
                   i < shields
-                    ? 'text-[#10B981] fill-[#10B981]'
-                    : 'text-[#94A3B8] opacity-40'
+                    ? 'text-[#34D399] fill-[#10B981] drop-shadow-[0_0_6px_#10B981]'
+                    : 'text-[#475569] opacity-35'
                 }`}
               />
             ))}
           </div>
+
           {started && (
             <button
               type="button"
               onClick={() => setPaused((p) => !p)}
-              className="px-2 py-0.5 text-[11px] bg-[#1E293B] text-white border-2 border-[#0F172A] cursor-pointer"
+              className="inline-flex items-center gap-1 px-2.5 py-0.5 text-[11px] bg-[#2E1065] hover:bg-[#4C1D95] text-white border-2 border-[#C084FC] cursor-pointer active:scale-95"
             >
-              {paused ? 'GO' : 'PAUSE'}
+              {paused ? <Play className="h-3 w-3" /> : <Pause className="h-3 w-3" />}
+              <span>{paused ? 'WEITER' : 'PAUSE'}</span>
             </button>
           )}
         </div>
       </div>
 
-      {/* GROSSFLÄCHIGE DEEP-SPACE-ARENA */}
+      {/* VOLLFLÄCHIGE DEEP-COSMOS ARENA */}
       <div
         ref={stageRef}
         onPointerDown={(e) => updateShipFromClientX(e.clientX)}
         onPointerMove={(e) => {
           if (e.buttons > 0 || e.pointerType === 'touch') updateShipFromClientX(e.clientX);
         }}
-        className={`relative w-full flex-1 min-h-[48dvh] sm:min-h-[58dvh] landscape:min-h-0 h-full bg-gradient-to-b from-[#090D16] via-[#0F172A] to-[#1E293B] border-[4px] border-[#334155] shadow-[inset_0_0_0_3px_#475569,0_12px_28px_rgba(9,13,22,0.55)] overflow-hidden touch-none cursor-ew-resize ${
-          invulnerable ? 'ring-2 ring-[#F43F5E]' : ''
+        className={`relative w-full flex-1 min-h-[48dvh] sm:min-h-[58dvh] landscape:min-h-0 h-full bg-gradient-to-b from-[#040611] via-[#0B1026] to-[#1A103C] border-[4px] border-[#A855F7] shadow-[inset_0_0_36px_rgba(168,85,247,0.25),0_16px_36px_rgba(0,0,0,0.7)] overflow-hidden touch-none cursor-ew-resize ${
+          invulnerable ? 'ring-4 ring-[#F43F5E]' : ''
         }`}
       >
-        {/* Statischer Sternenhimmel für Tiefenwirkung */}
+        {/* Kosmischer Sternenhimmel */}
         {STARFIELD.map((st) => (
           <div
             key={st.id}
@@ -232,15 +245,12 @@ export function SpaceDodgeBoard({
               width: `${st.size}px`,
               height: `${st.size}px`,
             }}
-            className="pointer-events-none absolute rounded-full bg-white/35"
+            className={`pointer-events-none absolute rounded-full bg-white ${st.opacity}`}
           />
         ))}
 
-        {/* Diagonal nebula sheen */}
-        <div
-          className="pointer-events-none absolute inset-0 bg-white/[0.03]"
-          style={{ clipPath: 'polygon(0 0, 58% 0, 32% 100%, 0 100%)' }}
-        />
+        {/* Horizont-Nebelschein unten */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-t from-[#7C3AED]/20 to-transparent" />
 
         {obstacles.map((o) => (
           <div
@@ -249,28 +259,33 @@ export function SpaceDodgeBoard({
             className="absolute -translate-x-1/2 -translate-y-1/2"
           >
             {o.isCore ? (
-              <CrystalGem size={o.size} active />
+              <div className="drop-shadow-[0_0_12px_rgba(56,189,248,0.85)]">
+                <CrystalGem size={o.size} active />
+              </div>
             ) : (
               <div
                 style={{
                   width: `${o.size}px`,
                   height: `${o.size}px`,
-                  clipPath: 'polygon(15% 0%, 88% 8%, 100% 75%, 72% 100%, 0% 82%)',
+                  clipPath: 'polygon(18% 0%, 86% 10%, 100% 72%, 68% 100%, 6% 84%, 0% 28%)',
                 }}
-                className="bg-[#64748B] border-2 border-[#CBD5E1] shadow-md"
+                className="bg-gradient-to-br from-[#94A3B8] via-[#475569] to-[#1E293B] border-2 border-[#E2E8F0] shadow-[0_0_10px_rgba(0,0,0,0.65)]"
               />
             )}
           </div>
         ))}
 
-        {/* Raumschiff mit Schutzschild-Ring */}
+        {/* Raumschiff mit Energieschild-Kuppel & Triebwerksflamme */}
         <div
-          style={{ left: `${shipX}%`, top: '85%' }}
-          className={`absolute -translate-x-1/2 -translate-y-1/2 grid h-12 w-12 sm:h-14 sm:w-14 place-items-center bg-[#F8FAFC] text-[#059669] border-[3px] border-[#10B981] shadow-[inset_0_0_0_2px_#FFFFFF,0_4px_14px_rgba(16,185,129,0.55)] transition-opacity ${
-            invulnerable ? 'opacity-60 animate-pulse' : 'opacity-100'
+          style={{ left: `${shipX}%`, top: '84%' }}
+          className={`absolute -translate-x-1/2 -translate-y-1/2 flex flex-col items-center transition-opacity ${
+            invulnerable ? 'opacity-55 animate-pulse' : 'opacity-100'
           }`}
         >
-          <Rocket className="h-6 w-6 sm:h-7 sm:w-7 -rotate-45" />
+          <div className="relative grid h-12 w-12 sm:h-14 sm:w-14 place-items-center rounded-full bg-gradient-to-b from-[#083344] to-[#0F172A] text-[#38BDF8] border-[3px] border-[#22D3EE] shadow-[0_0_20px_rgba(34,211,238,0.6)]">
+            <Rocket className="h-6 w-6 sm:h-7 sm:w-7 -rotate-45 text-white drop-shadow-[0_0_6px_#38BDF8]" />
+          </div>
+          <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-[#F59E0B] fill-[#FBBF24] -mt-1 rotate-180 animate-pulse" />
         </div>
 
         {/* Start- oder Pausen-Overlay */}
@@ -280,58 +295,35 @@ export function SpaceDodgeBoard({
               if (!started) setStarted(true);
               if (paused) setPaused(false);
             }}
-            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-[#090D16]/75 backdrop-blur-[2px] cursor-pointer text-center p-6"
+            className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-[#040611]/80 backdrop-blur-[2px] cursor-pointer text-center p-6"
           >
-            <span className="font-arcade text-2xl sm:text-3xl text-[#38BDF8] uppercase tracking-wider drop-shadow-[0_2px_0_#0F172A]">
-              {paused ? 'FLUG PAUSIERT' : 'ZIEHEN ODER TIPPEN ZUM STARTEN'}
+            <span className="font-arcade text-2xl sm:text-4xl text-[#38BDF8] uppercase tracking-wider drop-shadow-[0_3px_0_#0F172A]">
+              {paused ? 'SEKTOR PAUSIERT' : 'ZIEHEN ODER TIPPEN ZUM STARTEN'}
             </span>
-            <span className="font-arcade text-xs sm:text-sm text-[#E2E8F0] uppercase">
-              WEICHE ASTEROIDEN AUS • SAMMLE BLAUE ENERGIE-KRISTALLE (+30 PKT)
+            <span className="font-arcade text-xs sm:text-sm text-[#E9D5FF] uppercase">
+              WEICHE ASTEROIDEN AUS • SAMMLE ENERGIE-KRISTALLE (+30 PKT)
             </span>
           </div>
         )}
       </div>
 
-      {/* Cockpit-Seitenleiste & Steuerung */}
-      <aside className="flex flex-col justify-between gap-2.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_8px_0_rgba(15,23,42,0.35)] p-3 sm:p-4 shrink-0">
-        <div className="hidden lg:flex landscape:flex flex-col gap-2.5">
-          <CrystalReadout label="PUNKTE" value={score} />
-          <CrystalReadout
-            variant="emerald"
-            label="SCHUTZSCHILDE"
-            value={`${shields} / 3 AKTIV`}
-          />
-          <CrystalReadout
-            variant="gold"
-            label="WELLE / KRISTALLE"
-            value={`W${wave} • ${coresCollected} 💎`}
-          />
-        </div>
-
-        <div className="flex flex-col gap-2">
-          <div className="grid grid-cols-2 gap-2">
-            <CrystalButton size="md" variant="secondary" onClick={() => nudgeShip(-14)}>
-              ◀ LINKS
-            </CrystalButton>
-            <CrystalButton size="md" variant="secondary" onClick={() => nudgeShip(14)}>
-              RECHTS ▶
-            </CrystalButton>
-          </div>
-
-          <div className="hidden lg:block landscape:block">
-            <CrystalButton
-              size="sm"
-              fullWidth
-              variant="secondary"
-              disabled={!started}
-              onClick={() => setPaused((p) => !p)}
-            >
-              {paused ? <Play className="h-4 w-4" /> : <Pause className="h-4 w-4" />}
-              <span>{paused ? 'FORTSETZEN' : 'PAUSE'}</span>
-            </CrystalButton>
-          </div>
-        </div>
-      </aside>
+      {/* Kompakte Schubdüsen-Steuerleiste unten */}
+      <div className="grid grid-cols-2 gap-2.5 w-full max-w-md shrink-0">
+        <button
+          type="button"
+          onClick={() => nudgeShip(-14)}
+          className="h-10 sm:h-11 bg-[#2E1065]/90 hover:bg-[#4C1D95] text-[#F3E8FF] border-[3px] border-[#C084FC] font-arcade text-xs sm:text-sm uppercase shadow-[0_4px_0_rgba(0,0,0,0.45)] active:scale-95 cursor-pointer"
+        >
+          ◀ SCHUB LINKS
+        </button>
+        <button
+          type="button"
+          onClick={() => nudgeShip(14)}
+          className="h-10 sm:h-11 bg-[#2E1065]/90 hover:bg-[#4C1D95] text-[#F3E8FF] border-[3px] border-[#C084FC] font-arcade text-xs sm:text-sm uppercase shadow-[0_4px_0_rgba(0,0,0,0.45)] active:scale-95 cursor-pointer"
+        >
+          SCHUB RECHTS ▶
+        </button>
+      </div>
     </div>
   );
 }

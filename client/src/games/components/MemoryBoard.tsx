@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   Anchor,
-  Compass,
   Crown,
   Flame,
   Gem,
@@ -12,15 +11,72 @@ import {
   Zap,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
-import { CrystalButton, CrystalReadout } from '../../components/CrystalUI';
 import {
   playErrorSound,
   playMoveSound,
   playScoreSound,
   playWinSound,
+  triggerHapticFeedback,
 } from '../../utils/soundEffects';
 
-const ALL_ICONS = [Flame, Crown, Gem, Rocket, Moon, Anchor, Zap, Shield, Compass];
+const CARD_PAIRS = [
+  {
+    Icon: Flame,
+    label: 'FEUER',
+    openBg: 'from-[#FFF1F2] to-[#FFE4E6]',
+    openBorder: 'border-[#F43F5E]',
+    iconColor: 'text-[#E11D48]',
+  },
+  {
+    Icon: Crown,
+    label: 'KRONE',
+    openBg: 'from-[#FFFBEB] to-[#FEF3C7]',
+    openBorder: 'border-[#F59E0B]',
+    iconColor: 'text-[#D97706]',
+  },
+  {
+    Icon: Gem,
+    label: 'JUWEL',
+    openBg: 'from-[#ECFDF5] to-[#D1FAE5]',
+    openBorder: 'border-[#10B981]',
+    iconColor: 'text-[#059669]',
+  },
+  {
+    Icon: Rocket,
+    label: 'RAKETE',
+    openBg: 'from-[#ECFEFF] to-[#CFFAFE]',
+    openBorder: 'border-[#06B6D4]',
+    iconColor: 'text-[#0891B2]',
+  },
+  {
+    Icon: Moon,
+    label: 'MOND',
+    openBg: 'from-[#F5F3FF] to-[#EDE9FE]',
+    openBorder: 'border-[#8B5CF6]',
+    iconColor: 'text-[#7C3AED]',
+  },
+  {
+    Icon: Anchor,
+    label: 'ANKER',
+    openBg: 'from-[#EFF6FF] to-[#DBEAFE]',
+    openBorder: 'border-[#3B82F6]',
+    iconColor: 'text-[#2563EB]',
+  },
+  {
+    Icon: Zap,
+    label: 'BLITZ',
+    openBg: 'from-[#FEFCE8] to-[#FEF08A]',
+    openBorder: 'border-[#EAB308]',
+    iconColor: 'text-[#CA8A04]',
+  },
+  {
+    Icon: Shield,
+    label: 'SCHILD',
+    openBg: 'from-[#FDF2F8] to-[#FCE7F3]',
+    openBorder: 'border-[#EC4899]',
+    iconColor: 'text-[#DB2777]',
+  },
+];
 
 type DeckSize = 6 | 8; // 6 Paare (4x3) oder 8 Paare (4x4)
 
@@ -31,8 +87,7 @@ interface MemoryCard {
 }
 
 function createShuffledDeck(pairCount: DeckSize): MemoryCard[] {
-  const selected = ALL_ICONS.slice(0, pairCount);
-  const pairs = selected.flatMap((_, idx) => [idx, idx]);
+  const pairs = Array.from({ length: pairCount }, (_, idx) => [idx, idx]).flat();
   for (let i = pairs.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [pairs[i], pairs[j]] = [pairs[j], pairs[i]];
@@ -79,6 +134,7 @@ export function MemoryBoard({
       const efficiencyBonus = Math.max(0, (pairCount * 2 - moves) * 45);
       const finalScore = Math.max(150, score + efficiencyBonus);
       playWinSound();
+      triggerHapticFeedback([20, 40, 30]);
       const timer = setTimeout(() => {
         onMove({
           score: finalScore,
@@ -97,6 +153,7 @@ export function MemoryBoard({
     if (!card || card.matched || flipped.includes(uid)) return;
 
     playMoveSound();
+    triggerHapticFeedback(10);
     const nextFlipped = [...flipped, uid];
     setFlipped(nextFlipped);
 
@@ -117,6 +174,7 @@ export function MemoryBoard({
         setBestStreak(nextBestStreak);
         setScore(nextScore);
         playScoreSound(nextStreak);
+        triggerHapticFeedback([15, 25]);
 
         setCards((prev) =>
           prev.map((c) =>
@@ -142,136 +200,122 @@ export function MemoryBoard({
   const isFourByFour = pairCount === 8;
 
   return (
-    <div className="flex h-full w-full max-w-6xl flex-1 min-h-0 flex-col lg:flex-row landscape:flex-row items-center justify-center gap-3 sm:gap-5 px-1 sm:px-3 select-none">
-      {/* Obere kompakte Statusleiste auf Smartphones im Hochformat */}
-      <div className="flex lg:hidden landscape:hidden items-center justify-between gap-2 w-full max-w-xl px-3 py-2 bg-[#FFFBEB] border-[3px] border-[#9A3412] shadow-[0_4px_0_rgba(15,23,42,0.28)] text-xs sm:text-sm font-arcade uppercase text-[#78350F] shrink-0">
-        <div className="flex items-center gap-3">
-          <span>
-            PAARE: <strong className="text-[#EA580C]">{matchedCount}/{pairCount}</strong>
+    <div className="flex h-full w-full max-w-5xl flex-1 min-h-0 flex-col items-center justify-center gap-2 sm:gap-3.5 px-1 sm:px-3 select-none">
+      {/* INTEGRIERTE ARCANE-VAULT HUD-LEISTE (direkt über dem Kartentisch) */}
+      <div className="flex flex-wrap items-center justify-between gap-2 w-full max-w-[min(95vw,44rem)] landscape:max-w-[min(80vw,40rem)] px-3 sm:px-4 py-2 bg-[#1E1B4B]/95 border-[3px] border-[#8B5CF6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] text-xs sm:text-sm font-arcade uppercase text-[#EDE9FE] shrink-0">
+        <div className="flex items-center gap-3 sm:gap-4">
+          <span className="inline-flex items-center gap-1">
+            PAARE: <strong className="text-[#FBBF24]">{matchedCount}/{pairCount}</strong>
           </span>
-          <span>
-            ZÜGE: <strong className="text-[#1E293B]">{moves}</strong>
+          <span className="inline-flex items-center gap-1">
+            ZÜGE: <strong className="text-white">{moves}</strong>
+          </span>
+          <span className="inline-flex items-center gap-1">
+            PKT: <strong className="text-[#34D399]">{score}</strong>
           </span>
           {streak >= 2 && (
-            <span className="bg-[#059669] text-white px-2 py-0.5 text-[11px] border border-[#064E3B] animate-bounce">
-              {streak}x KOMBO!
+            <span className="bg-gradient-to-r from-[#F59E0B] to-[#EA580C] text-white px-2.5 py-0.5 text-[11px] border border-[#FEF3C7] shadow-[0_0_12px_rgba(245,158,11,0.6)] animate-bounce">
+              {streak}x KOMBO 🔥
             </span>
           )}
         </div>
 
+        {/* Feldgröße-Wahl */}
         <div className="flex items-center gap-1.5">
           <button
             type="button"
             onClick={() => resetDeck(6)}
-            className={`px-2 py-0.5 text-[11px] border-2 cursor-pointer ${
+            className={`px-2.5 py-1 text-[11px] font-arcade uppercase border-2 transition-all cursor-pointer active:scale-95 ${
               pairCount === 6
-                ? 'bg-[#EA580C] text-white border-[#78350F]'
-                : 'bg-white text-[#78350F] border-[#D97706]'
+                ? 'bg-[#7C3AED] text-white border-[#DDD6FE] shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+                : 'bg-[#0F172A]/80 text-[#C4B5FD] border-[#4C1D95] hover:bg-[#2E1065]'
             }`}
           >
-            4×3
+            4×3 (12)
           </button>
           <button
             type="button"
             onClick={() => resetDeck(8)}
-            className={`px-2 py-0.5 text-[11px] border-2 cursor-pointer ${
+            className={`px-2.5 py-1 text-[11px] font-arcade uppercase border-2 transition-all cursor-pointer active:scale-95 ${
               pairCount === 8
-                ? 'bg-[#EA580C] text-white border-[#78350F]'
-                : 'bg-white text-[#78350F] border-[#D97706]'
+                ? 'bg-[#7C3AED] text-white border-[#DDD6FE] shadow-[0_0_10px_rgba(139,92,246,0.5)]'
+                : 'bg-[#0F172A]/80 text-[#C4B5FD] border-[#4C1D95] hover:bg-[#2E1065]'
             }`}
           >
-            4×4
+            4×4 (16)
           </button>
         </div>
       </div>
 
-      {/* GROSSFLÄCHIGES KARTEN-SPIELFELD (füllt den gesamten verfügbaren Hauptbereich dynamisch aus) */}
+      {/* GROSSFLÄCHIGER ARCANE-KARTENTISCH */}
       <div className="flex-1 min-h-0 w-full flex items-center justify-center">
         <div
-          className={`grid grid-cols-4 gap-2 sm:gap-3.5 p-3 sm:p-4 bg-[#FFFBEB] border-[4px] border-[#9A3412] shadow-[inset_0_0_0_4px_#FDE68A,0_12px_24px_rgba(15,23,42,0.45)] w-full ${
+          className={`grid grid-cols-4 gap-2 sm:gap-3.5 landscape:gap-2 p-3 sm:p-5 landscape:p-2.5 bg-gradient-to-br from-[#1E1B4B] via-[#17153B] to-[#0F0C24] border-[4px] border-[#A78BFA] shadow-[inset_0_0_24px_rgba(139,92,246,0.25),0_16px_36px_rgba(0,0,0,0.65)] w-full ${
             isFourByFour
-              ? 'max-w-[min(92vw,calc(100dvh-10.5rem),37rem)] landscape:max-w-[min(64vw,calc(100dvh-4.8rem),36rem)] aspect-square'
-              : 'max-w-[min(94vw,calc((100dvh-10.5rem)*1.33),44rem)] landscape:max-w-[min(68vw,calc((100dvh-4.8rem)*1.33),42rem)] aspect-[4/3]'
+              ? 'max-w-[min(94vw,calc(100dvh-9.2rem),37rem)] landscape:max-w-[min(64vw,calc(100dvh-5.6rem),31rem)] aspect-square'
+              : 'max-w-[min(95vw,calc((100dvh-9.2rem)*1.33),45rem)] landscape:max-w-[min(74vw,calc((100dvh-5.6rem)*1.33),38rem)] aspect-[4/3]'
           }`}
         >
           {cards.map((card) => {
             const isOpen = card.matched || flipped.includes(card.uid);
             const isMismatch = mismatchPair.includes(card.uid);
-            const Icon = ALL_ICONS[card.pairId];
+            const pairTheme = CARD_PAIRS[card.pairId] || CARD_PAIRS[0];
+            const Icon = pairTheme.Icon;
 
             return (
               <button
                 key={card.uid}
                 type="button"
                 onClick={() => handleCardClick(card.uid)}
-                className={`group relative flex items-center justify-center transition-all duration-200 cursor-pointer active:scale-95 border-[3px] overflow-hidden ${
+                className={`group relative flex flex-col items-center justify-center gap-1 transition-all duration-200 cursor-pointer active:scale-95 border-[3px] overflow-hidden ${
                   card.matched
-                    ? 'bg-[#059669] text-white border-[#064E3B] shadow-[inset_0_0_0_2px_#6EE7B7,0_4px_0_rgba(6,78,59,0.35)] scale-[0.98]'
+                    ? 'bg-gradient-to-br from-[#059669] to-[#047857] text-white border-[#6EE7B7] shadow-[0_0_16px_rgba(16,185,129,0.5)] scale-[0.98]'
                     : isMismatch
-                      ? 'bg-[#FEE2E2] text-[#E11D48] border-[#991B1B] shadow-[inset_0_0_0_2px_#FECACA] screen-shake'
+                      ? 'bg-gradient-to-br from-[#FFE4E6] to-[#FECDD3] text-[#E11D48] border-[#F43F5E] screen-shake'
                       : isOpen
-                        ? 'bg-[#FFFFFF] text-[#1E293B] border-[#334155] shadow-[inset_0_0_0_2px_#F1F5F9,0_4px_0_rgba(15,23,42,0.25)] scale-[1.02]'
-                        : 'bg-[#EA580C] hover:bg-[#F97316] text-white border-[#9A3412] shadow-[inset_0_0_0_2px_#FDBA74,0_5px_0_rgba(154,52,18,0.38)] hover:-translate-y-0.5'
+                        ? `bg-gradient-to-br ${pairTheme.openBg} ${pairTheme.openBorder} shadow-[0_6px_16px_rgba(0,0,0,0.35)] scale-[1.02]`
+                        : 'bg-gradient-to-br from-[#4C1D95] via-[#3B0764] to-[#2E1065] hover:from-[#5B21B6] hover:to-[#3B0764] text-white border-[#C4B5FD]/80 shadow-[inset_0_2px_0_rgba(255,255,255,0.22),0_5px_0_rgba(15,12,36,0.75)] hover:-translate-y-0.5'
                 }`}
-                style={{
-                  clipPath: 'polygon(0% 3%, 100% 0%, 98% 97%, 2% 100%)',
-                }}
               >
+                {/* Edler Diagonal-Glanz */}
                 <div
-                  className="pointer-events-none absolute inset-0 bg-white/15"
+                  className="pointer-events-none absolute inset-0 bg-white/10"
                   style={{ clipPath: 'polygon(0 0, 58% 0, 32% 100%, 0 100%)' }}
                 />
+
                 {isOpen ? (
-                  <Icon
-                    className={`relative z-10 h-8 w-8 sm:h-11 sm:w-11 md:h-12 md:w-12 landscape:h-8 landscape:w-8 transition-transform duration-200 scale-110 ${
-                      card.matched
-                        ? 'text-white drop-shadow-[0_2px_0_rgba(6,78,59,0.65)]'
-                        : isMismatch
-                          ? 'text-[#E11D48]'
-                          : 'text-[#EA580C]'
-                    }`}
-                  />
+                  <>
+                    <Icon
+                      className={`relative z-10 h-8 w-8 sm:h-11 sm:w-11 md:h-12 md:w-12 landscape:h-7 landscape:w-7 transition-transform duration-200 scale-110 ${
+                        card.matched
+                          ? 'text-white drop-shadow-[0_2px_0_rgba(6,78,59,0.75)]'
+                          : isMismatch
+                            ? 'text-[#E11D48]'
+                            : pairTheme.iconColor
+                      }`}
+                    />
+                    <span
+                      className={`relative z-10 hidden sm:inline font-arcade text-[10px] tracking-wider uppercase ${
+                        card.matched
+                          ? 'text-[#D1FAE5]'
+                          : isMismatch
+                            ? 'text-[#9F1239]'
+                            : 'text-[#334155]'
+                      }`}
+                    >
+                      {pairTheme.label}
+                    </span>
+                  </>
                 ) : (
-                  <Sparkles className="relative z-10 h-6 w-6 sm:h-8 sm:w-8 text-[#FEF3C7]/90 transition-transform group-hover:scale-110" />
+                  <div className="relative z-10 flex h-9 w-9 sm:h-12 sm:w-12 landscape:h-8 landscape:w-8 items-center justify-center rounded-full border-2 border-[#FDE68A]/45 bg-[#1E1B4B]/60 transition-transform group-hover:scale-110">
+                    <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-[#FDE68A]" />
+                  </div>
                 )}
               </button>
             );
           })}
         </div>
       </div>
-
-      {/* Rechte Seitenleiste auf Desktop & im Querformat */}
-      <aside className="hidden lg:flex landscape:flex flex-col justify-center gap-3 w-52 sm:w-60 shrink-0 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_8px_0_rgba(15,23,42,0.35)] p-3.5">
-        <CrystalReadout variant="gold" label="PUNKTE" value={score} />
-        <CrystalReadout label="PAARE" value={`${matchedCount} / ${pairCount}`} />
-        <CrystalReadout
-          variant={streak >= 2 ? 'emerald' : 'neutral'}
-          label="ZÜGE / KOMBO"
-          value={streak >= 2 ? `${moves} (${streak}x 🔥)` : `${moves} ZÜGE`}
-        />
-
-        <div className="pt-1 flex flex-col gap-1.5">
-          <span className="font-arcade text-[11px] text-center text-[#475569] uppercase">
-            FELDGRÖSSE
-          </span>
-          <div className="grid grid-cols-2 gap-1.5">
-            <CrystalButton
-              size="sm"
-              variant={pairCount === 6 ? 'amber' : 'secondary'}
-              onClick={() => resetDeck(6)}
-            >
-              4×3 (12)
-            </CrystalButton>
-            <CrystalButton
-              size="sm"
-              variant={pairCount === 8 ? 'amber' : 'secondary'}
-              onClick={() => resetDeck(8)}
-            >
-              4×4 (16)
-            </CrystalButton>
-          </div>
-        </div>
-      </aside>
     </div>
   );
 }

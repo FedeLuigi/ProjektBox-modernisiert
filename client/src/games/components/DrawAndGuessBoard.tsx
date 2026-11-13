@@ -748,20 +748,20 @@ export function DrawAndGuessBoard({
       <div
         className="flex flex-col items-center w-full max-w-4xl landscape:max-w-6xl mx-auto select-none h-full min-h-0 justify-between landscape:grid landscape:grid-cols-[minmax(0,1fr)_17rem] sm:landscape:grid-cols-[minmax(0,1fr)_19rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-2"
       >
-        {/* Wortanzeige & Timer im Studio-Pearl-Banner mit Rose-Akzent */}
-        <div className="w-full flex items-center justify-between gap-2 px-2.5 py-1.5 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_2px_#FFFFFF,0_4px_0_rgba(15,23,42,0.28)] shrink-0 landscape:col-start-1 landscape:row-start-1">
-          <div className="flex items-center gap-1.5 text-[#DB2777] w-14 sm:w-16 shrink-0">
+        {/* Wortanzeige & Timer im Atelier-Studio-Banner mit Rose-Akzent */}
+        <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 landscape:col-start-1 landscape:row-start-1">
+          <div className="flex items-center gap-1.5 text-[#F472B6] w-14 sm:w-16 shrink-0">
             <Paintbrush className="h-4 w-4 shrink-0" />
             <span className="text-[10px] sm:text-[11px] font-arcade uppercase hidden xs:inline">
-              DRAW
+              ATELIER
             </span>
           </div>
 
           <div className="flex-1 flex flex-col items-center justify-center text-center px-1 min-w-0">
-            <span className="text-[9px] font-arcade uppercase tracking-wider text-[#64748B] leading-none mb-0.5">
-              WORD TO DRAW
+            <span className="text-[9px] font-arcade uppercase tracking-wider text-[#FBCFE8] leading-none mb-0.5">
+              ZEICHNE DIESES WORT
             </span>
-            <span className="text-base sm:text-xl font-arcade uppercase tracking-wider text-[#1E293B] break-words max-w-full leading-tight">
+            <span className="text-base sm:text-xl font-arcade uppercase tracking-wider text-white break-words max-w-full leading-tight">
               {gameState?.secretWord}
             </span>
           </div>
@@ -770,8 +770,8 @@ export function DrawAndGuessBoard({
             <div
               className={`flex items-center gap-1 px-2 py-0.5 font-arcade text-xs border-2 shrink-0 ${
                 timeLeft <= 10
-                  ? 'bg-[#E11D48] text-white border-[#881337] animate-pulse'
-                  : 'bg-[#1E293B] text-[#F8FAFC] border-[#0F172A]'
+                  ? 'bg-[#E11D48] text-white border-[#FDA4AF] animate-pulse'
+                  : 'bg-[#14071A] text-[#FBCFE8] border-[#F472B6]'
               }`}
             >
               <Clock className="h-3.5 w-3.5 shrink-0" />
@@ -814,8 +814,8 @@ export function DrawAndGuessBoard({
           </div>
         </div>
 
-        {/* Mal-Werkzeuge im neutralen Studio-Pearl-Panel für unverfälschte Farben */}
-        <div className="w-full mt-1.5 landscape:mt-0 p-2 sm:p-2.5 landscape:p-3 bg-[#F8FAFC] border-[3px] border-[#334155] shadow-[inset_0_0_0_3px_#FFFFFF,0_5px_0_rgba(15,23,42,0.3)] shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:self-center">
+        {/* Mal-Werkzeuge im edlen Atelier-Dock */}
+        <div className="w-full mt-1.5 landscape:mt-0 p-2 sm:p-2.5 landscape:p-3 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:self-center">
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 landscape:flex-col landscape:items-stretch landscape:gap-3.5">
             <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto overscroll-x-contain scrollbar-none px-1 py-1 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-2 landscape:justify-items-center landscape:overflow-visible">
               {COLORS.map((col) => {
@@ -914,16 +914,16 @@ export function DrawAndGuessBoard({
     >
       {!isRoundOver && (
         <div
-          className={`w-full flex items-center justify-between gap-2 px-2.5 py-1 bg-[#F8FAFC] border-2 border-[#334155] shadow-[0_3px_0_rgba(15,23,42,0.25)] shrink-0 ${
+          className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 ${
             isRaterTwoColLandscape ? 'landscape:col-start-2 landscape:row-start-1' : ''
           }`}
         >
-          <span className="text-xs font-arcade uppercase text-[#1E293B] truncate">
-            {drawerPlayer?.name || 'PLAYER'} DRAWS
+          <span className="text-xs font-arcade uppercase text-[#FBCFE8] truncate">
+            {drawerPlayer?.name || 'SPIELER'} ZEICHNET
           </span>
 
           {wrongText && (
-            <span className="truncate bg-[#E11D48] border border-[#881337] px-2 py-0.5 text-[10px] font-arcade uppercase text-white animate-fade-in">
+            <span className="truncate bg-[#E11D48] border border-[#FDA4AF] px-2 py-0.5 text-[10px] font-arcade uppercase text-white animate-fade-in">
               {wrongText}
             </span>
           )}
@@ -931,8 +931,8 @@ export function DrawAndGuessBoard({
           <div
             className={`flex items-center gap-1 px-2 py-0.5 font-arcade text-xs border-2 shrink-0 ${
               timeLeft <= 10
-                ? 'bg-[#E11D48] text-white border-[#881337] animate-pulse'
-                : 'bg-[#1E293B] text-[#F8FAFC] border-[#0F172A]'
+                ? 'bg-[#E11D48] text-white border-[#FDA4AF] animate-pulse'
+                : 'bg-[#14071A] text-[#FBCFE8] border-[#F472B6]'
             }`}
           >
             <Clock className="h-3.5 w-3.5" />

@@ -20,6 +20,7 @@ import {
   CrystalReadout,
   CrystalStatBar,
 } from '../CrystalUI';
+import { getGameWorldStage } from '../../styles/uiTokens';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -152,13 +153,22 @@ export function MultiplayerGameView({
   const isDraw = gameState?.status === 'draw';
 
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
+  const worldStage = getGameWorldStage(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in">
-      <BackgroundCometCanvas opacity={0.85} />
+    <div
+      className={`fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-gradient-to-br ${worldStage.bgGradient} text-[#1E293B] select-none animate-fade-in`}
+    >
+      <div
+        className={`pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl ${worldStage.glowPrimary}`}
+      />
+      <div
+        className={`pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full blur-3xl ${worldStage.glowSecondary}`}
+      />
+      <BackgroundCometCanvas opacity={0.45} />
 
       <div
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(10px+env(safe-area-inset-top,0px))] pb-[calc(10px+env(safe-area-inset-bottom,0px))] pl-[max(0.75rem,env(safe-area-inset-left,0px))] pr-[max(0.75rem,env(safe-area-inset-right,0px))] sm:px-6"
+        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(6px+env(safe-area-inset-top,0px))] pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))] sm:px-4 lg:px-6"
       >
         {/* 1. CRYSTAL TOP-BAR: EXIT links, Spielstatus Mitte, Code rechts */}
         <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
