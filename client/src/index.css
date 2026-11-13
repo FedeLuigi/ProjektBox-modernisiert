@@ -315,3 +315,67 @@
   animation: pbSplashFigureBurst 1.9s cubic-bezier(0.2, 0.9, 0.3, 1) both;
 }
 
+
+/* ─── Arcade Display-Schriftart (Chunky Cartoon Look wie im Vorbild) ─── */
+.font-arcade {
+  font-family: 'Lilita One', 'Fredoka', Impact, 'Arial Black', sans-serif;
+  letter-spacing: 0.02em;
+}
+
+.arcade-text-shadow {
+  text-shadow: 0 2px 0 rgba(16, 22, 58, 0.75), 0 4px 8px rgba(0, 0, 0, 0.35);
+}
+
+.arcade-title-shadow {
+  text-shadow:
+    0 3px 0 #1A4E7A,
+    0 5px 10px rgba(10, 32, 56, 0.45);
+}
+
+@keyframes cloudDrift {
+  0%, 100% {
+    transform: translateX(0px);
+  }
+  50% {
+    transform: translateX(14px);
+  }
+}
+
+@keyframes mascotBounce {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+  }
+  50% {
+    transform: translateY(-3px) scale(1.02, 0.98);
+  }
+}
+
+@keyframes lockWiggle {
+  0%, 100% {
+    transform: rotate(0deg) scale(1);
+  }
+  20% {
+    transform: rotate(-8deg) scale(1.06);
+  }
+  40% {
+    transform: rotate(8deg) scale(1.06);
+  }
+  60% {
+    transform: rotate(-5deg) scale(1.03);
+  }
+  80% {
+    transform: rotate(4deg) scale(1.01);
+  }
+}
+
+.animate-cloud-drift {
+  animation: cloudDrift 9s ease-in-out infinite;
+}
+
+.animate-mascot-bounce {
+  animation: mascotBounce 3.2s ease-in-out infinite;
+}
+
+.animate-lock-wiggle {
+  animation: lockWiggle 0.45s ease-in-out;
+}

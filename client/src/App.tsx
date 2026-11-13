@@ -1,27 +1,43 @@
-import { useEffect, useMemo, useState } from 'react';
-import { Trophy, Brain, Zap, Clock, Settings, Tv } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  CATEGORIES,
   type Category,
   GAMES,
   type Game,
 } from './data/games';
-import { CompactGameCard } from './components/CompactGameCard';
-import { QuickLaunchTile } from './components/QuickLaunchTile';
+import { GameCard } from './components/GameCard';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
-import { BackgroundCometCanvas } from './components/BackgroundCometCanvas';
+import { IslandBackground } from './components/IslandBackground';
+import {
+  ArcadeLogoHeader,
+  ArcadeMenuModal,
+  CoinCounterPill,
+  ComingSoonBanner,
+  IslandMascotWidget,
+  PlayerProfileBar,
+  PurpleActionCircleButton,
+  UnlockEpisodeModal,
+} from './components/ArcadeHudElements';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import { getUserProfile } from './utils/userProfile';
 import { socketService } from './services/socket';
 import { parseLobbyCode } from './utils/qrCodeHelper';
 import type { Lobby } from './types/multiplayer';
+import { Tv } from 'lucide-react';
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
 }
+
+const MASCOT_QUOTES = [
+  'Impress me.',
+  'Schaffst du 3 Sterne?',
+  'Zeig dein Talent!',
+  'Knack den Highscore!',
+  'Bereit für die Insel?',
+];
 
 export function App() {
   // Deep-Link Prüfung sofort beim ersten Render (verhindert Reload / Splash-Flackern)
@@ -32,7 +48,6 @@ export function App() {
 
   const [showSplash, setShowSplash] = useState(() => {
     if (typeof window !== 'undefined' && parseLobbyCode(window.location.href)) {
-      // Wenn per QR-Code / Deep-Link beigetreten wird: NIEMALS Splash-Screen zeigen
       return false;
     }
     return true;
@@ -46,8 +61,20 @@ export function App() {
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
   const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [deferredPrompt, setDeferredPrompt] =
-    useState<BeforeInstallPromptEvent | null>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+
+  // Arcade-Zustände aus dem Redesign
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [unlockModalGame, setUnlockModalGame] = useState<Game | null>(null);
+  const [modalMode, setModalMode] = useState<'menu' | 'shop' | 'settings' | null>(null);
+  const [coins, setCoins] = useState(72);
+  const [unlockedIds, setUnlockedIds] = useState<string[]>(() =>
+    GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id)
+  );
+  const [starsByGame, setStarsByGame] = useState<Record<string, number>>(() =>
+    Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22]))
+  );
+  const [quoteIndex, setQuoteIndex] = useState(0);
 
   // Einstellungen mit localStorage-Persistenz
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -68,16 +95,41 @@ export function App() {
     }
   });
 
-  const triggerHaptic = () => {
+  // Horizontales Maus-Drag & Scroll-Handling für die Episoden-Kartenreihe
+  const cardsScrollRef = useRef<HTMLDivElement | null>(null);
+  const isPointerDown = useRef(false);
+  const dragMoved = useRef(false);
+  const startScrollX = useRef(0);
+  const startClientX = useRef(0);
+
+  const games = useMemo(() => {
+    if (category === 'Alle') return GAMES;
+    return GAMES.filter((g) => g.category === category);
+  }, [category]);
+
+  const safeIndex = activeIndex >= games.length ? 0 : activeIndex;
+  const activeGame = games[safeIndex] || games[0];
+  const allUnlocked = unlockedIds.length === GAMES.length;
+
+  const progressPercent = useMemo(() => {
+    const unlockedStars = GAMES.reduce((sum, g) => {
+      if (!unlockedIds.includes(g.id)) return sum;
+      return sum + (starsByGame[g.id] ?? g.starsEarned ?? 22);
+    }, 0);
+    const maxStars = GAMES.reduce((sum, g) => sum + (g.starsTotal ?? 135), 0);
+    return Math.max(3, Math.min(100, Math.round((unlockedStars / maxStars) * 100)));
+  }, [unlockedIds, starsByGame]);
+
+  const triggerHaptic = useCallback(() => {
     if (!vibrationEnabled) return;
     try {
       if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
         navigator.vibrate(10);
       }
     } catch {
-      // Auf iOS/Desktop stumm ignorieren
+      // Ignorieren
     }
-  };
+  }, [vibrationEnabled]);
 
   const handleToggleSound = (enabled: boolean) => {
     triggerHaptic();
@@ -99,15 +151,35 @@ export function App() {
     localStorage.setItem('projektbox_vibration_enabled', String(enabled));
   };
 
-  const handleSelectGame = (game: Game) => {
-    triggerHaptic();
-    setMultiplayerGame(game);
+  const scrollToCardIndex = useCallback((idx: number) => {
+    const container = cardsScrollRef.current;
+    if (!container) return;
+    const cardEl = container.children[idx] as HTMLElement | undefined;
+    if (cardEl) {
+      cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+    }
+  }, []);
+
+  const handleSelectGame = (index: number) => {
+    if (index >= 0 && index < games.length) {
+      triggerHaptic();
+      setActiveIndex(index);
+    }
   };
 
-  const handleSelectCategory = (cat: Category) => {
+  const handleNext = useCallback(() => {
     triggerHaptic();
-    setCategory(cat);
-  };
+    const nextIdx = (safeIndex + 1) % games.length;
+    setActiveIndex(nextIdx);
+    scrollToCardIndex(nextIdx);
+  }, [triggerHaptic, safeIndex, games.length, scrollToCardIndex]);
+
+  const handlePrev = useCallback(() => {
+    triggerHaptic();
+    const prevIdx = (safeIndex - 1 + games.length) % games.length;
+    setActiveIndex(prevIdx);
+    scrollToCardIndex(prevIdx);
+  }, [triggerHaptic, safeIndex, games.length, scrollToCardIndex]);
 
   const handleSplashFinish = () => {
     triggerHaptic();
@@ -121,49 +193,42 @@ export function App() {
     if (outcome === 'accepted') setDeferredPrompt(null);
   };
 
-  // Spiele-Gruppen für die thematischen Sektionen
-  const quickLaunchGames = useMemo(() => {
-    const ids = ['draw-and-guess', 'reaction', 'tic-tac-toe', 'snake', 'memory', 'connect'];
-    return ids
-      .map((id) => GAMES.find((g) => g.id === id))
-      .filter((g): g is Game => Boolean(g));
-  }, []);
+  const handleUnlockWithCoins = (game: Game) => {
+    triggerHaptic();
+    const cost = game.unlockCost ?? 20;
+    if (coins >= cost && !unlockedIds.includes(game.id)) {
+      setCoins((c) => c - cost);
+      setUnlockedIds((prev) => [...prev, game.id]);
+    }
+    setUnlockModalGame(null);
+    setMultiplayerGame(game);
+  };
 
-  const strategyGames = useMemo(
-    () =>
-      GAMES.filter(
-        (g) =>
-          g.category === 'Strategie' ||
-          g.id === 'tic-tac-toe' ||
-          g.id === 'connect' ||
-          g.id === 'minesweeper'
-      ),
-    []
-  );
+  const handlePlayDirectly = (game: Game) => {
+    triggerHaptic();
+    if (!unlockedIds.includes(game.id)) {
+      setUnlockedIds((prev) => [...prev, game.id]);
+    }
+    setUnlockModalGame(null);
+    setMultiplayerGame(game);
+  };
 
-  const puzzleGames = useMemo(
-    () =>
-      GAMES.filter(
-        (g) =>
-          g.category === 'Denken' ||
-          g.id === 'draw-and-guess' ||
-          g.id === 'memory' ||
-          g.id === '2048'
-      ),
-    []
-  );
+  const handleToggleAllUnlocked = () => {
+    triggerHaptic();
+    if (allUnlocked) {
+      setUnlockedIds(GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id));
+    } else {
+      setUnlockedIds(GAMES.map((g) => g.id));
+    }
+  };
 
-  const arcadeGames = useMemo(
-    () =>
-      GAMES.filter(
-        (g) =>
-          g.category === 'Arcade' ||
-          g.id === 'reaction' ||
-          g.id === 'snake' ||
-          g.id === 'space-dodge'
-      ),
-    []
-  );
+  const handleResetProgress = () => {
+    triggerHaptic();
+    setCoins(72);
+    setUnlockedIds(GAMES.filter((g) => g.defaultUnlocked).map((g) => g.id));
+    setStarsByGame(Object.fromEntries(GAMES.map((g) => [g.id, g.starsEarned ?? 22])));
+    setCategory('Alle');
+  };
 
   // Zentraler Beitritt per Code / QR-Code: leitet sofort in die Lobby des jeweiligen Spiels weiter
   const joinByCode = async (code: string) => {
@@ -208,15 +273,29 @@ export function App() {
   }, []);
 
   useEffect(() => {
+    const preventZoom = (e: TouchEvent) => {
+      if (e.touches.length > 1) e.preventDefault();
+    };
+    const preventGesture = (e: Event) => e.preventDefault();
+
+    document.addEventListener('touchstart', preventZoom, { passive: false });
+    document.addEventListener('touchmove', preventZoom, { passive: false });
+    document.addEventListener('gesturestart', preventGesture);
+    document.addEventListener('gesturechange', preventGesture);
+    document.addEventListener('gestureend', preventGesture);
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showSplash) {
-        if (e.key === 'Escape') {
+        if (e.key === 'Escape' || e.key === ' ' || e.key === 'Enter') {
           handleSplashFinish();
         }
         return;
       }
       if (multiplayerGame) {
-        if (e.key === 'Escape') setMultiplayerGame(null);
+        if (e.key === 'Escape') {
+          setMultiplayerGame(null);
+          setDeepLinkLobby(null);
+        }
         return;
       }
       if (showSettings) {
@@ -227,10 +306,25 @@ export function App() {
         if (e.key === 'Escape') setShowTvJoinModal(false);
         return;
       }
-      if (multiplayerGame) {
+      if (unlockModalGame || modalMode) {
         if (e.key === 'Escape') {
-          setMultiplayerGame(null);
-          setDeepLinkLobby(null);
+          setUnlockModalGame(null);
+          setModalMode(null);
+        }
+        return;
+      }
+      if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+        e.preventDefault();
+        handleNext();
+      } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+        e.preventDefault();
+        handlePrev();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        if (unlockedIds.includes(activeGame.id)) {
+          setMultiplayerGame(activeGame);
+        } else {
+          setUnlockModalGame(activeGame);
         }
       }
     };
@@ -244,39 +338,58 @@ export function App() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
     return () => {
+      document.removeEventListener('touchstart', preventZoom);
+      document.removeEventListener('touchmove', preventZoom);
+      document.removeEventListener('gesturestart', preventGesture);
+      document.removeEventListener('gesturechange', preventGesture);
+      document.removeEventListener('gestureend', preventGesture);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
     };
-  }, [showSplash, showSettings, multiplayerGame]);
+  }, [
+    showSplash,
+    showSettings,
+    multiplayerGame,
+    showTvJoinModal,
+    unlockModalGame,
+    modalMode,
+    activeGame,
+    unlockedIds,
+    handleNext,
+    handlePrev,
+  ]);
 
-  const showAll = category === 'Alle';
+  // Maus-Ziehen zum horizontalen Scrollen der Kartenleiste
+  const onPointerDownStrip = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!cardsScrollRef.current) return;
+    isPointerDown.current = true;
+    dragMoved.current = false;
+    startClientX.current = e.clientX;
+    startScrollX.current = cardsScrollRef.current.scrollLeft;
+  };
+
+  const onPointerMoveStrip = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!isPointerDown.current || !cardsScrollRef.current) return;
+    const dx = e.clientX - startClientX.current;
+    if (Math.abs(dx) > 6) dragMoved.current = true;
+    cardsScrollRef.current.scrollLeft = startScrollX.current - dx;
+  };
+
+  const onPointerUpStrip = () => {
+    isPointerDown.current = false;
+  };
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh flex w-full flex-col overflow-hidden bg-[#0B0B0F] text-white select-none">
-      {/* ─── Sanfter Ambient-Hintergrund-Farbverlauf über die ganze Seite (oben bis ganz nach unten) ─── */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0"
-        style={{
-          background:
-            'radial-gradient(110% 70% at 50% -10%, rgba(139, 92, 246, 0.2) 0%, rgba(99, 102, 241, 0.09) 45%, transparent 80%), radial-gradient(110% 60% at 50% 108%, rgba(99, 102, 241, 0.16) 0%, rgba(139, 92, 246, 0.06) 45%, transparent 80%)',
-        }}
-      />
-      {/* ─── Hintergrund-Orbs & Globale Kometen-Animation erst nach Splash rendern (null GPU-Overhead beim Start) ─── */}
-      {!showSplash && (
-        <>
-          <div className="pointer-events-none absolute -top-24 -right-24 h-96 w-96 rounded-full blur-3xl opacity-60 bg-purple-600/20" />
-          <div className="pointer-events-none absolute -bottom-24 -left-24 h-96 w-96 rounded-full blur-3xl opacity-55 bg-indigo-600/20" />
-          <BackgroundCometCanvas opacity={0.65} />
-        </>
-      )}
-
-      {/* ─── Animierter 3D-Ladebildschirm beim Start ─── */}
+    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#2979B5] text-white select-none">
+      {/* ─── 0. Animierter Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+
+      {/* ─── 1. Illustrierter Tropen-Insel & Ozean-Karten-Hintergrund ─── */}
+      <IslandBackground />
 
       {/* ─── Schneller Verbindungs-Bildschirm bei QR-Code Beitritt (kein Neuladen / Flackern) ─── */}
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0B0B0F] text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
-          <BackgroundCometCanvas opacity={0.35} />
+        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0B0B0F]/90 backdrop-blur-md text-white select-none pt-[calc(1rem+env(safe-area-inset-top,0px))] pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
           <div className="relative z-10 flex flex-col items-center p-6 text-center max-w-sm mx-auto animate-fade-in">
             <div className="flex h-16 w-16 items-center justify-center rounded-3xl bg-purple-600/25 text-purple-300 ring-2 ring-purple-500/40 mb-4 shadow-[0_0_30px_rgba(168,85,247,0.35)] animate-pulse">
               <Tv className="h-8 w-8 text-purple-300" />
@@ -293,38 +406,28 @@ export function App() {
         </div>
       )}
 
-      {/* ─── 1. OBERE LEISTE: Kompakte einzeilige Kategorie-Filter & Aktionen rechts ─── */}
-      <header className="relative z-30 shrink-0 bg-transparent app-shell-x max-w-7xl mx-auto w-full pt-[calc(0.625rem+env(safe-area-inset-top,0px))] landscape:pt-[calc(0.375rem+env(safe-area-inset-top,0px))] lg:pt-5 pb-2 landscape:pb-1">
-        <div className="flex items-center justify-between gap-2.5">
-          {/* Links: Horizontale Kategorie-Pillen */}
-          <nav
-            role="tablist"
-            aria-label="Kategorien"
-            className="flex min-w-0 flex-1 items-center gap-1.5 sm:gap-2 overflow-x-auto scrollbar-none px-1.5 py-1.5"
-          >
-            {CATEGORIES.map((cat) => {
-              const isSelected = category === cat;
-              return (
-                <button
-                  key={cat}
-                  role="tab"
-                  aria-selected={isSelected}
-                  type="button"
-                  onClick={() => handleSelectCategory(cat)}
-                  className={`inline-flex h-8 sm:h-9 shrink-0 items-center justify-center rounded-full px-3.5 text-xs font-bold transition-all duration-200 cursor-pointer whitespace-nowrap ${
-                    isSelected
-                      ? 'bg-white text-[#1C1C1E] shadow-xs'
-                      : 'bg-white/[0.08] text-[#98989D] hover:text-white'
-                  }`}
-                >
-                  {cat}
-                </button>
-              );
-            })}
-          </nav>
+      {/* ─── 2. Haupt-HUD & Episoden-Bühne ─── */}
+      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+        {/* ═══ OBERE LEISTE: Münzen links (72) • PROJEKT BOX RELOADED Mitte • Player 1949 + ≡ rechts ═══ */}
+        <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-3 pt-0.5">
+          {/* Links: Goldmünzen-Zähler ("72") */}
+          <div className="shrink-0">
+            <CoinCounterPill
+              coins={coins}
+              onClick={() => {
+                triggerHaptic();
+                setModalMode('shop');
+              }}
+            />
+          </div>
 
-          {/* Rechts: TV beitreten & Einstellungen */}
-          <div className="flex shrink-0 items-center gap-2">
+          {/* Mitte: Großes Arcade-Logo ("PROJEKT BOX RELOADED") */}
+          <div className="mx-auto">
+            <ArcadeLogoHeader />
+          </div>
+
+          {/* Rechts: Roter Charakter-Avatar + "Player 1949" + Türkiser Menü-Button */}
+          <div className="shrink-0 pr-1 flex items-center gap-2">
             <button
               type="button"
               onClick={() => {
@@ -332,150 +435,213 @@ export function App() {
                 setTvJoinError(null);
                 setShowTvJoinModal(true);
               }}
-              aria-label="Mit Code oder QR beitreten"
-              title="Mit Code beitreten"
-              className="inline-flex h-8 sm:h-9 items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 rounded-full bg-purple-500/16 hover:bg-purple-500/24 text-purple-100 ring-1 ring-purple-400/35 font-bold text-xs sm:text-sm backdrop-blur-xl shadow-xs transition-all active:scale-95 cursor-pointer shrink-0"
+              title="Mit TV-Code beitreten"
+              className="hidden md:inline-flex h-9 items-center justify-center gap-1.5 px-3 rounded-full bg-[#2B337A] hover:bg-[#3C4696] text-[#67E8F9] ring-2 ring-[#3C4696] font-bold text-xs shadow-md transition-transform active:scale-95 cursor-pointer"
             >
-              <Tv className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-purple-300" />
-              <span>Mit Code</span>
+              <Tv className="h-4 w-4" />
+              <span>TV-Code</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => {
+            <PlayerProfileBar
+              playerName="Player 1949"
+              activeCategory={category}
+              onOpenMenu={() => {
                 triggerHaptic();
-                setShowSettings(true);
+                setModalMode('menu');
               }}
-              aria-label="Einstellungen öffnen"
-              title="Einstellungen"
-              className="grid h-8 w-8 sm:h-9 sm:w-9 place-items-center rounded-full bg-[#1C1C1E]/90 hover:bg-[#27272B] text-zinc-200 ring-1 ring-white/[0.1] backdrop-blur-xl transition-transform active:scale-95 cursor-pointer shadow-xs shrink-0"
-            >
-              <Settings className="h-4 w-4 sm:h-4.5 sm:w-4.5 text-zinc-200" />
-            </button>
+            />
+          </div>
+        </header>
+
+        {/* ═══ HAUPTBEREICH: Links Insel-Buttons & Maskottchen • Rechts Horizontale Episoden-Poster ═══ */}
+        <div className="relative flex flex-1 min-h-0 w-full items-center justify-between gap-2 sm:gap-4 pt-1 pb-1">
+          {/* ─── LINKE SPALTE: Shop-Button, "Coming Soon!" Pfeil, "Impress me." Maskottchen & Zahnrad-Button ─── */}
+          <aside className="relative z-20 flex h-full shrink-0 flex-col justify-between py-1 pl-1 sm:pl-2 w-[135px] sm:w-[235px] md:w-[285px] landscape:w-[175px] landscape:sm:w-[245px] landscape:md:w-[295px] portrait:hidden sm:portrait:flex">
+            {/* Oben links: Lila Einkaufswagen-Button */}
+            <div className="flex items-start">
+              <PurpleActionCircleButton
+                variant="shop"
+                label="Insel-Shop öffnen"
+                onClick={() => {
+                  triggerHaptic();
+                  setModalMode('shop');
+                }}
+              />
+            </div>
+
+            {/* Mitte links über der Insel: Schräger "Coming Soon!" Pfeil */}
+            <div className="my-auto self-center pl-4 sm:pl-8">
+              <ComingSoonBanner
+                onClick={() => {
+                  triggerHaptic();
+                  setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
+                }}
+              />
+            </div>
+
+            {/* Unten links: Maskottchen mit "Impress me." + "3%" & darunter der lila Zahnrad-Button */}
+            <div className="flex flex-col items-start gap-1">
+              <div className="self-center sm:self-end pr-1 sm:pr-3">
+                <IslandMascotWidget
+                  quote={MASCOT_QUOTES[quoteIndex]}
+                  progressPercent={progressPercent}
+                  onClickMascot={() => {
+                    triggerHaptic();
+                    setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
+                  }}
+                />
+              </div>
+
+              <PurpleActionCircleButton
+                variant="settings"
+                label="Einstellungen öffnen"
+                onClick={() => {
+                  triggerHaptic();
+                  setShowSettings(true);
+                }}
+              />
+            </div>
+          </aside>
+
+          {/* ─── RECHTER / HAUPT-BEREICH: Horizontale Reihe der hohen Episoden-Karten ─── */}
+          <main className="relative flex h-full flex-1 min-w-0 flex-col justify-center">
+            <div className="relative flex items-center w-full">
+              <div className="pointer-events-none hidden sm:block absolute left-1 bottom-0 top-[46%] w-5 border-l-2 border-b-2 border-white/75 z-0" />
+
+              <div
+                ref={cardsScrollRef}
+                onPointerDown={onPointerDownStrip}
+                onPointerMove={onPointerMoveStrip}
+                onPointerUp={onPointerUpStrip}
+                onPointerCancel={onPointerUpStrip}
+                className="no-scrollbar relative z-10 flex w-full items-center gap-3.5 sm:gap-5 md:gap-6 overflow-x-auto px-3 sm:px-5 py-3 scroll-smooth"
+              >
+                {games.map((game, index) => {
+                  const isUnlocked = unlockedIds.includes(game.id);
+                  const currentStars = starsByGame[game.id] ?? game.starsEarned ?? 22;
+
+                  return (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      isActive={index === safeIndex}
+                      isUnlocked={isUnlocked}
+                      starsEarned={currentStars}
+                      onSelect={() => {
+                        if (!dragMoved.current) handleSelectGame(index);
+                      }}
+                      onPlay={() => {
+                        if (!dragMoved.current) setMultiplayerGame(game);
+                      }}
+                      onUnlockRequest={() => {
+                        if (!dragMoved.current) setUnlockModalGame(game);
+                      }}
+                    />
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Kompakte Portrait-Leiste unten (nur auf schmalen Hochformat-Smartphones sichtbar) */}
+            <div className="mt-2 flex sm:portrait:hidden landscape:hidden items-center justify-between px-2">
+              <div className="flex items-center gap-2">
+                <PurpleActionCircleButton
+                  variant="shop"
+                  label="Insel-Shop öffnen"
+                  onClick={() => {
+                    triggerHaptic();
+                    setModalMode('shop');
+                  }}
+                />
+                <PurpleActionCircleButton
+                  variant="settings"
+                  label="Einstellungen öffnen"
+                  onClick={() => {
+                    triggerHaptic();
+                    setShowSettings(true);
+                  }}
+                />
+              </div>
+
+              <div className="scale-90 origin-bottom-right">
+                <IslandMascotWidget
+                  quote={MASCOT_QUOTES[quoteIndex]}
+                  progressPercent={progressPercent}
+                  onClickMascot={() => {
+                    triggerHaptic();
+                    setQuoteIndex((prev) => (prev + 1) % MASCOT_QUOTES.length);
+                  }}
+                />
+              </div>
+            </div>
+          </main>
+        </div>
+
+        {/* ═══ UNTEN RECHTS: Runde "EC" Plakette & Lila Pfeil-Button (wie im Vorbild) ═══ */}
+        <div className="pointer-events-none absolute right-3 sm:right-6 bottom-2 sm:bottom-3 z-30 flex flex-col items-center gap-2">
+          {/* Dunkler runder "EC" Badge-Button (Schaltet bei Klick bequem alle Schlösser frei/zu) */}
+          <button
+            type="button"
+            onClick={handleToggleAllUnlocked}
+            title={
+              allUnlocked
+                ? 'Karten-Schlösser wieder anzeigen'
+                : 'Alle Episoden-Schlösser sofort öffnen'
+            }
+            className="pointer-events-auto flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full border-[4px] border-[#3E5866] bg-[#647D89] text-white shadow-[0_5px_14px_rgba(0,0,0,0.45)] transition-transform active:scale-90 hover:scale-105 cursor-pointer"
+          >
+            <span className="font-arcade text-sm sm:text-base tracking-wider text-white/95">
+              EC
+            </span>
+          </button>
+
+          {/* Kleiner lila Pfeil-Button ganz unten rechts am Rand */}
+          <div className="pointer-events-auto -mb-4 sm:-mb-5">
+            <PurpleActionCircleButton
+              variant="up"
+              label="Nächste Episode zeigen"
+              onClick={handleNext}
+            />
           </div>
         </div>
-      </header>
+      </div>
 
-      {/* ─── 2. MITTE: Vertikal scrollbare Sektionen im App Store / Netflix Style ─── */}
-      <main className="relative z-10 flex-1 min-h-0 overflow-y-auto overscroll-y-contain pb-[calc(2rem+env(safe-area-inset-bottom,0px))] landscape:pb-[calc(1rem+env(safe-area-inset-bottom,0px))] pt-1 space-y-4 sm:space-y-5 landscape:space-y-2.5 scrollbar-none max-w-7xl mx-auto w-full">
-        {/* ── Sektion 1: Schnellstart ── */}
-        {(showAll || category === 'Arcade') && (
-          <section aria-labelledby="heading-quick-launch">
-            <div className="flex items-center app-shell-x mb-1">
-              <div className="flex items-center gap-1.5">
-                <Clock className="h-4 w-4 text-[#FB923C]" />
-                <h2
-                  id="heading-quick-launch"
-                  className="text-sm font-extrabold tracking-tight text-white"
-                >
-                  Schnellstart
-                </h2>
-              </div>
-            </div>
+      {/* ─── 3. Episode-Freischalten / Direkt-Spielen Popup bei Klick auf ein Schloss ─── */}
+      <UnlockEpisodeModal
+        game={unlockModalGame}
+        coins={coins}
+        onClose={() => setUnlockModalGame(null)}
+        onUnlockWithCoins={handleUnlockWithCoins}
+        onPlayDirectly={handlePlayDirectly}
+      />
 
-            {/* Horizontale Wischleiste mit genug vertikalem Padding gegen abgeschnittene Borders/Schatten */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
-              {quickLaunchGames.map((game) => (
-                <QuickLaunchTile
-                  key={`quick-${game.id}`}
-                  game={game}
-                  onSelect={() => handleSelectGame(game)}
-                />
-              ))}
-              <div className="w-1 shrink-0" aria-hidden="true" />
-            </div>
-          </section>
-        )}
+      {/* ─── 4. Menü-, Shop- & Einstellungs-Modal ─── */}
+      <ArcadeMenuModal
+        mode={modalMode}
+        onClose={() => setModalMode(null)}
+        category={category}
+        onSelectCategory={(cat) => {
+          triggerHaptic();
+          setCategory(cat);
+          setActiveIndex(0);
+        }}
+        allUnlocked={allUnlocked}
+        onToggleAllUnlocked={handleToggleAllUnlocked}
+        coins={coins}
+        onAddBonusCoins={() => {
+          triggerHaptic();
+          setCoins((c) => c + 50);
+        }}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => handleToggleSound(!soundEnabled)}
+        hapticsEnabled={vibrationEnabled}
+        onToggleHaptics={() => handleToggleVibration(!vibrationEnabled)}
+        onResetProgress={handleResetProgress}
+        canInstall={Boolean(deferredPrompt)}
+        onInstall={handleInstall}
+      />
 
-        {/* ── Sektion 2: Strategie ── */}
-        {(showAll || category === 'Strategie') && (
-          <section aria-labelledby="heading-strategy">
-            <div className="flex items-center app-shell-x mb-1">
-              <div className="flex items-center gap-1.5">
-                <Trophy className="h-4 w-4 text-[#A78BFA]" />
-                <h2
-                  id="heading-strategy"
-                  className="text-sm font-extrabold tracking-tight text-white"
-                >
-                  Strategie
-                </h2>
-              </div>
-            </div>
-
-            {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
-              {strategyGames.map((game) => (
-                <CompactGameCard
-                  key={`strat-${game.id}`}
-                  game={game}
-                  onSelect={() => handleSelectGame(game)}
-                />
-              ))}
-              <div className="w-1 shrink-0" aria-hidden="true" />
-            </div>
-          </section>
-        )}
-
-        {/* ── Sektion 3: Denken & Rätsel ── */}
-        {(showAll || category === 'Denken') && (
-          <section aria-labelledby="heading-puzzle">
-            <div className="flex items-center app-shell-x mb-1">
-              <div className="flex items-center gap-1.5">
-                <Brain className="h-4 w-4 text-[#FB923C]" />
-                <h2
-                  id="heading-puzzle"
-                  className="text-sm font-extrabold tracking-tight text-white"
-                >
-                  Denken & Rätsel
-                </h2>
-              </div>
-            </div>
-
-            {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
-              {puzzleGames.map((game) => (
-                <CompactGameCard
-                  key={`puzzle-${game.id}`}
-                  game={game}
-                  onSelect={() => handleSelectGame(game)}
-                />
-              ))}
-              <div className="w-1 shrink-0" aria-hidden="true" />
-            </div>
-          </section>
-        )}
-
-        {/* ── Sektion 4: Arcade & Reflexe ── */}
-        {(showAll || category === 'Arcade') && (
-          <section aria-labelledby="heading-arcade">
-            <div className="flex items-center app-shell-x mb-1">
-              <div className="flex items-center gap-1.5">
-                <Zap className="h-4 w-4 text-[#34D399]" />
-                <h2
-                  id="heading-arcade"
-                  className="text-sm font-extrabold tracking-tight text-white"
-                >
-                  Arcade & Reflexe
-                </h2>
-              </div>
-            </div>
-
-            {/* Horizontales Karussell (identischer linker Startabstand) */}
-            <div className="flex gap-3 overflow-x-auto snap-x snap-mandatory app-shell-x py-3 scrollbar-none overscroll-x-contain">
-              {arcadeGames.map((game) => (
-                <CompactGameCard
-                  key={`arcade-${game.id}`}
-                  game={game}
-                  onSelect={() => handleSelectGame(game)}
-                />
-              ))}
-              <div className="w-1 shrink-0" aria-hidden="true" />
-            </div>
-          </section>
-        )}
-      </main>
-
-      {/* ─── Multiplayer Lobby- & Spielbildschirm (für alle Spiele) ─── */}
+      {/* ─── 5. Multiplayer & Solo Lobby-Screen beim Start eines Spiels ─── */}
       {multiplayerGame && (
         <LobbyScreen
           game={multiplayerGame}
@@ -496,7 +662,7 @@ export function App() {
         errorMessage={tvJoinError}
       />
 
-      {/* ─── Einstellungsseite im exakten Stil des Game-Detail-Screens ─── */}
+      {/* ─── Einstellungen ─── */}
       <SettingsSheet
         isOpen={showSettings}
         onClose={() => setShowSettings(false)}

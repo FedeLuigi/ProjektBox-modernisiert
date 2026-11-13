@@ -26,7 +26,16 @@ export interface ToneStyle {
   playBtn: string;
   dot: string;
   glow: string;
+  headerBg?: string;
+  unlockedHeaderBg?: string;
 }
+
+export type ArtVariant =
+  | 'jungleSunset'
+  | 'mountainFlight'
+  | 'nightParty'
+  | 'palmBeach'
+  | 'cyberLagoon';
 
 export interface Game {
   id: string;
@@ -39,12 +48,20 @@ export interface Game {
   duration: string;
   icon: LucideIcon;
   tone: Tone;
+  episodeLines?: [string, string];
+  artVariant?: ArtVariant;
+  starsEarned?: number;
+  starsTotal?: number;
+  defaultUnlocked?: boolean;
+  unlockCost?: number;
 }
 
 export const CATEGORIES: Category[] = ['Alle', 'Strategie', 'Denken', 'Arcade'];
 
 export const TONE_STYLES: Record<Tone, ToneStyle> = {
   sunset: {
+    headerBg: '#549390',
+    unlockedHeaderBg: '#549390',
     cardBg:
       'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
     cardActiveBg:
@@ -64,6 +81,8 @@ export const TONE_STYLES: Record<Tone, ToneStyle> = {
     glow: 'bg-orange-400/25 dark:bg-orange-500/20',
   },
   indigo: {
+    headerBg: '#4C538E',
+    unlockedHeaderBg: '#5A489C',
     cardBg:
       'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
     cardActiveBg:
@@ -83,6 +102,8 @@ export const TONE_STYLES: Record<Tone, ToneStyle> = {
     glow: 'bg-violet-400/25 dark:bg-violet-500/20',
   },
   emerald: {
+    headerBg: '#272F66',
+    unlockedHeaderBg: '#2A7B6F',
     cardBg:
       'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
     cardActiveBg:
@@ -102,6 +123,8 @@ export const TONE_STYLES: Record<Tone, ToneStyle> = {
     glow: 'bg-emerald-400/25 dark:bg-emerald-500/20',
   },
   ocean: {
+    headerBg: '#37407A',
+    unlockedHeaderBg: '#2B79A8',
     cardBg:
       'bg-white/85 dark:bg-[#18181C]/90 hover:bg-white dark:hover:bg-[#1E1E24]',
     cardActiveBg:
@@ -125,10 +148,11 @@ export const TONE_STYLES: Record<Tone, ToneStyle> = {
 export const GAMES: Game[] = [
   {
     id: 'memory',
-    title: 'Memory',
+    episodeLines: ['HOT', 'PURSUIT'],
+    title: 'Insel-Memory',
     subtitle: 'Gedächtnis & Fokus',
     description:
-      'Finde die verdeckten Bildpaare in möglichst wenigen Zügen und trainiere dein Kurzzeitgedächtnis.',
+      'Finde die verdeckten Tropen-Paare im Sonnenuntergang in möglichst wenigen Zügen und trainiere dein Gedächtnis.',
     howToPlay:
       'Decke pro Zug zwei Karten auf. Stimmen die Symbole überein, bleiben sie offen.',
     category: 'Denken',
@@ -136,9 +160,15 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Brain,
     tone: 'sunset',
+    artVariant: 'jungleSunset',
+    starsEarned: 22,
+    starsTotal: 135,
+    defaultUnlocked: true,
+    unlockCost: 0,
   },
   {
     id: 'connect',
+    episodeLines: ['WHEN', 'CUBES FLY'],
     title: 'Vier gewinnt',
     subtitle: 'Taktisches Duell',
     description:
@@ -150,9 +180,15 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Grid2X2,
     tone: 'indigo',
+    artVariant: 'mountainFlight',
+    starsEarned: 45,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
   },
   {
     id: 'reaction',
+    episodeLines: ['PARTY', 'CRASHERS'],
     title: 'Reaktions-Test',
     subtitle: 'Reflex-Challenge',
     description:
@@ -164,9 +200,15 @@ export const GAMES: Game[] = [
     duration: '2 Min.',
     icon: Zap,
     tone: 'emerald',
+    artVariant: 'nightParty',
+    starsEarned: 33,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
   },
   {
     id: 'tic-tac-toe',
+    episodeLines: ['BACON', 'BEACH'],
     title: 'Tic Tac Toe',
     subtitle: 'Schneller Klassiker',
     description:
@@ -178,65 +220,15 @@ export const GAMES: Game[] = [
     duration: '3 Min.',
     icon: Puzzle,
     tone: 'ocean',
-  },
-  {
-    id: 'snake',
-    title: 'Snake',
-    subtitle: 'Retro Wurm-Jagd',
-    description:
-      'Steuere die Schlange, schnappe dir Äpfel und wachse unaufhaltsam – ohne in die Wände zu crashen.',
-    howToPlay:
-      'Wische oder nutze die Pfeiltasten, um die Richtung zu wechseln und Äpfel einzusammeln.',
-    category: 'Arcade',
-    players: '1 Spieler',
-    duration: '3 Min.',
-    icon: Flame,
-    tone: 'emerald',
-  },
-  {
-    id: '2048',
-    title: '2048',
-    subtitle: 'Zahlenrausch',
-    description:
-      'Kombiniere gleiche Zahlenblöcke durch geschicktes Wischen, bis die magische 2048 Kachel entsteht.',
-    howToPlay:
-      'Verschiebe alle Kacheln auf dem Spielfeld. Stoßen zwei gleiche Zahlen zusammen, verschmelzen sie.',
-    category: 'Denken',
-    players: '1 Spieler',
-    duration: '8 Min.',
-    icon: Gamepad2,
-    tone: 'sunset',
-  },
-  {
-    id: 'minesweeper',
-    title: 'Minenfeld',
-    subtitle: 'Logik & Spürsinn',
-    description:
-      'Decke sichere Kacheln auf, markiere gefährliche Sprengsätze mit Flaggen und löse das Minenfeld.',
-    howToPlay:
-      'Tippe zum Aufdecken. Zahlen zeigen an, wie viele Minen an diese Kachel angrenzen.',
-    category: 'Strategie',
-    players: '1 Spieler',
-    duration: '5 Min.',
-    icon: Bomb,
-    tone: 'indigo',
-  },
-  {
-    id: 'space-dodge',
-    title: 'Space Dodge',
-    subtitle: 'Galaxy Überleben',
-    description:
-      'Navigiere dein Raumschiff durch ein dichtes Asteroidenfeld und sammle leuchtende Raumkerne.',
-    howToPlay:
-      'Halte und ziehe dein Schiff nach links und rechts, um den anfliegenden Asteroiden auszuweichen.',
-    category: 'Arcade',
-    players: '1 Spieler',
-    duration: '2 Min.',
-    icon: Rocket,
-    tone: 'ocean',
+    artVariant: 'palmBeach',
+    starsEarned: 54,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
   },
   {
     id: 'draw-and-guess',
+    episodeLines: ['SECRET', 'CANVAS'],
     title: 'Zeichnen & Raten',
     subtitle: 'Kreatives Montagsmaler',
     description:
@@ -248,5 +240,90 @@ export const GAMES: Game[] = [
     duration: '5 Min.',
     icon: Palette,
     tone: 'sunset',
+    artVariant: 'cyberLagoon',
+    starsEarned: 18,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
+  },
+  {
+    id: 'snake',
+    episodeLines: ['RETRO', 'GLIDE'],
+    title: 'Snake',
+    subtitle: 'Retro Wurm-Jagd',
+    description:
+      'Steuere die Schlange, schnappe dir Äpfel und wachse unaufhaltsam – ohne in die Wände zu crashen.',
+    howToPlay:
+      'Wische oder nutze die Pfeiltasten, um die Richtung zu wechseln und Äpfel einzusammeln.',
+    category: 'Arcade',
+    players: '1 Spieler',
+    duration: '3 Min.',
+    icon: Flame,
+    tone: 'emerald',
+    artVariant: 'jungleSunset',
+    starsEarned: 15,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
+  },
+  {
+    id: '2048',
+    episodeLines: ['NUMBER', 'BLAST'],
+    title: '2048',
+    subtitle: 'Zahlenrausch',
+    description:
+      'Kombiniere gleiche Zahlenblöcke durch geschicktes Wischen, bis die magische 2048 Kachel entsteht.',
+    howToPlay:
+      'Verschiebe alle Kacheln auf dem Spielfeld. Stoßen zwei gleiche Zahlen zusammen, verschmelzen sie.',
+    category: 'Denken',
+    players: '1 Spieler',
+    duration: '8 Min.',
+    icon: Gamepad2,
+    tone: 'sunset',
+    artVariant: 'mountainFlight',
+    starsEarned: 28,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
+  },
+  {
+    id: 'minesweeper',
+    episodeLines: ['DANGER', 'ZONE'],
+    title: 'Minenfeld',
+    subtitle: 'Logik & Spürsinn',
+    description:
+      'Decke sichere Kacheln auf, markiere gefährliche Sprengsätze mit Flaggen und löse das Minenfeld.',
+    howToPlay:
+      'Tippe zum Aufdecken. Zahlen zeigen an, wie viele Minen an diese Kachel angrenzen.',
+    category: 'Strategie',
+    players: '1 Spieler',
+    duration: '5 Min.',
+    icon: Bomb,
+    tone: 'indigo',
+    artVariant: 'nightParty',
+    starsEarned: 10,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
+  },
+  {
+    id: 'space-dodge',
+    episodeLines: ['COSMIC', 'DRIFT'],
+    title: 'Space Dodge',
+    subtitle: 'Galaxy Überleben',
+    description:
+      'Navigiere dein Raumschiff durch ein dichtes Asteroidenfeld und sammle leuchtende Raumkerne.',
+    howToPlay:
+      'Halte und ziehe dein Schiff nach links und rechts, um den anfliegenden Asteroiden auszuweichen.',
+    category: 'Arcade',
+    players: '1 Spieler',
+    duration: '2 Min.',
+    icon: Rocket,
+    tone: 'ocean',
+    artVariant: 'palmBeach',
+    starsEarned: 12,
+    starsTotal: 135,
+    defaultUnlocked: false,
+    unlockCost: 20,
   },
 ];
