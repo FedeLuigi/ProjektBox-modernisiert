@@ -41,25 +41,26 @@ export function GameCard({
   return (
     <article
       onClick={handleCardClick}
-      className={`tablet-carousel-card widescreen-carousel-card landscape-horizontal-card group relative shrink-0 snap-center cursor-pointer select-none transition-all duration-300 pt-1 ${
+      className={`tablet-carousel-card widescreen-carousel-card landscape-horizontal-card group relative shrink-0 snap-center landscape:snap-start cursor-pointer select-none transition-all duration-300 pt-1 landscape:pt-0 landscape:h-full landscape:flex landscape:flex-col ${
         isActive
-          ? 'scale-100 sm:scale-[1.04] sm:-translate-y-1 xl:-translate-y-2 z-20 opacity-100 saturate-100 drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)] xl:drop-shadow-[0_24px_44px_rgba(0,0,0,0.65)]'
-          : 'scale-[0.93] z-10 opacity-85 saturate-[0.8] hover:opacity-95 hover:saturate-100 hover:scale-[0.95] drop-shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
-      } w-[83vw] max-w-[320px] sm:w-[300px] sm:max-w-none md:w-[315px] xl:w-[395px] 2xl:w-[415px] landscape:w-[420px] landscape:max-w-[450px]`}
+          ? 'scale-100 sm:scale-[1.04] sm:-translate-y-1 xl:-translate-y-2 landscape:scale-100 landscape:translate-y-0 z-20 opacity-100 saturate-100 drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)] xl:drop-shadow-[0_24px_44px_rgba(0,0,0,0.65)] landscape:drop-shadow-[0_6px_14px_rgba(0,0,0,0.4)]'
+          : 'scale-[0.93] landscape:scale-100 z-10 opacity-85 landscape:opacity-100 saturate-[0.8] landscape:saturate-100 hover:opacity-95 hover:saturate-100 hover:scale-[0.95] landscape:hover:scale-100 drop-shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
+      } w-[83vw] max-w-[320px] sm:w-[300px] sm:max-w-none md:w-[315px] xl:w-[395px] 2xl:w-[415px]`}
     >
       <CrystalPanel
         accent={game.accent}
-        contentClassName="pt-3 pb-3.5 sm:pt-3.5 sm:pb-4 xl:pt-4 xl:pb-5 px-3.5 sm:px-4 xl:px-5 landscape:p-2.5 gap-1.5 sm:gap-2 xl:gap-2.5 landscape:gap-0"
+        className="landscape:h-full landscape:flex-1"
+        contentClassName="pt-3 pb-3.5 sm:pt-3.5 sm:pb-4 xl:pt-4 xl:pb-5 px-3.5 sm:px-4 xl:px-5 landscape:p-3 landscape:h-full landscape:flex-1 gap-1.5 sm:gap-2 xl:gap-2.5 landscape:gap-0"
       >
         {/* ═══ 1. SMARTPHONE QUERFORMAT (LANDSCAPE): HORIZONTALES 2-SPALTEN-LAYOUT ═══ */}
-        <div className="hidden landscape:flex flex-row items-stretch w-full gap-3 h-full">
+        <div className="hidden landscape:flex flex-row items-stretch w-full gap-3 flex-1 h-full min-h-0">
           {/* Links: ca. 42% der Kartenbreite - Spiel-Vorschaubild inkl. Kategorie-Tag & Favoriten-Herz */}
-          <div className="relative w-[42%] shrink-0 flex flex-col justify-between">
+          <div className="relative w-[42%] shrink-0 flex flex-col justify-between h-full min-h-0">
             <div
               style={{
                 clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)',
               }}
-              className="relative w-full h-full min-h-[145px] bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)]"
+              className="relative w-full flex-1 h-full min-h-0 bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)]"
             >
               <div
                 style={{
@@ -120,7 +121,7 @@ export function GameCard({
           </div>
 
           {/* Rechts: Spieltitel, darunter Badges (SPIELER & DAUER), ganz unten Buttons (PLAY & TV) */}
-          <div className="flex flex-1 min-w-0 flex-col justify-between py-0.5">
+          <div className="flex flex-1 min-w-0 flex-col justify-between py-0.5 h-full">
             {/* Spieltitel */}
             <div className="w-full">
               <h3 className="font-arcade text-base sm:text-lg font-bold tracking-wider text-[#1E293B] uppercase leading-tight truncate">
@@ -155,7 +156,7 @@ export function GameCard({
                   onSelect();
                   onPlay(false);
                 }}
-                className="flex-1 h-8 text-xs font-bold"
+                className="flex-1 h-9 text-xs font-bold"
               >
                 PLAY
               </CrystalButton>
@@ -173,7 +174,7 @@ export function GameCard({
                     }}
                     title="Auf TV starten"
                     aria-label="Auf TV starten"
-                    className="h-8 px-2 text-xs"
+                    className="h-9 px-2.5 text-xs"
                   >
                     <Tv className="h-3.5 w-3.5" />
                     <span>TV</span>

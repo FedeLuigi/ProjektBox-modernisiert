@@ -111,6 +111,11 @@ export function App() {
   const [isMobileViewport, setIsMobileViewport] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 768 : false
   );
+  const [isLandscapeMobile, setIsLandscapeMobile] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.innerHeight <= 540 && window.innerWidth > window.innerHeight
+      : false
+  );
   const [isCompactScreen, setIsCompactScreen] = useState(() =>
     typeof window !== 'undefined' ? window.innerWidth < 430 : false
   );
@@ -118,6 +123,7 @@ export function App() {
   useEffect(() => {
     const onResize = () => {
       setIsMobileViewport(window.innerWidth < 768);
+      setIsLandscapeMobile(window.innerHeight <= 540 && window.innerWidth > window.innerHeight);
       setIsCompactScreen(window.innerWidth < 430);
     };
     window.addEventListener('resize', onResize);
@@ -191,16 +197,16 @@ export function App() {
   }, [games, activeGameId]);
 
   // Auf Desktop (>= 768px) wird bei 3 Spielen das aktive Spiel in die mittlere Fokus-Position rotiert;
-  // auf Mobile (< 768px) bleibt die Reihenfolge für flüssiges CSS Scroll-Snap stabil.
+  // auf Mobile (< 768px) & im Smartphone-Querformat bleibt die Reihenfolge für flüssiges CSS Scroll-Snap stabil.
   const displayedGames = useMemo(() => {
-    if (isMobileViewport || games.length !== 3) return games;
+    if (isMobileViewport || isLandscapeMobile || games.length !== 3) return games;
     const idx = games.findIndex((g) => g.id === activeGame.id);
     if (idx === -1 || idx === 1) return games;
     if (idx === 0) {
       return [games[2], games[0], games[1]];
     }
     return [games[1], games[2], games[0]];
-  }, [games, activeGame, isMobileViewport]);
+  }, [games, activeGame, isMobileViewport, isLandscapeMobile]);
 
   const triggerHaptic = useCallback(() => {
     if (!vibrationEnabled) return;
@@ -293,18 +299,26 @@ export function App() {
   }, []);
 
   // Beim Start & nach dem Splash-Screen die aktive Karte auf Mobile mittig einrasten
+  // (im Smartphone-Querformat zeigen wir 2 volle Karten nebeneinander ab Position 0)
   useEffect(() => {
-    if (!isMobileViewport || displayedGames.length === 0) return;
+    if (displayedGames.length === 0) return;
+    if (isLandscapeMobile) {
+      const raf = requestAnimationFrame(() => {
+        cardsScrollRef.current?.scrollTo({ left: 0, behavior: 'auto' });
+      });
+      return () => cancelAnimationFrame(raf);
+    }
+    if (!isMobileViewport) return;
     const activeIdx = displayedGames.findIndex((g) => g.id === activeGame.id);
     const targetIdx = activeIdx >= 0 ? activeIdx : Math.floor(displayedGames.length / 2);
     const raf = requestAnimationFrame(() => {
       scrollToCenterCard(targetIdx, true);
     });
     return () => cancelAnimationFrame(raf);
-  }, [isMobileViewport, showSplash, activeSection, sortBy]);
+  }, [isMobileViewport, isLandscapeMobile, showSplash, activeSection, sortBy, displayedGames, activeGame.id, scrollToCenterCard]);
 
   const handleCarouselScroll = useCallback(() => {
-    if (!isMobileViewport || programmaticScrollRef.current) return;
+    if ((!isMobileViewport && !isLandscapeMobile) || programmaticScrollRef.current) return;
     const container = cardsScrollRef.current;
     if (!container || displayedGames.length === 0) return;
 
@@ -326,34 +340,68 @@ export function App() {
     if (centeredGame && centeredGame.id !== activeGame.id) {
       setActiveGameId(centeredGame.id);
     }
-  }, [isMobileViewport, displayedGames, activeGame.id]);
+  }, [isMobileViewport, isLandscapeMobile, displayedGames, activeGame.id]);
 
   const handleSelectGame = useCallback(
     (gameId: string, renderedIdx: number) => {
       triggerHaptic();
       setActiveGameId(gameId);
+      if (isLandscapeMobile) {
+        const container = cardsScrollRef.current;
+        const cardEl = container?.children[renderedIdx] as HTMLElement | undefined;
+        cardEl?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'nearest' });
+        return;
+      }
       scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : renderedIdx);
     },
-    [triggerHaptic, scrollToCenterCard, games.length, isMobileViewport]
+    [triggerHaptic, scrollToCenterCard, games.length, isMobileViewport, isLandscapeMobile]
   );
 
   const handleNext = useCallback(() => {
     if (games.length === 0) return;
     triggerHaptic();
+    if (isLandscapeMobile) {
+      const container = cardsScrollRef.current;
+      const firstCard = container?.children[0] as HTMLElement | undefined;
+      if (container && firstCard) {
+        const step = firstCard.offsetWidth + 16;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        const nextLeft = container.scrollLeft < maxScroll - 12 ? container.scrollLeft + step : 0;
+        container.scrollTo({ left: nextLeft, behavior: 'smooth' });
+      }
+      const currentIdx = games.findIndex((g) => g.id === activeGame.id);
+      const nextIdx = (currentIdx + 1) % games.length;
+      setActiveGameId(games[nextIdx].id);
+      return;
+    }
     const currentIdx = games.findIndex((g) => g.id === activeGame.id);
     const nextIdx = (currentIdx + 1) % games.length;
     setActiveGameId(games[nextIdx].id);
     scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : nextIdx);
-  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport]);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport, isLandscapeMobile]);
 
   const handlePrev = useCallback(() => {
     if (games.length === 0) return;
     triggerHaptic();
+    if (isLandscapeMobile) {
+      const container = cardsScrollRef.current;
+      const firstCard = container?.children[0] as HTMLElement | undefined;
+      if (container && firstCard) {
+        const step = firstCard.offsetWidth + 16;
+        const maxScroll = container.scrollWidth - container.clientWidth;
+        const prevLeft = container.scrollLeft > 12 ? Math.max(0, container.scrollLeft - step) : maxScroll;
+        container.scrollTo({ left: prevLeft, behavior: 'smooth' });
+      }
+      const currentIdx = games.findIndex((g) => g.id === activeGame.id);
+      const prevIdx = (currentIdx - 1 + games.length) % games.length;
+      setActiveGameId(games[prevIdx].id);
+      return;
+    }
     const currentIdx = games.findIndex((g) => g.id === activeGame.id);
     const prevIdx = (currentIdx - 1 + games.length) % games.length;
     setActiveGameId(games[prevIdx].id);
     scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : prevIdx);
-  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport]);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport, isLandscapeMobile]);
 
   const handleSplashFinish = () => {
     triggerHaptic();
@@ -543,9 +591,9 @@ export function App() {
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
         {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="tablet-header landscape-top-bar relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-1 landscape:px-3">
+        <header className="tablet-header landscape-top-bar relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
           {/* Links: Flexibel schrumpfende Crystal-Suchleiste (flex-1 min-w-0) */}
-          <div className="tablet-search-container flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px]">
+          <div className="tablet-search-container flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px] landscape:max-w-[320px]">
             <div
               style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
               className="w-full min-w-0 bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
@@ -579,8 +627,8 @@ export function App() {
             </div>
           </div>
 
-          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
-          <div className="mx-auto hidden md:block">
+          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") - im Smartphone-Querformat ausgeblendet */}
+          <div className="landscape-hide-logo mx-auto hidden md:block landscape:hidden!">
             <ArcadeLogoHeader />
           </div>
 
@@ -616,11 +664,11 @@ export function App() {
         </header>
 
         {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
-        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:pt-0 landscape:justify-center">
-          <div className="widescreen-main-container mx-auto flex w-full max-w-[1005px] xl:max-w-[1420px] flex-col gap-1.5 sm:gap-2">
+        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:p-0 landscape:justify-stretch">
+          <div className="widescreen-main-container landscape-main-container mx-auto flex w-full max-w-[1005px] xl:max-w-[1420px] landscape:max-w-none landscape:flex-1 landscape:min-h-0 flex-col gap-1.5 sm:gap-2">
             {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE */}
             {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
-            <div className="hidden landscape:flex items-center justify-between gap-2.5 px-3 py-0.5 w-full">
+            <div className="hidden landscape:flex shrink-0 items-center justify-between gap-2.5 px-0.5 py-0 w-full">
               <span className="font-arcade text-xs tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase shrink-0">
                 SPIELAUSWAHL
               </span>
@@ -743,7 +791,7 @@ export function App() {
 
             {/* 2. KARTEN-KARUSSELL MIT SCROLL-SNAP AUF MOBILE & PFEIL-BUTTONS AUF DESKTOP */}
             {displayedGames.length > 0 ? (
-              <div className="relative flex w-full items-center justify-center">
+              <div className="landscape-carousel-row relative flex w-full landscape:flex-1 landscape:min-h-0 items-center landscape:items-stretch justify-center">
                 {/* Markanter, schräg angeschnittener Pfeil-Button links */}
                 {displayedGames.length > 1 && (
                   <button
@@ -752,13 +800,13 @@ export function App() {
                     title="Vorheriges Spiel"
                     aria-label="Vorheriges Spiel"
                     style={{ clipPath: 'polygon(12% 0%, 100% 6%, 88% 100%, 0% 94%)' }}
-                    className="widescreen-nav-arrow hidden sm:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 mr-2 xl:mr-3"
+                    className="widescreen-nav-arrow landscape-nav-arrow hidden sm:flex landscape:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 landscape:h-12 landscape:w-9 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 mr-2 xl:mr-3 landscape:mr-0"
                   >
-                    <ChevronLeft className="h-6 w-6 xl:h-8 xl:w-8 stroke-[3]" />
+                    <ChevronLeft className="h-6 w-6 xl:h-8 xl:w-8 landscape:h-5 landscape:w-5 stroke-[3]" />
                   </button>
                 )}
 
-                {/* Horizontale Kartenreihe mit CSS Scroll-Snap & symmetrischem Peek auf Mobile */}
+                {/* Horizontale Kartenreihe mit CSS Scroll-Snap & 2 vollen Karten im Querformat */}
                 <div
                   ref={cardsScrollRef}
                   onScroll={handleCarouselScroll}
@@ -766,7 +814,7 @@ export function App() {
                   onPointerMove={onPointerMoveStrip}
                   onPointerUp={onPointerUpStrip}
                   onPointerCancel={onPointerUpStrip}
-                  className="tablet-carousel-container widescreen-carousel-container no-scrollbar relative z-10 flex w-full snap-x snap-mandatory md:snap-none items-center justify-start md:justify-center gap-3 sm:gap-5 overflow-x-auto px-[8.5vw] sm:px-6 md:px-2 py-2 sm:py-4 landscape:py-1 scroll-smooth"
+                  className="tablet-carousel-container widescreen-carousel-container landscape-carousel-track no-scrollbar relative z-10 flex w-full snap-x snap-mandatory md:snap-none items-center justify-start md:justify-center gap-3 sm:gap-5 overflow-x-auto px-[8.5vw] sm:px-6 md:px-2 py-2 sm:py-4 landscape:p-0 scroll-smooth"
                 >
                   {displayedGames.map((game, index) => (
                     <GameCard
@@ -794,9 +842,9 @@ export function App() {
                     title="Nächstes Spiel"
                     aria-label="Nächstes Spiel"
                     style={{ clipPath: 'polygon(0% 6%, 88% 0%, 100% 94%, 12% 100%)' }}
-                    className="widescreen-nav-arrow hidden sm:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 ml-2 xl:ml-3"
+                    className="widescreen-nav-arrow landscape-nav-arrow hidden sm:flex landscape:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 landscape:h-12 landscape:w-9 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 ml-2 xl:ml-3 landscape:ml-0"
                   >
-                    <ChevronRight className="h-6 w-6 xl:h-8 xl:w-8 stroke-[3]" />
+                    <ChevronRight className="h-6 w-6 xl:h-8 xl:w-8 landscape:h-5 landscape:w-5 stroke-[3]" />
                   </button>
                 )}
               </div>
