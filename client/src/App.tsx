@@ -543,9 +543,9 @@ export function App() {
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
         {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1">
+        <header className="tablet-header relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1">
           {/* Links: Flexibel schrumpfende Crystal-Suchleiste (flex-1 min-w-0) */}
-          <div className="flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px]">
+          <div className="tablet-search-container flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px]">
             <div
               style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
               className="w-full min-w-0 bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
@@ -562,7 +562,8 @@ export function App() {
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={isCompactScreen ? 'SUCHEN...' : 'SPIEL SUCHEN...'}
                   aria-label="Spiele durchsuchen"
-                  className="font-arcade min-w-0 flex-1 w-full bg-transparent text-xs sm:text-sm tracking-wider text-[#F8FAFC] placeholder-[#94A3B8] uppercase focus:outline-none"
+                  style={{ color: '#FFFFFF', caretColor: '#FFFFFF' }}
+                  className="font-arcade min-w-0 flex-1 w-full bg-transparent text-xs sm:text-sm font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
                 />
                 {searchQuery && (
                   <button
@@ -615,8 +616,8 @@ export function App() {
         </header>
 
         {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
-        <main className="relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6">
-          <div className="mx-auto flex w-full max-w-[1005px] flex-col gap-1.5 sm:gap-2">
+        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6">
+          <div className="widescreen-main-container mx-auto flex w-full max-w-[1005px] xl:max-w-[1420px] flex-col gap-1.5 sm:gap-2">
             {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE */}
             <div className="flex flex-col gap-1.5 px-3 sm:px-2">
               <div className="flex items-center justify-between gap-2">
@@ -679,9 +680,10 @@ export function App() {
                     variant="secondary"
                     onClick={handleCycleSort}
                     title="Sortierreihenfolge ändern"
+                    className="xl:h-10 xl:px-4"
                   >
-                    <ArrowUpDown className="h-3.5 w-3.5" />
-                    <span>{currentSortLabel}</span>
+                    <ArrowUpDown className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
+                    <span className="xl:text-xs">{currentSortLabel}</span>
                   </CrystalButton>
                 </div>
               </div>
@@ -690,17 +692,17 @@ export function App() {
             {/* 2. KARTEN-KARUSSELL MIT SCROLL-SNAP AUF MOBILE & PFEIL-BUTTONS AUF DESKTOP */}
             {displayedGames.length > 0 ? (
               <div className="relative flex w-full items-center justify-center">
-                {/* Dezenter Pfeil-Button links */}
+                {/* Markanter, schräg angeschnittener Pfeil-Button links */}
                 {displayedGames.length > 1 && (
                   <button
                     type="button"
                     onClick={handlePrev}
                     title="Vorheriges Spiel"
                     aria-label="Vorheriges Spiel"
-                    style={{ clipPath: 'polygon(8% 0%, 100% 6%, 92% 100%, 0% 94%)' }}
-                    className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center bg-[#0F172A]/80 hover:bg-[#1E293B] text-[#E2E8F0] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-lg transition-all active:scale-90 cursor-pointer z-30 mr-1.5"
+                    style={{ clipPath: 'polygon(12% 0%, 100% 6%, 88% 100%, 0% 94%)' }}
+                    className="widescreen-nav-arrow hidden sm:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 mr-2 xl:mr-3"
                   >
-                    <ChevronLeft className="h-6 w-6 stroke-[2.6]" />
+                    <ChevronLeft className="h-6 w-6 xl:h-8 xl:w-8 stroke-[3]" />
                   </button>
                 )}
 
@@ -712,7 +714,7 @@ export function App() {
                   onPointerMove={onPointerMoveStrip}
                   onPointerUp={onPointerUpStrip}
                   onPointerCancel={onPointerUpStrip}
-                  className="no-scrollbar relative z-10 flex w-full snap-x snap-mandatory md:snap-none items-center justify-start md:justify-center gap-3 sm:gap-5 overflow-x-auto px-[8.5vw] sm:px-6 md:px-2 py-2 sm:py-4 landscape:py-1 scroll-smooth"
+                  className="tablet-carousel-container widescreen-carousel-container no-scrollbar relative z-10 flex w-full snap-x snap-mandatory md:snap-none items-center justify-start md:justify-center gap-3 sm:gap-5 overflow-x-auto px-[8.5vw] sm:px-6 md:px-2 py-2 sm:py-4 landscape:py-1 scroll-smooth"
                 >
                   {displayedGames.map((game, index) => (
                     <GameCard
@@ -732,17 +734,17 @@ export function App() {
                   ))}
                 </div>
 
-                {/* Dezenter Pfeil-Button rechts */}
+                {/* Markanter, schräg angeschnittener Pfeil-Button rechts */}
                 {displayedGames.length > 1 && (
                   <button
                     type="button"
                     onClick={handleNext}
                     title="Nächstes Spiel"
                     aria-label="Nächstes Spiel"
-                    style={{ clipPath: 'polygon(0% 6%, 92% 0%, 100% 94%, 8% 100%)' }}
-                    className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center bg-[#0F172A]/80 hover:bg-[#1E293B] text-[#E2E8F0] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-lg transition-all active:scale-90 cursor-pointer z-30 ml-1.5"
+                    style={{ clipPath: 'polygon(0% 6%, 88% 0%, 100% 94%, 12% 100%)' }}
+                    className="widescreen-nav-arrow hidden sm:flex shrink-0 h-11 w-11 xl:h-16 xl:w-14 items-center justify-center bg-gradient-to-b from-[#1E293B] to-[#0F172A] hover:from-[#334155] hover:to-[#1E293B] text-[#F8FAFC] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-[0_4px_12px_rgba(0,0,0,0.5)] transition-all active:scale-95 cursor-pointer z-30 ml-2 xl:ml-3"
                   >
-                    <ChevronRight className="h-6 w-6 stroke-[2.6]" />
+                    <ChevronRight className="h-6 w-6 xl:h-8 xl:w-8 stroke-[3]" />
                   </button>
                 )}
               </div>

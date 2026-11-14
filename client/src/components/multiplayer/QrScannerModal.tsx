@@ -203,7 +203,7 @@ export function QrScannerModal({
     >
       <IslandBackground />
 
-      <header className="relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
+      <header className="tablet-header relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
           ABBRECHEN
         </CrystalButton>
@@ -214,7 +214,7 @@ export function QrScannerModal({
 
       <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3">
         {errorType !== 'none' ? (
-          <div className="my-auto w-full max-w-sm pt-3">
+          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3">
             <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4">
               <CameraOff className="h-10 w-10 text-[#E11D48]" />
               <p className="text-center text-sm font-bold text-[#334155]">{errorMessage}</p>
@@ -224,7 +224,7 @@ export function QrScannerModal({
             </CrystalPanel>
           </div>
         ) : (
-          <div className="my-auto w-full max-w-sm pt-3">
+          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3">
             <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3">
               <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
                 <video

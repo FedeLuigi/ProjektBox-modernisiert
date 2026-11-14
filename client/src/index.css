@@ -38,6 +38,23 @@
     -webkit-font-smoothing: antialiased;
     font-family: 'Fredoka', -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", system-ui, sans-serif;
   }
+
+  /* ─── Globale Text- & Platzhalterfarbe für alle dunklen Eingabefelder ─── */
+  input,
+  input[type="text"],
+  input[type="search"] {
+    color: #FFFFFF !important;
+    caret-color: #FFFFFF !important;
+    -webkit-text-fill-color: #FFFFFF;
+  }
+
+  input::placeholder,
+  input[type="text"]::placeholder,
+  input[type="search"]::placeholder {
+    color: rgba(255, 255, 255, 0.55) !important;
+    -webkit-text-fill-color: rgba(255, 255, 255, 0.55);
+    opacity: 1 !important;
+  }
 }
 
 /* ─── Einheitliches Layout-Grundgerüst & Safe-Area Schutzabstand ─── */
@@ -179,4 +196,125 @@
   font-family: 'Lilita One', 'Fredoka', Impact, 'Arial Black', sans-serif;
   letter-spacing: 0.03em;
   text-transform: uppercase;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TABLET & IPAD BREAKPOINT SCOPING (768px - 1199px ONLY)
+   Strikt gekapselt: Smartphone (< 768px) und Desktop (>= 1200px) bleiben 100% unberührt!
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 768px) and (max-width: 1199px) {
+  /* Basisskalierung um ca. 15% auf iPads für proportionale Touch-Bedienung */
+  html {
+    font-size: 18px;
+  }
+
+  /* 1. Top-Header & Navigation auf Tablets mit 24px-32px Seitenabstand bündig zu den Ecken */
+  .tablet-header {
+    width: 100% !important;
+    max-width: 100% !important;
+    padding-left: clamp(24px, 3.5vw, 32px) !important;
+    padding-right: clamp(24px, 3.5vw, 32px) !important;
+    padding-top: 14px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .tablet-header .tablet-search-container {
+    max-width: 320px !important;
+  }
+
+  /* 2. Modals & Einzelkarten auf ca. 75% Breite vergrößern (max-width: 620px) */
+  .tablet-modal-box {
+    width: 75% !important;
+    max-width: 620px !important;
+  }
+
+  /* 3. Spielauswahl Karussell auf Tablets: vertikalen Leerraum reduzieren, 2 große Karten */
+  .tablet-main-area {
+    padding-top: 10px !important;
+    justify-content: flex-start !important;
+  }
+
+  .tablet-carousel-container {
+    padding-left: clamp(24px, 4vw, 40px) !important;
+    padding-right: clamp(24px, 4vw, 40px) !important;
+    gap: 24px !important;
+  }
+
+  .tablet-carousel-card {
+    width: clamp(340px, 42vw, 400px) !important;
+    max-width: 420px !important;
+  }
+
+  .tablet-carousel-card .h-28,
+  .tablet-carousel-card .sm\:h-36 {
+    height: 160px !important;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1199px) and (orientation: portrait) {
+  /* 4. Zwei-Spalten-Screens im Tablet-Hochformat (iPad Portrait) zu 1-Spalten-Layout (80%, max 640px) */
+  .tablet-portrait-stack {
+    grid-template-columns: 1fr !important;
+    width: 80% !important;
+    max-width: 640px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    gap: 22px !important;
+  }
+
+  .tablet-screen-main {
+    max-width: 680px !important;
+    padding-top: 14px !important;
+    padding-bottom: 24px !important;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   DESKTOP & WIDESCREEN OPTIMIERUNG (ab 1280px Breite)
+   Smartphone (< 768px) und Tablet (768px - 1199px) bleiben 100% unberührt!
+   ═══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 1280px) {
+  /* 1. Haupt-Content-Container auf 1360px bis 1440px (~85% Viewport) */
+  .widescreen-main-container {
+    width: 86% !important;
+    max-width: 1420px !important;
+    margin-top: auto !important;
+    margin-bottom: auto !important;
+  }
+
+  /* 2. Vertikale Zentrierung unterhalb der Top-Bar */
+  .widescreen-main-area {
+    justify-content: center !important;
+    align-items: center !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  /* 3. Karten-Karussell & Karten (380px–420px, Gap 28px–32px) */
+  .widescreen-carousel-container {
+    gap: clamp(28px, 2.2vw, 32px) !important;
+    padding-top: 16px !important;
+    padding-bottom: 20px !important;
+  }
+
+  .widescreen-carousel-card {
+    width: clamp(385px, 27vw, 420px) !important;
+    max-width: 420px !important;
+  }
+
+  .widescreen-carousel-card .h-28,
+  .widescreen-carousel-card .sm\:h-36 {
+    height: 175px !important;
+  }
+
+  /* 4. Markante, schräg angeschnittene Pfeil-Navigation */
+  .widescreen-nav-arrow {
+    width: 54px !important;
+    height: 64px !important;
+  }
+
+  .widescreen-nav-arrow > div {
+    width: 54px !important;
+    height: 64px !important;
+  }
 }

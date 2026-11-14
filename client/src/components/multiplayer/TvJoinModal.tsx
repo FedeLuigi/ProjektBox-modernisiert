@@ -47,7 +47,7 @@ export function TvJoinModal({
         onClick={onClose}
         className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto p-4 bg-[#0F172A]/80 backdrop-blur-xs select-none animate-fade-in"
       >
-        <div onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-sm pt-3">
+        <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm pt-3">
           <CrystalPanel
             topTabLabel="TV BEITRETEN"
             title="CODE EINGEBEN"
@@ -80,8 +80,13 @@ export function TvJoinModal({
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
                   placeholder="z. B. 9ZPZW"
                   aria-label="5-stelliger Lobby-Code"
-                  style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                  className="font-arcade h-12 sm:h-14 w-full border-2 border-[#475569] focus:border-[#F59E0B] bg-[#1E293B] px-4 text-center text-xl sm:text-2xl tracking-[0.28em] placeholder:tracking-[0.14em] text-[#F8FAFC] placeholder:text-[#64748B] focus:outline-none uppercase transition-colors"
+                  style={{
+                    clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
+                    paddingInline: '16px',
+                    color: '#FFFFFF',
+                    caretColor: '#FFFFFF',
+                  }}
+                  className="font-arcade h-12 sm:h-14 w-full border-2 border-[#475569] focus:border-[#F59E0B] bg-[#1E293B] px-4 text-center text-xl sm:text-2xl font-bold tracking-[0.28em] placeholder:tracking-[0.14em] text-white placeholder:text-white/55 focus:outline-none uppercase transition-colors caret-white"
                 />
               </div>
 

@@ -175,7 +175,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
       <BackgroundCometCanvas opacity={0.85} />
 
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
-        <header className="flex shrink-0 items-center justify-between gap-2 pb-2">
+        <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2">
           <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
             ZURÜCK
           </CrystalButton>
@@ -183,9 +183,9 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
           <ConnectionStatusBadge />
         </header>
 
-        <main className="mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-4">
+        <main className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-4">
           {/* Symmetrisches 2-Spalten-Grid mit exakt gleicher Kartenhöhe (items-stretch + h-full) */}
-          <div className="my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
+          <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
             {/* 1. LINKES PANEL: Spiel-Vorschau, Icon, Anleitung & Eckdaten (ohne redundanten Abbrechen-Button) */}
             <CrystalPanel
               title={game.title}
@@ -295,8 +295,13 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                           setHasCustomLobbyName(val.trim().length > 0);
                         }}
                         placeholder="Raumnamen eingeben..."
-                        style={{ clipPath: 'polygon(0% 5%, 100% 0%, 99% 96%, 1% 100%)' }}
-                        className="font-arcade h-11 sm:h-12 w-full bg-[#1E293B] px-3.5 text-center text-sm sm:text-base tracking-wider text-[#F8FAFC] placeholder-[#94A3B8] uppercase focus:outline-none"
+                        style={{
+                          clipPath: 'polygon(0% 5%, 100% 0%, 99% 96%, 1% 100%)',
+                          paddingInline: '16px',
+                          color: '#FFFFFF',
+                          caretColor: '#FFFFFF',
+                        }}
+                        className="font-arcade h-11 sm:h-12 w-full bg-[#1E293B] px-4 text-center text-sm sm:text-base font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
                       />
                     </div>
 

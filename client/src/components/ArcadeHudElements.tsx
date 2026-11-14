@@ -127,7 +127,7 @@ export function ArcadeMenuModal({
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/75 p-4 overflow-y-auto backdrop-blur-xs animate-fade-in"
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()} className="my-auto w-full max-w-sm pt-3">
+      <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm pt-3">
         <CrystalPanel title="SPIELFILTER" contentClassName="gap-3 py-5">
           <div className="flex w-full flex-col gap-2.5 px-2">
             {SECTION_ITEMS.map((item, idx) => {

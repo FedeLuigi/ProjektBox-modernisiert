@@ -183,7 +183,7 @@ export function InLobbyView({
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: "VERLASSEN" links, Spieltitel Mitte, Verbindungsstatus rechts */}
-      <header className="flex shrink-0 items-center justify-between gap-2 pb-2 w-full max-w-5xl mx-auto px-1">
+      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2 w-full max-w-5xl mx-auto px-1">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
           VERLASSEN
         </CrystalButton>
@@ -193,14 +193,14 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto px-2 pt-3 pb-2">
+      <div className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto px-2 pt-3 pb-2">
         {errorMsg && (
           <div className="font-arcade mb-3 border-[3px] border-[#991B1B] bg-[#FEE2E2] p-2.5 text-center text-xs text-[#991B1B] uppercase">
             {errorMsg}
           </div>
         )}
 
-        <div className="my-auto grid w-full items-stretch gap-5 grid-cols-1 md:grid-cols-[0.95fr_1.05fr]">
+        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-5 grid-cols-1 md:grid-cols-[0.95fr_1.05fr]">
           {/* Linkes Kristall-Panel: Beitrittscode, Link-Teilen & QR-Code */}
           <CrystalPanel
             title="LOBBY-CODE"
@@ -355,7 +355,7 @@ export function InLobbyView({
           className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/80 backdrop-blur-xs p-4 animate-fade-in"
           onClick={() => setIsQrModalOpen(false)}
         >
-          <div className="w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="tablet-modal-box w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
             <CrystalPanel
               topTabLabel="QR-CODE"
               accent="amber"

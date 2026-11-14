@@ -85,7 +85,7 @@ export function TvLobbyView({
 
   return (
     <div className="flex h-full w-full flex-col justify-between text-[#1E293B] select-none animate-fade-in">
-      <header className="flex shrink-0 items-center justify-between gap-2 pb-2">
+      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
           VERLASSEN
         </CrystalButton>
@@ -95,8 +95,8 @@ export function TvLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <main className="mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-3">
-        <div className="my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
+      <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-3">
+        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
           {/* Linkes Kristall-Panel: QR-Code & Lobby-Code */}
           <CrystalPanel
             title="TV-LOBBY"

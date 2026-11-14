@@ -41,15 +41,15 @@ export function GameCard({
   return (
     <article
       onClick={handleCardClick}
-      className={`group relative shrink-0 snap-center cursor-pointer select-none transition-all duration-300 pt-1 ${
+      className={`tablet-carousel-card widescreen-carousel-card group relative shrink-0 snap-center cursor-pointer select-none transition-all duration-300 pt-1 ${
         isActive
-          ? 'scale-100 sm:scale-[1.04] sm:-translate-y-1 z-20 opacity-100 saturate-100 drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)]'
+          ? 'scale-100 sm:scale-[1.04] sm:-translate-y-1 xl:-translate-y-2 z-20 opacity-100 saturate-100 drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)] xl:drop-shadow-[0_24px_44px_rgba(0,0,0,0.65)]'
           : 'scale-[0.93] z-10 opacity-85 saturate-[0.8] hover:opacity-95 hover:saturate-100 hover:scale-[0.95] drop-shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
-      } w-[83vw] max-w-[320px] sm:w-[300px] sm:max-w-none md:w-[315px] landscape:w-[240px]`}
+      } w-[83vw] max-w-[320px] sm:w-[300px] sm:max-w-none md:w-[315px] xl:w-[395px] 2xl:w-[415px] landscape:w-[240px]`}
     >
       <CrystalPanel
         accent={game.accent}
-        contentClassName="pt-3 pb-3.5 sm:pt-3.5 sm:pb-4 px-3.5 sm:px-4 landscape:pt-2.5 landscape:pb-2.5 landscape:px-3 gap-1.5 sm:gap-2 landscape:gap-1.5"
+        contentClassName="pt-3 pb-3.5 sm:pt-3.5 sm:pb-4 xl:pt-4 xl:pb-5 px-3.5 sm:px-4 xl:px-5 landscape:pt-2.5 landscape:pb-2.5 landscape:px-3 gap-1.5 sm:gap-2 xl:gap-2.5 landscape:gap-1.5"
       >
         {/* 1. OBERE ZEILE: Linksbündiges Kategorie-Tag + Favoriten-Herz-Button rechts */}
         <div className="flex items-center justify-between gap-2 w-full">
@@ -84,7 +84,7 @@ export function GameCard({
           style={{
             clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)',
           }}
-          className="relative w-full h-28 sm:h-36 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
+          className="relative w-full h-28 sm:h-36 xl:h-44 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
         >
           <div
             style={{

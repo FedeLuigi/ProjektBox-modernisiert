@@ -119,15 +119,15 @@ export function SettingsSheet({
 
       <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-start md:justify-between overflow-y-auto">
         {/* 1. Obere Navigationsleiste mit einem einzigen klaren "ZURÜCK"-Button links */}
-        <header className="flex shrink-0 items-center justify-start gap-2 pb-1.5 sm:pb-2">
+        <header className="tablet-header flex shrink-0 items-center justify-start gap-2 pb-1.5 sm:pb-2">
           <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handleSaveAndClose}>
             ZURÜCK
           </CrystalButton>
         </header>
 
         {/* 2. Hauptbereich: Auf Mobile startet "SPIELER" direkt oben ohne großen Leerraum, darunter "OPTIONEN" */}
-        <main className="mx-auto flex w-full max-w-4xl flex-1 md:my-auto items-start md:items-center justify-center pt-1.5 sm:pt-3 pb-3">
-          <div className="grid w-full items-stretch gap-3.5 sm:gap-6 grid-cols-1 md:grid-cols-2">
+        <main className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 md:my-auto items-start md:items-center justify-center pt-1.5 sm:pt-3 pb-3">
+          <div className="tablet-portrait-stack grid w-full items-stretch gap-3.5 sm:gap-6 grid-cols-1 md:grid-cols-2">
             {/* ERSTE KARTE: "SPIELER" Kristall-Panel für Avatar & Name */}
             <CrystalPanel
               topTabLabel="SPIELER"
@@ -162,13 +162,18 @@ export function SettingsSheet({
                     <input
                       id="player-profile-name-input"
                       type="text"
-                      value={nameInput || profile.name}
+                      value={nameInput}
                       onChange={handleNameChange}
                       onBlur={handleNameBlur}
                       maxLength={20}
                       placeholder="Spielername eingeben..."
-                      style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                      className="font-arcade w-full bg-[#1E293B] border border-[#475569] focus:border-[#818CF8] px-3 py-1.5 text-center text-sm sm:text-base tracking-wider text-[#F8FAFC] placeholder:text-[#94A3B8] uppercase focus:outline-none"
+                      style={{
+                        clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
+                        paddingInline: '16px',
+                        color: '#FFFFFF',
+                        caretColor: '#FFFFFF',
+                      }}
+                      className="font-arcade w-full bg-[#1E293B] border border-[#475569] focus:border-[#818CF8] px-4 py-2 text-center text-sm sm:text-base font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
                     />
                   </div>
 

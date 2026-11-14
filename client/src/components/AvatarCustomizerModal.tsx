@@ -82,7 +82,7 @@ export function AvatarCustomizerModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="my-auto w-full max-w-lg pt-3 flex flex-col"
+        className="tablet-modal-box my-auto w-full max-w-lg pt-3 flex flex-col"
       >
         <CrystalPanel topTabLabel="AVATAR ÄNDERN" accent="indigo" contentClassName="w-full gap-3 p-4 sm:p-5">
           {/* Vorschau (rund direkt auf dem Kartenhintergrund) + Würfel-Icon-Button */}
