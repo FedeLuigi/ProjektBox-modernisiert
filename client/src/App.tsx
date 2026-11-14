@@ -519,7 +519,7 @@ export function App() {
   const currentSortLabel = SORT_CYCLE.find((s) => s.id === sortBy)?.label || 'EMPFOHLEN';
 
   return (
-    <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none">
+    <div className="relative flex h-dvh min-h-dvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 
@@ -543,7 +543,7 @@ export function App() {
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
         {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="tablet-header relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1">
+        <header className="tablet-header landscape-top-bar relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-1 landscape:px-3">
           {/* Links: Flexibel schrumpfende Crystal-Suchleiste (flex-1 min-w-0) */}
           <div className="tablet-search-container flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px]">
             <div
@@ -616,10 +616,62 @@ export function App() {
         </header>
 
         {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
-        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6">
+        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:pt-0 landscape:justify-center">
           <div className="widescreen-main-container mx-auto flex w-full max-w-[1005px] xl:max-w-[1420px] flex-col gap-1.5 sm:gap-2">
             {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE */}
-            <div className="flex flex-col gap-1.5 px-3 sm:px-2">
+            {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
+            <div className="hidden landscape:flex items-center justify-between gap-2.5 px-3 py-0.5 w-full">
+              <span className="font-arcade text-xs tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase shrink-0">
+                SPIELAUSWAHL
+              </span>
+
+              <div className="no-scrollbar flex flex-1 min-w-0 items-center gap-1.5 overflow-x-auto pr-2">
+                {SECTION_ITEMS.map((item, idx) => {
+                  const count =
+                    item.id === 'favorites'
+                      ? favoriteIds.length
+                      : item.id === 'recent'
+                        ? recentEntries.length
+                        : null;
+
+                  return (
+                    <CrystalButton
+                      key={item.id}
+                      size="sm"
+                      tilt={idx % 2 === 0 ? 'left' : 'right'}
+                      variant={activeSection === item.id ? item.accent : 'secondary'}
+                      onClick={() => {
+                        triggerHaptic();
+                        setActiveSection(item.id);
+                      }}
+                      className="shrink-0 h-7 px-2.5 text-xs"
+                    >
+                      <span>{item.shortLabel}</span>
+                      {count !== null && count > 0 && (
+                        <span className="ml-0.5 opacity-90">({count})</span>
+                      )}
+                    </CrystalButton>
+                  );
+                })}
+              </div>
+
+              <div className="shrink-0">
+                <CrystalButton
+                  size="sm"
+                  tilt="right"
+                  variant="secondary"
+                  onClick={handleCycleSort}
+                  title="Sortierreihenfolge ändern"
+                  className="h-7 px-2.5 text-xs"
+                >
+                  <ArrowUpDown className="h-3 w-3" />
+                  <span>{currentSortLabel}</span>
+                </CrystalButton>
+              </div>
+            </div>
+
+            {/* ═══ STANDARDFALL (PORTRAIT & DESKTOP): 2 ZEILEN WIE BISHER ═══ */}
+            <div className="flex landscape:hidden flex-col gap-1.5 px-3 sm:px-2">
               <div className="flex items-center justify-between gap-2">
                 <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
                   SPIELAUSWAHL

@@ -193,27 +193,27 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto px-2 pt-3 pb-2">
+      <div className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-3 pb-2 landscape:pt-1 landscape:pb-1">
         {errorMsg && (
           <div className="font-arcade mb-3 border-[3px] border-[#991B1B] bg-[#FEE2E2] p-2.5 text-center text-xs text-[#991B1B] uppercase">
             {errorMsg}
           </div>
         )}
 
-        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-5 grid-cols-1 md:grid-cols-[0.95fr_1.05fr]">
+        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-5 landscape:gap-3 grid-cols-1 md:grid-cols-[0.95fr_1.05fr] landscape:grid-cols-2">
           {/* Linkes Kristall-Panel: Beitrittscode, Link-Teilen & QR-Code */}
           <CrystalPanel
             title="LOBBY-CODE"
             accent="amber"
             className="h-full"
-            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6"
+            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2.5 landscape:px-3 landscape:gap-1.5"
           >
-            <div className="flex w-full flex-col items-center gap-2">
-              <span className="font-arcade text-[11px] sm:text-xs tracking-wider text-[#334155] uppercase">
+            <div className="flex w-full flex-col items-center gap-2 landscape:gap-1">
+              <span className="font-arcade text-[11px] sm:text-xs landscape:text-[10px] tracking-wider text-[#334155] uppercase">
                 {copiedCode ? 'KOPIERT ✓' : 'TIPPEN ZUM KOPIEREN'}
               </span>
 
-              <div className="flex flex-wrap items-center justify-center gap-2.5 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-2.5 landscape:gap-1.5 w-full">
                 <div
                   onClick={handleCopyCode}
                   title="Lobby-Code in die Zwischenablage kopieren"
@@ -227,7 +227,7 @@ export function InLobbyView({
                   onClick={handleCopyLink}
                   title="Direkten Einladungslink in die Zwischenablage kopieren"
                   style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                  className={`font-arcade inline-flex items-center justify-center gap-1.5 border-[2.5px] px-3 py-2 text-xs uppercase tracking-wider shadow-[0_3px_0_rgba(15,23,42,0.22)] transition-all hover:scale-[1.03] active:scale-95 cursor-pointer shrink-0 ${
+                  className={`font-arcade inline-flex items-center justify-center gap-1.5 border-[2.5px] px-3 py-2 landscape:py-1 landscape:px-2 text-xs uppercase tracking-wider shadow-[0_3px_0_rgba(15,23,42,0.22)] transition-all hover:scale-[1.03] active:scale-95 cursor-pointer shrink-0 ${
                     copiedLink
                       ? 'border-[#064E3B] bg-[#059669] text-white'
                       : 'border-[#0F172A] bg-[#334155] text-[#F8FAFC] hover:bg-[#1E293B]'
@@ -251,12 +251,12 @@ export function InLobbyView({
             <button
               type="button"
               onClick={() => setIsQrModalOpen(true)}
-              className="my-auto border-[4px] border-[#1E293B] bg-white p-3 shadow-[0_6px_0_rgba(15,23,42,0.3)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="my-auto border-[4px] border-[#1E293B] bg-white p-3 landscape:p-1 shadow-[0_6px_0_rgba(15,23,42,0.3)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
               title="QR-Code vergrößern"
             >
               <canvas
                 ref={desktopQrCanvasRef}
-                className="w-40 h-40 sm:w-44 sm:h-44 block"
+                className="w-40 h-40 sm:w-44 sm:h-44 landscape:w-20 landscape:h-20 block"
               />
             </button>
           </CrystalPanel>
@@ -266,7 +266,7 @@ export function InLobbyView({
             title="SPIELER"
             accent={gameAccent}
             className="h-full"
-            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6"
+            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2.5 landscape:px-3 landscape:gap-1.5"
           >
             <div className="flex w-full flex-col gap-4">
               <LobbyGameSettings

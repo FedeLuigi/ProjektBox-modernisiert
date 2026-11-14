@@ -112,12 +112,12 @@ export function SettingsSheet({
       role="dialog"
       aria-modal="true"
       aria-labelledby="settings-screen-title"
-      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
+      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
     >
       {/* Globaler Slate-Ocean-Kristall-Hintergrund */}
       <IslandBackground />
 
-      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-start md:justify-between overflow-y-auto">
+      <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-start md:justify-between overflow-y-auto overflow-x-hidden">
         {/* 1. Obere Navigationsleiste mit einem einzigen klaren "ZURÜCK"-Button links */}
         <header className="tablet-header flex shrink-0 items-center justify-start gap-2 pb-1.5 sm:pb-2">
           <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handleSaveAndClose}>
@@ -126,20 +126,20 @@ export function SettingsSheet({
         </header>
 
         {/* 2. Hauptbereich: Auf Mobile startet "SPIELER" direkt oben ohne großen Leerraum, darunter "OPTIONEN" */}
-        <main className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 md:my-auto items-start md:items-center justify-center pt-1.5 sm:pt-3 pb-3">
-          <div className="tablet-portrait-stack grid w-full items-stretch gap-3.5 sm:gap-6 grid-cols-1 md:grid-cols-2">
+        <main className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 md:my-auto items-start md:items-center justify-center pt-1.5 sm:pt-3 pb-3 landscape:pt-0.5 landscape:pb-1">
+          <div className="tablet-portrait-stack grid w-full items-stretch gap-3.5 sm:gap-6 landscape:gap-3 grid-cols-1 md:grid-cols-2 landscape:grid-cols-2">
             {/* ERSTE KARTE: "SPIELER" Kristall-Panel für Avatar & Name */}
             <CrystalPanel
               topTabLabel="SPIELER"
               accent="indigo"
               className="h-full"
-              contentClassName="justify-between gap-2.5 sm:gap-3.5 py-4 sm:py-6 px-4 sm:px-6"
+              contentClassName="justify-between gap-2.5 sm:gap-3.5 landscape:gap-1.5 py-4 sm:py-6 landscape:py-2.5 px-4 sm:px-6 landscape:px-3"
             >
               {/* Runder Avatar direkt auf dem Kartenhintergrund (klickbar, ohne weißen Kasten & ohne doppeltes Stift-Icon) */}
               <button
                 type="button"
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="group relative rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]"
+                className="group relative rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none drop-shadow-[0_5px_0_rgba(15,23,42,0.3)] landscape:scale-80"
                 title="Avatar anpassen"
                 aria-label="Avatar anpassen"
               >
@@ -150,7 +150,7 @@ export function SettingsSheet({
               <div className="w-full flex flex-col items-center">
                 <label
                   htmlFor="player-profile-name-input"
-                  className="font-arcade mb-1 text-xs sm:text-sm tracking-wider text-[#334155] uppercase"
+                  className="font-arcade mb-1 landscape:mb-0.5 text-xs sm:text-sm tracking-wider text-[#334155] uppercase"
                 >
                   NAME
                 </label>
@@ -173,7 +173,7 @@ export function SettingsSheet({
                         color: '#FFFFFF',
                         caretColor: '#FFFFFF',
                       }}
-                      className="font-arcade w-full bg-[#1E293B] border border-[#475569] focus:border-[#818CF8] px-4 py-2 text-center text-sm sm:text-base font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
+                      className="font-arcade w-full bg-[#1E293B] border border-[#475569] focus:border-[#818CF8] px-4 py-2 landscape:py-1 text-center text-sm sm:text-base font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
                     />
                   </div>
 
@@ -203,6 +203,7 @@ export function SettingsSheet({
                   variant="indigo"
                   tilt="left"
                   onClick={() => setIsAvatarModalOpen(true)}
+                  className="landscape:h-7 landscape:text-xs"
                 >
                   AVATAR ÄNDERN
                 </CrystalButton>
@@ -212,6 +213,7 @@ export function SettingsSheet({
                   tilt="right"
                   onClick={handleCopyId}
                   title="Spieler-ID in die Zwischenablage kopieren"
+                  className="landscape:h-7 landscape:text-xs"
                 >
                   {copiedId ? (
                     <>
@@ -233,7 +235,7 @@ export function SettingsSheet({
               topTabLabel="OPTIONEN"
               accent="amber"
               className="h-full"
-              contentClassName="justify-between gap-3.5 sm:gap-5 py-4 sm:py-6 px-4 sm:px-6"
+              contentClassName="justify-between gap-3.5 sm:gap-5 landscape:gap-1.5 py-4 sm:py-6 landscape:py-2.5 px-4 sm:px-6 landscape:px-3"
             >
               <div className="flex w-full flex-col items-center gap-3 sm:gap-4 my-auto">
                 <CrystalSlider

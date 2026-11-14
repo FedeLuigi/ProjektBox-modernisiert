@@ -95,7 +95,7 @@ export function TvLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto px-2.5 pt-4 pb-3">
+      <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto overflow-x-hidden px-2.5 pt-4 pb-3">
         <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
           {/* Linkes Kristall-Panel: QR-Code & Lobby-Code */}
           <CrystalPanel

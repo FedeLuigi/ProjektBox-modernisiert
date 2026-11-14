@@ -129,7 +129,7 @@ export function MultiplayerGameView({
 
   return (
     <div
-      className={`fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-gradient-to-br ${worldStage.bgGradient} text-[#1E293B] select-none animate-fade-in`}
+      className={`fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-gradient-to-br ${worldStage.bgGradient} text-[#1E293B] select-none animate-fade-in`}
     >
       <div
         className={`pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl ${worldStage.glowPrimary}`}

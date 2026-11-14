@@ -199,11 +199,11 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in p-4"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in p-4 landscape:p-1.5"
     >
       <IslandBackground />
 
-      <header className="tablet-header relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
+      <header className="tablet-header relative z-20 w-full max-w-lg flex items-center justify-between pt-2 landscape:pt-0">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
           ABBRECHEN
         </CrystalButton>
@@ -212,10 +212,10 @@ export function QrScannerModal({
         </span>
       </header>
 
-      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3">
+      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3 landscape:p-1">
         {errorType !== 'none' ? (
-          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4">
+          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3 landscape:pt-0">
+            <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4 landscape:gap-2">
               <CameraOff className="h-10 w-10 text-[#E11D48]" />
               <p className="text-center text-sm font-bold text-[#334155]">{errorMessage}</p>
               <CrystalButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry}>
@@ -224,9 +224,9 @@ export function QrScannerModal({
             </CrystalPanel>
           </div>
         ) : (
-          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3">
-              <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
+          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3 landscape:pt-0">
+            <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3 landscape:gap-1.5">
+              <div className="relative w-full aspect-square max-h-[46dvh] landscape:max-h-[34dvh] landscape:w-40 landscape:h-40 overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   className="absolute inset-0 h-full w-full object-cover"

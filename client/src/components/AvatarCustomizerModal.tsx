@@ -77,55 +77,72 @@ export function AvatarCustomizerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto p-3 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="tablet-modal-box my-auto w-full max-w-lg pt-3 flex flex-col"
+        className="tablet-modal-box my-auto w-full max-w-lg landscape:max-w-2xl pt-3 landscape:pt-0 flex flex-col"
       >
-        <CrystalPanel topTabLabel="AVATAR ÄNDERN" accent="indigo" contentClassName="w-full gap-3 p-4 sm:p-5">
-          {/* Vorschau (rund direkt auf dem Kartenhintergrund) + Würfel-Icon-Button */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
-              <Avatar config={current} size={84} />
+        <CrystalPanel topTabLabel="AVATAR ÄNDERN" accent="indigo" contentClassName="w-full gap-3 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
+          {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
+          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-4 w-full">
+            {/* Linke Seite: Vorschau, Würfel & Aktions-Buttons im Querformat */}
+            <div className="flex flex-col items-center justify-center landscape:w-44 shrink-0 gap-3 landscape:gap-2">
+              <div className="flex items-center justify-center gap-3">
+                <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
+                  <Avatar config={current} size={74} />
+                </div>
+                <CrystalIconButton
+                  size="md"
+                  variant="amber"
+                  tilt="right"
+                  onClick={handleRandomize}
+                  title="Zufälliger Avatar"
+                >
+                  <Dices className="h-5 w-5" />
+                </CrystalIconButton>
+              </div>
+
+              {/* Aktions-Buttons direkt links im Querformat */}
+              <div className="hidden landscape:flex flex-col gap-1.5 w-full pt-1">
+                <CrystalButton size="sm" tilt="left" onClick={handleSave} fullWidth>
+                  SPEICHERN
+                </CrystalButton>
+                <CrystalButton size="sm" variant="secondary" tilt="right" onClick={onClose} fullWidth>
+                  ABBRECHEN
+                </CrystalButton>
+              </div>
             </div>
-            <CrystalIconButton
-              size="md"
-              variant="amber"
-              tilt="right"
-              onClick={handleRandomize}
-              title="Zufälliger Avatar"
-            >
-              <Dices className="h-6 w-6" />
-            </CrystalIconButton>
-          </div>
 
-          {/* Kategorie-Tabs als abgeschrägte Crystal-Buttons */}
-          <div className="flex flex-wrap items-center justify-center gap-1.5 w-full">
-            {(
-              [
-                { id: 'base', label: 'FIGUR' },
-                { id: 'skin', label: 'FARBE' },
-                { id: 'hat', label: 'HUT' },
-                { id: 'accessory', label: 'BRILLE' },
-                { id: 'bg', label: 'AURA' },
-              ] as const
-            ).map((tab, idx) => (
-              <CrystalButton
-                key={tab.id}
-                size="sm"
-                tilt={idx % 2 === 0 ? 'left' : 'right'}
-                variant={activeTab === tab.id ? 'indigo' : 'secondary'}
-                onClick={() => setActiveTab(tab.id)}
-              >
-                {tab.label}
-              </CrystalButton>
-            ))}
-          </div>
+            {/* Rechte Seite: Tabs & Auswahl-Gitter */}
+            <div className="flex flex-1 min-w-0 flex-col gap-2 w-full">
+              {/* Kategorie-Tabs als abgeschrägte Crystal-Buttons */}
+              <div className="flex flex-wrap items-center justify-center gap-1.5 landscape:gap-1 w-full">
+                {(
+                  [
+                    { id: 'base', label: 'FIGUR' },
+                    { id: 'skin', label: 'FARBE' },
+                    { id: 'hat', label: 'HUT' },
+                    { id: 'accessory', label: 'BRILLE' },
+                    { id: 'bg', label: 'AURA' },
+                  ] as const
+                ).map((tab, idx) => (
+                  <CrystalButton
+                    key={tab.id}
+                    size="sm"
+                    tilt={idx % 2 === 0 ? 'left' : 'right'}
+                    variant={activeTab === tab.id ? 'indigo' : 'secondary'}
+                    onClick={() => setActiveTab(tab.id)}
+                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs"
+                  >
+                    {tab.label}
+                  </CrystalButton>
+                ))}
+              </div>
 
-          {/* Auswahl-Gitter */}
-          <div className="w-full max-h-[38dvh] overflow-y-auto px-1 py-1">
+              {/* Auswahl-Gitter */}
+              <div className="w-full max-h-[38dvh] landscape:max-h-[30dvh] overflow-y-auto px-1 py-1">
             {activeTab === 'base' && (
               <div className="grid grid-cols-3 gap-2">
                 {AVATAR_BASES.map((b) => {
@@ -243,16 +260,18 @@ export function AvatarCustomizerModal({
               </div>
             )}
           </div>
+        </div>
+      </div>
 
-          {/* Untere Aktionsleiste: ABBRECHEN & SPEICHERN */}
-          <div className="flex w-full items-center justify-center gap-3 pt-2">
-            <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose}>
-              ABBRECHEN
-            </CrystalButton>
-            <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[140px]">
-              SPEICHERN
-            </CrystalButton>
-          </div>
+      {/* Untere Aktionsleiste in Portrait: ABBRECHEN & SPEICHERN */}
+      <div className="flex landscape:hidden w-full items-center justify-center gap-3 pt-2">
+        <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose}>
+          ABBRECHEN
+        </CrystalButton>
+        <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[140px]">
+          SPEICHERN
+        </CrystalButton>
+      </div>
         </CrystalPanel>
       </div>
     </div>
