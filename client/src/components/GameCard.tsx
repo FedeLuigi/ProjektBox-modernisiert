@@ -28,7 +28,6 @@ export function GameCard({
   onPlay,
   onToggleFavorite,
 }: GameCardProps) {
-  const Icon = game.icon;
   const palette = ACCENT_PALETTES[game.accent];
 
   const handleCardClick = () => {
@@ -42,41 +41,28 @@ export function GameCard({
   return (
     <article
       onClick={handleCardClick}
-      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-300 pt-1 ${
+      className={`group relative shrink-0 snap-center cursor-pointer select-none transition-all duration-300 pt-1 ${
         isActive
-          ? 'scale-[1.04] -translate-y-1 z-20 opacity-100 saturate-100 drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)]'
+          ? 'scale-100 sm:scale-[1.04] sm:-translate-y-1 z-20 opacity-100 saturate-100 drop-shadow-[0_16px_28px_rgba(0,0,0,0.55)] sm:drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)]'
           : 'scale-[0.93] z-10 opacity-85 saturate-[0.8] hover:opacity-95 hover:saturate-100 hover:scale-[0.95] drop-shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
-      } w-[265px] sm:w-[300px] md:w-[315px] landscape:w-[240px]`}
+      } w-[83vw] max-w-[320px] sm:w-[300px] sm:max-w-none md:w-[315px] landscape:w-[240px]`}
     >
       <CrystalPanel
         accent={game.accent}
-        contentClassName="pt-3.5 pb-4 px-3.5 sm:px-4 landscape:pt-2.5 landscape:pb-2.5 landscape:px-3 gap-2 landscape:gap-1.5"
+        contentClassName="pt-3 pb-3.5 sm:pt-3.5 sm:pb-4 px-3.5 sm:px-4 landscape:pt-2.5 landscape:pb-2.5 landscape:px-3 gap-1.5 sm:gap-2 landscape:gap-1.5"
       >
-        {/* 1. OBERE ZEILE: Spiel-Emblem + vereinfachtes Kategorie-Tag + Favoriten-Button */}
+        {/* 1. OBERE ZEILE: Linksbündiges Kategorie-Tag + Favoriten-Herz-Button rechts */}
         <div className="flex items-center justify-between gap-2 w-full">
-          <div className="flex items-center gap-2 min-w-0">
-            <div
-              style={{
-                backgroundColor: palette.bg,
-                borderColor: palette.outer,
-                clipPath: 'polygon(6% 0%, 100% 6%, 94% 100%, 0% 94%)',
-              }}
-              className="flex h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 items-center justify-center border-2 text-white shadow-sm"
-            >
-              <Icon className="h-4 w-4 sm:h-5 sm:w-5 landscape:h-3.5 landscape:w-3.5 stroke-[2.4]" />
-            </div>
-
-            <span
-              style={{
-                backgroundColor: palette.badgeBg,
-                color: palette.badgeText,
-                borderColor: palette.badgeBorder,
-              }}
-              className="font-arcade px-2.5 py-0.5 text-[10px] sm:text-xs landscape:text-[9px] tracking-wider uppercase border truncate"
-            >
-              {game.gameTypeLabel} • {game.category}
-            </span>
-          </div>
+          <span
+            style={{
+              backgroundColor: palette.badgeBg,
+              color: palette.badgeText,
+              borderColor: palette.badgeBorder,
+            }}
+            className="font-arcade px-2.5 py-0.5 text-[10px] sm:text-xs landscape:text-[9px] tracking-wider uppercase border truncate"
+          >
+            {game.gameTypeLabel} • {game.category}
+          </span>
 
           <CrystalIconButton
             size="sm"
@@ -98,7 +84,7 @@ export function GameCard({
           style={{
             clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)',
           }}
-          className="relative w-full h-32 sm:h-36 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
+          className="relative w-full h-28 sm:h-36 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
         >
           <div
             style={{
@@ -135,19 +121,19 @@ export function GameCard({
           </p>
         </div>
 
-        {/* 4. SPIELERZAHL & SPIELDAUER IM KONTRASTREICHEN KRISTALL-READOUT */}
-        <div className="grid grid-cols-2 gap-2 w-full mt-0.5">
+        {/* 4. SPIELERZAHL & SPIELDAUER IM KONTRASTREICHEN KRISTALL-READOUT (sauber getrennt ohne Überlappung) */}
+        <div className="grid grid-cols-2 gap-2.5 sm:gap-3 w-full mt-0.5">
           <CrystalReadout
             label="SPIELER"
             value={game.players.toUpperCase()}
             variant="neutral"
-            className="w-full"
+            className="w-full min-w-0"
           />
           <CrystalReadout
             label="DAUER"
             value={game.duration.toUpperCase()}
             variant="gold"
-            className="w-full"
+            className="w-full min-w-0"
           />
         </div>
 

@@ -16,10 +16,6 @@ export function GamePreviewArtwork({
       <div
         className={`relative w-full overflow-hidden bg-gradient-to-br from-[#2E1065] via-[#831843] to-[#0F172A] ${className}`}
       >
-        {/* Atmosphärische Lichtkugeln */}
-        <div className="pointer-events-none absolute -top-12 -left-12 h-44 w-44 rounded-full bg-[#F43F5E]/30 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-10 right-8 h-48 w-48 rounded-full bg-[#A855F7]/30 blur-2xl" />
-
         <svg
           viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
           className="h-full w-full object-cover"
@@ -36,11 +32,6 @@ export function GamePreviewArtwork({
               <stop offset="100%" stopColor="#06B6D4" />
             </linearGradient>
           </defs>
-
-          {/* Dekorative Hintergrund-Sterne */}
-          <circle cx="42" cy="36" r="2.5" fill="#FDE68A" opacity="0.7" />
-          <circle cx="355" cy="28" r="3" fill="#F9A8D4" opacity="0.6" />
-          <circle cx="65" cy="175" r="2" fill="#A5B4FC" opacity="0.6" />
 
           {/* Live Zeichen-Board in der Mitte */}
           <g transform={isHero ? 'translate(85, 26)' : 'translate(42, 22)'}>
@@ -210,9 +201,6 @@ export function GamePreviewArtwork({
       <div
         className={`relative w-full overflow-hidden bg-gradient-to-br from-[#1E293B] via-[#881337] to-[#0F172A] ${className}`}
       >
-        <div className="pointer-events-none absolute -top-10 left-1/4 h-40 w-40 rounded-full bg-[#F43F5E]/25 blur-2xl" />
-        <div className="pointer-events-none absolute -bottom-12 right-10 h-44 w-44 rounded-full bg-[#F59E0B]/25 blur-2xl" />
-
         <svg
           viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
           className="h-full w-full object-cover"
@@ -345,9 +333,6 @@ export function GamePreviewArtwork({
     <div
       className={`relative w-full overflow-hidden bg-gradient-to-br from-[#1E1B4B] via-[#4C1D95] to-[#0F172A] ${className}`}
     >
-      <div className="pointer-events-none absolute -top-10 right-12 h-40 w-40 rounded-full bg-[#8B5CF6]/30 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-10 left-10 h-40 w-40 rounded-full bg-[#06B6D4]/25 blur-2xl" />
-
       <svg
         viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
         className="h-full w-full object-cover"

@@ -106,6 +106,23 @@ export function App() {
   const dragMoved = useRef(false);
   const startScrollX = useRef(0);
   const startClientX = useRef(0);
+  const programmaticScrollRef = useRef(false);
+
+  const [isMobileViewport, setIsMobileViewport] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 768 : false
+  );
+  const [isCompactScreen, setIsCompactScreen] = useState(() =>
+    typeof window !== 'undefined' ? window.innerWidth < 430 : false
+  );
+
+  useEffect(() => {
+    const onResize = () => {
+      setIsMobileViewport(window.innerWidth < 768);
+      setIsCompactScreen(window.innerWidth < 430);
+    };
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
 
   const recentPlayedMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -173,16 +190,17 @@ export function App() {
     return games[Math.floor(games.length / 2)] || games[0];
   }, [games, activeGameId]);
 
-  // Bei 3 Spielen wird das aktive Spiel immer in die mittlere Fokus-Position rotiert
+  // Auf Desktop (>= 768px) wird bei 3 Spielen das aktive Spiel in die mittlere Fokus-Position rotiert;
+  // auf Mobile (< 768px) bleibt die Reihenfolge für flüssiges CSS Scroll-Snap stabil.
   const displayedGames = useMemo(() => {
-    if (games.length !== 3) return games;
+    if (isMobileViewport || games.length !== 3) return games;
     const idx = games.findIndex((g) => g.id === activeGame.id);
     if (idx === -1 || idx === 1) return games;
     if (idx === 0) {
       return [games[2], games[0], games[1]];
     }
     return [games[1], games[2], games[0]];
-  }, [games, activeGame]);
+  }, [games, activeGame, isMobileViewport]);
 
   const triggerHaptic = useCallback(() => {
     if (!vibrationEnabled) return;
@@ -256,22 +274,67 @@ export function App() {
     setSortBy(SORT_CYCLE[nextIdx].id);
   };
 
-  const scrollToCenterCard = useCallback((idx: number) => {
+  const scrollToCenterCard = useCallback((idx: number, instant = false) => {
     const container = cardsScrollRef.current;
     if (!container) return;
     const cardEl = container.children[idx] as HTMLElement | undefined;
-    if (cardEl) {
-      cardEl.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
+    if (!cardEl) return;
+
+    programmaticScrollRef.current = true;
+    const targetLeft =
+      cardEl.offsetLeft - (container.clientWidth - cardEl.offsetWidth) / 2;
+    container.scrollTo({
+      left: Math.max(0, targetLeft),
+      behavior: instant ? 'auto' : 'smooth',
+    });
+    window.setTimeout(() => {
+      programmaticScrollRef.current = false;
+    }, 380);
   }, []);
+
+  // Beim Start & nach dem Splash-Screen die aktive Karte auf Mobile mittig einrasten
+  useEffect(() => {
+    if (!isMobileViewport || displayedGames.length === 0) return;
+    const activeIdx = displayedGames.findIndex((g) => g.id === activeGame.id);
+    const targetIdx = activeIdx >= 0 ? activeIdx : Math.floor(displayedGames.length / 2);
+    const raf = requestAnimationFrame(() => {
+      scrollToCenterCard(targetIdx, true);
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [isMobileViewport, showSplash, activeSection, sortBy]);
+
+  const handleCarouselScroll = useCallback(() => {
+    if (!isMobileViewport || programmaticScrollRef.current) return;
+    const container = cardsScrollRef.current;
+    if (!container || displayedGames.length === 0) return;
+
+    const centerX = container.scrollLeft + container.clientWidth / 2;
+    let closestIdx = 0;
+    let minDistance = Number.POSITIVE_INFINITY;
+
+    for (let i = 0; i < container.children.length; i++) {
+      const child = container.children[i] as HTMLElement;
+      const childCenter = child.offsetLeft + child.offsetWidth / 2;
+      const dist = Math.abs(childCenter - centerX);
+      if (dist < minDistance) {
+        minDistance = dist;
+        closestIdx = i;
+      }
+    }
+
+    const centeredGame = displayedGames[closestIdx];
+    if (centeredGame && centeredGame.id !== activeGame.id) {
+      setActiveGameId(centeredGame.id);
+    }
+  }, [isMobileViewport, displayedGames, activeGame.id]);
 
   const handleSelectGame = useCallback(
     (gameId: string, renderedIdx: number) => {
       triggerHaptic();
       setActiveGameId(gameId);
-      scrollToCenterCard(games.length === 3 ? 1 : renderedIdx);
+      scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : renderedIdx);
     },
-    [triggerHaptic, scrollToCenterCard, games.length]
+    [triggerHaptic, scrollToCenterCard, games.length, isMobileViewport]
   );
 
   const handleNext = useCallback(() => {
@@ -280,8 +343,8 @@ export function App() {
     const currentIdx = games.findIndex((g) => g.id === activeGame.id);
     const nextIdx = (currentIdx + 1) % games.length;
     setActiveGameId(games[nextIdx].id);
-    scrollToCenterCard(games.length === 3 ? 1 : nextIdx);
-  }, [triggerHaptic, games, activeGame, scrollToCenterCard]);
+    scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : nextIdx);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport]);
 
   const handlePrev = useCallback(() => {
     if (games.length === 0) return;
@@ -289,8 +352,8 @@ export function App() {
     const currentIdx = games.findIndex((g) => g.id === activeGame.id);
     const prevIdx = (currentIdx - 1 + games.length) % games.length;
     setActiveGameId(games[prevIdx].id);
-    scrollToCenterCard(games.length === 3 ? 1 : prevIdx);
-  }, [triggerHaptic, games, activeGame, scrollToCenterCard]);
+    scrollToCenterCard(!isMobileViewport && games.length === 3 ? 1 : prevIdx);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard, isMobileViewport]);
 
   const handleSplashFinish = () => {
     triggerHaptic();
@@ -435,7 +498,7 @@ export function App() {
   ]);
 
   const onPointerDownStrip = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!cardsScrollRef.current) return;
+    if (e.pointerType !== 'mouse' || !cardsScrollRef.current) return;
     isPointerDown.current = true;
     dragMoved.current = false;
     startClientX.current = e.clientX;
@@ -443,7 +506,7 @@ export function App() {
   };
 
   const onPointerMoveStrip = (e: React.PointerEvent<HTMLDivElement>) => {
-    if (!isPointerDown.current || !cardsScrollRef.current) return;
+    if (e.pointerType !== 'mouse' || !isPointerDown.current || !cardsScrollRef.current) return;
     const dx = e.clientX - startClientX.current;
     if (Math.abs(dx) > 6) dragMoved.current = true;
     cardsScrollRef.current.scrollLeft = startScrollX.current - dx;
@@ -480,32 +543,33 @@ export function App() {
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
         {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-2 sm:px-4 pt-0.5 pb-1">
-          {/* Links: Facettierte Crystal-Suchleiste */}
-          <div className="flex items-center gap-2 flex-1 max-w-[220px] sm:max-w-[270px]">
+        <header className="relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1">
+          {/* Links: Flexibel schrumpfende Crystal-Suchleiste (flex-1 min-w-0) */}
+          <div className="flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px]">
             <div
               style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-              className="w-full bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
+              className="w-full min-w-0 bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
             >
               <div
                 style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-                className="relative flex items-center bg-[#1E293B] border border-[#475569] px-3 py-1.5"
+                className="relative flex min-w-0 items-center bg-[#1E293B] border border-[#475569] px-2.5 sm:px-3 py-1 sm:py-1.5"
               >
-                <Search className="h-4 w-4 text-[#FBBF24] shrink-0 mr-2" />
+                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#FBBF24] shrink-0 mr-1.5 sm:mr-2" />
                 <input
                   type="text"
+                  size={1}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="SPIEL SUCHEN..."
+                  placeholder={isCompactScreen ? 'SUCHEN...' : 'SPIEL SUCHEN...'}
                   aria-label="Spiele durchsuchen"
-                  className="font-arcade w-full bg-transparent text-xs sm:text-sm tracking-wider text-[#F8FAFC] placeholder-[#94A3B8] uppercase focus:outline-none"
+                  className="font-arcade min-w-0 flex-1 w-full bg-transparent text-xs sm:text-sm tracking-wider text-[#F8FAFC] placeholder-[#94A3B8] uppercase focus:outline-none"
                 />
                 {searchQuery && (
                   <button
                     type="button"
                     onClick={() => setSearchQuery('')}
                     aria-label="Suche löschen"
-                    className="ml-1 text-[#94A3B8] hover:text-white cursor-pointer"
+                    className="ml-1 shrink-0 text-[#94A3B8] hover:text-white cursor-pointer"
                   >
                     <X className="h-4 w-4" />
                   </button>
@@ -520,7 +584,7 @@ export function App() {
           </div>
 
           {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen & Menü Icon-Buttons */}
-          <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
+          <div className="shrink-0 flex items-center gap-1 sm:gap-2">
             <CrystalButton
               size="sm"
               tilt="right"
@@ -551,19 +615,33 @@ export function App() {
         </header>
 
         {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
-        <main className="relative flex flex-1 min-h-0 w-full flex-col justify-center px-2 sm:px-6">
+        <main className="relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6">
           <div className="mx-auto flex w-full max-w-[1005px] flex-col gap-1.5 sm:gap-2">
-            {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE (bündig mit den Außenkanten der Spielkarten) */}
-            <div className="flex flex-col gap-1 px-1 sm:px-2">
-              <div className="flex items-center justify-between">
+            {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE */}
+            <div className="flex flex-col gap-1.5 px-3 sm:px-2">
+              <div className="flex items-center justify-between gap-2">
                 <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
                   SPIELAUSWAHL
                 </span>
+
+                {/* Auf Mobile (< 768px) rechtsbündig direkt neben "SPIELAUSWAHL" */}
+                <div className="md:hidden shrink-0">
+                  <CrystalButton
+                    size="sm"
+                    tilt="right"
+                    variant="secondary"
+                    onClick={handleCycleSort}
+                    title="Sortierreihenfolge ändern"
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <span>{currentSortLabel}</span>
+                  </CrystalButton>
+                </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
-                {/* Links: Filter-Chips */}
-                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+              <div className="flex items-center justify-between gap-2 py-0.5">
+                {/* Links: Horizontal scrollbare Filter-Chips mit rechtem Padding */}
+                <div className="no-scrollbar flex flex-1 min-w-0 items-center gap-1.5 sm:gap-2 overflow-x-auto pr-4 sm:pr-2">
                   {SECTION_ITEMS.map((item, idx) => {
                     const count =
                       item.id === 'favorites'
@@ -582,6 +660,7 @@ export function App() {
                           triggerHaptic();
                           setActiveSection(item.id);
                         }}
+                        className="shrink-0"
                       >
                         <span>{item.shortLabel}</span>
                         {count !== null && count > 0 && (
@@ -592,8 +671,8 @@ export function App() {
                   })}
                 </div>
 
-                {/* Ganz rechts (bündig mit der rechten Spielkarte): Sortier-Button */}
-                <div className="ml-auto shrink-0 pl-2">
+                {/* Auf Desktop (>= 768px) ganz rechts bündig mit der rechten Spielkarte */}
+                <div className="hidden md:block ml-auto shrink-0 pl-2">
                   <CrystalButton
                     size="sm"
                     tilt="right"
@@ -608,7 +687,7 @@ export function App() {
               </div>
             </div>
 
-            {/* 2. KARTEN-KARUSSELL MIT DEZENTEN PFEIL-BUTTONS LINKS & RECHTS */}
+            {/* 2. KARTEN-KARUSSELL MIT SCROLL-SNAP AUF MOBILE & PFEIL-BUTTONS AUF DESKTOP */}
             {displayedGames.length > 0 ? (
               <div className="relative flex w-full items-center justify-center">
                 {/* Dezenter Pfeil-Button links */}
@@ -625,14 +704,15 @@ export function App() {
                   </button>
                 )}
 
-                {/* Horizontale Kartenreihe */}
+                {/* Horizontale Kartenreihe mit CSS Scroll-Snap & symmetrischem Peek auf Mobile */}
                 <div
                   ref={cardsScrollRef}
+                  onScroll={handleCarouselScroll}
                   onPointerDown={onPointerDownStrip}
                   onPointerMove={onPointerMoveStrip}
                   onPointerUp={onPointerUpStrip}
                   onPointerCancel={onPointerUpStrip}
-                  className="no-scrollbar relative z-10 flex w-full items-center justify-start md:justify-center gap-3.5 sm:gap-5 overflow-x-auto px-2 py-3 sm:py-4 landscape:py-1 scroll-smooth"
+                  className="no-scrollbar relative z-10 flex w-full snap-x snap-mandatory md:snap-none items-center justify-start md:justify-center gap-3 sm:gap-5 overflow-x-auto px-[8.5vw] sm:px-6 md:px-2 py-2 sm:py-4 landscape:py-1 scroll-smooth"
                 >
                   {displayedGames.map((game, index) => (
                     <GameCard

@@ -84,10 +84,10 @@ export function AvatarCustomizerModal({
         onClick={(e) => e.stopPropagation()}
         className="my-auto w-full max-w-lg pt-3 flex flex-col"
       >
-        <CrystalPanel topTabLabel="AVATAR" accent="indigo" contentClassName="w-full gap-3 p-4 sm:p-5">
-          {/* Vorschau + Würfel-Icon-Button */}
+        <CrystalPanel topTabLabel="AVATAR ÄNDERN" accent="indigo" contentClassName="w-full gap-3 p-4 sm:p-5">
+          {/* Vorschau (rund direkt auf dem Kartenhintergrund) + Würfel-Icon-Button */}
           <div className="flex items-center justify-center gap-4">
-            <div className="border-[4px] border-[#1E293B] bg-[#F8FAFC] p-2 shadow-[inset_0_2px_0_#FFFFFF,0_5px_0_rgba(15,23,42,0.3)]">
+            <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
               <Avatar config={current} size={84} />
             </div>
             <CrystalIconButton
@@ -244,13 +244,13 @@ export function AvatarCustomizerModal({
             )}
           </div>
 
-          {/* Untere Aktionsleiste: EXIT & OK */}
+          {/* Untere Aktionsleiste: ABBRECHEN & SPEICHERN */}
           <div className="flex w-full items-center justify-center gap-3 pt-2">
             <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose}>
-              EXIT
+              ABBRECHEN
             </CrystalButton>
-            <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[130px]">
-              OK
+            <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[140px]">
+              SPEICHERN
             </CrystalButton>
           </div>
         </CrystalPanel>

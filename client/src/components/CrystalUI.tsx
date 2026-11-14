@@ -698,7 +698,7 @@ export function CrystalReadout({
           clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
           backgroundColor: style.outer,
         }}
-        className="relative flex w-full min-w-[105px] sm:min-w-[165px] landscape:min-w-[110px] items-center justify-center p-[2.5px]"
+        className="relative flex w-full min-w-0 items-center justify-center p-[2.5px]"
       >
         <div
           style={{
@@ -706,7 +706,7 @@ export function CrystalReadout({
             backgroundColor: style.bg,
             borderColor: style.border,
           }}
-          className="relative flex w-full items-center justify-center overflow-hidden px-3 sm:px-5 py-1 sm:py-1.5 landscape:py-1 border"
+          className="relative flex w-full min-w-0 items-center justify-center overflow-hidden px-2.5 sm:px-3.5 py-1 sm:py-1.5 landscape:py-1 border"
         >
           <div
             className="pointer-events-none absolute inset-0"
@@ -723,7 +723,7 @@ export function CrystalReadout({
             <polygon points="6,6 155,3 95,12 6,14" fill={style.sheen} fillOpacity="0.45" />
             <line x1="6" y1="6" x2="155" y2="3" stroke={style.line} strokeWidth="1.6" />
           </svg>
-          <span className={`font-arcade relative z-10 text-sm sm:text-lg landscape:text-sm tracking-wider uppercase truncate max-w-[190px] sm:max-w-[260px] ${style.text}`}>
+          <span className={`font-arcade relative z-10 text-xs sm:text-sm md:text-base landscape:text-xs tracking-wider uppercase truncate max-w-full ${style.text}`}>
             {value}
           </span>
         </div>
@@ -751,8 +751,8 @@ export function CrystalSlider({
 
   return (
     <div className={`flex flex-col items-center w-full select-none ${className}`}>
-      <div className="flex items-center gap-2 mb-1.5 sm:mb-2">
-        <span className="font-arcade text-base sm:text-2xl landscape:text-base tracking-wider text-[#1E293B] uppercase">
+      <div className="flex items-center gap-2 mb-1 sm:mb-2">
+        <span className="font-arcade text-sm sm:text-xl landscape:text-sm tracking-wider text-[#1E293B] uppercase">
           {label}
         </span>
         <span
@@ -762,7 +762,7 @@ export function CrystalSlider({
               : 'bg-[#E2E8F0] text-[#475569] border-[#94A3B8]'
           }`}
         >
-          {isOn ? 'ON' : 'OFF'}
+          {isOn ? 'AN' : 'AUS'}
         </span>
       </div>
 
