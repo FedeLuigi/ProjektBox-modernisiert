@@ -205,27 +205,27 @@ export function QrScannerModal({
 
       <header className="relative z-20 w-full max-w-lg flex items-center justify-between pt-2">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onClose}>
-          EXIT
+          ABBRECHEN
         </CrystalButton>
         <span className="font-arcade text-lg tracking-wider text-white uppercase drop-shadow-[0_2px_0_rgba(15,23,42,0.8)]">
-          QR SCANNER
+          QR-CODE SCANNER
         </span>
       </header>
 
       <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3">
         {errorType !== 'none' ? (
           <div className="my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="CAMERA" title="NO CAMERA" accent="rose" contentClassName="gap-4">
+            <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4">
               <CameraOff className="h-10 w-10 text-[#E11D48]" />
               <p className="text-center text-sm font-bold text-[#334155]">{errorMessage}</p>
               <CrystalButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry}>
-                ENTER CODE
+                CODE EINGEBEN
               </CrystalButton>
             </CrystalPanel>
           </div>
         ) : (
           <div className="my-auto w-full max-w-sm pt-3">
-            <CrystalPanel topTabLabel="SCAN QR" accent="amber" contentClassName="gap-3">
+            <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3">
               <div className="relative w-full aspect-square max-h-[46dvh] overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
                 <video
                   ref={videoRef}
@@ -237,14 +237,14 @@ export function QrScannerModal({
                 <div className="relative z-10 w-48 h-48 border-[3px] border-[#F59E0B] pointer-events-none flex items-center justify-center">
                   {hasScanned && (
                     <span className="font-arcade bg-[#059669] border-2 border-[#064E3B] px-4 py-1.5 text-sm text-white uppercase">
-                      FOUND!
+                      GEFUNDEN!
                     </span>
                   )}
                 </div>
 
                 {isInitializing && (
                   <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm text-white uppercase">
-                    STARTING CAMERA...
+                    KAMERA STARTET...
                   </div>
                 )}
               </div>
@@ -256,7 +256,7 @@ export function QrScannerModal({
                 tilt="right"
                 onClick={onSwitchToCodeEntry}
               >
-                ENTER CODE
+                CODE EINGEBEN
               </CrystalButton>
             </CrystalPanel>
           </div>

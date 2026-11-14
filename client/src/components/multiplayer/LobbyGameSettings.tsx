@@ -62,7 +62,7 @@ export function LobbyGameSettings({
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <span className="font-arcade text-sm tracking-wider text-[#1E293B] uppercase">
-              OPTIONS
+              OPTIONEN
             </span>
             {isHost ? (
               <span className="font-arcade inline-flex items-center gap-1 text-[10px] text-[#78350F] bg-[#FEF3C7] px-2 py-0.5 border border-[#D97706]">
@@ -72,7 +72,7 @@ export function LobbyGameSettings({
             ) : (
               <span className="font-arcade inline-flex items-center gap-1 text-[10px] text-[#334155] bg-[#E2E8F0] px-2 py-0.5 border border-[#64748B]">
                 <Lock className="h-2.5 w-2.5" />
-                <span>HOST ONLY</span>
+                <span>NUR HOST</span>
               </span>
             )}
           </div>
@@ -135,7 +135,7 @@ export function LobbyGameSettings({
                     variant={hints ? 'primary' : 'secondary'}
                     onClick={() => handleSetHints(true)}
                   >
-                    ON
+                    AN
                   </CrystalButton>
                   <CrystalButton
                     size="sm"
@@ -143,7 +143,7 @@ export function LobbyGameSettings({
                     variant={!hints ? 'primary' : 'secondary'}
                     onClick={() => handleSetHints(false)}
                   >
-                    OFF
+                    AUS
                   </CrystalButton>
                 </div>
               </div>
@@ -167,12 +167,12 @@ export function LobbyGameSettings({
             </>
           ) : (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <span className="font-arcade text-xs text-[#334155] uppercase">DIFFICULTY / ROUNDS</span>
+              <span className="font-arcade text-xs text-[#334155] uppercase">MODUS / RUNDEN</span>
               <div className="flex items-center gap-1.5 flex-wrap">
                 {[
-                  { val: 1, label: 'EASY (1)' },
-                  { val: 3, label: 'NORMAL (3)' },
-                  { val: 5, label: 'HARD (5)' },
+                  { val: 1, label: '1 RUNDE' },
+                  { val: 3, label: 'BEST OF 3' },
+                  { val: 5, label: 'BEST OF 5' },
                 ].map(({ val, label }) => (
                   <CrystalButton
                     key={val}

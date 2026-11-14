@@ -478,7 +478,7 @@ export function CrystalButton({
         ? 'h-11 sm:h-14 landscape:h-10 px-5 sm:px-7 text-base sm:text-xl landscape:text-sm'
         : 'h-10 sm:h-12 landscape:h-9 px-4 sm:px-6 text-sm sm:text-lg landscape:text-sm';
 
-  const palette =
+  const basePalette =
     variant === 'danger'
       ? {
           outer: '#881337',
@@ -531,6 +531,21 @@ export function CrystalButton({
                 textClass: `text-white drop-shadow-[0_2px_0_${ACCENT_PALETTES[variant].shadow}]`,
               };
 
+  // Deaktivierte primäre Hauptbuttons (z.B. "WARTE AUF SPIELER (1/2)") erhalten ein
+  // kontrastreiches dunkles Schiefergrau mit heller Schrift statt ausgewaschenem Grün
+  const palette =
+    disabled && variant === 'primary'
+      ? {
+          outer: '#0F172A',
+          bg: '#334155',
+          facet: '#475569',
+          topBorder: '#64748B',
+          sheenFill: '#94A3B8',
+          sheenStroke: '#CBD5E1',
+          textClass: 'text-[#F8FAFC] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)]',
+        }
+      : basePalette;
+
   return (
     <button
       type="button"
@@ -541,7 +556,9 @@ export function CrystalButton({
       }}
       className={`group relative inline-flex items-center justify-center p-[2.5px] sm:p-[3px] pb-[3.5px] sm:pb-[4px] pr-[3.5px] sm:pr-[4px] select-none transition-transform duration-150 ${
         disabled
-          ? 'opacity-45 cursor-not-allowed'
+          ? variant === 'primary'
+            ? 'cursor-not-allowed'
+            : 'opacity-65 cursor-not-allowed'
           : 'hover:scale-[1.02] active:scale-95 cursor-pointer'
       } ${fullWidth ? 'w-full' : ''} ${className}`}
       {...props}
@@ -924,7 +941,7 @@ export function CrystalPanel({
           borderColor: surface.outerBorder,
           backgroundColor: surface.bg,
         }}
-        className="relative w-full border-[4px] shadow-[0_12px_24px_rgba(9,20,38,0.42),0_6px_0_rgba(15,23,42,0.45)] overflow-hidden"
+        className="relative flex flex-1 flex-col w-full border-[4px] shadow-[0_12px_24px_rgba(9,20,38,0.42),0_6px_0_rgba(15,23,42,0.45)] overflow-hidden"
       >
         {/* Optionaler farbiger Akzent-Streifen an der Oberkante für Spiel-/Funktions-Differenzierung */}
         {accentInfo && (
@@ -970,7 +987,7 @@ export function CrystalPanel({
         </svg>
 
         {/* Inhalt des Kristall-Fensters */}
-        <div className={`relative z-10 flex flex-col items-center p-4 sm:p-6 landscape:p-3.5 ${contentClassName}`}>
+        <div className={`relative z-10 flex flex-1 w-full flex-col items-center p-4 sm:p-6 landscape:p-3.5 ${contentClassName}`}>
           {title && (
             <h2 className={`font-arcade mb-3 sm:mb-4 landscape:mb-2 text-center text-xl sm:text-3xl landscape:text-lg tracking-wider uppercase ${surface.titleText}`}>
               {title}

@@ -38,7 +38,7 @@ export function ConnectionStatusBadge() {
         className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#FEF3C7] border-[2.5px] border-[#92400E] px-3.5 text-xs text-[#78350F] shadow-[0_3px_0_rgba(15,23,42,0.2)] shrink-0"
       >
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
-        <span>CONNECTING...</span>
+        <span>VERBINDE...</span>
       </div>
     );
   }
@@ -54,7 +54,7 @@ export function ConnectionStatusBadge() {
       className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#DC2626] border-[2.5px] border-[#7F1D1D] px-3.5 text-xs text-white transition-transform active:scale-95 cursor-pointer shrink-0"
     >
       <WifiOff className="h-3.5 w-3.5" />
-      <span>{isHovered ? 'REPLAY' : 'OFFLINE'}</span>
+      <span>{isHovered ? 'NEU VERBINDEN' : 'OFFLINE'}</span>
     </button>
   );
 }
