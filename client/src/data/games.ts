@@ -5,7 +5,7 @@ import {
   type LucideIcon,
 } from 'lucide-react';
 
-export type Category = 'Alle' | 'Strategie' | 'Party & Kreativ';
+export type Category = 'Alle' | 'Strategie' | 'Kreativ';
 
 export type GameType = 'duel' | 'party';
 
@@ -46,12 +46,12 @@ export interface Game {
   accent: CrystalAccent;
 }
 
-export const CATEGORIES: Category[] = ['Alle', 'Strategie', 'Party & Kreativ'];
+export const CATEGORIES: Category[] = ['Alle', 'Strategie', 'Kreativ'];
 
 export const CATEGORY_ACCENTS: Record<Category, CrystalAccent> = {
   Alle: 'amber',
   Strategie: 'indigo',
-  'Party & Kreativ': 'rose',
+  Kreativ: 'rose',
 };
 
 export const GAMES: Game[] = [
@@ -60,19 +60,19 @@ export const GAMES: Game[] = [
     title: 'Zeichnen & Raten',
     subtitle: 'Kreatives Party-Montagsmaler',
     description:
-      'Einer zeichnet das geheime Wort live auf dem Smartphone, während alle anderen auf dem Handy oder großen TV-Bildschirm um die Wette raten.',
+      'Male das geheime Wort auf dem Handy, während alle anderen live mitraten!',
     howToPlay:
       'Der Zeichner wählt ein Wort und malt es auf dem Canvas. Je schneller die Mitspieler den Begriff im Chat erraten, desto mehr Punkte gibt es!',
-    category: 'Party & Kreativ',
+    category: 'Kreativ',
     gameType: 'party',
-    gameTypeLabel: 'Party & Gruppe',
+    gameTypeLabel: 'GRUPPE',
     players: '2–8 Spieler',
     minPlayers: 2,
     maxPlayers: 8,
     duration: '5–10 Min.',
     durationMinutes: 7,
     supportsTv: true,
-    tags: ['Party', 'Zeichnen', 'Raten', 'TV-Highlight', 'Familie & Freunde'],
+    tags: ['Party', 'Gruppe', 'Kreativ', 'Zeichnen', 'Raten', 'TV-Highlight'],
     icon: Palette,
     tone: 'sunset',
     accent: 'rose',
@@ -82,12 +82,12 @@ export const GAMES: Game[] = [
     title: 'Vier gewinnt',
     subtitle: 'Taktisches 1v1 Schwerkraft-Duell',
     description:
-      'Wirf deine Spielsteine geschickt in die 7×6-Arena, baue Zwickmühlen auf und verbinde vier Steine horizontal, vertikal oder diagonal.',
+      'Wirf deine Steine geschickt in die 7×6-Arena und verbinde vier in einer Reihe.',
     howToPlay:
       'Setzt abwechselnd Steine in die Spalten. Durch die Schwerkraft fallen sie auf das unterste freie Feld. Wer zuerst vier eigene Steine in eine Reihe bringt, gewinnt.',
     category: 'Strategie',
     gameType: 'duel',
-    gameTypeLabel: '1v1 Duell',
+    gameTypeLabel: 'DUELL',
     players: '2 Spieler',
     minPlayers: 2,
     maxPlayers: 2,
@@ -104,12 +104,12 @@ export const GAMES: Game[] = [
     title: 'Tic Tac Toe',
     subtitle: 'Schnelles 3×3 Taktik-Duell',
     description:
-      'Der zeitlose Klassiker für zwischendurch: Setze X und O mit klarem Blick, blockiere deinen Gegner und sichere dir den schnellen Rundensieg.',
+      'Setze X und O mit klarem Taktik-Blick und sichere dir drei in einer Reihe.',
     howToPlay:
       'Zwei Spieler setzen abwechselnd ihr Symbol auf das 3×3-Spielfeld. Drei gleiche Symbole in einer Reihe, Spalte oder Diagonale entscheiden die Runde.',
     category: 'Strategie',
     gameType: 'duel',
-    gameTypeLabel: '1v1 Duell',
+    gameTypeLabel: 'DUELL',
     players: '2 Spieler',
     minPlayers: 2,
     maxPlayers: 2,

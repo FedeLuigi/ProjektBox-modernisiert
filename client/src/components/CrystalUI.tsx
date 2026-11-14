@@ -611,12 +611,12 @@ export function CrystalReadout({
     resolvedVariant === 'gold'
       ? {
           outer: '#78350F',
-          bg: '#D97706',
-          facet: '#F59E0B',
+          bg: '#F59E0B',
+          facet: '#FBBF24',
           border: '#FDE68A',
           sheen: '#FEF3C7',
           line: '#FFFBEB',
-          text: 'text-white drop-shadow-[0_1.5px_0_rgba(120,53,15,0.75)]',
+          text: 'text-[#0F172A] drop-shadow-[0_1px_0_rgba(255,255,255,0.55)]',
         }
       : resolvedVariant === 'emerald'
         ? {

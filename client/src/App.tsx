@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpDown, Search, X } from 'lucide-react';
+import { ArrowUpDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import {
   GAMES,
   type Game,
@@ -39,11 +39,11 @@ interface BeforeInstallPromptEvent extends Event {
 export type NavSection = 'all' | 'duel' | 'party' | 'favorites' | 'recent';
 
 const SORT_CYCLE: { id: SortOption; label: string }[] = [
-  { id: 'featured', label: 'SORT: EMPFOHLEN' },
-  { id: 'players-asc', label: 'SORT: 2 → 8 SPIELER' },
-  { id: 'players-desc', label: 'SORT: 8 → 2 SPIELER' },
-  { id: 'duration-asc', label: 'SORT: DAUER' },
-  { id: 'alpha', label: 'SORT: A–Z' },
+  { id: 'alpha', label: 'A–Z' },
+  { id: 'featured', label: 'EMPFOHLEN' },
+  { id: 'players-asc', label: '2 → 8 SPIELER' },
+  { id: 'players-desc', label: '8 → 2 SPIELER' },
+  { id: 'duration-asc', label: 'DAUER' },
 ];
 
 export function App() {
@@ -79,7 +79,9 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
+
+  // Standardmäßig liegt der Fokus auf dem mittleren Spiel (Index 1 = Vier gewinnt)
+  const [activeGameId, setActiveGameId] = useState<string>('connect');
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
@@ -112,6 +114,9 @@ export function App() {
     }
     return map;
   }, [recentEntries]);
+
+  // Nur das tatsächlich zuletzt gespielte Spiel erhält das grüne "ZULETZT"-Badge
+  const mostRecentGameId = recentEntries[0]?.gameId ?? null;
 
   const games = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
@@ -160,8 +165,24 @@ export function App() {
     });
   }, [activeSection, favoriteIds, recentPlayedMap, searchQuery, sortBy]);
 
-  const safeIndex = activeIndex >= games.length ? 0 : activeIndex;
-  const activeGame = games[safeIndex] || games[0] || GAMES[0];
+  // Aktives Spiel bestimmen
+  const activeGame = useMemo(() => {
+    if (games.length === 0) return GAMES[0];
+    const found = games.find((g) => g.id === activeGameId);
+    if (found) return found;
+    return games[Math.floor(games.length / 2)] || games[0];
+  }, [games, activeGameId]);
+
+  // Bei 3 Spielen wird das aktive Spiel immer in die mittlere Fokus-Position rotiert
+  const displayedGames = useMemo(() => {
+    if (games.length !== 3) return games;
+    const idx = games.findIndex((g) => g.id === activeGame.id);
+    if (idx === -1 || idx === 1) return games;
+    if (idx === 0) {
+      return [games[2], games[0], games[1]];
+    }
+    return [games[1], games[2], games[0]];
+  }, [games, activeGame]);
 
   const triggerHaptic = useCallback(() => {
     if (!vibrationEnabled) return;
@@ -235,7 +256,7 @@ export function App() {
     setSortBy(SORT_CYCLE[nextIdx].id);
   };
 
-  const scrollToCardIndex = useCallback((idx: number) => {
+  const scrollToCenterCard = useCallback((idx: number) => {
     const container = cardsScrollRef.current;
     if (!container) return;
     const cardEl = container.children[idx] as HTMLElement | undefined;
@@ -244,28 +265,32 @@ export function App() {
     }
   }, []);
 
-  const handleSelectGame = (index: number) => {
-    if (index >= 0 && index < games.length) {
+  const handleSelectGame = useCallback(
+    (gameId: string, renderedIdx: number) => {
       triggerHaptic();
-      setActiveIndex(index);
-    }
-  };
+      setActiveGameId(gameId);
+      scrollToCenterCard(games.length === 3 ? 1 : renderedIdx);
+    },
+    [triggerHaptic, scrollToCenterCard, games.length]
+  );
 
   const handleNext = useCallback(() => {
     if (games.length === 0) return;
     triggerHaptic();
-    const nextIdx = (safeIndex + 1) % games.length;
-    setActiveIndex(nextIdx);
-    scrollToCardIndex(nextIdx);
-  }, [triggerHaptic, safeIndex, games.length, scrollToCardIndex]);
+    const currentIdx = games.findIndex((g) => g.id === activeGame.id);
+    const nextIdx = (currentIdx + 1) % games.length;
+    setActiveGameId(games[nextIdx].id);
+    scrollToCenterCard(games.length === 3 ? 1 : nextIdx);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard]);
 
   const handlePrev = useCallback(() => {
     if (games.length === 0) return;
     triggerHaptic();
-    const prevIdx = (safeIndex - 1 + games.length) % games.length;
-    setActiveIndex(prevIdx);
-    scrollToCardIndex(prevIdx);
-  }, [triggerHaptic, safeIndex, games.length, scrollToCardIndex]);
+    const currentIdx = games.findIndex((g) => g.id === activeGame.id);
+    const prevIdx = (currentIdx - 1 + games.length) % games.length;
+    setActiveGameId(games[prevIdx].id);
+    scrollToCenterCard(games.length === 3 ? 1 : prevIdx);
+  }, [triggerHaptic, games, activeGame, scrollToCenterCard]);
 
   const handleSplashFinish = () => {
     triggerHaptic();
@@ -428,7 +453,7 @@ export function App() {
     isPointerDown.current = false;
   };
 
-  const currentSortLabel = SORT_CYCLE.find((s) => s.id === sortBy)?.label || 'SORT: EMPFOHLEN';
+  const currentSortLabel = SORT_CYCLE.find((s) => s.id === sortBy)?.label || 'EMPFOHLEN';
 
   return (
     <div className="relative flex h-dvh w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none">
@@ -452,12 +477,12 @@ export function App() {
         </div>
       )}
 
-      {/* ─── 2. Haupt-HUD & Crystal-Bühne ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col justify-between overflow-hidden">
+      {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
+      <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
         {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-1 sm:px-2 pt-0.5">
-          {/* Links: Facettierte Crystal-Suchleiste (ersetzt die konkurrierende Münzanzeige) */}
-          <div className="flex items-center gap-2 flex-1 max-w-[230px] sm:max-w-[280px]">
+        <header className="relative z-30 flex shrink-0 items-center justify-between gap-2 px-2 sm:px-4 pt-0.5 pb-1">
+          {/* Links: Facettierte Crystal-Suchleiste */}
+          <div className="flex items-center gap-2 flex-1 max-w-[220px] sm:max-w-[270px]">
             <div
               style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
               className="w-full bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
@@ -470,10 +495,7 @@ export function App() {
                 <input
                   type="text"
                   value={searchQuery}
-                  onChange={(e) => {
-                    setSearchQuery(e.target.value);
-                    setActiveIndex(0);
-                  }}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="SPIEL SUCHEN..."
                   aria-label="Spiele durchsuchen"
                   className="font-arcade w-full bg-transparent text-xs sm:text-sm tracking-wider text-[#F8FAFC] placeholder-[#94A3B8] uppercase focus:outline-none"
@@ -481,10 +503,7 @@ export function App() {
                 {searchQuery && (
                   <button
                     type="button"
-                    onClick={() => {
-                      setSearchQuery('');
-                      setActiveIndex(0);
-                    }}
+                    onClick={() => setSearchQuery('')}
                     aria-label="Suche löschen"
                     className="ml-1 text-[#94A3B8] hover:text-white cursor-pointer"
                   >
@@ -496,7 +515,7 @@ export function App() {
           </div>
 
           {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
-          <div className="mx-auto hidden lg:block">
+          <div className="mx-auto hidden md:block">
             <ArcadeLogoHeader />
           </div>
 
@@ -506,6 +525,7 @@ export function App() {
               size="sm"
               tilt="right"
               variant="amber"
+              title="Mit einem bestehenden 6-stelligen TV- oder Raum-Code beitreten"
               onClick={() => {
                 triggerHaptic();
                 setTvJoinError(null);
@@ -530,114 +550,121 @@ export function App() {
           </div>
         </header>
 
-        {/* ═══ HAUPTBEREICH: Links "MODUS"-CrystalPanel (Spieltyp, Spielerzahl, Favoriten, Zuletzt) • Rechts Kristall-Spielkarten ═══ */}
-        <div className="relative flex flex-1 min-h-0 w-full items-center justify-between gap-3 sm:gap-5 pt-1 pb-1">
-          {/* ─── LINKE SPALTE IM ORIGINALEN CRYSTAL-PANEL-DESIGN ─── */}
-          <aside className="relative z-20 hidden lg:flex h-full shrink-0 flex-col justify-center gap-3 pl-2 w-[275px]">
-            <CrystalPanel title="MODUS" contentClassName="gap-2.5 py-4 px-4">
-              {SECTION_ITEMS.map((item, idx) => {
-                const isActive = activeSection === item.id;
-                const count =
-                  item.id === 'favorites'
-                    ? favoriteIds.length
-                    : item.id === 'recent'
-                      ? recentEntries.length
-                      : null;
-
-                return (
-                  <CrystalButton
-                    key={item.id}
-                    fullWidth
-                    size="sm"
-                    tilt={idx % 2 === 0 ? 'left' : 'right'}
-                    variant={isActive ? item.accent : 'secondary'}
-                    onClick={() => {
-                      triggerHaptic();
-                      setActiveSection(item.id);
-                      setActiveIndex(0);
-                    }}
-                  >
-                    <span>{item.label}</span>
-                    {count !== null && count > 0 && (
-                      <span className="ml-1 opacity-90">({count})</span>
-                    )}
-                  </CrystalButton>
-                );
-              })}
-
-              <div className="w-full pt-1 border-t-2 border-[#CBD5E1]">
-                <CrystalButton
-                  fullWidth
-                  size="sm"
-                  tilt="right"
-                  variant="secondary"
-                  onClick={handleCycleSort}
-                  title="Sortierung nach Spieltyp, Spielerzahl oder Dauer wechseln"
-                >
-                  <ArrowUpDown className="h-3.5 w-3.5" />
-                  <span>{currentSortLabel}</span>
-                </CrystalButton>
+        {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
+        <main className="relative flex flex-1 min-h-0 w-full flex-col justify-center px-2 sm:px-6">
+          <div className="mx-auto flex w-full max-w-[1005px] flex-col gap-1.5 sm:gap-2">
+            {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE (bündig mit den Außenkanten der Spielkarten) */}
+            <div className="flex flex-col gap-1 px-1 sm:px-2">
+              <div className="flex items-center justify-between">
+                <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
+                  SPIELAUSWAHL
+                </span>
               </div>
-            </CrystalPanel>
-          </aside>
 
-          {/* ─── HAUPT-BÜHNE: Horizontale Reihe der Kristall-Spielkarten ─── */}
-          <main className="relative flex h-full flex-1 min-w-0 flex-col justify-center">
-            {/* Kompakte Filter- & Sortier-Buttons für Mobile / Tablet oberhalb der Karten */}
-            <div className="mb-1.5 landscape:mb-0.5 flex lg:hidden items-center justify-start sm:justify-center gap-1.5 sm:gap-2 overflow-x-auto px-2 py-0.5 no-scrollbar shrink-0">
-              {SECTION_ITEMS.map((item, idx) => (
-                <CrystalButton
-                  key={item.id}
-                  size="sm"
-                  tilt={idx % 2 === 0 ? 'left' : 'right'}
-                  variant={activeSection === item.id ? item.accent : 'secondary'}
-                  onClick={() => {
-                    triggerHaptic();
-                    setActiveSection(item.id);
-                    setActiveIndex(0);
-                  }}
-                >
-                  {item.shortLabel}
-                </CrystalButton>
-              ))}
+              <div className="flex items-center justify-between gap-2 overflow-x-auto no-scrollbar py-0.5">
+                {/* Links: Filter-Chips */}
+                <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+                  {SECTION_ITEMS.map((item, idx) => {
+                    const count =
+                      item.id === 'favorites'
+                        ? favoriteIds.length
+                        : item.id === 'recent'
+                          ? recentEntries.length
+                          : null;
 
-              <CrystalButton
-                size="sm"
-                tilt="right"
-                variant="secondary"
-                onClick={handleCycleSort}
-              >
-                <ArrowUpDown className="h-3.5 w-3.5" />
-                <span>{currentSortLabel.replace('SORT: ', '')}</span>
-              </CrystalButton>
+                    return (
+                      <CrystalButton
+                        key={item.id}
+                        size="sm"
+                        tilt={idx % 2 === 0 ? 'left' : 'right'}
+                        variant={activeSection === item.id ? item.accent : 'secondary'}
+                        onClick={() => {
+                          triggerHaptic();
+                          setActiveSection(item.id);
+                        }}
+                      >
+                        <span>{item.shortLabel}</span>
+                        {count !== null && count > 0 && (
+                          <span className="ml-0.5 opacity-90">({count})</span>
+                        )}
+                      </CrystalButton>
+                    );
+                  })}
+                </div>
+
+                {/* Ganz rechts (bündig mit der rechten Spielkarte): Sortier-Button */}
+                <div className="ml-auto shrink-0 pl-2">
+                  <CrystalButton
+                    size="sm"
+                    tilt="right"
+                    variant="secondary"
+                    onClick={handleCycleSort}
+                    title="Sortierreihenfolge ändern"
+                  >
+                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <span>{currentSortLabel}</span>
+                  </CrystalButton>
+                </div>
+              </div>
             </div>
 
-            {/* Horizontale Kartenreihe */}
-            {games.length > 0 ? (
-              <div
-                ref={cardsScrollRef}
-                onPointerDown={onPointerDownStrip}
-                onPointerMove={onPointerMoveStrip}
-                onPointerUp={onPointerUpStrip}
-                onPointerCancel={onPointerUpStrip}
-                className="no-scrollbar relative z-10 flex w-full items-center gap-4 sm:gap-6 overflow-x-auto px-3 sm:px-6 py-2 sm:py-4 landscape:py-1 scroll-smooth"
-              >
-                {games.map((game, index) => (
-                  <GameCard
-                    key={game.id}
-                    game={game}
-                    isActive={index === safeIndex}
-                    isFavorite={favoriteIds.includes(game.id)}
-                    lastPlayedAt={recentPlayedMap.get(game.id)}
-                    onSelect={() => {
-                      if (!dragMoved.current) handleSelectGame(index);
-                    }}
-                    onPlay={(tvMode) => {
-                      if (!dragMoved.current) handleLaunchGame(game, Boolean(tvMode));
-                    }}
-                    onToggleFavorite={() => handleToggleFavorite(game.id)}
-                  />
-                ))}
+            {/* 2. KARTEN-KARUSSELL MIT DEZENTEN PFEIL-BUTTONS LINKS & RECHTS */}
+            {displayedGames.length > 0 ? (
+              <div className="relative flex w-full items-center justify-center">
+                {/* Dezenter Pfeil-Button links */}
+                {displayedGames.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handlePrev}
+                    title="Vorheriges Spiel"
+                    aria-label="Vorheriges Spiel"
+                    style={{ clipPath: 'polygon(8% 0%, 100% 6%, 92% 100%, 0% 94%)' }}
+                    className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center bg-[#0F172A]/80 hover:bg-[#1E293B] text-[#E2E8F0] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-lg transition-all active:scale-90 cursor-pointer z-30 mr-1.5"
+                  >
+                    <ChevronLeft className="h-6 w-6 stroke-[2.6]" />
+                  </button>
+                )}
+
+                {/* Horizontale Kartenreihe */}
+                <div
+                  ref={cardsScrollRef}
+                  onPointerDown={onPointerDownStrip}
+                  onPointerMove={onPointerMoveStrip}
+                  onPointerUp={onPointerUpStrip}
+                  onPointerCancel={onPointerUpStrip}
+                  className="no-scrollbar relative z-10 flex w-full items-center justify-start md:justify-center gap-3.5 sm:gap-5 overflow-x-auto px-2 py-3 sm:py-4 landscape:py-1 scroll-smooth"
+                >
+                  {displayedGames.map((game, index) => (
+                    <GameCard
+                      key={game.id}
+                      game={game}
+                      isActive={game.id === activeGame.id}
+                      isFavorite={favoriteIds.includes(game.id)}
+                      isLastPlayed={mostRecentGameId === game.id}
+                      onSelect={() => {
+                        if (!dragMoved.current) handleSelectGame(game.id, index);
+                      }}
+                      onPlay={(tvMode) => {
+                        if (!dragMoved.current) handleLaunchGame(game, Boolean(tvMode));
+                      }}
+                      onToggleFavorite={() => handleToggleFavorite(game.id)}
+                    />
+                  ))}
+                </div>
+
+                {/* Dezenter Pfeil-Button rechts */}
+                {displayedGames.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={handleNext}
+                    title="Nächstes Spiel"
+                    aria-label="Nächstes Spiel"
+                    style={{ clipPath: 'polygon(0% 6%, 92% 0%, 100% 94%, 8% 100%)' }}
+                    className="hidden sm:flex shrink-0 h-11 w-11 items-center justify-center bg-[#0F172A]/80 hover:bg-[#1E293B] text-[#E2E8F0] hover:text-[#FBBF24] border-2 border-[#475569] hover:border-[#F59E0B] shadow-lg transition-all active:scale-90 cursor-pointer z-30 ml-1.5"
+                  >
+                    <ChevronRight className="h-6 w-6 stroke-[2.6]" />
+                  </button>
+                )}
               </div>
             ) : (
               <div className="mx-auto w-full max-w-md px-4 py-4">
@@ -656,7 +683,6 @@ export function App() {
                       triggerHaptic();
                       setActiveSection('all');
                       setSearchQuery('');
-                      setActiveIndex(0);
                     }}
                   >
                     ALLE SPIELE ZEIGEN
@@ -664,28 +690,8 @@ export function App() {
                 </CrystalPanel>
               </div>
             )}
-
-            {/* Untere Schnell-Steuerleiste im originalen Crystal-UI Stil */}
-            {games.length > 0 && (
-              <div className="mt-1 landscape:hidden flex items-center justify-center gap-2 sm:gap-4 px-2 shrink-0">
-                <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handlePrev}>
-                  PREV
-                </CrystalButton>
-                <CrystalButton
-                  size="md"
-                  tilt="right"
-                  variant={activeGame?.accent || 'primary'}
-                  onClick={() => handleLaunchGame(activeGame, false)}
-                >
-                  PLAY {activeGame?.title}
-                </CrystalButton>
-                <CrystalButton size="sm" variant="secondary" tilt="left" onClick={handleNext}>
-                  NEXT
-                </CrystalButton>
-              </div>
-            )}
-          </main>
-        </div>
+          </div>
+        </main>
       </div>
 
       {/* ─── 3. Filter- & Kategorie-Modal im CrystalPanel-Stil ─── */}
@@ -696,7 +702,6 @@ export function App() {
         onSelectSection={(sec) => {
           triggerHaptic();
           setActiveSection(sec);
-          setActiveIndex(0);
         }}
         canInstall={Boolean(deferredPrompt)}
         onInstall={handleInstall}

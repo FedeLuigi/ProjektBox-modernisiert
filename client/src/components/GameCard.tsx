@@ -13,7 +13,7 @@ interface GameCardProps {
   game: Game;
   isActive: boolean;
   isFavorite: boolean;
-  lastPlayedAt?: number;
+  isLastPlayed?: boolean;
   onSelect: () => void;
   onPlay: (tvMode?: boolean) => void;
   onToggleFavorite: () => void;
@@ -23,7 +23,7 @@ export function GameCard({
   game,
   isActive,
   isFavorite,
-  lastPlayedAt,
+  isLastPlayed = false,
   onSelect,
   onPlay,
   onToggleFavorite,
@@ -32,24 +32,27 @@ export function GameCard({
   const palette = ACCENT_PALETTES[game.accent];
 
   const handleCardClick = () => {
-    onSelect();
-    onPlay(false);
+    if (!isActive) {
+      onSelect();
+    } else {
+      onPlay(false);
+    }
   };
 
   return (
     <article
       onClick={handleCardClick}
-      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-200 pt-1 ${
+      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-300 pt-1 ${
         isActive
-          ? 'scale-[1.02] z-20 drop-shadow-[0_14px_28px_rgba(0,0,0,0.45)]'
-          : 'hover:scale-[1.01] opacity-95 hover:opacity-100 z-10'
-      } w-[265px] sm:w-[300px] md:w-[320px] landscape:w-[240px]`}
+          ? 'scale-[1.04] -translate-y-1 z-20 opacity-100 saturate-100 drop-shadow-[0_20px_36px_rgba(0,0,0,0.58)]'
+          : 'scale-[0.93] z-10 opacity-85 saturate-[0.8] hover:opacity-95 hover:saturate-100 hover:scale-[0.95] drop-shadow-[0_8px_18px_rgba(0,0,0,0.3)]'
+      } w-[265px] sm:w-[300px] md:w-[315px] landscape:w-[240px]`}
     >
       <CrystalPanel
         accent={game.accent}
         contentClassName="pt-3.5 pb-4 px-3.5 sm:px-4 landscape:pt-2.5 landscape:pb-2.5 landscape:px-3 gap-2 landscape:gap-1.5"
       >
-        {/* 1. OBERE ZEILE: Spiel-Emblem + Spieltyp-Badge + Favoriten-Kristall-Button */}
+        {/* 1. OBERE ZEILE: Spiel-Emblem + vereinfachtes Kategorie-Tag + Favoriten-Button */}
         <div className="flex items-center justify-between gap-2 w-full">
           <div className="flex items-center gap-2 min-w-0">
             <div
@@ -109,7 +112,7 @@ export function GameCard({
               className="h-full w-full transition-transform duration-300 group-hover:scale-105"
             />
 
-            {lastPlayedAt && (
+            {isLastPlayed && (
               <span
                 style={{
                   clipPath: 'polygon(0% 8%, 100% 0%, 96% 94%, 3% 100%)',
@@ -122,12 +125,12 @@ export function GameCard({
           </div>
         </div>
 
-        {/* 3. SPIEL-TITEL & BESCHREIBUNG AUF EINEN BLICK */}
+        {/* 3. SPIEL-TITEL & BESCHREIBUNG (max. 2 Zeilen ohne "..." Abschneiden) */}
         <div className="w-full text-center">
           <h3 className="font-arcade text-lg sm:text-2xl landscape:text-base tracking-wider text-[#1E293B] uppercase leading-tight truncate w-full">
             {game.title}
           </h3>
-          <p className="mt-1 text-xs leading-snug font-medium text-[#334155] line-clamp-2 landscape:line-clamp-1 px-1">
+          <p className="mt-1 min-h-[2.25rem] landscape:min-h-0 text-[11.5px] sm:text-xs leading-snug font-semibold text-[#334155] px-1">
             {game.description}
           </p>
         </div>
@@ -148,7 +151,7 @@ export function GameCard({
           />
         </div>
 
-        {/* 5. UNTERE ABGESCHRÄGTE CRYSTAL-BUTTONS (PLAY & TV-MODUS) */}
+        {/* 5. UNTERE ABGESCHRÄGTE CRYSTAL-BUTTONS (PLAY & TV MIT HOVER-TOOLTIP) */}
         <div className="mt-1 landscape:mt-0.5 flex w-full items-center justify-center gap-2">
           <CrystalButton
             size="md"
@@ -165,20 +168,33 @@ export function GameCard({
           </CrystalButton>
 
           {game.supportsTv && (
-            <CrystalButton
-              size="sm"
-              tilt="right"
-              variant="secondary"
-              onClick={(e) => {
-                e.stopPropagation();
-                onSelect();
-                onPlay(true);
-              }}
-              title="Als TV-Party auf großem Bildschirm starten"
-            >
-              <Tv className="h-4 w-4" />
-              <span>TV</span>
-            </CrystalButton>
+            <div className="group/tv relative inline-flex">
+              <CrystalButton
+                size="sm"
+                tilt="right"
+                variant="secondary"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onSelect();
+                  onPlay(true);
+                }}
+                title="Auf TV starten"
+                aria-label="Auf TV starten"
+              >
+                <Tv className="h-4 w-4" />
+                <span>TV</span>
+              </CrystalButton>
+
+              {/* Sichtbarer Comic-Arcade Hover-Tooltip zur klaren Abgrenzung vom "TV CODE"-Button */}
+              <div
+                style={{
+                  clipPath: 'polygon(0% 8%, 100% 0%, 97% 94%, 3% 100%)',
+                }}
+                className="pointer-events-none absolute -top-9 right-0 z-30 whitespace-nowrap bg-[#0F172A] border-2 border-[#F59E0B] px-2.5 py-1 font-arcade text-[10px] tracking-wider text-[#FDE68A] uppercase opacity-0 scale-95 group-hover/tv:opacity-100 group-hover/tv:scale-100 group-focus-within/tv:opacity-100 transition-all duration-150 shadow-lg"
+              >
+                Auf TV starten
+              </div>
+            </div>
           )}
         </div>
       </CrystalPanel>
