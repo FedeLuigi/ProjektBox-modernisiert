@@ -1,52 +1,80 @@
-# 🚀 Fullstack Echtzeit-Boilerplate (React & Socket.io)
+# 🎮 ProjektBox – Modernisierte Web- & Mobile Games Plattform
 
-Ein modernes, sauberes und **einsteigerfreundliches Starter-Template** für Fullstack-Echtzeitanwendungen.
+[![React](https://img.shields.io/badge/React-19-blue.svg)](https://react.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5-blue.svg)](https://www.typescriptlang.org/)
+[![Vite](https://img.shields.io/badge/Vite-8-purple.svg)](https://vite.dev/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4-38bdf8.svg)](https://tailwindcss.com/)
+[![Socket.io](https://img.shields.io/badge/Socket.io-4-black.svg)](https://socket.io/)
+[![PWA](https://img.shields.io/badge/PWA-Ready-green.svg)](https://web.dev/progressive-web-apps/)
 
-* **Frontend:** [React](https://react.dev/), [Vite](https://vite.dev/), [Tailwind CSS](https://tailwindcss.com/), [Lucide React](https://lucide.dev/)
-* **Backend:** [Node.js](https://nodejs.org/), [Express](https://expressjs.com/), [Socket.io](https://socket.io/), [TypeScript](https://www.typescriptlang.org/)
+**ProjektBox** ist eine moderne, interaktive Spieleplattform für Web und Mobilgeräte. Sie vereint fesselnde Solo-Games, rundenbasierte 1-gegen-1 Duelle und packende Party-Echtzeitspiele mit nahtlosem TV-/Beamer-Modus und Smartphone-Controllern.
 
 ---
 
 ## 📋 Inhaltsverzeichnis
 
-- [✨ Highlights](#-highlights)
+- [✨ Highlights & Features](#-highlights--features)
+- [🎯 Spielekatalog](#-spielekatalog)
 - [⚡ Schnelleinstieg (Quick Start)](#-schnelleinstieg-quick-start)
 - [📁 Projektstruktur](#-projektstruktur)
-- [🔌 Wie Socket.io in diesem Projekt funktioniert](#-wie-socketio-in-diesem-projekt-funktioniert)
+- [📺 TV- / Party-Modus & QR-Code Join](#-tv---party-modus--qr-code-join)
+- [🔌 Socket.io Schnittstellen & Events](#-socketio-schnittstellen--events)
+- [🌐 REST API Endpunkte](#-rest-api-endpunkte)
 - [🛠 Nützliche Befehle (Scripts)](#-nützliche-befehle-scripts)
-- [💡 Tutorial: Eigenes Socket-Event hinzufügen](#-tutorial-eigenes-socket-event-hinzufügen)
-- [🌐 REST API & WebSockets nebeneinander](#-rest-api--websockets-nebeneinander)
+- [🚀 Neues Spiel hinzufügen](#-neues-spiel-hinzufügen)
+- [☁️ Deployment (Render.com & Produktion)](#️-deployment-rendercom--produktion)
 
 ---
 
-## ✨ Highlights
+## ✨ Highlights & Features
 
-- **Ein-Befehl-Start**: Ein einziger Befehl (`npm run dev`) startet Frontend und Backend parallel mit synchronisierten Logs.
-- **End-to-End Typsicherheit**: Socket-Events sind auf Client und Server typisiert (`ClientToServerEvents`, `ServerToClientEvents`) – inklusive Autovervollständigung in VS Code.
-- **Interaktive Demos out-of-the-box**:
-  - 💬 **Echtzeit-Chat**: Nachrichten sofort an alle Clients senden (Broadcast).
-  - ⚡ **Gemeinsamer Live-Zähler**: Klicke in Tab 1, sieh das Ergebnis sofort in Tab 2.
-  - 📡 **Live-Verbindungsstatus & Latenz**: Ping/Pong-Messung in Millisekunden.
-  - 🔌 **REST-API Tester**: Zeigt, wie klassische Express HTTP-Routen parallel zu WebSockets funktionieren.
-- **Schöne & responsive Oberfläche**: Gestylt mit modernem Tailwind CSS und Icons von Lucide React.
-- **Keine komplizierte Einrichtung**: Sofort einsatzbereit für Anfänger und Fortgeschrittene.
+- 📱 **Progressive Web App (PWA) & Mobile-First**:
+  - Installierbar auf Smartphones, Tablets und Desktop.
+  - Vollbild-Modus, Standalone-Display und Offline-Caching (Workbox / Service Worker).
+  - Web Audio Synthesizer für Sound-Effekte und Haptisches Feedback (Vibration API).
+- 📺 **TV- & Party-Modus (Jackbox-Style)**:
+  - Starte eine TV-Lobby auf einem Fernseher, Laptop oder Beamer.
+  - Mitspieler scannen einfach den angezeigten QR-Code oder nutzen den 6-stelligen Code bzw. Deep-Link (`?join=CODE`) auf ihrem Smartphone – keine App-Installation notwendig!
+  - Der Fernseher dient als zentraler Spielbildschirm, während die Handys als Gamepads und Zeichenflächen fungieren.
+- ⚡ **Echtzeit-Synchronisation mit Socket.io**:
+  - Millisekunden-Übertragung von Spielzügen, Canvas-Pinselstrichen (Draw & Guess) und Chat-Eingaben.
+  - Automatisches Reconnect-Handling mit 45-Sekunden Grace Period bei Verbindungsabbrüchen.
+  - Revanche-System (Rematch) direkt nach Spielende.
+- 🎨 **Übersichtliches Dashboard & Crystal UI**:
+  - Klare visuelle Hierarchie ohne ablenkende Münzanzeigen: Sidebar-Navigation, Echtzeit-Suchleiste, Filter nach Spieltyp und Spielerzahl sowie große, aussagekräftige Spielvorschauen (`GamePreviewArtwork`).
+  - Persistente **Favoriten** und **Zuletzt gespielt**-Verlauf für schnellen Wiedereinstieg.
+  - Modular anpassbare Spielerprofile mit SVG-Avatar-Generator (Frisuren, Gesichter, Accessoires, Farben).
+- 🛡️ **Autoritative Server-Architektur**:
+  - Server-validierte Spielzüge gegen Cheating.
+  - Schutz vor Event-Flooding durch integriertes Rate-Limiting.
+  - Getestete Spiellogik mit automatisierten Node.js Unit-Tests.
+
+---
+
+## 🎯 Spielekatalog
+
+ProjektBox konzentriert sich voll auf **Echtzeit-Multiplayer- & Party-Spiele**:
+
+| Spiel | Kategorie | Spieltyp | Spieler | Dauer | Beschreibung |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Zeichnen & Raten** | *Party & Kreativ* | Party & Gruppe (TV) | 2–8 | 5–10 Min. | Kreatives Montagsmaler: Einer zeichnet live auf dem Smartphone, alle anderen raten auf Zeit! |
+| **Vier gewinnt** | *Strategie* | 1v1 Taktik-Duell | 2 | 3–5 Min. | Taktischer Klassiker: Bringe 4 Steine horizontal, vertikal oder diagonal in eine Reihe. |
+| **Tic Tac Toe** | *Strategie* | 1v1 Taktik-Duell | 2 | 1–3 Min. | Schnelles 3×3-Duell mit dynamischer Zugreihenfolge. |
 
 ---
 
 ## ⚡ Schnelleinstieg (Quick Start)
 
 ### 1. Voraussetzungen
-Stelle sicher, dass [Node.js](https://nodejs.org/) (Version 18 oder höher) installiert ist.
+- [Node.js](https://nodejs.org/) Version 18 oder neuer.
+- npm (wird mit Node.js ausgeliefert).
 
-### 2. Abhängigkeiten installieren
-Führe im Hauptverzeichnis des Projekts aus:
+### 2. Installation
+Installiere alle Abhängigkeiten für Root, Client und Server mit einem einzigen Befehl:
 
 ```bash
-# Installiert Root-, Client- und Server-Pakete automatisch
 npm run install:all
 ```
-
-*(Alternativ kannst du auch einzeln in `client` und `server` jeweils `npm install` ausführen).*
 
 ### 3. Entwicklungsmodus starten
 
@@ -54,11 +82,11 @@ npm run install:all
 npm run dev
 ```
 
-Sobald der Befehl ausgeführt wurde:
-- 🖥️ **Frontend:** Öffne [http://localhost:5173](http://localhost:5173) im Browser.
-- ⚙️ **Backend:** Läuft auf [http://localhost:5000](http://localhost:5000) (Health-Check unter `/api/health`).
+Sobald der Prozess läuft:
+- 🖥️ **Frontend:** [http://localhost:5173](http://localhost:5173) (automatisch per Proxy mit dem Backend verbunden)
+- ⚙️ **Backend:** [http://localhost:5001](http://localhost:5001) (Healthcheck: `/healthz`, REST-Info: `/api/server-info`)
 
-> **Tipp zum Ausprobieren:** Öffne die Seite in **zwei separaten Browser-Tabs oder -Fenstern**. Wenn du in einem Tab eine Nachricht schreibst oder den Zähler erhöhst, siehst du die Änderung sofort im anderen Tab!
+> **💡 Lokaler Party-Test:** Öffne [http://localhost:5173](http://localhost:5173) in zwei verschiedenen Fenstern oder Tabs. Erstelle in einem Tab ein Multiplayer-Spiel und trete mit dem 6-stelligen Code aus dem anderen Tab bei!
 
 ---
 
@@ -66,162 +94,179 @@ Sobald der Befehl ausgeführt wurde:
 
 ```text
 ProjektBox-modernisiert/
-├── package.json             # Root-Konfiguration & parallele Startskripte (concurrently)
-├── README.md                # Dokumentation & Schritt-für-Schritt Anleitungen
+├── package.json             # Root-Skripte & Concurrently-Konfiguration
+├── render.yaml              # Automatisches Deployment-Blueprint für Render.com
+├── README.md                # Zentrale Projekt-Dokumentation
 │
-├── client/                  # Frontend (React 19 + Vite + Tailwind + Lucide)
+├── client/                  # Frontend (React 19 + Vite 8 + Tailwind CSS v4 + PWA)
+│   ├── public/              # Statische Assets, PWA-Icons & Manifest
 │   ├── src/
-│   │   ├── components/      # UI-Komponenten
-│   │   │   ├── Header.tsx           # Statusleiste mit Verbindungsindikator & Latenz
-│   │   │   ├── ChatDemo.tsx         # Echtzeit-Chat mit Lucide Icons
-│   │   │   ├── CounterDemo.tsx      # Global synchronisierter Zähler
-│   │   │   ├── ApiDemo.tsx          # Express REST-API Tester
-│   │   │   └── TechStackGuide.tsx   # Übersichtskarten & Schnellhilfe
-│   │   ├── types/
-│   │   │   └── socket.ts    # Clientseitige Typdefinitionen für Socket.io Events
-│   │   ├── socket.ts        # Singleton-Socket-Verbindung
-│   │   ├── App.tsx          # Hauptkomponente
-│   │   ├── main.tsx         # React Einstiegspunkt
-│   │   └── index.css        # Tailwind CSS Einbindung
-│   ├── vite.config.ts       # Vite-Konfiguration inklusive Backend-Proxy (/api -> :5000)
+│   │   ├── components/      # UI-Komponenten (Arcade HUD, Avatar, Crystal UI, Modals)
+│   │   │   └── multiplayer/ # Lobby, TV-Host, QR-Scanner, Solo- & Multiplayer-Views
+│   │   ├── data/
+│   │   │   └── games.ts     # Katalog & Metadaten aller 9 Spiele
+│   │   ├── games/
+│   │   │   ├── components/  # Spiel-Boards (TicTacToeBoard, DrawAndGuessBoard, etc.)
+│   │   │   └── registry.ts  # Client-seitiges Mapping von Spiel-IDs auf Board-Komponenten
+│   │   ├── services/
+│   │   │   └── socket.ts    # Singleton SocketService für Echtzeit-Kommunikation
+│   │   ├── utils/           # Audio-Synthesizer, Haptik, Avatar-State & QR-Code Helfer
+│   │   ├── App.tsx          # Hauptkomponente mit Spiele-Karussell & Navigation
+│   │   ├── main.tsx         # React Einstiegspunkt mit PWA-Registrierung
+│   │   └── index.css        # Tailwind CSS Einbindung & Theme-Variablen
+│   ├── vite.config.ts       # Vite-Konfiguration mit PWA-Plugin & Proxy zu Port 5001
 │   └── package.json
 │
 └── server/                  # Backend (Node.js + Express + Socket.io + TypeScript)
     ├── src/
+    │   ├── games/
+    │   │   ├── definitions/ # Autoritative Spiellogik (Connect Four, Draw & Guess, Tic Tac Toe)
+    │   │   └── registry.ts  # Zentrale Registrierung aller Multiplayer-Spiele
+    │   ├── lobby/
+    │   │   ├── lobbyManager.ts # Raumverwaltung, TV-Modus, Timeout-Grace-Period
+    │   │   ├── socketHandlers.ts # Socket.io Events für Lobbys, Spielzüge & Zeichnen
+    │   │   └── lobbyAndGames.test.ts # Unit-Tests für Spiellogik & Lobbys
     │   ├── routes/
-    │   │   └── api.ts       # Express REST-Endpunkte (z. B. /api/health)
-    │   ├── socket/
-    │   │   └── handlers.ts  # Socket.io Event-Handler (Empfangen & Weiterleiten)
+    │   │   └── api.ts       # Express REST-Endpunkte (/api/health, /api/server-info)
     │   ├── types/
-    │   │   └── socket.ts    # Typdefinitionen für Events & Datensätze
-    │   └── index.ts         # Server-Einstiegspunkt (Express + HTTP + Socket.io)
-    ├── .env                 # Umgebungsvariablen (PORT=5000, CLIENT_ORIGIN)
+    │   │   └── multiplayer.ts # TypeScript Interfaces für Player, Lobby, GameState
+    │   ├── utils/
+    │   │   └── rateLimiter.ts # Token-Bucket Rate Limiter gegen Socket-Spam
+    │   └── index.ts         # Server-Bootstrapping, statisches Hosting von client/dist
+    ├── .env                 # Lokale Umgebungsvariablen (PORT=5001)
+    ├── .env.example         # Vorlage für Umgebungsvariablen
     ├── tsconfig.json        # TypeScript-Konfiguration
     └── package.json
 ```
 
 ---
 
-## 🔌 Wie Socket.io in diesem Projekt funktioniert
+## 📺 TV- / Party-Modus & QR-Code Join
 
-Socket.io ermöglicht eine dauerhafte, bidirektionale Verbindung zwischen Browser und Server:
+ProjektBox bietet ein nahtloses Party-Spiel-Erlebnis:
 
 ```mermaid
 sequenceDiagram
     autonumber
-    actor Nutzer A (Client 1)
-    participant Server (Socket.io)
-    actor Nutzer B (Client 2)
+    actor Host (TV / Beamer)
+    participant Server (ProjektBox)
+    actor Spieler (Smartphones)
 
-    Nutzer A (Client 1)->>Server (Socket.io): socket.emit('sendMessage', { text: 'Hallo!' })
-    Note over Server (Socket.io): Server verarbeitet Event & speichert ggf.
-    Server (Socket.io)->>Nutzer A (Client 1): io.emit('receiveMessage', msg)
-    Server (Socket.io)->>Nutzer B (Client 2): io.emit('receiveMessage', msg)
-    Note over Nutzer A (Client 1),Nutzer B (Client 2): Beide UIs aktualisieren sich sofort!
+    Host (TV / Beamer)->>Server (ProjektBox): lobby:create { isTvMode: true, gameId: 'draw-and-guess' }
+    Server (ProjektBox)-->>Host (TV / Beamer): Lobby erstellt (Code: 'ABC123')
+    Note over Host (TV / Beamer): Zeigt QR-Code & Beitrete-Link auf dem Großbildschirm
+    Spieler (Smartphones)->>Spieler (Smartphones): QR-Code mit Handykamera scannen
+    Spieler (Smartphones)->>Server (ProjektBox): lobby:join { code: 'ABC123', profile: userProfile }
+    Server (ProjektBox)-->>Host (TV / Beamer): lobby:updated (Neuer Spieler im TV-Raum)
+    Server (ProjektBox)-->>Spieler (Smartphones): Erfolg! Smartphone wechselt zu Gamepad/Controller
+    Host (TV / Beamer)->>Server (ProjektBox): lobby:start
+    Server (ProjektBox)-->>Host (TV / Beamer): game:started (Großer Zuschauer- & Score-Screen)
+    Server (ProjektBox)-->>Spieler (Smartphones): game:started (Interaktive Steuer-/Zeichenoberfläche)
 ```
 
-### Die wichtigsten Befehle auf einen Blick:
+1. **TV-Modus aktivieren**: Klicke in der Menüleiste oder Spielansicht auf **"TV-Party"** bzw. erstelle ein Spiel mit aktiviertem TV-Modus.
+2. **QR-Code Scan**: Die Mitspieler scannen den QR-Code direkt mit der Smartphone-Kamera und sind sofort in der Lobby.
+3. **Synchronisation**: Alle Aktionen auf den Mobilgeräten (z. B. Zeichnen, Raten, Züge setzen) werden in Echtzeit auf dem TV-Bildschirm visualisiert.
 
-| Befehl | Wo? | Bedeutung |
-| :--- | :--- | :--- |
-| `socket.emit('event', data)` | Client oder Server | Sendet ein Event an die jeweilige Gegenstelle. |
-| `socket.on('event', callback)` | Client oder Server | Hört auf ein bestimmtes Event und führt Code aus. |
-| `io.emit('event', data)` | Nur Server | **Broadcast an ALLE** aktuell verbundenen Clients. |
-| `socket.broadcast.emit(...)` | Nur Server | Sendet an alle Clients **außer dem Absender**. |
+---
+
+## 🔌 Socket.io Schnittstellen & Events
+
+Die Kommunikation zwischen Clients und Backend erfolgt über strukturierte Socket.io Events:
+
+### Lobby Lifecycle
+
+| Event | Richtung | Daten / Payload | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `lobby:list` | Client ➔ Server | `{ gameId: string }` | Ruft öffentliche Lobbys für ein Spiel ab. |
+| `lobby:create` | Client ➔ Server | `{ name, isPrivate, gameId, userProfile, isTvMode }` | Erstellt einen neuen Raum mit 6-stelligem Code. |
+| `lobby:join` | Client ➔ Server | `{ lobbyIdOrCode, userProfile }` | Tritt einer bestehenden Lobby bei. |
+| `lobby:ready` | Client ➔ Server | *(keine)* | Schaltet den Bereitschaftsstatus des Spielers um. |
+| `lobby:start` | Client ➔ Server | *(keine)* | Startet das Spiel (nur Host). |
+| `lobby:leave` | Client ➔ Server | *(keine)* | Verlässt die aktuelle Lobby. |
+| `lobby:reconnect` | Client ➔ Server | `{ userId: string }` | Stellt die Verbindung bei Verbindungsverlust wieder her. |
+| `lobby:updated` | Server ➔ Client | `{ lobby, message? }` | Informiert alle Clients über Änderungen der Lobby. |
+| `lobby:player-disconnected` | Server ➔ Client | `{ playerId, playerName, lobby }` | Signalisiert temporären Verbindungsverlust eines Spielers. |
+
+### Gameplay & Interaktion
+
+| Event | Richtung | Daten / Payload | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `game:move` | Client ➔ Server | Spielspezifische Zugdaten (z. B. Spalte bei Vier gewinnt) | Führt einen autoritativen Spielzug aus. |
+| `game:state` | Server ➔ Client | `{ gameState, status, lobby }` | Sendet den aktualisierten Spielstand an alle Teilnehmer. |
+| `game:rematch` | Client ➔ Server | *(keine)* | Stimmt für eine Revanche ab. |
+| `game:restarted` | Server ➔ Client | `{ lobby }` | Startet eine neue Spielrunde bei Übereinstimmung. |
+
+### Zeichnen & Raten (Draw & Guess)
+
+| Event | Richtung | Daten / Payload | Beschreibung |
+| :--- | :--- | :--- | :--- |
+| `draw:strokes` | Client ➔ Server | `{ strokes: Array<Point> }` | Sendet Live-Pinselstriche des Zeichners. |
+| `draw:live-strokes` | Server ➔ Client | `{ strokes }` | Broadcastet Pinselstriche an TV und Ratende. |
+| `draw:clear` / `draw:live-clear` | Bidirektional | *(keine)* | Leert die Zeichenfläche für alle Teilnehmer. |
+| `draw:undo` / `draw:live-undo` | Bidirektional | `{ strokes }` | Nimmt den letzten Pinselstrich zurück. |
+
+---
+
+## 🌐 REST API Endpunkte
+
+Neben den WebSockets stellt der Express-Server folgende HTTP-Endpunkte bereit:
+
+| Methode | Endpunkt | Beschreibung | Beispielantwort |
+| :--- | :--- | :--- | :--- |
+| `GET` | `/healthz` | Healthcheck für Load Balancer / Cloud-Hostings | `200 OK` |
+| `GET` | `/api/health` | Detaillierter Server-Status mit Uptime | `{"status":"ok","uptime":1420,"service":"ProjektBox Server"}` |
+| `GET` | `/api/server-info` | Lokale Netzwerk-IPs (für WLAN-Tests) & Render-Status | `{"status":"ok","localIps":["192.168.178.50"],"isRender":false}` |
 
 ---
 
 ## 🛠 Nützliche Befehle (Scripts)
 
-Im Hauptverzeichnis stehen folgende Befehle bereit:
+Im Root-Verzeichnis stehen folgende Befehle zur Verfügung:
 
 | Befehl | Beschreibung |
 | :--- | :--- |
-| `npm run dev` | Startet Client und Server parallel im Entwicklungsmodus mit Hot-Reloading |
-| `npm run dev:client` | Startet nur den Vite Frontend-Entwicklungsserver (Port 5173) |
-| `npm run dev:server` | Startet nur das TypeScript Backend mit `tsx watch` (Port 5000) |
-| `npm run build` | Baut sowohl Frontend (`vite build`) als auch Backend (`tsc`) für die Produktion |
-| `npm run start` | Startet das kompilierte Backend im Produktionsmodus (`node server/dist/index.js`) |
-| `npm run install:all` | Installiert alle Pakete im Root-, Client- und Server-Verzeichnis |
+| `npm run dev` | Startet Frontend (:5173) und Backend (:5001) parallel mit synchronisierten Logs. |
+| `npm run dev:client` | Startet nur den Vite Frontend-Entwicklungsserver. |
+| `npm run dev:server` | Startet nur den Express/Socket.io Backend-Server mit `tsx watch`. |
+| `npm run build` | Kompiliert Client (`vite build`) und Server (`tsc`) für den Produktionseinsatz. |
+| `npm run start` | Führt den kompilierten Produktionsserver aus (`node server/dist/index.js`). |
+| `npm run install:all` | Installiert rekursiv alle Abhängigkeiten im Root-, Client- und Server-Verzeichnis. |
+| `npm run test --prefix server` | Führt die automatisierten Unit-Tests für Spiellogik, Lobbys und Rate-Limiting aus. |
+| `npm run lint --prefix client` | Überprüft das Frontend mit Oxlint. |
 
 ---
 
-## 💡 Tutorial: Eigenes Socket-Event hinzufügen
+## 🚀 Neues Spiel hinzufügen
 
-Möchtest du z. B. ein Event `likePost` erstellen? Hier sind die 3 einfachen Schritte:
+Dank der modularen Architektur lässt sich ProjektBox einfach um neue Spiele erweitern:
 
-### 1. Typ definieren (`types/socket.ts`)
-Füge das Event in `server/src/types/socket.ts` und `client/src/types/socket.ts` hinzu:
-
-```typescript
-export interface ClientToServerEvents {
-  likePost: (postId: string) => void;
-}
-
-export interface ServerToClientEvents {
-  postLiked: (data: { postId: string; likes: number }) => void;
-}
-```
-
-### 2. Handler im Backend anlegen (`server/src/socket/handlers.ts`)
-Reagiere auf das Event und informiere alle Clients:
-
-```typescript
-socket.on('likePost', (postId) => {
-  const newLikes = 42; // Logik hier
-  io.emit('postLiked', { postId, likes: newLikes });
-});
-```
-
-### 3. Im Frontend auslösen & empfangen (`client/src/...`)
-
-```typescript
-// Event senden:
-socket.emit('likePost', 'post-123');
-
-// Event empfangen:
-useEffect(() => {
-  socket.on('postLiked', ({ postId, likes }) => {
-    console.log(`Post ${postId} hat nun ${likes} Likes!`);
-  });
-
-  return () => {
-    socket.off('postLiked');
-  };
-}, []);
-```
+1. **Spiellogik im Backend (`server/src/games/definitions/myGame.ts`)**:
+   Implementiere das Interface `MultiplayerGameDefinition`:
+   - `initGameState(players, starterId, settings)`: Initialer Zustand.
+   - `validateAndApplyMove({ state, players, playerId, move })`: Autoritative Validierung und Zugausführung.
+2. **Im Backend registrieren (`server/src/games/registry.ts`)**:
+   Importiere dein Spiel und registriere es mit `gameRegistry.register(myGameDefinition)`.
+3. **Spielkatalog aktualisieren (`client/src/data/games.ts`)**:
+   Trage das Spiel mit Titel, Beschreibung, Lucide-Icon und Kategorie ein.
+4. **Board-Komponente im Frontend erstellen (`client/src/games/components/MyGameBoard.tsx`)**:
+   Erstelle die visuelle Spieloberfläche und registriere sie in `client/src/games/registry.ts`.
 
 ---
 
-## 🌐 REST API & WebSockets nebeneinander
+## ☁️ Deployment (Render.com & Produktion)
 
-Nicht alles muss über WebSockets laufen. Für Login, Registrierung oder statische Datenabfragen ist eine REST-API oft die bessere Wahl.
+ProjektBox ist vollständig für das Hosting auf Cloud-Plattformen wie **Render.com**, **Railway** oder klassischen Virtual Private Servern (VPS) vorbereitet.
 
-- **Routen definieren**: In `server/src/routes/api.ts` kannst du beliebige Express-Routen wie `router.post('/login', ...)` oder `router.get('/products', ...)` anlegen.
-- **Frontend-Aufruf**: Dank des in `client/vite.config.ts` integrierten Proxies reicht im Frontend ein einfacher Aufruf wie `fetch('/api/health')` – ohne CORS-Probleme im lokalen Modus!
+### Automatisches Deployment auf Render.com
+Im Repository ist eine fertige [render.yaml](file:///c:/Users/Feder/Desktop/ProjektBox-modernisiert/render.yaml) hinterlegt:
+1. Erstelle auf [Render](https://render.com) einen neuen **Blueprint**.
+2. Wähle dein ProjektBox-Repository aus.
+3. Render übernimmt automatisch Build- und Start-Befehle (`npm run build` & `npm start`) und konfiguriert den Healthcheck auf `/healthz`.
 
----
-
-## ☁️ Deployment auf Render.com (Web Service)
-
-Wenn du das Projekt auf [Render](https://render.com) veröffentlichst, beachte folgende Einstellungen:
-
-### Option A: Automatisches Deployment mit `render.yaml`
-Im Projekt ist eine fertige `render.yaml` hinterlegt. Wenn du das Repository mit Render verknüpfst, wähle **Blueprint** – Render konfiguriert alle Befehle automatisch.
-
-### Option B: Manuelle Konfiguration im Render Dashboard
-Wenn du einen neuen **Web Service** anlegst:
-
-| Feld | Wert | Hinweis |
-| :--- | :--- | :--- |
-| **Root Directory** | *(leer lassen)* | Läuft im Hauptverzeichnis |
-| **Environment** | `Node` | Node.js Runtime |
-| **Build Command** | `npm run build` | **Wichtig!** Baut Client & Server und erzeugt `server/dist/index.js` |
-| **Start Command** | `npm start` | Führt `node server/dist/index.js` aus |
-
-> **Warum der Fehler `Cannot find module '/opt/render/project/src/server/dist/index.js'` auftritt:**  
-> Da der Ordner `dist/` in der `.gitignore` liegt, existiert er im Git-Repository nicht. Wenn bei Render als **Build Command** nur `npm install` statt `npm run build` eingetragen ist, wird TypeScript nicht kompiliert und `server/dist/index.js` wird nicht erstellt. Mit `npm run build` wird der Build-Schritt ordnungsgemäß ausgeführt.
+### Produktions-Modus
+Im Produktionsbetrieb serviert der Express-Server das kompilierte Frontend (`client/dist`) automatisch als Single Page Application (SPA), inklusive Fallback auf `index.html` für clientseitiges Routing. Es wird kein separater Webserver für statische Dateien benötigt.
 
 ---
 
-Viel Erfolg beim Entwickeln deiner Echtzeit-Webanwendung! 🚀
+Entwickelt mit ❤️ für gemeinsamen Spielspaß! 🚀

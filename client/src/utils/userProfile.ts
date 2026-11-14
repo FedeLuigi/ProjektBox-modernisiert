@@ -15,7 +15,61 @@ export const STORAGE_KEYS = {
   SOCKET_URL: 'projektbox_socket_url',
   SOUND_ENABLED: 'projektbox_sound_enabled',
   VIBRATION_ENABLED: 'projektbox_vibration_enabled',
+  FAVORITE_GAMES: 'projektbox_favorite_games',
+  RECENT_GAMES: 'projektbox_recent_games',
 } as const;
+
+export interface RecentGameEntry {
+  gameId: string;
+  playedAt: number;
+}
+
+export function getFavoriteGameIds(): string[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.FAVORITE_GAMES);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.filter((id) => typeof id === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveFavoriteGameIds(ids: string[]): void {
+  try {
+    localStorage.setItem(STORAGE_KEYS.FAVORITE_GAMES, JSON.stringify(ids));
+  } catch {
+    // ignore
+  }
+}
+
+export function getRecentGames(): RecentGameEntry[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.RECENT_GAMES);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item) => item && typeof item.gameId === 'string' && typeof item.playedAt === 'number'
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function recordGamePlayed(gameId: string): RecentGameEntry[] {
+  const current = getRecentGames().filter((entry) => entry.gameId !== gameId);
+  const updated: RecentGameEntry[] = [
+    { gameId, playedAt: Date.now() },
+    ...current,
+  ].slice(0, 10);
+  try {
+    localStorage.setItem(STORAGE_KEYS.RECENT_GAMES, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+  return updated;
+}
 
 export function generateUserId(): string {
   const rand = Math.random().toString(36).substring(2, 8);

@@ -1,7 +1,7 @@
 {
   "name": "client",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -29,5 +29,6 @@
     "typescript": "~7.0.2",
     "vite": "^8.3.6",
     "vite-plugin-pwa": "^2.0.0"
-  }
+  },
+  "description": "ProjektBox - Modernes React 19 + Vite PWA Frontend fuer Mini-Games"
 }

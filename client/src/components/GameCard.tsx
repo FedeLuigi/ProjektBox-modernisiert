@@ -1,112 +1,168 @@
+import { Clock, Heart, Play, Tv, Users } from 'lucide-react';
 import { type Game } from '../data/games';
-import { formatSoloScore, getSoloHighscore } from '../utils/soloScores';
-import {
-  ACCENT_PALETTES,
-  CrystalButton,
-  CrystalPanel,
-  CrystalReadout,
-} from './CrystalUI';
+import { ACCENT_PALETTES } from './CrystalUI';
+import { GamePreviewArtwork } from './GamePreviewArtwork';
 
 interface GameCardProps {
   game: Game;
-  isActive: boolean;
+  isSelected?: boolean;
+  isFavorite: boolean;
+  lastPlayedAt?: number;
   onSelect: () => void;
-  onPlay: () => void;
+  onPlay: (tvMode?: boolean) => void;
+  onToggleFavorite: () => void;
 }
 
 export function GameCard({
   game,
-  isActive,
+  isSelected = false,
+  isFavorite,
+  lastPlayedAt,
   onSelect,
   onPlay,
+  onToggleFavorite,
 }: GameCardProps) {
-  const savedBest = getSoloHighscore(game.id);
-  const scoreDisplay =
-    savedBest !== null ? formatSoloScore(game.id, savedBest) : String(game.defaultScore);
-  const rewardDisplay = String(game.defaultReward);
   const Icon = game.icon;
   const palette = ACCENT_PALETTES[game.accent];
 
-  const handleCardClick = () => {
-    onSelect();
-    onPlay();
-  };
-
   return (
     <article
-      onClick={handleCardClick}
-      className={`group relative shrink-0 cursor-pointer select-none transition-all duration-200 pt-1 ${
-        isActive
-          ? 'scale-[1.03] z-20 drop-shadow-[0_14px_28px_rgba(0,0,0,0.45)]'
-          : 'hover:scale-[1.015] opacity-95 hover:opacity-100 z-10'
-      } w-[205px] sm:w-[240px] md:w-[260px] landscape:w-[190px]`}
+      onClick={onSelect}
+      className={`group relative flex flex-col overflow-hidden rounded-2xl border-2 bg-[#162235]/95 text-[#F8FAFC] transition-all duration-200 cursor-pointer select-none ${
+        isSelected
+          ? 'border-[#38BDF8] ring-2 ring-[#38BDF8]/30 shadow-[0_14px_32px_rgba(0,0,0,0.45)] -translate-y-0.5'
+          : 'border-[#293B56] hover:border-[#475569] hover:-translate-y-0.5 shadow-[0_8px_20px_rgba(0,0,0,0.3)]'
+      }`}
     >
-      <CrystalPanel
-        accent={game.accent}
-        contentClassName="pt-4 pb-4 px-3.5 sm:px-5 landscape:pt-3 landscape:pb-2.5 landscape:px-3 gap-2 landscape:gap-1"
-      >
-        {/* Individuelles Spiel-Emblem + Kategorie-Badge für sofortige optische Unterscheidbarkeit */}
-        <div className="flex items-center justify-center gap-2 w-full">
-          <div
-            style={{
-              backgroundColor: palette.bg,
-              borderColor: palette.outer,
-              clipPath: 'polygon(6% 0%, 100% 6%, 94% 100%, 0% 94%)',
-            }}
-            className="flex h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 items-center justify-center border-2 text-white shadow-sm"
-          >
-            <Icon className="h-4 w-4 sm:h-5 sm:w-5 landscape:h-3.5 landscape:w-3.5 stroke-[2.4]" />
-          </div>
+      {/* 1. GROSSE AUSSAGEKRÄFTIGE SPIELVORSCHAU */}
+      <div className="relative h-44 sm:h-48 w-full overflow-hidden border-b border-[#293B56]">
+        <GamePreviewArtwork
+          gameId={game.id}
+          variant="card"
+          className="h-full w-full transition-transform duration-300 group-hover:scale-105"
+        />
 
+        {/* Sanfter Verlauf am unteren Rand der Vorschau */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-[#0F172A]/90 via-[#0F172A]/40 to-transparent" />
+
+        {/* Oben links: Spieltyp & Spielerzahl klar hervorgehoben */}
+        <div className="absolute top-3 left-3 flex flex-wrap items-center gap-1.5">
           <span
             style={{
-              backgroundColor: palette.badgeBg,
-              color: palette.badgeText,
-              borderColor: palette.badgeBorder,
+              backgroundColor: palette.bg,
+              borderColor: palette.topBorder,
             }}
-            className="font-arcade px-2.5 py-0.5 text-[10px] sm:text-xs landscape:text-[9px] tracking-wider uppercase border truncate"
+            className="inline-flex items-center gap-1 rounded-lg border px-2.5 py-1 text-[11px] font-bold tracking-wide text-white uppercase shadow-md"
           >
-            {game.category} • {game.players}
+            {game.gameTypeLabel}
+          </span>
+
+          <span className="inline-flex items-center gap-1 rounded-lg border border-white/15 bg-[#0F172A]/85 px-2.5 py-1 text-xs font-semibold text-[#E2E8F0] backdrop-blur-xs">
+            <Users className="h-3.5 w-3.5 text-[#38BDF8]" />
+            {game.players}
           </span>
         </div>
 
-        {/* Spiel-Titel */}
-        <h3 className="font-arcade text-center text-lg sm:text-2xl landscape:text-base tracking-wider text-[#1E293B] uppercase leading-tight truncate w-full">
-          {game.title}
-        </h3>
+        {/* Oben rechts: Favoriten-Herz-Button */}
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          title={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+          aria-label={isFavorite ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+          className={`absolute top-3 right-3 flex h-9 w-9 items-center justify-center rounded-xl border transition-all active:scale-90 cursor-pointer ${
+            isFavorite
+              ? 'border-[#F43F5E] bg-[#F43F5E] text-white shadow-[0_0_12px_rgba(244,63,94,0.5)]'
+              : 'border-white/20 bg-[#0F172A]/75 text-[#CBD5E1] hover:bg-[#1E293B] hover:text-white backdrop-blur-xs'
+          }`}
+        >
+          <Heart className={`h-4 w-4 ${isFavorite ? 'fill-current' : ''}`} />
+        </button>
 
-        {/* SCORE-Anzeige im kontrastreichen Schiefer-Kristall */}
-        <CrystalReadout
-          label="SCORE"
-          value={scoreDisplay}
-          variant="neutral"
-          className="mt-0.5 w-full"
-        />
+        {/* Unten auf der Vorschau: Spieldauer & Zuletzt-Gespielt-Hinweis */}
+        <div className="absolute bottom-2.5 inset-x-3 flex items-center justify-between gap-2">
+          <span className="inline-flex items-center gap-1 rounded-md bg-[#0F172A]/85 px-2 py-0.5 text-xs font-medium text-[#FDE68A] border border-[#F59E0B]/30">
+            <Clock className="h-3.5 w-3.5 text-[#FBBF24]" />
+            {game.duration}
+          </span>
 
-        {/* REWARD-Anzeige im warmen Gold-Kristall (im sehr flachen Smartphone-Querformat ausgeblendet) */}
-        <CrystalReadout
-          label="REWARD"
-          value={rewardDisplay}
-          variant="gold"
-          className="mt-0.5 w-full landscape:hidden"
-        />
+          {lastPlayedAt && (
+            <span className="rounded-md bg-[#10B981]/20 border border-[#10B981]/40 px-2 py-0.5 text-[11px] font-semibold text-[#6EE7B7]">
+              Zuletzt gespielt
+            </span>
+          )}
+        </div>
+      </div>
 
-        {/* Unterer abgeschrägter "PLAY" Button in der jeweiligen Spiel-Akzentfarbe */}
-        <div className="mt-1.5 landscape:mt-1 w-full flex justify-center">
-          <CrystalButton
-            size="md"
-            tilt="left"
-            variant={game.accent}
+      {/* 2. KARTEN-INHALT: TITEL, BESCHREIBUNG & DIREKTER SPIELSTART */}
+      <div className="flex flex-1 flex-col justify-between gap-3 p-4">
+        <div>
+          {/* Icon + Titel + Kategorie */}
+          <div className="flex items-center gap-3">
+            <div
+              style={{
+                backgroundColor: palette.bg,
+                borderColor: palette.topBorder,
+              }}
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border text-white shadow-sm"
+            >
+              <Icon className="h-5 w-5 stroke-[2.2]" />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h3 className="font-arcade text-lg sm:text-xl tracking-wide text-white uppercase truncate">
+                {game.title}
+              </h3>
+              <p className="text-xs font-medium text-[#94A3B8] truncate">
+                {game.subtitle} • {game.category}
+              </p>
+            </div>
+          </div>
+
+          {/* Spielbeschreibung auf einen Blick */}
+          <p className="mt-2.5 text-xs sm:text-sm leading-relaxed text-[#CBD5E1] line-clamp-2">
+            {game.description}
+          </p>
+        </div>
+
+        {/* 3. AKTIONSZEILE UNTEN */}
+        <div className="flex items-center justify-between gap-2 pt-2 border-t border-[#293B56]/70">
+          {game.supportsTv ? (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onPlay(true);
+              }}
+              title="Als TV-Party auf großem Bildschirm starten"
+              className="inline-flex items-center gap-1.5 rounded-xl border border-[#334155] bg-[#1E293B] hover:bg-[#334155] px-3 py-2 text-xs font-semibold text-[#E2E8F0] transition-colors active:scale-95 cursor-pointer"
+            >
+              <Tv className="h-3.5 w-3.5 text-[#FBBF24]" />
+              <span>TV-Modus</span>
+            </button>
+          ) : (
+            <span />
+          )}
+
+          <button
+            type="button"
             onClick={(e) => {
               e.stopPropagation();
-              handleCardClick();
+              onPlay(false);
             }}
-            className="min-w-[115px] sm:min-w-[135px] landscape:min-w-[105px]"
+            style={{
+              backgroundColor: palette.bg,
+              borderColor: palette.topBorder,
+            }}
+            className="inline-flex flex-1 sm:flex-initial items-center justify-center gap-1.5 rounded-xl border px-4 py-2 text-xs sm:text-sm font-bold text-white uppercase tracking-wider shadow-md hover:brightness-110 transition-all active:scale-95 cursor-pointer"
           >
-            PLAY
-          </CrystalButton>
+            <Play className="h-4 w-4 fill-current" />
+            <span>Spielen</span>
+          </button>
         </div>
-      </CrystalPanel>
+      </div>
     </article>
   );
 }

@@ -3,7 +3,7 @@ import { ticTacToeGame } from './definitions/ticTacToe.js';
 import { connectFourGame } from './definitions/connectFour.js';
 import { drawAndGuessGame } from './definitions/drawAndGuess.js';
 
-function createStandardGame(id: string, title?: string, minPlayers = 1, maxPlayers = 4): MultiplayerGameDefinition {
+function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlayers = 4): MultiplayerGameDefinition {
   return {
     id,
     title: title || id,
@@ -53,18 +53,10 @@ export class GameRegistry {
   private games = new Map<string, MultiplayerGameDefinition<any, any>>();
 
   constructor() {
-    // Spezialisierte Multiplayer-Spiele
+    // Multiplayer- & Party-Spiele
     this.register(ticTacToeGame);
     this.register(connectFourGame);
     this.register(drawAndGuessGame);
-
-    // Einzelspiele (sofort solo oder ab 1 Spieler in der Lobby startbar)
-    this.register(createStandardGame('memory', 'Memory', 1, 4));
-    this.register(createStandardGame('reaction', 'Reaktions-Test', 1, 4));
-    this.register(createStandardGame('snake', 'Snake', 1, 4));
-    this.register(createStandardGame('2048', '2048', 1, 4));
-    this.register(createStandardGame('minesweeper', 'Minenfeld', 1, 4));
-    this.register(createStandardGame('space-dodge', 'Space Dodge', 1, 4));
   }
 
   public register(game: MultiplayerGameDefinition<any, any>): void {
@@ -80,7 +72,7 @@ export class GameRegistry {
   }
 
   public has(gameId: string): boolean {
-    return true;
+    return this.games.has(gameId);
   }
 }
 

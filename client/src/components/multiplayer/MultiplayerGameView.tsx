@@ -6,14 +6,7 @@ import { socketService } from '../../services/socket';
 import { useUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { clientGameRegistry, isSoloGame } from '../../games/registry';
-import {
-  formatSoloScore,
-  getSoloHighscore,
-  isLowerBetterGame,
-  saveSoloHighscore,
-} from '../../utils/soloScores';
-import { SoloResultCard } from './SoloResultCard';
+import { clientGameRegistry } from '../../games/registry';
 import {
   CrystalButton,
   CrystalPanel,
@@ -50,14 +43,9 @@ export function MultiplayerGameView({
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
-  const soloMode = isSoloGame(lobby.gameId) && activePlayers.length <= 1 && !opponent;
-  const isMyTurn = isDrawAndGuess || soloMode
-    ? (gameState?.status === 'playing')
-    : (gameState?.status === 'playing' && gameState.currentTurn === currentUser.id);
-  const [soloBestScore, setSoloBestScore] = useState<number | null>(() =>
-    getSoloHighscore(lobby.gameId)
-  );
-  const [isNewSoloRecord, setIsNewSoloRecord] = useState(false);
+  const isMyTurn = isDrawAndGuess
+    ? gameState?.status === 'playing'
+    : gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
 
   useEffect(() => {
     setLobby(initialLobby);
@@ -71,32 +59,16 @@ export function MultiplayerGameView({
         gameState: newState,
         status: status as any,
       }));
-      if (soloMode && newState?.status === 'won') {
-        const myFinalScore = newState?.scores?.[currentUser.id] || 0;
-        const lowerIsBetter =
-          typeof newState?.lastMove?.lowerIsBetter === 'boolean'
-            ? newState.lastMove.lowerIsBetter
-            : isLowerBetterGame(lobby.gameId);
-        const { bestScore, isNewRecord } = saveSoloHighscore(
-          lobby.gameId,
-          myFinalScore,
-          lowerIsBetter
-        );
-        setSoloBestScore(bestScore);
-        setIsNewSoloRecord(isNewRecord);
-      }
       setIsSubmitting(false);
     });
 
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
-      setIsNewSoloRecord(false);
       setIsSubmitting(false);
     });
 
     const unsubRestart = socketService.onGameRestarted(({ lobby: updatedLobby }) => {
       setLobby(updatedLobby);
-      setIsNewSoloRecord(false);
       setIsSubmitting(false);
       setErrorMsg(null);
     });
@@ -186,17 +158,11 @@ export function MultiplayerGameView({
               </span>
               <Avatar config={opponent?.avatar || ({} as any)} size={22} />
             </div>
-          ) : soloMode ? (
-            <div className="justify-self-center">
-              <CrystalReadout
-                value={formatSoloScore(lobby.gameId, gameState?.scores?.[currentUser.id] || 0)}
-              />
-            </div>
           ) : (
             <div className="justify-self-center">
               <CrystalReadout
                 variant={isMyTurn ? 'emerald' : 'neutral'}
-                value={isMyTurn ? 'YOUR TURN' : `${opponent?.name || 'OPPONENT'}`}
+                value={isMyTurn ? 'DEIN ZUG' : `${opponent?.name || 'MITSPIELER'}`}
               />
             </div>
           )}
@@ -215,68 +181,55 @@ export function MultiplayerGameView({
         {disconnectedOpponent && (
           <div className="font-arcade mx-auto my-1 flex items-center gap-2 border-2 border-[#92400E] bg-[#FEF3C7] px-3.5 py-2 text-center text-xs text-[#78350F] uppercase animate-pulse">
             <WifiOff className="h-4 w-4 shrink-0" />
-            <span>WAITING FOR {disconnectedOpponent}...</span>
+            <span>WARTE AUF {disconnectedOpponent}...</span>
           </div>
         )}
 
-        {/* 2. MITTE: "LEVEL 16"-ERGEBNIS-PANEL ODER SPIELFELD */}
+        {/* 2. MITTE: ERGEBNIS-PANEL ODER SPIELFELD */}
         {isGameOver ? (
           <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4">
-            {soloMode ? (
-              <SoloResultCard
-                gameId={lobby.gameId}
-                score={gameState?.scores?.[currentUser.id] || 0}
-                bestScore={soloBestScore}
-                isNewRecord={isNewSoloRecord}
-                resultLabel={gameState?.lastMove?.label}
-                secondaryLabel="EXIT"
-                onPlayAgain={handleRematch}
-                onExit={onLeave}
-              />
-            ) : (
-              <div className="my-auto w-full max-w-md animate-fade-in">
-                <CrystalPanel
-                  title={isWinner ? 'SIEG!' : isDraw ? 'UNENTSCHIEDEN!' : 'SPIEL BEENDET'}
-                  accent={isWinner ? 'emerald' : gameAccent}
-                  contentClassName="gap-3.5 py-6"
-                >
-                  <CrystalReadout
-                    label="PUNKTE"
-                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
-                  />
-                  <CrystalReadout
-                    label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
-                    value={
-                      isDrawAndGuess && gameState?.secretWord
-                        ? gameState.secretWord
-                        : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
-                    }
-                  />
+            <div className="my-auto w-full max-w-md animate-fade-in">
+              <CrystalPanel
+                title={isWinner ? 'SIEG!' : isDraw ? 'UNENTSCHIEDEN!' : 'SPIEL BEENDET'}
+                accent={isWinner ? 'emerald' : gameAccent}
+                contentClassName="gap-3.5 py-6"
+              >
+                <CrystalReadout
+                  label="PUNKTE"
+                  value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
+                />
+                <CrystalReadout
+                  label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
+                  value={
+                    isDrawAndGuess && gameState?.secretWord
+                      ? gameState.secretWord
+                      : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
+                  }
+                />
 
-                  <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
-                    <CrystalButton
-                      fullWidth
-                      size="md"
-                      variant={gameAccent}
-                      tilt="left"
-                      disabled={hasVotedRematch}
-                      onClick={handleRematch}
-                    >
-                      {hasVotedRematch ? 'WARTE AUF MITSPIELER...' : 'REVANCHE'}
-                    </CrystalButton>
-                    <CrystalButton
-                      size="md"
-                      variant="secondary"
-                      tilt="right"
-                      onClick={onLeave}
-                      className="min-w-[130px]"
-                    >
-                      ZURÜCK
-                    </CrystalButton>
-                  </div>
-                </CrystalPanel>
-              </div>
-            )}
+                <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
+                  <CrystalButton
+                    fullWidth
+                    size="md"
+                    variant={gameAccent}
+                    tilt="left"
+                    disabled={hasVotedRematch}
+                    onClick={handleRematch}
+                  >
+                    {hasVotedRematch ? 'WARTE AUF MITSPIELER...' : 'REVANCHE'}
+                  </CrystalButton>
+                  <CrystalButton
+                    size="md"
+                    variant="secondary"
+                    tilt="right"
+                    onClick={onLeave}
+                    className="min-w-[130px]"
+                  >
+                    ZURÜCK
+                  </CrystalButton>
+                </div>
+              </CrystalPanel>
+            </div>
           </main>
         ) : (
           <main className="mx-auto flex w-full max-w-[1400px] flex-1 min-h-0 flex-col items-center justify-center overflow-hidden p-1 sm:p-2">
@@ -289,7 +242,6 @@ export function MultiplayerGameView({
                 allPlayers={activePlayers}
                 isMyTurn={isMyTurn}
                 isGameOver={isGameOver}
-                isSolo={soloMode}
                 onMove={handleSendMove}
                 disabled={isSubmitting}
                 isTvMode={lobby.isTvMode}
