@@ -6,7 +6,6 @@ import {
   CrystalButton,
   CrystalIconButton,
   CrystalPanel,
-  CrystalReadout,
 } from './CrystalUI';
 
 /* ─── 1. ZENTRIERTES SPIEL-LOGO OBEN IM EDLEN SCHIEFER-GOLD-KRISTALL-STIL ─── */
@@ -36,13 +35,12 @@ export function ArcadeLogoHeader() {
 
 /* ─── 2. SPIELER-PROFIL & KRISTALL-ICON-BUTTONS OBEN RECHTS ─── */
 export function PlayerProfileBar({
-  playerName,
   avatar,
   onOpenMenu,
   onOpenSettings,
   onOpenProfile,
 }: {
-  playerName: string;
+  playerName?: string;
   avatar?: AvatarConfig;
   onOpenMenu: () => void;
   onOpenSettings?: () => void;
@@ -51,18 +49,7 @@ export function PlayerProfileBar({
   const handleProfileClick = onOpenProfile || onOpenSettings;
 
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2">
-      {/* Spielername auf Desktop (>= 768px) als CrystalReadout */}
-      {playerName && (
-        <div
-          onClick={handleProfileClick}
-          className="hidden md:flex items-center cursor-pointer"
-          title="Spielerprofil & Avatar anpassen"
-        >
-          <CrystalReadout value={playerName} variant="neutral" />
-        </div>
-      )}
-
+    <div className="flex items-center gap-1 sm:gap-2">
       {/* Anklickbares Profil-Icon (Avatar) direkt neben dem Einstellungs-Button */}
       <button
         type="button"

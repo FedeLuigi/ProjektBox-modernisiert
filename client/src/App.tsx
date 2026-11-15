@@ -657,7 +657,6 @@ export function App() {
             </CrystalButton>
 
             <PlayerProfileBar
-              playerName={userProfile.name}
               avatar={userProfile.avatar}
               onOpenProfile={() => {
                 triggerHaptic();
