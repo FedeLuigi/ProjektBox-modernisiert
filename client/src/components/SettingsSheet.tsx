@@ -1,7 +1,5 @@
 import { useEffect, useState } from 'react';
 import { Check, Copy, Dices } from 'lucide-react';
-import { Avatar, type AvatarConfig } from './Avatar';
-import { AvatarCustomizerModal } from './AvatarCustomizerModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
 import {
   saveUserProfile,
@@ -39,7 +37,6 @@ export function SettingsSheet({
   const [nameInput, setNameInput] = useState(profile.name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [copiedId, setCopiedId] = useState(false);
-  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
@@ -93,10 +90,6 @@ export function SettingsSheet({
     onClose();
   };
 
-  const handleSaveAvatar = (newConfig: AvatarConfig) => {
-    saveUserProfile({ avatar: newConfig });
-  };
-
   const handleCopyId = async () => {
     try {
       await navigator.clipboard.writeText(profile.id);
@@ -128,31 +121,20 @@ export function SettingsSheet({
         {/* 2. Hauptbereich: Auf Mobile startet "SPIELER" direkt oben ohne großen Leerraum, darunter "OPTIONEN" */}
         <main className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 md:my-auto items-start md:items-center justify-center pt-1.5 sm:pt-3 pb-3 landscape:pt-0.5 landscape:pb-1">
           <div className="tablet-portrait-stack grid w-full items-stretch gap-3.5 sm:gap-6 landscape:gap-3 grid-cols-1 md:grid-cols-2 landscape:grid-cols-2">
-            {/* ERSTE KARTE: "SPIELER" Kristall-Panel für Avatar & Name */}
+            {/* ERSTE KARTE: "SPIELER" Kristall-Panel für Spielername & ID */}
             <CrystalPanel
               topTabLabel="SPIELER"
               accent="indigo"
               className="h-full"
-              contentClassName="justify-between gap-2.5 sm:gap-3.5 landscape:gap-1 py-4 sm:py-6 landscape:py-2 px-4 sm:px-6 landscape:px-3"
+              contentClassName="justify-between gap-3 sm:gap-4 landscape:gap-2 py-5 sm:py-6 landscape:py-3 px-4 sm:px-6 landscape:px-4"
             >
-              {/* Runder Avatar direkt auf dem Kartenhintergrund (klickbar, ohne weißen Kasten & ohne doppeltes Stift-Icon) */}
-              <button
-                type="button"
-                onClick={() => setIsAvatarModalOpen(true)}
-                className="group relative rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none drop-shadow-[0_5px_0_rgba(15,23,42,0.3)] landscape:scale-75 landscape:-my-2"
-                title="Avatar anpassen"
-                aria-label="Avatar anpassen"
-              >
-                <Avatar config={profile.avatar} size={74} />
-              </button>
-
               {/* Namensfeld im abgeschrägten Readout-Stil mit aktuellem Spielernamen */}
-              <div className="w-full flex flex-col items-center">
+              <div className="w-full flex flex-col items-center gap-2 my-auto">
                 <label
                   htmlFor="player-profile-name-input"
-                  className="font-arcade mb-1 landscape:mb-0.5 text-xs sm:text-sm tracking-wider text-[#334155] uppercase"
+                  className="font-arcade text-xs sm:text-sm tracking-wider text-[#334155] uppercase"
                 >
-                  NAME
+                  SPIELERNAME
                 </label>
                 <div className="flex items-center gap-2 w-full max-w-[290px] justify-center">
                   <div
@@ -196,34 +178,25 @@ export function SettingsSheet({
                 )}
               </div>
 
-              {/* Avatar ändern & ID kopieren mit "KOPIERT!"-Feedback */}
-              <div className="flex items-center justify-center gap-2.5 w-full pt-0.5">
-                <CrystalButton
-                  size="sm"
-                  variant="indigo"
-                  tilt="left"
-                  onClick={() => setIsAvatarModalOpen(true)}
-                  className="landscape:h-7 landscape:text-xs"
-                >
-                  AVATAR ÄNDERN
-                </CrystalButton>
+              {/* ID kopieren mit "KOPIERT!"-Feedback */}
+              <div className="flex items-center justify-center w-full pt-1">
                 <CrystalButton
                   size="sm"
                   variant="secondary"
                   tilt="right"
                   onClick={handleCopyId}
                   title="Spieler-ID in die Zwischenablage kopieren"
-                  className="landscape:h-7 landscape:text-xs"
+                  className="landscape:h-7 landscape:text-xs min-w-[150px]"
                 >
                   {copiedId ? (
                     <>
                       <Check className="h-4 w-4 text-[#059669] stroke-[3]" />
-                      <span>KOPIERT!</span>
+                      <span>ID KOPIERT!</span>
                     </>
                   ) : (
                     <>
                       <Copy className="h-4 w-4" />
-                      <span>ID</span>
+                      <span>SPIELER-ID KOPIEREN</span>
                     </>
                   )}
                 </CrystalButton>
@@ -271,13 +244,6 @@ export function SettingsSheet({
           </div>
         </main>
       </div>
-
-      <AvatarCustomizerModal
-        isOpen={isAvatarModalOpen}
-        onClose={() => setIsAvatarModalOpen(false)}
-        config={profile.avatar}
-        onSave={handleSaveAvatar}
-      />
     </div>
   );
 }

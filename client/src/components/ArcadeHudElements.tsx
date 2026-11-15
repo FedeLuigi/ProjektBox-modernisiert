@@ -1,3 +1,4 @@
+import { User } from 'lucide-react';
 import { type NavSection } from '../App';
 import { type CrystalAccent } from '../data/games';
 import { Avatar, type AvatarConfig } from './Avatar';
@@ -39,22 +40,45 @@ export function PlayerProfileBar({
   avatar,
   onOpenMenu,
   onOpenSettings,
+  onOpenProfile,
 }: {
   playerName: string;
   avatar?: AvatarConfig;
   onOpenMenu: () => void;
   onOpenSettings?: () => void;
+  onOpenProfile?: () => void;
 }) {
+  const handleProfileClick = onOpenProfile || onOpenSettings;
+
   return (
-    <div className="flex items-center gap-1.5 sm:gap-2.5">
-      <div
-        onClick={onOpenSettings}
-        className="hidden md:flex items-center gap-2 cursor-pointer"
-        title="Spielerprofil anpassen"
+    <div className="flex items-center gap-1.5 sm:gap-2">
+      {/* Spielername auf Desktop (>= 768px) als CrystalReadout */}
+      {playerName && (
+        <div
+          onClick={handleProfileClick}
+          className="hidden md:flex items-center cursor-pointer"
+          title="Spielerprofil & Avatar anpassen"
+        >
+          <CrystalReadout value={playerName} variant="neutral" />
+        </div>
+      )}
+
+      {/* Anklickbares Profil-Icon (Avatar) direkt neben dem Einstellungs-Button */}
+      <button
+        type="button"
+        onClick={handleProfileClick}
+        title="Profil & Avatar anpassen"
+        aria-label="Profil & Avatar anpassen"
+        className="group relative flex h-9 w-9 sm:h-11 sm:w-11 landscape:h-9 landscape:w-9 items-center justify-center rounded-full border-2 border-[#F59E0B] bg-[#0F172A] p-[2px] shadow-[0_3px_0_rgba(15,23,42,0.35)] transition-transform hover:scale-105 active:scale-92 cursor-pointer shrink-0 focus:outline-none"
       >
-        {avatar && <Avatar config={avatar} size={32} />}
-        <CrystalReadout value={playerName} variant="neutral" />
-      </div>
+        {avatar ? (
+          <Avatar config={avatar} size={28} className="sm:w-[34px] sm:h-[34px]" />
+        ) : (
+          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#1E293B] text-[#FBBF24]">
+            <User className="h-4 w-4 sm:h-5 sm:w-5" />
+          </div>
+        )}
+      </button>
 
       {/* Zahnrad Icon-Button (neutrales Frost-Perlmutt) */}
       {onOpenSettings && (
@@ -63,8 +87,8 @@ export function PlayerProfileBar({
           size="md"
           variant="neutral"
           onClick={onOpenSettings}
-          title="Optionen & Profil öffnen"
-          aria-label="Optionen & Profil öffnen"
+          title="Optionen & Einstellungen öffnen"
+          aria-label="Optionen & Einstellungen öffnen"
         >
           <svg viewBox="0 0 36 36" className="h-5 w-5 sm:h-6 sm:w-6 fill-current">
             <path d="M19.6 4l.9 3.1a10.4 10.4 0 0 1 2.9 1.2l2.9-1.4 2.3 2.3-1.4 2.9a10.4 10.4 0 0 1 1.2 2.9l3.1.9v3.2l-3.1.9a10.4 10.4 0 0 1-1.2 2.9l1.4 2.9-2.3 2.3-2.9-1.4a10.4 10.4 0 0 1-2.9 1.2L19.6 31h-3.2l-.9-3.1a10.4 10.4 0 0 1-2.9-1.2L9.7 28l-2.3-2.3 1.4-2.9a10.4 10.4 0 0 1-1.2-2.9L4.5 19v-3.2l3.1-.9a10.4 10.4 0 0 1 1.2-2.9L7.4 9.1l2.3-2.3 2.9 1.4a10.4 10.4 0 0 1 2.9-1.2L16.4 4h3.2zM18 12.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11z" />

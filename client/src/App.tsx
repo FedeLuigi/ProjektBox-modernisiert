@@ -8,6 +8,7 @@ import {
 import { GameCard } from './components/GameCard';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
+import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { IslandBackground } from './components/IslandBackground';
 import {
   ArcadeLogoHeader,
@@ -24,6 +25,7 @@ import {
   recordGamePlayed,
   type RecentGameEntry,
   saveFavoriteGameIds,
+  saveUserProfile,
   STORAGE_KEYS,
   useUserProfile,
 } from './utils/userProfile';
@@ -77,6 +79,7 @@ export function App() {
   const [launchInTvMode, setLaunchInTvMode] = useState(false);
   const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
@@ -496,6 +499,10 @@ export function App() {
         if (e.key === 'Escape') setShowSettings(false);
         return;
       }
+      if (showAvatarModal) {
+        if (e.key === 'Escape') setShowAvatarModal(false);
+        return;
+      }
       if (showTvJoinModal) {
         if (e.key === 'Escape') setShowTvJoinModal(false);
         return;
@@ -536,6 +543,7 @@ export function App() {
   }, [
     showSplash,
     showSettings,
+    showAvatarModal,
     multiplayerGame,
     showTvJoinModal,
     showMenuModal,
@@ -651,6 +659,10 @@ export function App() {
             <PlayerProfileBar
               playerName={userProfile.name}
               avatar={userProfile.avatar}
+              onOpenProfile={() => {
+                triggerHaptic();
+                setShowAvatarModal(true);
+              }}
               onOpenSettings={() => {
                 triggerHaptic();
                 setShowSettings(true);
@@ -921,6 +933,16 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={handleToggleVibration}
         onInstall={deferredPrompt ? handleInstall : undefined}
+      />
+
+      {/* ─── 7. Spielerprofil & Avatar-Anpassung ─── */}
+      <AvatarCustomizerModal
+        isOpen={showAvatarModal}
+        onClose={() => setShowAvatarModal(false)}
+        config={userProfile.avatar}
+        onSave={(newAvatar) => {
+          saveUserProfile({ avatar: newAvatar });
+        }}
       />
     </div>
   );
