@@ -45,30 +45,30 @@ export function TvJoinModal({
         role="dialog"
         aria-modal="true"
         onClick={onClose}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden p-4 bg-[#0F172A]/80 backdrop-blur-xs select-none animate-fade-in"
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden p-4 landscape:p-2 bg-[#0F172A]/80 backdrop-blur-xs select-none animate-fade-in"
       >
-        <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-md pt-3 landscape:pt-0">
+        <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-lg pt-3 landscape:pt-0">
           <CrystalPanel
             topTabLabel="TV BEITRETEN"
             title="CODE EINGEBEN"
             accent="amber"
-            contentClassName="gap-3.5 landscape:gap-1.5 py-6 px-5 sm:px-6 landscape:py-2.5 landscape:px-4"
+            contentClassName="gap-3.5 landscape:gap-2 py-6 px-5 sm:px-6 landscape:py-3 landscape:px-4"
           >
-            <p className="-mt-2 landscape:mt-0 text-center text-xs sm:text-sm font-semibold text-[#475569] leading-snug">
+            <p className="-mt-2 landscape:-mt-1 text-center text-xs sm:text-sm landscape:text-xs font-semibold text-[#475569] leading-snug">
               Gib den 5-stelligen Lobby-Code vom TV-Bildschirm ein.
             </p>
 
             {errorMessage && (
-              <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-1.5 text-center text-xs text-white uppercase">
+              <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-1.5 landscape:py-1 text-center text-xs text-white uppercase">
                 {errorMessage}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="w-full flex flex-col items-center gap-3 landscape:gap-2">
+            <form onSubmit={handleSubmit} className="w-full flex flex-col landscape:flex-row items-center gap-3 landscape:gap-2">
               {/* Abgeschrägtes Code-Eingabefeld in voller Button-Breite */}
               <div
                 style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                className="w-full bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.28)]"
+                className="w-full landscape:flex-1 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.28)]"
               >
                 <input
                   type="text"
@@ -86,7 +86,7 @@ export function TvJoinModal({
                     color: '#FFFFFF',
                     caretColor: '#FFFFFF',
                   }}
-                  className="font-arcade h-12 sm:h-14 landscape:h-10 w-full border-2 border-[#475569] focus:border-[#F59E0B] bg-[#1E293B] px-4 text-center text-xl sm:text-2xl landscape:text-lg font-bold tracking-[0.28em] placeholder:tracking-[0.14em] text-white placeholder:text-white/55 focus:outline-none uppercase transition-colors caret-white"
+                  className="font-arcade h-12 sm:h-14 landscape:h-10 w-full border-2 border-[#475569] focus:border-[#F59E0B] bg-[#1E293B] px-4 text-center text-xl sm:text-2xl landscape:text-base font-bold tracking-[0.28em] placeholder:tracking-[0.14em] text-white placeholder:text-white/55 focus:outline-none uppercase transition-colors caret-white"
                 />
               </div>
 
@@ -97,7 +97,7 @@ export function TvJoinModal({
                 variant="primary"
                 tilt="left"
                 disabled={!isValidCode || isJoining}
-                className="landscape:h-9 landscape:text-sm"
+                className="landscape:w-auto landscape:min-w-[140px] landscape:h-10 landscape:text-xs"
               >
                 {isJoining ? (
                   <>
@@ -111,7 +111,7 @@ export function TvJoinModal({
             </form>
 
             {/* Dezente horizontale Trennlinie mit "ODER"-Label */}
-            <div className="flex w-full items-center gap-3 py-0.5">
+            <div className="flex landscape:hidden w-full items-center gap-3 py-0.5">
               <div className="h-[2px] flex-1 bg-[#CBD5E1]" />
               <span className="font-arcade text-xs tracking-widest text-[#64748B] uppercase">
                 ODER
@@ -119,28 +119,31 @@ export function TvJoinModal({
               <div className="h-[2px] flex-1 bg-[#CBD5E1]" />
             </div>
 
-            <CrystalButton
-              fullWidth
-              size="md"
-              variant="amber"
-              tilt="right"
-              disabled={isJoining}
-              onClick={() => setShowScanner(true)}
-            >
-              <QrCode className="h-4 w-4" />
-              <span>QR-CODE SCANNEN</span>
-            </CrystalButton>
-
-            <div className="w-full pt-2 flex justify-center">
+            <div className="flex flex-col landscape:grid landscape:grid-cols-2 items-center gap-2.5 landscape:gap-2 w-full">
               <CrystalButton
-                size="sm"
-                variant="secondary"
-                tilt="left"
-                onClick={onClose}
-                className="min-w-[140px]"
+                fullWidth
+                size="md"
+                variant="amber"
+                tilt="right"
+                disabled={isJoining}
+                onClick={() => setShowScanner(true)}
+                className="landscape:h-9 landscape:text-xs"
               >
-                ABBRECHEN
+                <QrCode className="h-4 w-4" />
+                <span>QR-CODE SCANNEN</span>
               </CrystalButton>
+
+              <div className="w-full pt-1 landscape:pt-0 flex justify-center">
+                <CrystalButton
+                  size="sm"
+                  variant="secondary"
+                  tilt="left"
+                  onClick={onClose}
+                  className="min-w-[140px] landscape:w-full landscape:h-9 landscape:text-xs"
+                >
+                  ABBRECHEN
+                </CrystalButton>
+              </div>
             </div>
           </CrystalPanel>
         </div>

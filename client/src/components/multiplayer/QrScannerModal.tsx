@@ -214,19 +214,19 @@ export function QrScannerModal({
 
       <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-3 landscape:p-1">
         {errorType !== 'none' ? (
-          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3 landscape:pt-0">
-            <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4 landscape:gap-2">
-              <CameraOff className="h-10 w-10 text-[#E11D48]" />
-              <p className="text-center text-sm font-bold text-[#334155]">{errorMessage}</p>
-              <CrystalButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry}>
+          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-md pt-3 landscape:pt-0">
+            <CrystalPanel topTabLabel="KAMERA" title="KEINE KAMERA" accent="rose" contentClassName="gap-4 landscape:gap-2 landscape:py-3">
+              <CameraOff className="h-10 w-10 landscape:h-7 landscape:w-7 text-[#E11D48]" />
+              <p className="text-center text-sm landscape:text-xs font-bold text-[#334155]">{errorMessage}</p>
+              <CrystalButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry} className="landscape:h-9 landscape:text-xs">
                 CODE EINGEBEN
               </CrystalButton>
             </CrystalPanel>
           </div>
         ) : (
-          <div className="tablet-modal-box my-auto w-full max-w-sm pt-3 landscape:pt-0">
-            <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3 landscape:gap-1.5">
-              <div className="relative w-full aspect-square max-h-[46dvh] landscape:max-h-[34dvh] landscape:w-40 landscape:h-40 overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
+          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-lg pt-3 landscape:pt-0">
+            <CrystalPanel topTabLabel="QR-CODE SCANNEN" accent="amber" contentClassName="gap-3 landscape:gap-4 landscape:flex-row landscape:items-center landscape:py-3 landscape:px-5">
+              <div className="relative w-full aspect-square max-h-[46dvh] landscape:max-h-none landscape:w-38 landscape:h-38 shrink-0 overflow-hidden border-[4px] border-[#1E293B] bg-[#0F172A] flex items-center justify-center">
                 <video
                   ref={videoRef}
                   className="absolute inset-0 h-full w-full object-cover"
@@ -234,30 +234,36 @@ export function QrScannerModal({
                   playsInline
                 />
 
-                <div className="relative z-10 w-48 h-48 border-[3px] border-[#F59E0B] pointer-events-none flex items-center justify-center">
+                <div className="relative z-10 w-48 h-48 landscape:w-28 landscape:h-28 border-[3px] border-[#F59E0B] pointer-events-none flex items-center justify-center">
                   {hasScanned && (
-                    <span className="font-arcade bg-[#059669] border-2 border-[#064E3B] px-4 py-1.5 text-sm text-white uppercase">
+                    <span className="font-arcade bg-[#059669] border-2 border-[#064E3B] px-4 py-1.5 text-sm landscape:text-xs text-white uppercase">
                       GEFUNDEN!
                     </span>
                   )}
                 </div>
 
                 {isInitializing && (
-                  <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm text-white uppercase">
+                  <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm landscape:text-xs text-white uppercase">
                     KAMERA STARTET...
                   </div>
                 )}
               </div>
 
-              <CrystalButton
-                fullWidth
-                size="sm"
-                variant="secondary"
-                tilt="right"
-                onClick={onSwitchToCodeEntry}
-              >
-                CODE EINGEBEN
-              </CrystalButton>
+              <div className="flex flex-col items-center justify-center gap-2.5 w-full landscape:flex-1">
+                <p className="hidden landscape:block text-center text-xs font-semibold text-[#334155]">
+                  Richte die Kamera auf den QR-Code am TV oder gib den Code manuell ein.
+                </p>
+                <CrystalButton
+                  fullWidth
+                  size="sm"
+                  variant="secondary"
+                  tilt="right"
+                  onClick={onSwitchToCodeEntry}
+                  className="landscape:h-9 landscape:text-xs"
+                >
+                  CODE EINGEBEN
+                </CrystalButton>
+              </div>
             </CrystalPanel>
           </div>
         )}

@@ -997,7 +997,7 @@ export function DrawAndGuessBoard({
           <div
             className={`flex flex-wrap items-center justify-center w-full ${
               totalSlots > 8 ? 'gap-1' : 'gap-1.5 sm:gap-2'
-            } py-1 landscape:py-1.5`}
+            } py-1 landscape:py-0.5`}
           >
             {slotIndices.map((idx) => {
               if (isRoundOver && gameState?.secretWord) {
@@ -1063,7 +1063,7 @@ export function DrawAndGuessBoard({
             <div
               role="group"
               aria-label="In-App Tastatur"
-              className="mt-1.5 landscape:mt-2 flex w-full flex-col gap-1.5 px-1 pb-1"
+              className="mt-1.5 landscape:mt-1 flex w-full flex-col gap-1.5 landscape:gap-1 px-1 pb-1 landscape:pb-0"
             >
               {KEYBOARD_ROWS.map((row, rowIdx) => (
                 <div key={rowIdx} className="flex w-full items-center gap-1">
@@ -1072,7 +1072,7 @@ export function DrawAndGuessBoard({
                       key={letter}
                       type="button"
                       onClick={() => handleKeyboardChar(letter)}
-                      className="flex-1 min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 bg-[#F8FAFC] hover:bg-[#FFFFFF] active:bg-[#DB2777] active:text-white active:scale-95 text-[#1E293B] text-sm sm:text-base landscape:text-xs sm:landscape:text-sm font-arcade border-2 border-[#334155] shadow-[inset_0_0_0_1px_#FFFFFF,0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                      className="flex-1 min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 bg-[#F8FAFC] hover:bg-[#FFFFFF] active:bg-[#DB2777] active:text-white active:scale-95 text-[#1E293B] text-sm sm:text-base landscape:text-xs font-arcade border-2 border-[#334155] shadow-[inset_0_0_0_1px_#FFFFFF,0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                     >
                       {letter}
                     </button>
@@ -1084,9 +1084,9 @@ export function DrawAndGuessBoard({
                         type="button"
                         onClick={handleKeyboardBackspace}
                         aria-label="Buchstabe löschen"
-                        className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 bg-[#334155] hover:bg-[#475569] active:scale-95 text-white border-2 border-[#0F172A] shadow-[0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                        className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 bg-[#334155] hover:bg-[#475569] active:scale-95 text-white border-2 border-[#0F172A] shadow-[0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                       >
-                        <Delete className="h-4 w-4" />
+                        <Delete className="h-4 w-4 landscape:h-3.5 landscape:w-3.5" />
                       </button>
 
                       <button
@@ -1094,11 +1094,11 @@ export function DrawAndGuessBoard({
                         onClick={handleGuessSubmit}
                         disabled={!guessInput.trim()}
                         aria-label="Tipp absenden"
-                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-9 sm:landscape:h-10 font-arcade uppercase text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
+                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 font-arcade uppercase text-xs sm:text-sm landscape:text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
                           guessInput.trim() ? theme.primaryBtn : BTN_PRIMARY_DISABLED
                         }`}
                       >
-                        <Send className="h-3.5 w-3.5" />
+                        <Send className="h-3.5 w-3.5 landscape:h-3 landscape:w-3" />
                         <span>OK</span>
                       </button>
                     </>

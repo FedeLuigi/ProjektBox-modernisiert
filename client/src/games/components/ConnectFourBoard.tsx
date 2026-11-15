@@ -61,12 +61,12 @@ export function ConnectFourBoard({
   const remainingDiscs = Math.max(0, 42 - moveCount);
 
   return (
-    <div className="flex h-full w-full max-w-5xl flex-1 min-h-0 flex-col items-center justify-center gap-2 sm:gap-3 px-1 sm:px-3 select-none">
-      {/* INTEGRIERTE GRAVITY-DUELL-LEISTE (direkt über dem Spielständer) */}
-      <div className="grid w-full max-w-[min(95vw,calc((100dvh-8.5rem)*1.16),44rem)] landscape:max-w-[min(74vw,38rem)] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-1.5 sm:py-2 bg-[#0F1D3A]/95 border-[3px] border-[#3B82F6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
+    <div className="flex h-full w-full max-w-5xl landscape:max-w-6xl flex-1 min-h-0 flex-col landscape:flex-row items-center justify-center gap-2 sm:gap-3 landscape:gap-5 px-1 sm:px-3 select-none">
+      {/* INTEGRIERTE GRAVITY-DUELL-LEISTE (Portrait: über dem Spielständer, Querformat: kompakt links neben dem Spielständer) */}
+      <div className="grid w-full max-w-[min(95vw,calc((100dvh-8.5rem)*1.16),44rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-1.5 sm:py-2 landscape:p-3 bg-[#0F1D3A]/95 border-[3px] border-[#3B82F6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
         {/* Roter Spieler */}
         <div
-          className={`flex items-center gap-2 px-2.5 py-1 border-2 transition-all ${
+          className={`flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
             !isGameOver && activeColor === 'red'
               ? 'bg-[#881337] border-[#FB7185] shadow-[0_0_14px_rgba(244,63,94,0.5)] scale-[1.02]'
               : 'bg-[#091224]/70 border-[#1E3A8A] opacity-65'
@@ -79,7 +79,7 @@ export function ConnectFourBoard({
         </div>
 
         {/* Status Mitte */}
-        <div className="flex flex-col items-center justify-center px-2 text-center">
+        <div className="flex flex-col items-center justify-center px-2 landscape:py-1 text-center">
           <span className="font-arcade text-xs sm:text-sm uppercase text-[#EFF6FF]">
             {isGameOver
               ? winningCoords
@@ -96,7 +96,7 @@ export function ConnectFourBoard({
 
         {/* Gelber/Goldener Spieler */}
         <div
-          className={`justify-self-end flex items-center gap-2 px-2.5 py-1 border-2 transition-all ${
+          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
             !isGameOver && activeColor === 'yellow'
               ? 'bg-[#78350F] border-[#FCD34D] shadow-[0_0_14px_rgba(251,191,36,0.5)] scale-[1.02]'
               : 'bg-[#091224]/70 border-[#1E3A8A] opacity-65'
@@ -110,10 +110,10 @@ export function ConnectFourBoard({
       </div>
 
       {/* GROSSFLÄCHIGES 7×6 ROYAL-COBALT SPIELRACK */}
-      <div className="flex flex-col items-center justify-center flex-1 min-h-0 w-full">
-        <div className="flex flex-col items-center w-[min(95vw,calc((100dvh-9.2rem)*1.16),44rem)] landscape:w-[min(70vw,calc((100dvh-5.5rem)*1.16),37rem)]">
+      <div className="flex flex-col items-center justify-center flex-1 landscape:flex-none min-h-0 w-full landscape:w-auto">
+        <div className="flex flex-col items-center w-[min(95vw,calc((100dvh-9.2rem)*1.16),44rem)] landscape:w-[min(56vw,calc((100dvh-5.6rem)*1.16),24.5rem)]">
           {/* Spalten-Einwurf-Zeile mit schwebendem 3D-Spielstein */}
-          <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 w-full px-3 sm:px-4 mb-1">
+          <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 landscape:gap-1 w-full px-3 sm:px-4 landscape:px-2 mb-1 landscape:mb-0.5">
             {Array.from({ length: 7 }).map((_, c) => {
               const isColFull = getLandingRow(c) === -1;
               const isHovered = hoveredCol === c;
@@ -127,20 +127,20 @@ export function ConnectFourBoard({
                   onClick={() => handleColClick(c)}
                   onMouseEnter={() => setHoveredCol(c)}
                   onMouseLeave={() => setHoveredCol(null)}
-                  className="h-6 sm:h-8 landscape:h-5 flex items-center justify-center font-arcade transition-all cursor-pointer disabled:cursor-default"
+                  className="h-6 sm:h-8 landscape:h-4 flex items-center justify-center font-arcade transition-all cursor-pointer disabled:cursor-default"
                   aria-label={`Spalte ${c + 1} einwerfen`}
                 >
                   {canClick ? (
                     isHovered ? (
                       <div
-                        className={`h-6 w-6 sm:h-7 sm:w-7 landscape:h-5 landscape:w-5 rounded-full border-2 animate-bounce shadow-lg ${
+                        className={`h-6 w-6 sm:h-7 sm:w-7 landscape:h-4 landscape:w-4 rounded-full border-2 animate-bounce shadow-lg ${
                           activeColor === 'red'
                             ? 'bg-gradient-to-br from-[#FDA4AF] via-[#E11D48] to-[#881337] border-white'
                             : 'bg-gradient-to-br from-[#FEF08A] via-[#F59E0B] to-[#92400E] border-white'
                         }`}
                       />
                     ) : (
-                      <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 text-[#93C5FD]/85 hover:text-[#FCD34D]" />
+                      <ArrowDown className="h-4 w-4 sm:h-5 sm:w-5 landscape:h-3.5 landscape:w-3.5 text-[#93C5FD]/85 hover:text-[#FCD34D]" />
                     )
                   ) : null}
                 </button>
@@ -149,8 +149,8 @@ export function ConnectFourBoard({
           </div>
 
           {/* 3D Royal-Blue Spielständer */}
-          <div className="relative p-2.5 sm:p-4 landscape:p-2 bg-gradient-to-b from-[#1D4ED8] via-[#1E3A8A] to-[#172554] border-[4px] border-[#60A5FA] shadow-[inset_0_3px_0_rgba(255,255,255,0.28),0_16px_36px_rgba(0,0,0,0.65)] w-full">
-            <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 landscape:gap-1.5">
+          <div className="relative p-2.5 sm:p-4 landscape:p-1.5 bg-gradient-to-b from-[#1D4ED8] via-[#1E3A8A] to-[#172554] border-[4px] border-[#60A5FA] shadow-[inset_0_3px_0_rgba(255,255,255,0.28),0_16px_36px_rgba(0,0,0,0.65)] w-full">
+            <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 landscape:gap-1">
               {Array.from({ length: 7 }).map((_, colIdx) => {
                 const landingRow = getLandingRow(colIdx);
                 const isColFull = landingRow === -1;

@@ -133,13 +133,13 @@ export function SettingsSheet({
               topTabLabel="SPIELER"
               accent="indigo"
               className="h-full"
-              contentClassName="justify-between gap-2.5 sm:gap-3.5 landscape:gap-1.5 py-4 sm:py-6 landscape:py-2.5 px-4 sm:px-6 landscape:px-3"
+              contentClassName="justify-between gap-2.5 sm:gap-3.5 landscape:gap-1 py-4 sm:py-6 landscape:py-2 px-4 sm:px-6 landscape:px-3"
             >
               {/* Runder Avatar direkt auf dem Kartenhintergrund (klickbar, ohne weißen Kasten & ohne doppeltes Stift-Icon) */}
               <button
                 type="button"
                 onClick={() => setIsAvatarModalOpen(true)}
-                className="group relative rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none drop-shadow-[0_5px_0_rgba(15,23,42,0.3)] landscape:scale-80"
+                className="group relative rounded-full cursor-pointer transition-transform hover:scale-105 active:scale-95 focus:outline-none drop-shadow-[0_5px_0_rgba(15,23,42,0.3)] landscape:scale-75 landscape:-my-2"
                 title="Avatar anpassen"
                 aria-label="Avatar anpassen"
               >

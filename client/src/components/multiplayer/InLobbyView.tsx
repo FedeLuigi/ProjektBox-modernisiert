@@ -157,7 +157,7 @@ export function InLobbyView({
   const missingPlayersCount = Math.max(0, lobby.minPlayers - activePlayers.length);
 
   const actionButton = !isReady ? (
-    <CrystalButton fullWidth size="lg" tilt="left" onClick={handleToggleReady}>
+    <CrystalButton fullWidth size="lg" tilt="left" onClick={handleToggleReady} className="landscape:h-9 landscape:text-xs">
       BEREIT
     </CrystalButton>
   ) : canStartGame ? (
@@ -167,6 +167,7 @@ export function InLobbyView({
       tilt="left"
       disabled={!allReady || isStarting}
       onClick={handleStartGame}
+      className="landscape:h-9 landscape:text-xs"
     >
       {!allReady
         ? activePlayers.length < lobby.minPlayers
@@ -175,7 +176,7 @@ export function InLobbyView({
         : 'SPIEL STARTEN'}
     </CrystalButton>
   ) : (
-    <CrystalButton fullWidth size="lg" variant="secondary" tilt="right" onClick={handleToggleReady}>
+    <CrystalButton fullWidth size="lg" variant="secondary" tilt="right" onClick={handleToggleReady} className="landscape:h-9 landscape:text-xs">
       BEREIT ✓
     </CrystalButton>
   );
@@ -183,7 +184,7 @@ export function InLobbyView({
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: "VERLASSEN" links, Spieltitel Mitte, Verbindungsstatus rechts */}
-      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2 w-full max-w-5xl mx-auto px-1">
+      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2 landscape:pb-1 w-full max-w-5xl mx-auto px-1">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
           VERLASSEN
         </CrystalButton>
@@ -193,20 +194,20 @@ export function InLobbyView({
         <ConnectionStatusBadge />
       </header>
 
-      <div className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-3 pb-2 landscape:pt-1 landscape:pb-1">
+      <div className="tablet-screen-main mx-auto flex w-full max-w-4xl flex-1 flex-col min-h-0 overflow-y-auto overflow-x-hidden px-2 pt-3 pb-2 landscape:pt-0.5 landscape:pb-0.5">
         {errorMsg && (
-          <div className="font-arcade mb-3 border-[3px] border-[#991B1B] bg-[#FEE2E2] p-2.5 text-center text-xs text-[#991B1B] uppercase">
+          <div className="font-arcade mb-3 landscape:mb-1 border-[3px] border-[#991B1B] bg-[#FEE2E2] p-2.5 landscape:p-1.5 text-center text-xs text-[#991B1B] uppercase">
             {errorMsg}
           </div>
         )}
 
-        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-5 landscape:gap-3 grid-cols-1 md:grid-cols-[0.95fr_1.05fr] landscape:grid-cols-2">
+        <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-5 landscape:gap-2.5 grid-cols-1 md:grid-cols-[0.95fr_1.05fr] landscape:grid-cols-2">
           {/* Linkes Kristall-Panel: Beitrittscode, Link-Teilen & QR-Code */}
           <CrystalPanel
             title="LOBBY-CODE"
             accent="amber"
             className="h-full"
-            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2.5 landscape:px-3 landscape:gap-1.5"
+            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2 landscape:px-3 landscape:gap-1.5"
           >
             <div className="flex w-full flex-col items-center gap-2 landscape:gap-1">
               <span className="font-arcade text-[11px] sm:text-xs landscape:text-[10px] tracking-wider text-[#334155] uppercase">
@@ -251,12 +252,12 @@ export function InLobbyView({
             <button
               type="button"
               onClick={() => setIsQrModalOpen(true)}
-              className="my-auto border-[4px] border-[#1E293B] bg-white p-3 landscape:p-1 shadow-[0_6px_0_rgba(15,23,42,0.3)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+              className="my-auto border-[4px] border-[#1E293B] bg-white p-3 landscape:p-1.5 shadow-[0_6px_0_rgba(15,23,42,0.3)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
               title="QR-Code vergrößern"
             >
               <canvas
                 ref={desktopQrCanvasRef}
-                className="w-40 h-40 sm:w-44 sm:h-44 landscape:w-20 landscape:h-20 block"
+                className="w-40 h-40 sm:w-44 sm:h-44 landscape:w-22 landscape:h-22 block"
               />
             </button>
           </CrystalPanel>
@@ -266,9 +267,9 @@ export function InLobbyView({
             title="SPIELER"
             accent={gameAccent}
             className="h-full"
-            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2.5 landscape:px-3 landscape:gap-1.5"
+            contentClassName="justify-between gap-4 py-5 px-4 sm:px-6 landscape:py-2 landscape:px-3 landscape:gap-1.5"
           >
-            <div className="flex w-full flex-col gap-4">
+            <div className="flex w-full flex-col gap-4 landscape:gap-1.5">
               <LobbyGameSettings
                 gameId={lobby.gameId}
                 settings={lobby.settings}
@@ -276,34 +277,34 @@ export function InLobbyView({
                 onUpdate={handleUpdateSettings}
               />
 
-              <div className="w-full flex flex-col gap-2.5">
+              <div className="w-full flex flex-col gap-2.5 landscape:gap-1">
                 <div className="flex items-center justify-between w-full px-1">
-                  <span className="font-arcade text-xs text-[#1E293B] uppercase">
+                  <span className="font-arcade text-xs landscape:text-[11px] text-[#1E293B] uppercase">
                     SPIELER ({activePlayers.length}/{lobby.maxPlayers})
                   </span>
-                  <span className="font-arcade text-xs text-[#047857] uppercase">
+                  <span className="font-arcade text-xs landscape:text-[11px] text-[#047857] uppercase">
                     {readyCount}/{targetReadyTotal} BEREIT
                   </span>
                 </div>
 
-                <div className="w-full flex flex-col gap-2">
+                <div className="w-full flex flex-col gap-2 landscape:gap-1 landscape:max-h-[96px] landscape:overflow-y-auto">
                   {activePlayers.map((p, idx) => {
                     const isMe = p.id === currentUser.id;
                     return (
                       <div
                         key={p.id || idx}
-                        className={`flex w-full items-center justify-between gap-2.5 border-[3px] px-3 py-2 shadow-[0_3px_0_rgba(15,23,42,0.18)] ${
+                        className={`flex w-full items-center justify-between gap-2.5 border-[3px] px-3 py-2 landscape:px-2.5 landscape:py-1 shadow-[0_3px_0_rgba(15,23,42,0.18)] ${
                           p.isReady
                             ? 'bg-[#059669] border-[#064E3B] text-white'
                             : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
                         }`}
                       >
-                        <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                        <div className="flex items-center gap-2.5 landscape:gap-2 min-w-0 flex-1">
                           <div className="shrink-0">
-                            <Avatar config={p.avatar} size={32} />
+                            <Avatar config={p.avatar} size={28} />
                           </div>
                           <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                            <span className="font-arcade text-xs sm:text-sm uppercase break-all">
+                            <span className="font-arcade text-xs sm:text-sm landscape:text-xs uppercase break-all">
                               {p.name}
                               {isMe ? ' (DU)' : ''}
                             </span>
@@ -326,13 +327,13 @@ export function InLobbyView({
                   {Array.from({ length: missingPlayersCount }).map((_, slotIdx) => (
                     <div
                       key={`open-slot-${slotIdx}`}
-                      className="flex w-full items-center justify-between gap-2.5 border-[3px] border-dashed border-[#64748B] bg-[#E2E8F0]/70 px-3 py-2 text-[#475569]"
+                      className="flex w-full items-center justify-between gap-2.5 border-[3px] border-dashed border-[#64748B] bg-[#E2E8F0]/70 px-3 py-2 landscape:px-2.5 landscape:py-1 text-[#475569]"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#64748B] bg-[#CBD5E1]/60">
-                          <Loader2 className="h-4 w-4 animate-spin text-[#475569]" />
+                      <div className="flex items-center gap-2.5 landscape:gap-2 min-w-0">
+                        <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border-2 border-dashed border-[#64748B] bg-[#CBD5E1]/60">
+                          <Loader2 className="h-3.5 w-3.5 animate-spin text-[#475569]" />
                         </div>
-                        <span className="font-arcade text-xs sm:text-sm tracking-wide text-[#475569] uppercase">
+                        <span className="font-arcade text-xs sm:text-sm landscape:text-xs tracking-wide text-[#475569] uppercase">
                           Warte auf Mitspieler...
                         </span>
                       </div>
@@ -342,74 +343,78 @@ export function InLobbyView({
               </div>
             </div>
 
-            <div className="w-full pt-1 mt-auto">{actionButton}</div>
+            <div className="w-full pt-1 landscape:pt-0.5 mt-auto">{actionButton}</div>
           </CrystalPanel>
         </div>
       </div>
 
-      {/* QR-Code Zoom-Modal im Crystal-Panel-Stil */}
+      {/* QR-Code Zoom-Modal im Crystal-Panel-Stil (kompaktes 2-Spalten-Layout im Smartphone-Querformat) */}
       {isQrModalOpen && (
         <div
           role="dialog"
           aria-modal="true"
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/80 backdrop-blur-xs p-4 animate-fade-in"
+          className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto bg-[#0F172A]/80 backdrop-blur-xs p-4 landscape:p-2 animate-fade-in"
           onClick={() => setIsQrModalOpen(false)}
         >
-          <div className="tablet-modal-box w-full max-w-sm" onClick={(e) => e.stopPropagation()}>
+          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-xl" onClick={(e) => e.stopPropagation()}>
             <CrystalPanel
               topTabLabel="QR-CODE"
               accent="amber"
-              contentClassName="gap-4 py-6 px-6 sm:px-8"
+              contentClassName="gap-4 landscape:gap-2.5 py-6 px-6 sm:px-8 landscape:py-3 landscape:px-5"
             >
-              {/* Prominenter Lobby-Code mit großem Zeichenabstand + Hinweistext */}
-              <div className="flex flex-col items-center gap-1.5 w-full text-center">
-                <span className="font-arcade text-3xl sm:text-4xl tracking-[0.25em] pl-[0.25em] text-[#0F172A] drop-shadow-[0_2px_0_rgba(255,255,255,0.9)] uppercase">
-                  {lobby.code}
-                </span>
-                <p className="text-xs sm:text-sm font-semibold text-[#475569] leading-snug max-w-[260px]">
-                  Scanne den Code mit deinem Smartphone zum Beitreten.
-                </p>
-              </div>
+              <div className="flex flex-col items-center gap-4 w-full landscape:grid landscape:grid-cols-[auto_1fr] landscape:items-center landscape:gap-x-5 landscape:gap-y-2.5">
+                {/* Prominenter Lobby-Code mit großem Zeichenabstand + Hinweistext */}
+                <div className="flex flex-col items-center landscape:items-start gap-1.5 landscape:gap-1 w-full text-center landscape:text-left landscape:col-start-2 landscape:row-start-1">
+                  <span className="font-arcade text-3xl sm:text-4xl landscape:text-2xl tracking-[0.25em] pl-[0.25em] landscape:pl-0 text-[#0F172A] drop-shadow-[0_2px_0_rgba(255,255,255,0.9)] uppercase">
+                    {lobby.code}
+                  </span>
+                  <p className="text-xs sm:text-sm landscape:text-xs font-semibold text-[#475569] leading-snug max-w-[260px] landscape:max-w-none">
+                    Scanne den Code mit deinem Smartphone zum Beitreten.
+                  </p>
+                </div>
 
-              {/* QR-Code auf ~78% der Kartenbreite begrenzt mit großzügiger weißer Quiet-Zone */}
-              <div className="w-[78%] max-w-[240px] aspect-square border-[4px] border-[#1E293B] bg-white p-4 sm:p-5 shadow-[0_6px_0_rgba(15,23,42,0.3)] flex items-center justify-center mx-auto">
-                <canvas
-                  ref={qrModalCanvasRef}
-                  className="w-full h-full block"
-                />
-              </div>
+                {/* QR-Code: In Portrait mittig, im Smartphone-Querformat links neben Text & Buttons */}
+                <div className="w-[78%] max-w-[240px] landscape:w-36 landscape:h-36 landscape:max-w-none aspect-square border-[4px] border-[#1E293B] bg-white p-4 sm:p-5 landscape:p-2 shadow-[0_6px_0_rgba(15,23,42,0.3)] flex items-center justify-center mx-auto landscape:mx-0 landscape:col-start-1 landscape:row-start-1 landscape:row-span-2">
+                  <canvas
+                    ref={qrModalCanvasRef}
+                    className="w-full h-full block"
+                  />
+                </div>
 
-              {/* Vergrößerte Aktions-Buttons mit "KOPIERT!"-Feedback */}
-              <div className="grid grid-cols-2 gap-3 w-full pt-1">
-                <CrystalButton
-                  size="md"
-                  fullWidth
-                  variant="secondary"
-                  tilt="left"
-                  onClick={handleCopyCode}
-                >
-                  {copiedCode ? (
-                    <>
-                      <Check className="h-4 w-4 shrink-0 text-[#059669] stroke-[3]" />
-                      <span>KOPIERT!</span>
-                    </>
-                  ) : (
-                    <>
-                      <Copy className="h-4 w-4 shrink-0" />
-                      <span>CODE KOPIEREN</span>
-                    </>
-                  )}
-                </CrystalButton>
+                {/* Aktions-Buttons mit "KOPIERT!"-Feedback */}
+                <div className="grid grid-cols-2 gap-3 landscape:gap-2 w-full pt-1 landscape:pt-0 landscape:col-start-2 landscape:row-start-2">
+                  <CrystalButton
+                    size="md"
+                    fullWidth
+                    variant="secondary"
+                    tilt="left"
+                    onClick={handleCopyCode}
+                    className="landscape:h-9 landscape:px-2.5 landscape:text-xs"
+                  >
+                    {copiedCode ? (
+                      <>
+                        <Check className="h-4 w-4 shrink-0 text-[#059669] stroke-[3]" />
+                        <span>KOPIERT!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 shrink-0" />
+                        <span>CODE KOPIEREN</span>
+                      </>
+                    )}
+                  </CrystalButton>
 
-                <CrystalButton
-                  size="md"
-                  fullWidth
-                  variant="primary"
-                  tilt="right"
-                  onClick={() => setIsQrModalOpen(false)}
-                >
-                  SCHLIESSEN
-                </CrystalButton>
+                  <CrystalButton
+                    size="md"
+                    fullWidth
+                    variant="primary"
+                    tilt="right"
+                    onClick={() => setIsQrModalOpen(false)}
+                    className="landscape:h-9 landscape:px-2.5 landscape:text-xs"
+                  >
+                    SCHLIESSEN
+                  </CrystalButton>
+                </div>
               </div>
             </CrystalPanel>
           </div>

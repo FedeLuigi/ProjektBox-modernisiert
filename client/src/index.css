@@ -390,6 +390,12 @@ body::-webkit-scrollbar,
     display: none !important;
   }
 
+  /* Modals im Smartphone-Querformat vor dem Tablet-75%-Zwang schützen & kompakt halten */
+  .tablet-modal-box {
+    width: 100% !important;
+    max-width: min(92vw, 560px) !important;
+  }
+
   /* 3. Haupt-Container ohne künstliche max-width, volle Breite & Resthöhe (flex: 1) */
   .tablet-main-area,
   .widescreen-main-area,

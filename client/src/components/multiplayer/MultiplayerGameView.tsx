@@ -187,27 +187,29 @@ export function MultiplayerGameView({
 
         {/* 2. MITTE: ERGEBNIS-PANEL ODER SPIELFELD */}
         {isGameOver ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4">
-            <div className="my-auto w-full max-w-md animate-fade-in">
+          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4 landscape:py-1">
+            <div className="my-auto w-full max-w-md landscape:max-w-lg animate-fade-in">
               <CrystalPanel
                 title={isWinner ? 'SIEG!' : isDraw ? 'UNENTSCHIEDEN!' : 'SPIEL BEENDET'}
                 accent={isWinner ? 'emerald' : gameAccent}
-                contentClassName="gap-3.5 py-6"
+                contentClassName="gap-3.5 landscape:gap-2 py-6 landscape:py-3"
               >
-                <CrystalReadout
-                  label="PUNKTE"
-                  value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
-                />
-                <CrystalReadout
-                  label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
-                  value={
-                    isDrawAndGuess && gameState?.secretWord
-                      ? gameState.secretWord
-                      : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
-                  }
-                />
+                <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3 landscape:gap-2.5 w-full px-2">
+                  <CrystalReadout
+                    label="PUNKTE"
+                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
+                  />
+                  <CrystalReadout
+                    label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
+                    value={
+                      isDrawAndGuess && gameState?.secretWord
+                        ? gameState.secretWord
+                        : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
+                    }
+                  />
+                </div>
 
-                <div className="mt-2 flex w-full flex-col items-center gap-2.5 px-2">
+                <div className="mt-2 landscape:mt-1 flex w-full flex-col landscape:flex-row items-center gap-2.5 landscape:gap-2 px-2">
                   <CrystalButton
                     fullWidth
                     size="md"
@@ -215,6 +217,7 @@ export function MultiplayerGameView({
                     tilt="left"
                     disabled={hasVotedRematch}
                     onClick={handleRematch}
+                    className="landscape:h-9 landscape:text-xs"
                   >
                     {hasVotedRematch ? 'WARTE AUF MITSPIELER...' : 'REVANCHE'}
                   </CrystalButton>
@@ -223,7 +226,7 @@ export function MultiplayerGameView({
                     variant="secondary"
                     tilt="right"
                     onClick={onLeave}
-                    className="min-w-[130px]"
+                    className="min-w-[130px] landscape:h-9 landscape:text-xs"
                   >
                     ZURÜCK
                   </CrystalButton>

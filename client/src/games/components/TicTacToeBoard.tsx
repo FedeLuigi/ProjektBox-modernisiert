@@ -46,12 +46,12 @@ export function TicTacToeBoard({
   };
 
   return (
-    <div className="flex h-full w-full max-w-4xl flex-1 min-h-0 flex-col items-center justify-center gap-2.5 sm:gap-4 px-2 select-none">
-      {/* INTEGRIERTE CYBER-DUELL-LEISTE (direkt über dem Spielfeld, ohne äußere Card) */}
-      <div className="grid w-full max-w-[min(92vw,calc(100dvh-8.5rem),34rem)] landscape:max-w-[min(78vw,32rem)] grid-cols-[1fr_auto_1fr] items-center gap-2 px-3 py-2 bg-[#0B192C]/90 border-[3px] border-[#1E3A5F] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
+    <div className="flex h-full w-full max-w-4xl landscape:max-w-5xl flex-1 min-h-0 flex-col landscape:flex-row items-center justify-center gap-2.5 sm:gap-4 landscape:gap-5 px-2 select-none">
+      {/* INTEGRIERTE CYBER-DUELL-LEISTE (Portrait: über dem Spielfeld, Querformat: kompakt links neben dem Spielfeld) */}
+      <div className="grid w-full max-w-[min(92vw,calc(100dvh-8.5rem),34rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-2 landscape:p-3 bg-[#0B192C]/90 border-[3px] border-[#1E3A5F] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
         {/* Spieler X (Cyan) */}
         <div
-          className={`flex items-center gap-2 px-2.5 py-1 border-2 transition-all ${
+          className={`flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
             !isGameOver && activeSymbol === 'X'
               ? 'bg-[#083344] border-[#22D3EE] shadow-[0_0_14px_rgba(34,211,238,0.45)] scale-[1.03]'
               : 'bg-[#0F172A]/70 border-[#334155] opacity-65'
@@ -64,7 +64,7 @@ export function TicTacToeBoard({
         </div>
 
         {/* Zug- & Runden-Indikator */}
-        <div className="flex flex-col items-center justify-center px-2 text-center">
+        <div className="flex flex-col items-center justify-center px-2 landscape:py-1 text-center">
           <div className="inline-flex items-center gap-1.5 font-arcade text-xs sm:text-sm uppercase text-white">
             <Swords className="h-3.5 w-3.5 text-[#38BDF8]" />
             <span>
@@ -96,7 +96,7 @@ export function TicTacToeBoard({
 
         {/* Spieler O (Gold) */}
         <div
-          className={`justify-self-end flex items-center gap-2 px-2.5 py-1 border-2 transition-all ${
+          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
             !isGameOver && activeSymbol === 'O'
               ? 'bg-[#451A03] border-[#FBBF24] shadow-[0_0_14px_rgba(251,191,36,0.45)] scale-[1.03]'
               : 'bg-[#0F172A]/70 border-[#334155] opacity-65'
@@ -110,8 +110,8 @@ export function TicTacToeBoard({
       </div>
 
       {/* GROSSFLÄCHIGE CYBER-ARENA (3×3 NEON-MATRIX) */}
-      <div className="flex-1 min-h-0 w-full flex items-center justify-center">
-        <div className="relative grid grid-cols-3 gap-2.5 sm:gap-4 landscape:gap-2.5 p-3 sm:p-5 landscape:p-3 bg-gradient-to-br from-[#0F243C] via-[#0B192C] to-[#07111E] border-[4px] border-[#06B6D4] shadow-[inset_0_0_24px_rgba(6,182,212,0.22),0_16px_36px_rgba(0,0,0,0.6)] w-[min(92vw,calc(100dvh-9rem),34rem)] landscape:w-[min(58vw,calc(100dvh-5.8rem),27rem)] aspect-square">
+      <div className="flex-1 landscape:flex-none min-h-0 w-full landscape:w-auto flex items-center justify-center">
+        <div className="relative grid grid-cols-3 gap-2.5 sm:gap-4 landscape:gap-2 p-3 sm:p-5 landscape:p-2.5 bg-gradient-to-br from-[#0F243C] via-[#0B192C] to-[#07111E] border-[4px] border-[#06B6D4] shadow-[inset_0_0_24px_rgba(6,182,212,0.22),0_16px_36px_rgba(0,0,0,0.6)] w-[min(92vw,calc(100dvh-9rem),34rem)] landscape:w-[min(52vw,calc(100dvh-4.4rem),21rem)] aspect-square">
           {board.map((cell, idx) => {
             const isWinningCell = winningLine?.includes(idx);
             const canClick = isMyTurn && !isGameOver && !disabled && cell === null;

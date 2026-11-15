@@ -124,39 +124,67 @@ export function ArcadeMenuModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/75 p-4 overflow-y-auto backdrop-blur-xs animate-fade-in"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/75 p-4 landscape:p-2 overflow-y-auto backdrop-blur-xs animate-fade-in"
       onClick={onClose}
     >
-      <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm pt-3">
-        <CrystalPanel title="SPIELFILTER" contentClassName="gap-3 py-5">
-          <div className="flex w-full flex-col gap-2.5 px-2">
-            {SECTION_ITEMS.map((item, idx) => {
-              const active = activeSection === item.id;
-              return (
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-xl pt-3 landscape:pt-0"
+      >
+        <CrystalPanel
+          title="SPIELFILTER"
+          contentClassName="gap-3 landscape:gap-2 py-5 landscape:py-3 landscape:px-4"
+        >
+          <div className="flex w-full flex-col gap-2.5 landscape:gap-2 px-2 landscape:px-0">
+            <div className="grid grid-cols-1 landscape:grid-cols-2 gap-2.5 landscape:gap-2 w-full">
+              {SECTION_ITEMS.map((item, idx) => {
+                const active = activeSection === item.id;
+                const isLastOdd =
+                  idx === SECTION_ITEMS.length - 1 &&
+                  SECTION_ITEMS.length % 2 === 1 &&
+                  !canInstall;
+                return (
+                  <div
+                    key={item.id}
+                    className={isLastOdd ? 'landscape:col-span-2' : ''}
+                  >
+                    <CrystalButton
+                      fullWidth
+                      size="lg"
+                      tilt={idx % 2 === 0 ? 'left' : 'right'}
+                      variant={active ? item.accent : 'secondary'}
+                      onClick={() => {
+                        onSelectSection(item.id);
+                        onClose();
+                      }}
+                      className="landscape:h-9 landscape:text-xs"
+                    >
+                      {item.label}
+                    </CrystalButton>
+                  </div>
+                );
+              })}
+
+              {canInstall && (
                 <CrystalButton
-                  key={item.id}
                   fullWidth
-                  size="lg"
-                  tilt={idx % 2 === 0 ? 'left' : 'right'}
-                  variant={active ? item.accent : 'secondary'}
-                  onClick={() => {
-                    onSelectSection(item.id);
-                    onClose();
-                  }}
+                  size="md"
+                  variant="cyan"
+                  onClick={onInstall}
+                  className="landscape:h-9 landscape:text-xs"
                 >
-                  {item.label}
+                  APP INSTALLIEREN
                 </CrystalButton>
-              );
-            })}
+              )}
+            </div>
 
-            {canInstall && (
-              <CrystalButton fullWidth size="md" variant="cyan" onClick={onInstall}>
-                APP INSTALLIEREN
-              </CrystalButton>
-            )}
-
-            <div className="pt-1.5 flex justify-center">
-              <CrystalButton size="md" variant="secondary" onClick={onClose} className="min-w-[130px]">
+            <div className="pt-1.5 landscape:pt-0.5 flex justify-center">
+              <CrystalButton
+                size="md"
+                variant="secondary"
+                onClick={onClose}
+                className="min-w-[130px] landscape:h-8 landscape:text-xs"
+              >
                 OK
               </CrystalButton>
             </div>

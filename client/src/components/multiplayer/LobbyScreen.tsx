@@ -351,19 +351,19 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
           </div>
 
           {/* ═══ 2. DESKTOP & TABLET (ab 768px): Bestehendes 2-Spalten-Layout ═══ */}
-          <div className="tablet-portrait-stack my-auto hidden md:grid w-full items-stretch gap-6 landscape:gap-3.5 grid-cols-2">
+          <div className="tablet-portrait-stack my-auto hidden md:grid w-full items-stretch gap-6 landscape:gap-3 grid-cols-2">
             {/* 1. LINKES PANEL: Spiel-Vorschau, Icon, Anleitung & Eckdaten (ohne redundanten Abbrechen-Button) */}
             <CrystalPanel
               title={game.title}
               accent={game.accent}
               className="h-full"
-              contentClassName="justify-between gap-3.5 py-6 px-5 landscape:py-2.5 landscape:px-3.5 landscape:gap-1.5"
+              contentClassName="justify-between gap-3.5 py-6 px-5 landscape:py-2 landscape:px-3.5 landscape:gap-1.5"
             >
               {/* Kompakte visuelle Spielvorschau mit Spiel-Icon-Badge */}
               <div className="flex w-full flex-col items-center gap-3 landscape:gap-1.5">
                 <div
                   style={{ clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)' }}
-                  className="relative w-full h-28 sm:h-32 landscape:h-18 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
+                  className="relative w-full h-28 sm:h-32 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
                 >
                   <div
                     style={{ clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)' }}
@@ -397,13 +397,13 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                   </div>
                 </div>
 
-                <p className="text-center text-xs sm:text-sm font-semibold text-[#334155] leading-relaxed px-1">
+                <p className="landscape:hidden text-center text-xs sm:text-sm font-semibold text-[#334155] leading-relaxed px-1">
                   {game.howToPlay}
                 </p>
               </div>
 
               {/* Eckdaten unten bündig */}
-              <div className="grid grid-cols-2 gap-2.5 w-full pt-1">
+              <div className="grid grid-cols-2 gap-2.5 w-full pt-1 landscape:pt-0">
                 <CrystalReadout
                   label="SPIELER"
                   value={game.players.toUpperCase()}
@@ -424,23 +424,23 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
               title="LOBBY STARTEN"
               accent={game.accent}
               className="h-full"
-              contentClassName="justify-between gap-4 py-6 px-5 landscape:py-2.5 landscape:px-3.5 landscape:gap-1.5"
+              contentClassName="justify-between gap-4 py-6 px-5 landscape:py-2 landscape:px-3.5 landscape:gap-1.5"
             >
               {errorMsg && (
-                <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 text-center text-xs text-white uppercase">
+                <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-2 landscape:py-1 text-center text-xs text-white uppercase">
                   {errorMsg}
                 </div>
               )}
 
               <form
                 onSubmit={handleCreateLobby}
-                className="flex flex-1 w-full flex-col justify-between gap-4 landscape:gap-2"
+                className="flex flex-1 w-full flex-col justify-between gap-4 landscape:gap-1.5"
               >
                 {/* Eingabefeld RAUM-NAME mit optisch sauber angebundenem Würfel-Button */}
                 <div className="flex flex-col items-center w-full">
                   <label
                     htmlFor="lobby-name-input"
-                    className="font-arcade mb-1.5 text-xs sm:text-sm tracking-wider text-[#334155] uppercase"
+                    className="font-arcade mb-1.5 landscape:mb-0.5 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase"
                   >
                     RAUM-NAME
                   </label>
@@ -467,7 +467,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                           color: '#FFFFFF',
                           caretColor: '#FFFFFF',
                         }}
-                        className="font-arcade h-11 sm:h-12 landscape:h-9 w-full bg-[#1E293B] px-4 text-center text-sm sm:text-base font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
+                        className="font-arcade h-11 sm:h-12 landscape:h-8 w-full bg-[#1E293B] px-4 text-center text-sm sm:text-base landscape:text-xs font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
                       />
                     </div>
 
@@ -479,7 +479,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                         title="Zufälligen Namen generieren"
                         aria-label="Zufälligen Namen generieren"
                         style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
-                        className="flex h-full w-12 sm:w-13 landscape:w-10 items-center justify-center bg-[#78350F] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.25)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+                        className="flex h-full w-12 sm:w-13 landscape:w-9 items-center justify-center bg-[#78350F] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.25)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
                       >
                         <div
                           style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
@@ -502,13 +502,13 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
 
                 {/* Zusammenhängende Tab-/Modus-Auswahl ("STANDARD" vs. "TV SCREEN") + dynamische Kurzbeschreibung */}
                 <div className="flex flex-col items-center w-full">
-                  <span className="font-arcade mb-1.5 text-xs sm:text-sm tracking-wider text-[#334155] uppercase">
+                  <span className="font-arcade mb-1.5 landscape:mb-0.5 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase">
                     SPIELMODUS
                   </span>
 
                   <div
                     style={{ clipPath: 'polygon(0% 4%, 100% 0%, 99% 96%, 1% 100%)' }}
-                    className="grid w-full grid-cols-2 gap-1.5 bg-[#CBD5E1] border-[3px] border-[#334155] p-1.5 shadow-inner"
+                    className="grid w-full grid-cols-2 gap-1.5 bg-[#CBD5E1] border-[3px] border-[#334155] p-1.5 landscape:p-1 shadow-inner"
                   >
                     <CrystalButton
                       size="sm"
@@ -518,8 +518,9 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                         setIsTvMode(false);
                         if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(false));
                       }}
+                      className="landscape:h-7 landscape:text-xs"
                     >
-                      <Smartphone className="h-4 w-4 shrink-0" />
+                      <Smartphone className="h-4 w-4 landscape:h-3.5 landscape:w-3.5 shrink-0" />
                       <span>STANDARD</span>
                     </CrystalButton>
 
@@ -531,14 +532,15 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                         setIsTvMode(true);
                         if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(true));
                       }}
+                      className="landscape:h-7 landscape:text-xs"
                     >
-                      <Tv className="h-4 w-4 shrink-0" />
+                      <Tv className="h-4 w-4 landscape:h-3.5 landscape:w-3.5 shrink-0" />
                       <span>TV SCREEN</span>
                     </CrystalButton>
                   </div>
 
                   {/* Einzeilige dynamische Kurzbeschreibung je nach ausgewähltem Modus */}
-                  <p className="mt-2 text-center text-xs font-semibold text-[#334155] min-h-[1.15rem]">
+                  <p className="landscape:hidden mt-2 text-center text-xs font-semibold text-[#334155] min-h-[1.15rem]">
                     {isTvMode
                       ? 'TV als Hauptbildschirm, Smartphones als Controller'
                       : 'Alle spielen direkt auf diesem Gerät'}
@@ -546,7 +548,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                 </div>
 
                 {/* Primärer Haupt-CTA: Größere Höhe & prominenter Schlagschatten */}
-                <div className="w-full pt-1">
+                <div className="w-full pt-1 landscape:pt-0">
                   <CrystalButton
                     type="submit"
                     fullWidth
@@ -554,7 +556,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                     variant="primary"
                     tilt="left"
                     disabled={isCreating}
-                    className="h-13 sm:h-14 landscape:h-10 text-base sm:text-lg landscape:text-sm drop-shadow-[0_8px_16px_rgba(5,150,105,0.45)]"
+                    className="h-13 sm:h-14 landscape:h-9 text-base sm:text-lg landscape:text-xs drop-shadow-[0_8px_16px_rgba(5,150,105,0.45)]"
                   >
                     {isCreating ? (
                       <>
