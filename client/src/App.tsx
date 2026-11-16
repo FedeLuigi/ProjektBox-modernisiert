@@ -5,8 +5,8 @@ import { SettingsSheet } from './components/SettingsSheet';
 import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { IslandBackground } from './components/IslandBackground';
 import { CrystalPanel, CrystalReadout } from './components/CrystalUI';
-import { LayoutExplorerModal } from './components/LayoutExplorerModal';
-import { OPEN_LAYOUT_OPTIONS, OpenGalleryLayout, type OpenLayoutId } from './components/MainMenuLayouts';
+import { MainMenuHeader } from './components/MainMenuHeader';
+import { OpenGalleryLayout } from './components/MainMenuLayouts';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import {
@@ -61,18 +61,6 @@ export function App() {
   const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
-  const [showLayoutExplorer, setShowLayoutExplorer] = useState(false);
-  const [openLayout, setOpenLayout] = useState<OpenLayoutId>(() => {
-    try {
-      const saved = localStorage.getItem('projektbox.openLayout') as OpenLayoutId | null;
-      if (saved && OPEN_LAYOUT_OPTIONS.some((opt) => opt.id === saved)) {
-        return saved;
-      }
-    } catch {
-      // ignore
-    }
-    return 'open-classic';
-  });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
@@ -364,17 +352,10 @@ export function App() {
         </div>
       )}
 
-      {/* ─── 2. Haupt-HUD & Open Gallery Bühne ─── */}
+      {/* ─── 2. Haupt-HUD & Verschmolzene Open-Gallery-Bühne ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
-        <OpenGalleryLayout
-          layout={openLayout}
+        <MainMenuHeader
           avatar={userProfile.avatar}
-          playerName={userProfile.name}
-          games={games}
-          favoriteIds={favoriteIds}
-          activeSection={activeSection}
-          searchQuery={searchQuery}
-          filterCounts={filterCounts}
           onOpenProfile={() => {
             triggerHaptic();
             setShowAvatarModal(true);
@@ -388,36 +369,28 @@ export function App() {
             triggerHaptic();
             setShowSettings(true);
           }}
-          onOpenLayoutExplorer={() => {
-            triggerHaptic();
-            setShowLayoutExplorer(true);
-          }}
-          onSelectGame={(gameId) => {
-            const found = games.find((g) => g.id === gameId);
-            if (found) handleLaunchGame(found, false);
-          }}
-          onLaunchGame={handleLaunchGame}
-          onToggleFavorite={handleToggleFavorite}
-          onSelectSection={handleSelectSection}
-          onSearchChange={setSearchQuery}
         />
-      </div>
 
-      {/* ─── Layout-Explorer („+“-Button) ─── */}
-      <LayoutExplorerModal
-        isOpen={showLayoutExplorer}
-        activeLayout={openLayout}
-        onSelectLayout={(nextLayout) => {
-          triggerHaptic();
-          setOpenLayout(nextLayout);
-          try {
-            localStorage.setItem('projektbox.openLayout', nextLayout);
-          } catch {
-            // ignore
-          }
-        }}
-        onClose={() => setShowLayoutExplorer(false)}
-      />
+        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col">
+          <section aria-label="Spiele" className="flex flex-1 min-h-0 w-full flex-col">
+            <OpenGalleryLayout
+              games={games}
+              favoriteIds={favoriteIds}
+              activeSection={activeSection}
+              searchQuery={searchQuery}
+              filterCounts={filterCounts}
+              onSelectGame={(gameId) => {
+                const found = games.find((g) => g.id === gameId);
+                if (found) handleLaunchGame(found, false);
+              }}
+              onLaunchGame={handleLaunchGame}
+              onToggleFavorite={handleToggleFavorite}
+              onSelectSection={handleSelectSection}
+              onSearchChange={setSearchQuery}
+            />
+          </section>
+        </main>
+      </div>
 
       {/* ─── 3. Multiplayer & TV Lobby-Screen beim Start eines Spiels ─── */}
       {multiplayerGame && (
