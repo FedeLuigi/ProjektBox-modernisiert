@@ -236,8 +236,8 @@ export function AvatarCustomizerModal({
                 ))}
               </div>
 
-              {/* Auswahl-Gitter (passt ohne Scrollen auf jeden Bildschirm; bei vielen Elementen mit Seitenwechsel) */}
-              <div className="w-full">
+              {/* Einheitlich großer Auswahlbereich für alle Untermenüs (kein Größensprung beim Tab-Wechsel) */}
+              <div className="flex w-full flex-col justify-between h-[264px] sm:h-[288px] landscape:h-[172px]">
             {activeTab === 'base' && (() => {
               const allBaseItems = [
                 ...customAvatars.map((ca) => ({ kind: 'custom' as const, data: ca })),
@@ -248,18 +248,7 @@ export function AvatarCustomizerModal({
                 isShortLandscape ? 8 : 9
               );
               return (
-                <div className="flex flex-col gap-2">
-                  <CrystalButton
-                    size="sm"
-                    variant="indigo"
-                    fullWidth
-                    onClick={() => setShowCreator(true)}
-                    className="h-8 sm:h-9 landscape:h-7"
-                  >
-                    <Paintbrush className="h-3.5 w-3.5 shrink-0" />
-                    <span className="text-xs">EIGENEN AVATAR ERSTELLEN</span>
-                  </CrystalButton>
-
+                <div className="flex flex-1 flex-col justify-between">
                   <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
                     {slice.map((entry) => {
                       if (entry.kind === 'custom') {
@@ -416,7 +405,7 @@ export function AvatarCustomizerModal({
                 isShortLandscape ? 8 : 9
               );
               return (
-                <div className="flex flex-col gap-2">
+                <div className="flex flex-1 flex-col justify-between">
                   <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
                     {slice.map((h) => {
                       const isSelected = current.hat === h.id;
@@ -523,6 +512,18 @@ export function AvatarCustomizerModal({
               </div>
             )}
           </div>
+
+          {/* „Eigenen Avatar erstellen“ unterhalb der Auswahlmöglichkeiten */}
+          <CrystalButton
+            size="sm"
+            variant="indigo"
+            fullWidth
+            onClick={() => setShowCreator(true)}
+            className="h-9 sm:h-10 landscape:h-8"
+          >
+            <Paintbrush className="h-4 w-4 shrink-0" />
+            <span className="text-xs sm:text-sm landscape:text-xs">EIGENEN AVATAR ERSTELLEN</span>
+          </CrystalButton>
         </div>
       </div>
 
