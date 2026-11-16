@@ -17,6 +17,12 @@ import {
   SectionFilterBar,
 } from './components/ArcadeHudElements';
 import { CrystalButton, CrystalIconButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
+import { LayoutExplorerModal, type MenuLayoutVariant } from './components/LayoutExplorerModal';
+import {
+  ArcadeGridLayout,
+  CommandCenterLayout,
+  QuickLaunchListLayout,
+} from './components/MainMenuLayouts';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import {
@@ -73,6 +79,17 @@ export function App() {
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
   const [showBlankPage, setShowBlankPage] = useState(false);
+  const [menuLayout, setMenuLayout] = useState<MenuLayoutVariant>(() => {
+    try {
+      const saved = localStorage.getItem('projektbox_menu_layout');
+      if (saved === 'carousel' || saved === 'grid' || saved === 'sidebar' || saved === 'compact') {
+        return saved;
+      }
+    } catch {
+      // ignore
+    }
+    return 'carousel';
+  });
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Standardmäßig liegt der Fokus auf dem mittleren Spiel (Index 1 = Vier gewinnt)
@@ -754,6 +771,37 @@ export function App() {
               className="flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center landscape:justify-stretch"
             >
             {displayedGames.length > 0 ? (
+              menuLayout === 'grid' ? (
+                <ArcadeGridLayout
+                  games={displayedGames}
+                  activeGame={activeGame}
+                  favoriteIds={favoriteIds}
+                  lastPlayedGameId={mostRecentGameId}
+                  onSelectGame={setActiveGameId}
+                  onLaunchGame={handleLaunchGame}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ) : menuLayout === 'sidebar' ? (
+                <CommandCenterLayout
+                  games={displayedGames}
+                  activeGame={activeGame}
+                  favoriteIds={favoriteIds}
+                  lastPlayedGameId={mostRecentGameId}
+                  onSelectGame={setActiveGameId}
+                  onLaunchGame={handleLaunchGame}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ) : menuLayout === 'compact' ? (
+                <QuickLaunchListLayout
+                  games={displayedGames}
+                  activeGame={activeGame}
+                  favoriteIds={favoriteIds}
+                  lastPlayedGameId={mostRecentGameId}
+                  onSelectGame={setActiveGameId}
+                  onLaunchGame={handleLaunchGame}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ) : (
               <div className="landscape-carousel-row relative flex w-full landscape:flex-1 landscape:min-h-0 items-center landscape:items-stretch justify-center">
                 {/* Markanter, schräg angeschnittener Pfeil-Button links */}
                 {displayedGames.length > 1 && (
@@ -811,6 +859,7 @@ export function App() {
                   </button>
                 )}
               </div>
+              )
             ) : (
               <div className="mx-auto w-full max-w-md px-4 py-4">
                 <CrystalPanel title="KEINE SPIELE" accent="amber" contentClassName="gap-3 py-6">
@@ -896,34 +945,25 @@ export function App() {
         />
       )}
 
-      {/* ─── 8. Leere Fläche mit Hauptscreen-Hintergrund & Zurück-Button ─── */}
+      {/* ─── 8. Design-Exploration: Hauptmenü-Layout-Varianten testen ─── */}
       {showBlankPage && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Leere Ansicht"
-          className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
-        >
-          <IslandBackground />
-
-          <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
-            <header className="tablet-header flex shrink-0 items-center justify-start gap-2 pb-2">
-              <CrystalButton
-                size="sm"
-                variant="secondary"
-                tilt="left"
-                onClick={() => {
-                  triggerHaptic();
-                  setShowBlankPage(false);
-                }}
-              >
-                ZURÜCK
-              </CrystalButton>
-            </header>
-
-            <main className="flex flex-1 min-h-0 w-full" />
-          </div>
-        </div>
+        <LayoutExplorerModal
+          activeLayout={menuLayout}
+          onSelectLayout={(variant) => {
+            triggerHaptic();
+            setMenuLayout(variant);
+            try {
+              localStorage.setItem('projektbox_menu_layout', variant);
+            } catch {
+              // ignore
+            }
+            setShowBlankPage(false);
+          }}
+          onClose={() => {
+            triggerHaptic();
+            setShowBlankPage(false);
+          }}
+        />
       )}
     </div>
   );
