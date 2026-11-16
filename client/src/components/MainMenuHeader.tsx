@@ -20,7 +20,7 @@ export function MainMenuHeader({
   onOpenSettings,
 }: MainMenuHeaderProps) {
   return (
-    <header className="tablet-header landscape-top-bar relative z-30 mx-auto flex w-full max-w-6xl shrink-0 flex-nowrap items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 py-2 landscape:py-1">
+    <header className="tablet-header landscape-top-bar relative z-30 flex w-full shrink-0 flex-nowrap items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 lg:px-10 py-2 landscape:py-1">
       {/* Links: Avatar + Wortmarke verschmolzen */}
       <div className="flex min-w-0 items-center gap-3">
         <div className="shrink-0 rounded-full ring-2 ring-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.35)]">
