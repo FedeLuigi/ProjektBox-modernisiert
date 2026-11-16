@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Check, Dices } from 'lucide-react';
 import {
   Avatar,
@@ -11,32 +11,35 @@ import {
   DEFAULT_AVATAR,
 } from './Avatar';
 import { CrystalButton, CrystalIconButton, CrystalPanel } from './CrystalUI';
+import { generateUniquePlayerName } from '../utils/nameGenerator';
+import { validatePlayerName } from '../utils/userProfile';
 
 interface AvatarCustomizerModalProps {
-  isOpen: boolean;
   onClose: () => void;
   config: AvatarConfig;
-  onSave: (config: AvatarConfig) => void;
+  /** Aktueller Spielername aus dem bestehenden Nutzerprofil */
+  name: string;
+  /** Speichert Name und Avatar gemeinsam über das bestehende Nutzerprofil-System */
+  onSave: (profile: { avatar: AvatarConfig; name: string }) => void;
 }
 
 type TabType = 'base' | 'skin' | 'hat' | 'accessory' | 'bg';
 
+/**
+ * Zentrale Profil-Verwaltung: Spielername + Avatar-Anpassung in einem Crystal-Panel.
+ * Wird nur gemountet, solange es geöffnet ist – der Entwurf startet dadurch immer
+ * mit dem aktuell gespeicherten Profil.
+ */
 export function AvatarCustomizerModal({
-  isOpen,
   onClose,
   config,
+  name,
   onSave,
 }: AvatarCustomizerModalProps) {
   const [current, setCurrent] = useState<AvatarConfig>(() => ({ ...DEFAULT_AVATAR, ...config }));
   const [activeTab, setActiveTab] = useState<TabType>('base');
-
-  useEffect(() => {
-    if (isOpen) {
-      setCurrent({ ...DEFAULT_AVATAR, ...config });
-    }
-  }, [isOpen, config]);
-
-  if (!isOpen) return null;
+  const [nameInput, setNameInput] = useState(name);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   const handleRandomize = () => {
     const randomBase =
@@ -61,8 +64,25 @@ export function AvatarCustomizerModal({
     });
   };
 
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value;
+    setNameInput(raw);
+    const validation = validatePlayerName(raw);
+    setNameError(validation.valid ? null : validation.error || 'Ungültiger Name');
+  };
+
+  const handleRollNewName = () => {
+    setNameInput(generateUniquePlayerName());
+    setNameError(null);
+  };
+
   const handleSave = () => {
-    onSave(current);
+    const validation = validatePlayerName(nameInput);
+    if (!validation.valid) {
+      setNameError(validation.error || 'Ungültiger Name');
+      return;
+    }
+    onSave({ avatar: current, name: validation.cleaned });
     onClose();
   };
 
@@ -77,6 +97,7 @@ export function AvatarCustomizerModal({
     <div
       role="dialog"
       aria-modal="true"
+      aria-label="Profil & Avatar anpassen"
       className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
       onClick={onClose}
     >
@@ -84,14 +105,14 @@ export function AvatarCustomizerModal({
         onClick={(e) => e.stopPropagation()}
         className="tablet-modal-box my-auto w-full max-w-lg landscape:max-w-2xl pt-3 landscape:pt-0 flex flex-col"
       >
-        <CrystalPanel topTabLabel="AVATAR ÄNDERN" accent="indigo" contentClassName="w-full gap-3 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
+        <CrystalPanel topTabLabel="PROFIL & AVATAR" accent="indigo" contentClassName="w-full gap-3 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
           <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-4 w-full">
-            {/* Linke Seite: Vorschau, Würfel & Aktions-Buttons im Querformat */}
-            <div className="flex flex-col items-center justify-center landscape:w-44 shrink-0 gap-3 landscape:gap-2">
+            {/* Linke Seite: Vorschau, Würfel, Spielername & Aktions-Buttons im Querformat */}
+            <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-3 landscape:gap-2">
               <div className="flex items-center justify-center gap-3">
                 <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
-                  <Avatar config={current} size={74} />
+                  <Avatar config={current} size={74} className="landscape:w-[60px] landscape:h-[60px]" />
                 </div>
                 <CrystalIconButton
                   size="md"
@@ -99,9 +120,80 @@ export function AvatarCustomizerModal({
                   tilt="right"
                   onClick={handleRandomize}
                   title="Zufälliger Avatar"
+                  aria-label="Zufälligen Avatar würfeln"
                 >
                   <Dices className="h-5 w-5" />
                 </CrystalIconButton>
+              </div>
+
+              {/* Spielername direkt unter dem Avatar – Teil des persönlichen Profils */}
+              <div className="w-full flex flex-col items-center">
+                <label
+                  htmlFor="player-profile-name-input"
+                  className="font-arcade mb-1 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase"
+                >
+                  SPIELERNAME
+                </label>
+                <div className="flex items-stretch gap-1.5 w-full max-w-[290px] justify-center">
+                  <div
+                    style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
+                    className="flex-1 min-w-0 bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.2)]"
+                  >
+                    <input
+                      id="player-profile-name-input"
+                      type="text"
+                      value={nameInput}
+                      onChange={handleNameChange}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleSave();
+                        }
+                      }}
+                      maxLength={20}
+                      autoComplete="off"
+                      spellCheck={false}
+                      placeholder="Spielername eingeben..."
+                      aria-invalid={Boolean(nameError)}
+                      aria-describedby={nameError ? 'player-profile-name-error' : undefined}
+                      style={{
+                        clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
+                        paddingInline: '14px',
+                        color: '#FFFFFF',
+                        caretColor: '#FFFFFF',
+                      }}
+                      className={`font-arcade h-9 sm:h-10 landscape:h-8 w-full bg-[#1E293B] border ${
+                        nameError ? 'border-[#E11D48]' : 'border-[#475569] focus:border-[#F59E0B]'
+                      } px-3 text-center text-sm landscape:text-xs font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white`}
+                    />
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleRollNewName}
+                    title="Zufälligen Spielernamen generieren"
+                    aria-label="Zufälligen Spielernamen generieren"
+                    style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
+                    className="flex w-9 sm:w-10 landscape:w-8 items-center justify-center bg-[#78350F] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)] active:scale-95 cursor-pointer shrink-0"
+                  >
+                    <div
+                      style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
+                      className="flex h-full w-full items-center justify-center border-t-2 border-l-2 border-[#FEF3C7] bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] text-[#0F172A]"
+                    >
+                      <Dices className="h-4 w-4 stroke-[2.4]" />
+                    </div>
+                  </button>
+                </div>
+
+                {nameError && (
+                  <span
+                    id="player-profile-name-error"
+                    role="alert"
+                    className="font-arcade mt-1 text-center text-xs text-[#E11D48] uppercase"
+                  >
+                    {nameError}
+                  </span>
+                )}
               </div>
 
               {/* Aktions-Buttons direkt links im Querformat */}

@@ -14,7 +14,7 @@ import {
   ArcadeLogoHeader,
   ArcadeMenuModal,
   PlayerProfileBar,
-  SECTION_ITEMS,
+  SectionFilterBar,
 } from './components/ArcadeHudElements';
 import { CrystalButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
@@ -282,6 +282,26 @@ export function App() {
     const nextIdx = (currentIdx + 1) % SORT_CYCLE.length;
     setSortBy(SORT_CYCLE[nextIdx].id);
   };
+
+  // Gemeinsamer Filter-Status für Inline-Leiste und kompaktes Sandwich-Modal:
+  // Beim Umschalten der Darstellung bleibt die Auswahl daher immer erhalten.
+  const handleSelectSection = useCallback(
+    (sec: NavSection) => {
+      triggerHaptic();
+      setActiveSection(sec);
+    },
+    [triggerHaptic]
+  );
+
+  const handleOpenFilterMenu = useCallback(() => {
+    triggerHaptic();
+    setShowMenuModal(true);
+  }, [triggerHaptic]);
+
+  const filterCounts = useMemo<Partial<Record<NavSection, number>>>(
+    () => ({ favorites: favoriteIds.length, recent: recentEntries.length }),
+    [favoriteIds.length, recentEntries.length]
+  );
 
   const scrollToCenterCard = useCallback((idx: number, instant = false) => {
     const container = cardsScrollRef.current;
@@ -666,141 +686,101 @@ export function App() {
                 triggerHaptic();
                 setShowSettings(true);
               }}
-              onOpenMenu={() => {
-                triggerHaptic();
-                setShowMenuModal(true);
-              }}
             />
           </div>
         </header>
 
-        {/* ═══ HAUPT-BÜHNE: SPIELAUSWAHL HEADER + FILTER/SORTIER-LEISTE + ZENTRIERTES KARUSSELL ═══ */}
+        {/* ═══ HAUPT-BÜHNE: Klare Aufteilung in festen FILTERBEREICH (oben) und flexiblen SPIELEBEREICH ═══
+            Der Container hat eine von der Spieleanzahl unabhängige Höhe (flex-1, auf großen Screens begrenzt),
+            dadurch bleibt die Filterleiste bei vielen, wenigen und null Spielen exakt an derselben Position. */}
         <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:p-0 landscape:justify-stretch">
-          <div className="widescreen-main-container landscape-main-container mx-auto flex w-full max-w-[1005px] xl:max-w-[1420px] landscape:max-w-none landscape:flex-1 landscape:min-h-0 flex-col gap-1.5 sm:gap-2">
-            {/* 1. ÜBERSCHRIFT & FILTER-/SORTIER-LEISTE */}
-            {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
-            <div className="hidden landscape:flex shrink-0 items-center justify-between gap-2.5 px-0.5 py-0 w-full">
-              <span className="font-arcade text-xs tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase shrink-0">
-                SPIELAUSWAHL
-              </span>
-
-              <div className="no-scrollbar flex flex-1 min-w-0 items-center gap-1.5 overflow-x-auto pr-2">
-                {SECTION_ITEMS.map((item, idx) => {
-                  const count =
-                    item.id === 'favorites'
-                      ? favoriteIds.length
-                      : item.id === 'recent'
-                        ? recentEntries.length
-                        : null;
-
-                  return (
-                    <CrystalButton
-                      key={item.id}
-                      size="sm"
-                      tilt={idx % 2 === 0 ? 'left' : 'right'}
-                      variant={activeSection === item.id ? item.accent : 'secondary'}
-                      onClick={() => {
-                        triggerHaptic();
-                        setActiveSection(item.id);
-                      }}
-                      className="shrink-0 h-7 px-2.5 text-xs"
-                    >
-                      <span>{item.shortLabel}</span>
-                      {count !== null && count > 0 && (
-                        <span className="ml-0.5 opacity-90">({count})</span>
-                      )}
-                    </CrystalButton>
-                  );
-                })}
-              </div>
-
-              <div className="shrink-0">
-                <CrystalButton
-                  size="sm"
-                  tilt="right"
-                  variant="secondary"
-                  onClick={handleCycleSort}
-                  title="Sortierreihenfolge ändern"
-                  className="h-7 px-2.5 text-xs"
-                >
-                  <ArrowUpDown className="h-3 w-3" />
-                  <span>{currentSortLabel}</span>
-                </CrystalButton>
-              </div>
-            </div>
-
-            {/* ═══ STANDARDFALL (PORTRAIT & DESKTOP): 2 ZEILEN WIE BISHER ═══ */}
-            <div className="flex landscape:hidden flex-col gap-1.5 px-3 sm:px-2">
-              <div className="flex items-center justify-between gap-2">
-                <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
+          <div className="widescreen-main-container landscape-main-container mx-auto flex w-full flex-1 min-h-0 md:max-h-[46rem] max-w-[1005px] xl:max-w-[1420px] landscape:max-w-none flex-col gap-1.5 sm:gap-2">
+            {/* 1. FILTERBEREICH: ÜBERSCHRIFT, FILTER- & SORTIER-LEISTE (fester Platz, schrumpft nie) */}
+            <div className="shrink-0">
+              {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
+              <div className="hidden landscape:flex items-center justify-between gap-2.5 px-0.5 py-0 w-full">
+                <span className="font-arcade text-xs tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase shrink-0">
                   SPIELAUSWAHL
                 </span>
 
-                {/* Auf Mobile (< 768px) rechtsbündig direkt neben "SPIELAUSWAHL" */}
-                <div className="md:hidden shrink-0">
+                <SectionFilterBar
+                  activeSection={activeSection}
+                  onSelectSection={handleSelectSection}
+                  onOpenMenu={handleOpenFilterMenu}
+                  counts={filterCounts}
+                  gapClassName="gap-1.5"
+                  buttonClassName="h-7 px-2.5 text-xs"
+                />
+
+                <div className="shrink-0">
                   <CrystalButton
                     size="sm"
                     tilt="right"
                     variant="secondary"
                     onClick={handleCycleSort}
                     title="Sortierreihenfolge ändern"
+                    className="h-7 px-2.5 text-xs"
                   >
-                    <ArrowUpDown className="h-3.5 w-3.5" />
+                    <ArrowUpDown className="h-3 w-3" />
                     <span>{currentSortLabel}</span>
                   </CrystalButton>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between gap-2 py-0.5">
-                {/* Links: Horizontal scrollbare Filter-Chips mit rechtem Padding */}
-                <div className="no-scrollbar flex flex-1 min-w-0 items-center gap-1.5 sm:gap-2 overflow-x-auto pr-4 sm:pr-2">
-                  {SECTION_ITEMS.map((item, idx) => {
-                    const count =
-                      item.id === 'favorites'
-                        ? favoriteIds.length
-                        : item.id === 'recent'
-                          ? recentEntries.length
-                          : null;
+              {/* ═══ STANDARDFALL (PORTRAIT & DESKTOP): 2 ZEILEN ═══ */}
+              <div className="flex landscape:hidden flex-col gap-1.5 px-3 sm:px-2">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
+                    SPIELAUSWAHL
+                  </span>
 
-                    return (
-                      <CrystalButton
-                        key={item.id}
-                        size="sm"
-                        tilt={idx % 2 === 0 ? 'left' : 'right'}
-                        variant={activeSection === item.id ? item.accent : 'secondary'}
-                        onClick={() => {
-                          triggerHaptic();
-                          setActiveSection(item.id);
-                        }}
-                        className="shrink-0"
-                      >
-                        <span>{item.shortLabel}</span>
-                        {count !== null && count > 0 && (
-                          <span className="ml-0.5 opacity-90">({count})</span>
-                        )}
-                      </CrystalButton>
-                    );
-                  })}
+                  {/* Auf Mobile (< 768px) rechtsbündig direkt neben "SPIELAUSWAHL" */}
+                  <div className="md:hidden shrink-0">
+                    <CrystalButton
+                      size="sm"
+                      tilt="right"
+                      variant="secondary"
+                      onClick={handleCycleSort}
+                      title="Sortierreihenfolge ändern"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5" />
+                      <span>{currentSortLabel}</span>
+                    </CrystalButton>
+                  </div>
                 </div>
 
-                {/* Auf Desktop (>= 768px) ganz rechts bündig mit der rechten Spielkarte */}
-                <div className="hidden md:block ml-auto shrink-0 pl-2">
-                  <CrystalButton
-                    size="sm"
-                    tilt="right"
-                    variant="secondary"
-                    onClick={handleCycleSort}
-                    title="Sortierreihenfolge ändern"
-                    className="xl:h-10 xl:px-4"
-                  >
-                    <ArrowUpDown className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
-                    <span className="xl:text-xs">{currentSortLabel}</span>
-                  </CrystalButton>
+                <div className="flex items-center justify-between gap-2 py-0.5">
+                  {/* Links: Filter direkt sichtbar – Sandwich-Menü nur bei tatsächlichem Platzmangel */}
+                  <SectionFilterBar
+                    activeSection={activeSection}
+                    onSelectSection={handleSelectSection}
+                    onOpenMenu={handleOpenFilterMenu}
+                    counts={filterCounts}
+                  />
+
+                  {/* Auf Desktop (>= 768px) ganz rechts bündig mit der rechten Spielkarte */}
+                  <div className="hidden md:block ml-auto shrink-0 pl-2">
+                    <CrystalButton
+                      size="sm"
+                      tilt="right"
+                      variant="secondary"
+                      onClick={handleCycleSort}
+                      title="Sortierreihenfolge ändern"
+                      className="xl:h-10 xl:px-4"
+                    >
+                      <ArrowUpDown className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
+                      <span className="xl:text-xs">{currentSortLabel}</span>
+                    </CrystalButton>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* 2. KARTEN-KARUSSELL MIT SCROLL-SNAP AUF MOBILE & PFEIL-BUTTONS AUF DESKTOP */}
+            {/* 2. SPIELEBEREICH: Karussell oder Leer-Meldung – nimmt den restlichen Platz ein */}
+            <section
+              aria-label="Spiele"
+              className="flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center landscape:justify-stretch"
+            >
             {displayedGames.length > 0 ? (
               <div className="landscape-carousel-row relative flex w-full landscape:flex-1 landscape:min-h-0 items-center landscape:items-stretch justify-center">
                 {/* Markanter, schräg angeschnittener Pfeil-Button links */}
@@ -883,19 +863,17 @@ export function App() {
                 </CrystalPanel>
               </div>
             )}
+            </section>
           </div>
         </main>
       </div>
 
-      {/* ─── 3. Filter- & Kategorie-Modal im CrystalPanel-Stil ─── */}
+      {/* ─── 3. Kompaktes Filter-Modal (nur erreichbar, wenn die Filterleiste aus Platzmangel eingeklappt ist) ─── */}
       <ArcadeMenuModal
         isOpen={showMenuModal}
         onClose={() => setShowMenuModal(false)}
         activeSection={activeSection}
-        onSelectSection={(sec) => {
-          triggerHaptic();
-          setActiveSection(sec);
-        }}
+        onSelectSection={handleSelectSection}
         canInstall={Boolean(deferredPrompt)}
         onInstall={handleInstall}
       />
@@ -934,15 +912,17 @@ export function App() {
         onInstall={deferredPrompt ? handleInstall : undefined}
       />
 
-      {/* ─── 7. Spielerprofil & Avatar-Anpassung ─── */}
-      <AvatarCustomizerModal
-        isOpen={showAvatarModal}
-        onClose={() => setShowAvatarModal(false)}
-        config={userProfile.avatar}
-        onSave={(newAvatar) => {
-          saveUserProfile({ avatar: newAvatar });
-        }}
-      />
+      {/* ─── 7. Spielerprofil: Name & Avatar zentral an einer Stelle ─── */}
+      {showAvatarModal && (
+        <AvatarCustomizerModal
+          onClose={() => setShowAvatarModal(false)}
+          config={userProfile.avatar}
+          name={userProfile.name}
+          onSave={({ avatar, name }) => {
+            saveUserProfile({ avatar, name });
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -3,9 +3,10 @@ import { Check, Copy, Crown, Loader2, Share2 } from 'lucide-react';
 import { GAMES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
-import { useUserProfile } from '../../utils/userProfile';
+import { saveUserProfile, useUserProfile } from '../../utils/userProfile';
 import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
 import { Avatar } from '../Avatar';
+import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
 import {
@@ -31,6 +32,7 @@ export function InLobbyView({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [isStarting, setIsStarting] = useState(false);
 
@@ -293,7 +295,11 @@ export function InLobbyView({
                     return (
                       <div
                         key={p.id || idx}
+                        onClick={isMe ? () => setIsAvatarModalOpen(true) : undefined}
+                        title={isMe ? 'Klicken, um Name und Avatar anzupassen' : undefined}
                         className={`flex w-full items-center justify-between gap-2.5 border-[3px] px-3 py-2 landscape:px-2.5 landscape:py-1 shadow-[0_3px_0_rgba(15,23,42,0.18)] ${
+                          isMe ? 'cursor-pointer hover:border-[#F59E0B] ' : ''
+                        }${
                           p.isReady
                             ? 'bg-[#059669] border-[#064E3B] text-white'
                             : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
@@ -419,6 +425,18 @@ export function InLobbyView({
             </CrystalPanel>
           </div>
         </div>
+      )}
+
+      {/* Profil- und Avatar-Modal direkt aus der Lobby */}
+      {isAvatarModalOpen && (
+        <AvatarCustomizerModal
+          onClose={() => setIsAvatarModalOpen(false)}
+          config={currentUser.avatar}
+          name={currentUser.name}
+          onSave={({ avatar, name }) => {
+            saveUserProfile({ avatar, name });
+          }}
+        />
       )}
     </div>
   );

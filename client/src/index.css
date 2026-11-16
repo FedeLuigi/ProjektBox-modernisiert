@@ -303,18 +303,23 @@ body::-webkit-scrollbar,
    Smartphone (< 768px) und Tablet (768px - 1199px) bleiben 100% unberührt!
    ═══════════════════════════════════════════════════════════════════════════ */
 @media (min-width: 1280px) {
-  /* 1. Haupt-Content-Container auf 1360px bis 1440px (~85% Viewport) */
+  /* 1. Haupt-Content-Container auf 1360px bis 1440px (~86% Viewport) mit stabiler Layout-Aufteilung */
   .widescreen-main-container {
     width: 86% !important;
     max-width: 1420px !important;
-    margin-top: auto !important;
-    margin-bottom: auto !important;
+    height: 100% !important;
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
   }
 
-  /* 2. Vertikale Zentrierung unterhalb der Top-Bar */
+  /* 2. Vertikale Ausrichtung unterhalb der Top-Bar */
   .widescreen-main-area {
-    justify-content: center !important;
-    align-items: center !important;
+    justify-content: flex-start !important;
+    align-items: stretch !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }

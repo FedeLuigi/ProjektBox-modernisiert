@@ -1,4 +1,5 @@
-import { User } from 'lucide-react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { ChevronDown, Menu, User } from 'lucide-react';
 import { type NavSection } from '../App';
 import { type CrystalAccent } from '../data/games';
 import { Avatar, type AvatarConfig } from './Avatar';
@@ -42,7 +43,7 @@ export function PlayerProfileBar({
 }: {
   playerName?: string;
   avatar?: AvatarConfig;
-  onOpenMenu: () => void;
+  onOpenMenu?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
 }) {
@@ -83,21 +84,23 @@ export function PlayerProfileBar({
         </CrystalIconButton>
       )}
 
-      {/* Menü Icon-Button (3 Balken ≡) */}
-      <CrystalIconButton
-        tilt="left"
-        size="md"
-        variant="neutral"
-        onClick={onOpenMenu}
-        title="Filter & Menü öffnen"
-        aria-label="Filter & Menü öffnen"
-      >
-        <svg viewBox="0 0 36 36" className="h-5 w-5 sm:h-6 sm:w-6 fill-current">
-          <rect x="6" y="8" width="24" height="4.5" />
-          <rect x="6" y="15.75" width="24" height="4.5" />
-          <rect x="6" y="23.5" width="24" height="4.5" />
-        </svg>
-      </CrystalIconButton>
+      {/* Optionaler Menü Icon-Button (3 Balken ≡) – der Spielfilter nutzt stattdessen SectionFilterBar */}
+      {onOpenMenu && (
+        <CrystalIconButton
+          tilt="left"
+          size="md"
+          variant="neutral"
+          onClick={onOpenMenu}
+          title="Filter & Menü öffnen"
+          aria-label="Filter & Menü öffnen"
+        >
+          <svg viewBox="0 0 36 36" className="h-5 w-5 sm:h-6 sm:w-6 fill-current">
+            <rect x="6" y="8" width="24" height="4.5" />
+            <rect x="6" y="15.75" width="24" height="4.5" />
+            <rect x="6" y="23.5" width="24" height="4.5" />
+          </svg>
+        </CrystalIconButton>
+      )}
     </div>
   );
 }
@@ -115,6 +118,116 @@ export const SECTION_ITEMS: {
   { id: 'favorites', label: 'FAVORITEN', shortLabel: 'FAVORITEN', accent: 'coral' },
   { id: 'recent', label: 'ZULETZT GESPIELT', shortLabel: 'ZULETZT', accent: 'emerald' },
 ];
+
+/* ─── 3b. RESPONSIVE SPIELFILTER-LEISTE ───
+   Zeigt alle Filter direkt an, solange sie in die tatsächlich verfügbare Breite passen.
+   Nur bei echtem Platzmangel wird auf einen kompakten Sandwich-Button umgeschaltet,
+   der das SPIELFILTER-Modal öffnet. Gemessen wird per ResizeObserver statt per Breakpoint. */
+export function SectionFilterBar({
+  activeSection,
+  onSelectSection,
+  onOpenMenu,
+  counts,
+  buttonClassName = '',
+  gapClassName = 'gap-1.5 sm:gap-2',
+}: {
+  activeSection: NavSection;
+  onSelectSection: (sec: NavSection) => void;
+  onOpenMenu: () => void;
+  counts?: Partial<Record<NavSection, number>>;
+  buttonClassName?: string;
+  gapClassName?: string;
+}) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
+  const measureRef = useRef<HTMLDivElement | null>(null);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useLayoutEffect(() => {
+    const container = containerRef.current;
+    const measure = measureRef.current;
+    if (!container || !measure) return;
+
+    const update = () => {
+      const available = container.clientWidth;
+      // Ausgeblendete Leiste (z. B. Portrait-Leiste im Querformat) nicht neu bewerten
+      if (available <= 0) return;
+      const required = Math.ceil(measure.getBoundingClientRect().width);
+      setIsCollapsed(required > available);
+    };
+
+    update();
+
+    const observer =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(update) : null;
+    observer?.observe(container);
+    observer?.observe(measure);
+    window.addEventListener('resize', update);
+    // Nach dem Laden der Arcade-Schrift ändert sich die Chip-Breite
+    document.fonts?.ready.then(update).catch(() => {});
+
+    return () => {
+      observer?.disconnect();
+      window.removeEventListener('resize', update);
+    };
+  }, []);
+
+  const renderChips = (forMeasure: boolean) =>
+    SECTION_ITEMS.map((item, idx) => {
+      const count = counts?.[item.id] ?? 0;
+      return (
+        <CrystalButton
+          key={item.id}
+          size="sm"
+          tilt={idx % 2 === 0 ? 'left' : 'right'}
+          variant={activeSection === item.id ? item.accent : 'secondary'}
+          tabIndex={forMeasure ? -1 : undefined}
+          aria-pressed={forMeasure ? undefined : activeSection === item.id}
+          onClick={forMeasure ? undefined : () => onSelectSection(item.id)}
+          className={`shrink-0 ${buttonClassName}`}
+        >
+          <span>{item.shortLabel}</span>
+          {count > 0 && <span className="ml-0.5 opacity-90">({count})</span>}
+        </CrystalButton>
+      );
+    });
+
+  const activeItem = SECTION_ITEMS.find((item) => item.id === activeSection) ?? SECTION_ITEMS[0];
+  const activeCount = counts?.[activeItem.id] ?? 0;
+
+  return (
+    <div ref={containerRef} className="relative flex min-w-0 flex-1 items-center">
+      {/* Unsichtbare Messleiste mit identischen Chips für die benötigte Inline-Breite */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none invisible absolute left-0 top-0 h-0 w-full overflow-hidden"
+      >
+        <div ref={measureRef} className={`flex w-max items-center ${gapClassName}`}>
+          {renderChips(true)}
+        </div>
+      </div>
+
+      {isCollapsed ? (
+        <CrystalButton
+          size="sm"
+          tilt="left"
+          variant={activeItem.accent}
+          onClick={onOpenMenu}
+          title="Spielfilter öffnen"
+          aria-label={`Spielfilter öffnen (aktiv: ${activeItem.label})`}
+          aria-haspopup="dialog"
+          className={`max-w-full ${buttonClassName}`}
+        >
+          <Menu className="h-3.5 w-3.5 shrink-0 stroke-[2.6]" />
+          <span className="truncate">{activeItem.shortLabel}</span>
+          {activeCount > 0 && <span className="opacity-90">({activeCount})</span>}
+          <ChevronDown className="h-3.5 w-3.5 shrink-0 stroke-[2.6]" />
+        </CrystalButton>
+      ) : (
+        <div className={`flex min-w-0 items-center ${gapClassName}`}>{renderChips(false)}</div>
+      )}
+    </div>
+  );
+}
 
 export function ArcadeMenuModal({
   isOpen,

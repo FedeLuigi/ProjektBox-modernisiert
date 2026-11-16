@@ -3,7 +3,7 @@ import type {
   Lobby,
   LobbySummary,
 } from '../types/multiplayer';
-import { getUserProfile, STORAGE_KEYS } from '../utils/userProfile';
+import { getUserProfile, subscribeUserProfile, STORAGE_KEYS } from '../utils/userProfile';
 
 export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
 
@@ -115,6 +115,12 @@ class SocketService {
 
   public setActiveLobbyId(id: string | null) {
     this.activeLobbyId = id;
+  }
+
+  public updatePlayerProfile(userProfile = getUserProfile()): void {
+    if (this.socket?.connected && this.activeLobbyId) {
+      this.socket.emit('lobby:update-profile', { userProfile });
+    }
   }
 
   // ─── API METHODEN ───
@@ -355,3 +361,7 @@ class SocketService {
 }
 
 export const socketService = new SocketService();
+
+subscribeUserProfile((profile) => {
+  socketService.updatePlayerProfile(profile);
+});

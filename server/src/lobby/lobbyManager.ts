@@ -579,6 +579,38 @@ export class LobbyManager {
     return this.lobbies.get(lobbyId);
   }
 
+  // 11. Spielerprofil (Name & Avatar) in aktiver Lobby aktualisieren
+  public updatePlayerProfile(
+    socketId: string,
+    userProfile: { id: string; name: string; avatar: any }
+  ): { lobby: Lobby | null } {
+    const lobbyId = this.socketToLobby.get(socketId);
+    if (!lobbyId) return { lobby: null };
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { lobby: null };
+
+    const player = lobby.players.find(
+      (p) => p.socketId === socketId || p.id === userProfile.id
+    );
+    if (!player || player.isTvScreen) {
+      return { lobby: null };
+    }
+
+    const cleanedName =
+      typeof userProfile.name === 'string'
+        ? userProfile.name.trim().replace(/[\r\n\t]/g, ' ').slice(0, 20)
+        : '';
+    if (cleanedName.length >= 2) {
+      player.name = cleanedName;
+    }
+    if (userProfile.avatar) {
+      player.avatar = userProfile.avatar;
+    }
+
+    return { lobby };
+  }
+
   public getLobbyBySocketId(socketId: string): Lobby | undefined {
     const lobbyId = this.socketToLobby.get(socketId);
     if (!lobbyId) return undefined;

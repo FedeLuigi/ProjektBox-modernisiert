@@ -352,24 +352,24 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
 
           {/* ═══ 2. DESKTOP & TABLET (ab 768px): Bestehendes 2-Spalten-Layout ═══ */}
           <div className="tablet-portrait-stack my-auto hidden md:grid w-full items-stretch gap-6 landscape:gap-3 grid-cols-2">
-            {/* 1. LINKES PANEL: Spiel-Vorschau, Icon, Anleitung & Eckdaten (ohne redundanten Abbrechen-Button) */}
+            {/* 1. LINKES PANEL: Spiel-Vorschau, Icon & Eckdaten (ohne Spielbeschreibungskasten) */}
             <CrystalPanel
               title={game.title}
               accent={game.accent}
               className="h-full"
-              contentClassName="justify-between gap-3.5 py-6 px-5 landscape:py-2 landscape:px-3.5 landscape:gap-1.5"
+              contentClassName="justify-between gap-4 py-6 px-5 landscape:py-2 landscape:px-3.5 landscape:gap-1.5"
             >
-              {/* Kompakte visuelle Spielvorschau mit Spiel-Icon-Badge */}
-              <div className="flex w-full flex-col items-center gap-3 landscape:gap-1.5">
+              {/* Großzügige visuelle Spielvorschau mit Spiel-Icon-Badge */}
+              <div className="flex w-full flex-1 flex-col items-center justify-center gap-2">
                 <div
                   style={{ clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)' }}
-                  className="relative w-full h-28 sm:h-32 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
+                  className="relative w-full h-36 sm:h-44 md:h-48 landscape:h-24 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.25)]"
                 >
                   <div
                     style={{ clipPath: 'polygon(1% 3%, 99% 0%, 98% 97%, 0% 100%)' }}
                     className="relative h-full w-full overflow-hidden"
                   >
-                    <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full" />
+                    <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
 
                     {/* Spiel-Icon & Kategorie-Tag links oben im Vorschaubild */}
                     <div className="absolute top-2 left-2.5 flex items-center gap-1.5">
@@ -396,14 +396,10 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                     </div>
                   </div>
                 </div>
-
-                <p className="landscape:hidden text-center text-xs sm:text-sm font-semibold text-[#334155] leading-relaxed px-1">
-                  {game.howToPlay}
-                </p>
               </div>
 
               {/* Eckdaten unten bündig */}
-              <div className="grid grid-cols-2 gap-2.5 w-full pt-1 landscape:pt-0">
+              <div className="grid grid-cols-2 gap-2.5 w-full pt-2 landscape:pt-0">
                 <CrystalReadout
                   label="SPIELER"
                   value={game.players.toUpperCase()}

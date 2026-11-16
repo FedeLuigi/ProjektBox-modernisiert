@@ -176,6 +176,29 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     );
 
+    // 4c. Spielerprofil (Name & Avatar) live in aktiver Lobby aktualisieren
+    socket.on(
+      'lobby:update-profile',
+      (
+        data: { userProfile: { id: string; name: string; avatar: any } },
+        callback?: (res: { success: boolean; lobby?: any }) => void
+      ) => {
+        try {
+          if (!data?.userProfile) {
+            return callback?.({ success: false });
+          }
+          const { lobby } = lobbyManager.updatePlayerProfile(socket.id, data.userProfile);
+          if (!lobby) {
+            return callback?.({ success: false });
+          }
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          callback?.({ success: true, lobby });
+        } catch {
+          callback?.({ success: false });
+        }
+      }
+    );
+
     // 5. Spiel durch Host starten
     socket.on('lobby:start', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
       if (!checkRateLimit(socket.id)) {
