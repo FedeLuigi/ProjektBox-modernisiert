@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Check, Dices, Paintbrush, X } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Check, ChevronLeft, ChevronRight, Dices, Paintbrush, X } from 'lucide-react';
 import {
   Avatar,
   type AvatarConfig,
@@ -44,10 +44,25 @@ export function AvatarCustomizerModal({
 }: AvatarCustomizerModalProps) {
   const [current, setCurrent] = useState<AvatarConfig>(() => ({ ...DEFAULT_AVATAR, ...config }));
   const [activeTab, setActiveTab] = useState<TabType>('base');
+  const [page, setPage] = useState(0);
+  const [isShortLandscape, setIsShortLandscape] = useState(() =>
+    typeof window !== 'undefined'
+      ? window.matchMedia('(orientation: landscape) and (max-height: 540px)').matches
+      : false
+  );
   const [nameInput, setNameInput] = useState(name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [customAvatars, setCustomAvatars] = useState<CustomAvatar[]>(() => getCustomAvatars());
   const [showCreator, setShowCreator] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(orientation: landscape) and (max-height: 540px)');
+    const onChange = () => setIsShortLandscape(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -72,32 +87,44 @@ export function AvatarCustomizerModal({
   };
 
   const optionCardClass = (isSelected: boolean) =>
-    `min-w-0 w-full flex flex-col items-center p-2.5 border-[3px] transition-transform cursor-pointer active:scale-95 ${
+    `min-w-0 w-full flex flex-col items-center justify-center p-1.5 sm:p-2 landscape:p-1.5 border-[3px] transition-transform cursor-pointer active:scale-95 ${
       isSelected
         ? 'bg-[#4F46E5] border-[#312E81] text-white shadow-[inset_0_2px_0_#A5B4FC,0_3px_0_rgba(15,23,42,0.28)]'
         : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
     }`;
+
+  // Berechnet Seiteninhalt für das aktive Gitter – verhindert Scrollbars bei vielen Elementen
+  const paginate = <T,>(items: T[], perPage: number) => {
+    const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+    const safePage = Math.min(page, totalPages - 1);
+    const start = safePage * perPage;
+    return {
+      slice: items.slice(start, start + perPage),
+      totalPages,
+      safePage,
+    };
+  };
 
   return (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Profil & Avatar anpassen"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-3 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
       onClick={onClose}
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="tablet-modal-box my-auto w-full max-w-lg landscape:max-w-2xl pt-3 landscape:pt-0 flex flex-col"
+        className="tablet-modal-box my-auto w-full max-w-xl landscape:max-w-3xl pt-3 landscape:pt-0 flex flex-col"
       >
-        <CrystalPanel topTabLabel="PROFIL" accent="indigo" contentClassName="w-full gap-3.5 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
+        <CrystalPanel topTabLabel="PROFIL" accent="indigo" contentClassName="w-full gap-2.5 sm:gap-3.5 landscape:gap-2 p-3.5 sm:p-5 landscape:p-2.5">
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
-          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3.5 sm:gap-4">
+          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3 sm:gap-4">
             {/* Linke Seite: Zentrierte Avatar-Vorschau, Spielername & Aktions-Buttons im Querformat */}
-            <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-3 landscape:gap-2">
+            <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-2.5 landscape:gap-2">
               <div className="flex w-full items-center justify-center">
                 <div className="flex items-center justify-center rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
-                  <Avatar config={current} size={78} className="landscape:w-[64px] landscape:h-[64px]" />
+                  <Avatar config={current} size={68} className="sm:w-[76px] sm:h-[76px] landscape:w-[60px] landscape:h-[60px]" />
                 </div>
               </div>
 
@@ -180,10 +207,10 @@ export function AvatarCustomizerModal({
               </div>
             </div>
 
-            {/* Rechte Seite: Tabs & Auswahl-Gitter */}
-            <div className="flex flex-1 min-w-0 flex-col gap-2.5 sm:gap-3 w-full">
+            {/* Rechte Seite: Tabs & Auswahl-Gitter (kompakt & ohne Scrollleiste) */}
+            <div className="flex flex-1 min-w-0 flex-col gap-2 sm:gap-2.5 w-full">
               {/* Kategorie-Tabs als abgeschrägte Crystal-Buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 landscape:gap-1.5 w-full pb-0.5">
+              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 landscape:gap-1.5 w-full">
                 {(
                   [
                     { id: 'base', label: 'FIGUR' },
@@ -198,44 +225,113 @@ export function AvatarCustomizerModal({
                     size="sm"
                     tilt={idx % 2 === 0 ? 'left' : 'right'}
                     variant={activeTab === tab.id ? 'indigo' : 'secondary'}
-                    onClick={() => setActiveTab(tab.id)}
-                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs min-w-[56px] sm:min-w-[62px]"
+                    onClick={() => {
+                      setActiveTab(tab.id);
+                      setPage(0);
+                    }}
+                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs min-w-[54px] sm:min-w-[60px]"
                   >
                     {tab.label}
                   </CrystalButton>
                 ))}
               </div>
 
-              {/* Auswahl-Gitter */}
-              <div className="w-full max-h-[36dvh] sm:max-h-[38dvh] landscape:max-h-[30dvh] overflow-y-auto px-1 py-1">
-            {activeTab === 'base' && (
-              <div className="flex flex-col gap-2.5 sm:gap-3">
-                <CrystalButton
-                  size="sm"
-                  variant="indigo"
-                  fullWidth
-                  onClick={() => setShowCreator(true)}
-                  className="h-9 sm:h-10"
-                >
-                  <Paintbrush className="h-4 w-4 shrink-0" />
-                  <span>EIGENEN AVATAR ERSTELLEN</span>
-                </CrystalButton>
+              {/* Auswahl-Gitter (passt ohne Scrollen auf jeden Bildschirm; bei vielen Elementen mit Seitenwechsel) */}
+              <div className="w-full">
+            {activeTab === 'base' && (() => {
+              const allBaseItems = [
+                ...customAvatars.map((ca) => ({ kind: 'custom' as const, data: ca })),
+                ...AVATAR_BASES.map((b) => ({ kind: 'preset' as const, data: b })),
+              ];
+              const { slice, totalPages, safePage } = paginate(
+                allBaseItems,
+                isShortLandscape ? 8 : 9
+              );
+              return (
+                <div className="flex flex-col gap-2">
+                  <CrystalButton
+                    size="sm"
+                    variant="indigo"
+                    fullWidth
+                    onClick={() => setShowCreator(true)}
+                    className="h-8 sm:h-9 landscape:h-7"
+                  >
+                    <Paintbrush className="h-3.5 w-3.5 shrink-0" />
+                    <span className="text-xs">EIGENEN AVATAR ERSTELLEN</span>
+                  </CrystalButton>
 
-                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                  {customAvatars.map((ca) => {
-                    const isSelected =
-                      current.base === 'custom' && current.customId === ca.id;
-                    return (
-                      <div key={ca.id} className="relative">
+                  <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
+                    {slice.map((entry) => {
+                      if (entry.kind === 'custom') {
+                        const ca = entry.data;
+                        const isSelected =
+                          current.base === 'custom' && current.customId === ca.id;
+                        return (
+                          <div key={ca.id} className="relative">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setCurrent({
+                                  ...current,
+                                  base: 'custom',
+                                  customImage: ca.imageData,
+                                  customId: ca.id,
+                                  skinColor: ca.skinColor,
+                                })
+                              }
+                              className={optionCardClass(isSelected)}
+                            >
+                              <Avatar
+                                config={{
+                                  ...current,
+                                  base: 'custom',
+                                  customImage: ca.imageData,
+                                  skinColor: ca.skinColor,
+                                }}
+                                size={36}
+                                className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                              />
+                              <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                                {ca.name}
+                              </span>
+                            </button>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                const remaining = deleteCustomAvatar(ca.id);
+                                setCustomAvatars(remaining);
+                                if (current.base === 'custom' && current.customId === ca.id) {
+                                  setCurrent({
+                                    ...current,
+                                    base: 'human',
+                                    customImage: undefined,
+                                    customId: undefined,
+                                  });
+                                }
+                              }}
+                              title={`Avatar "${ca.name}" löschen`}
+                              aria-label={`Avatar ${ca.name} löschen`}
+                              className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] shadow-xs hover:bg-[#FEE2E2] cursor-pointer"
+                            >
+                              <X className="h-3 w-3 stroke-[2.8]" />
+                            </button>
+                          </div>
+                        );
+                      }
+
+                      const b = entry.data;
+                      const isSelected = current.base === b.id;
+                      return (
                         <button
+                          key={b.id}
                           type="button"
                           onClick={() =>
                             setCurrent({
                               ...current,
-                              base: 'custom',
-                              customImage: ca.imageData,
-                              customId: ca.id,
-                              skinColor: ca.skinColor,
+                              base: b.id,
+                              customImage: undefined,
+                              customId: undefined,
                             })
                           }
                           className={optionCardClass(isSelected)}
@@ -243,77 +339,53 @@ export function AvatarCustomizerModal({
                           <Avatar
                             config={{
                               ...current,
-                              base: 'custom',
-                              customImage: ca.imageData,
-                              skinColor: ca.skinColor,
+                              base: b.id,
+                              customImage: undefined,
                             }}
-                            size={44}
+                            size={36}
+                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
                           />
-                          <span className="font-arcade mt-1 w-full truncate text-center text-xs uppercase">
-                            {ca.name}
+                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                            {b.label}
                           </span>
                         </button>
-                        <button
-                          type="button"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            const remaining = deleteCustomAvatar(ca.id);
-                            setCustomAvatars(remaining);
-                            if (current.base === 'custom' && current.customId === ca.id) {
-                              setCurrent({
-                                ...current,
-                                base: 'human',
-                                customImage: undefined,
-                                customId: undefined,
-                              });
-                            }
-                          }}
-                          title={`Avatar "${ca.name}" löschen`}
-                          aria-label={`Avatar ${ca.name} löschen`}
-                          className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] shadow-xs hover:bg-[#FEE2E2] cursor-pointer"
-                        >
-                          <X className="h-3 w-3 stroke-[2.8]" />
-                        </button>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
 
-                  {AVATAR_BASES.map((b) => {
-                    const isSelected = current.base === b.id;
-                    return (
-                      <button
-                        key={b.id}
-                        type="button"
-                        onClick={() =>
-                          setCurrent({
-                            ...current,
-                            base: b.id,
-                            customImage: undefined,
-                            customId: undefined,
-                          })
-                        }
-                        className={optionCardClass(isSelected)}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-0.5">
+                      <CrystalButton
+                        size="sm"
+                        variant="secondary"
+                        disabled={safePage === 0}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        aria-label="Vorherige Seite"
+                        className="h-7 px-2.5"
                       >
-                        <Avatar
-                          config={{
-                            ...current,
-                            base: b.id,
-                            customImage: undefined,
-                          }}
-                          size={44}
-                        />
-                        <span className="font-arcade mt-1 w-full truncate text-center text-xs uppercase">
-                          {b.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                        <ChevronLeft className="h-4 w-4" />
+                      </CrystalButton>
+                      <span className="font-arcade text-xs text-[#334155] min-w-[44px] text-center">
+                        {safePage + 1} / {totalPages}
+                      </span>
+                      <CrystalButton
+                        size="sm"
+                        variant="secondary"
+                        disabled={safePage >= totalPages - 1}
+                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                        aria-label="Nächste Seite"
+                        className="h-7 px-2.5"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </CrystalButton>
+                    </div>
+                  )}
                 </div>
-              </div>
-            )}
+              );
+            })()}
 
             {activeTab === 'skin' && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-4 gap-2">
                 {AVATAR_SKIN_COLORS.map((s) => {
                   const isSelected = current.skinColor === s.id;
                   return (
@@ -324,12 +396,12 @@ export function AvatarCustomizerModal({
                       className={optionCardClass(isSelected)}
                     >
                       <div
-                        className="h-9 w-9 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                        className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
                         style={{ backgroundColor: s.id }}
                       >
                         {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                       </div>
-                      <span className="font-arcade mt-1 w-full truncate text-center text-[11px] uppercase">
+                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
                         {s.label}
                       </span>
                     </button>
@@ -338,29 +410,68 @@ export function AvatarCustomizerModal({
               </div>
             )}
 
-            {activeTab === 'hat' && (
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
-                {AVATAR_HATS.map((h) => {
-                  const isSelected = current.hat === h.id;
-                  return (
-                    <button
-                      key={h.id}
-                      type="button"
-                      onClick={() => setCurrent({ ...current, hat: h.id })}
-                      className={optionCardClass(isSelected)}
-                    >
-                      <Avatar config={{ ...current, hat: h.id }} size={44} />
-                      <span className="font-arcade mt-1 w-full truncate text-center text-[11px] uppercase">
-                        {h.label}
+            {activeTab === 'hat' && (() => {
+              const { slice, totalPages, safePage } = paginate(
+                AVATAR_HATS,
+                isShortLandscape ? 8 : 9
+              );
+              return (
+                <div className="flex flex-col gap-2">
+                  <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
+                    {slice.map((h) => {
+                      const isSelected = current.hat === h.id;
+                      return (
+                        <button
+                          key={h.id}
+                          type="button"
+                          onClick={() => setCurrent({ ...current, hat: h.id })}
+                          className={optionCardClass(isSelected)}
+                        >
+                          <Avatar
+                            config={{ ...current, hat: h.id }}
+                            size={36}
+                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                          />
+                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                            {h.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-center gap-2 pt-0.5">
+                      <CrystalButton
+                        size="sm"
+                        variant="secondary"
+                        disabled={safePage === 0}
+                        onClick={() => setPage((p) => Math.max(0, p - 1))}
+                        aria-label="Vorherige Seite"
+                        className="h-7 px-2.5"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </CrystalButton>
+                      <span className="font-arcade text-xs text-[#334155] min-w-[44px] text-center">
+                        {safePage + 1} / {totalPages}
                       </span>
-                    </button>
-                  );
-                })}
-              </div>
-            )}
+                      <CrystalButton
+                        size="sm"
+                        variant="secondary"
+                        disabled={safePage >= totalPages - 1}
+                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                        aria-label="Nächste Seite"
+                        className="h-7 px-2.5"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </CrystalButton>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {activeTab === 'accessory' && (
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {AVATAR_ACCESSORIES.map((acc) => {
                   const isSelected = current.accessory === acc.id;
                   return (
@@ -370,8 +481,12 @@ export function AvatarCustomizerModal({
                       onClick={() => setCurrent({ ...current, accessory: acc.id })}
                       className={optionCardClass(isSelected)}
                     >
-                      <Avatar config={{ ...current, accessory: acc.id }} size={44} />
-                      <span className="font-arcade mt-1 w-full truncate text-center text-[11px] uppercase">
+                      <Avatar
+                        config={{ ...current, accessory: acc.id }}
+                        size={36}
+                        className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                      />
+                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
                         {acc.label}
                       </span>
                     </button>
@@ -381,7 +496,7 @@ export function AvatarCustomizerModal({
             )}
 
             {activeTab === 'bg' && (
-              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-3 gap-2">
                 {AVATAR_BGS.map((bg) => {
                   const isSelected = current.bg === bg.id;
                   return (
@@ -392,14 +507,14 @@ export function AvatarCustomizerModal({
                       className={optionCardClass(isSelected)}
                     >
                       <div
-                        className="h-9 w-9 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                        className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
                         style={{
                           backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
                         }}
                       >
                         {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                       </div>
-                      <span className="font-arcade mt-1 w-full truncate text-center text-[11px] uppercase">
+                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
                         {bg.label}
                       </span>
                     </button>
@@ -412,7 +527,7 @@ export function AvatarCustomizerModal({
       </div>
 
       {/* Untere Aktionsleiste in Portrait: ABBRECHEN & SPEICHERN */}
-      <div className="flex landscape:hidden w-full items-center justify-center gap-3.5 sm:gap-4 pt-3 sm:pt-4">
+      <div className="flex landscape:hidden w-full items-center justify-center gap-3.5 sm:gap-4 pt-2 sm:pt-3">
         <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose} className="min-w-[130px]">
           ABBRECHEN
         </CrystalButton>

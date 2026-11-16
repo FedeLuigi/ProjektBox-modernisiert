@@ -227,13 +227,13 @@ export function CustomAvatarCreatorModal({
         <CrystalPanel
           topTabLabel="AVATAR ERSTELLEN"
           accent="indigo"
-          contentClassName="w-full gap-3.5 sm:gap-4 landscape:gap-3 p-4 sm:p-5 landscape:p-3"
+          contentClassName="w-full gap-2.5 sm:gap-3.5 landscape:gap-2.5 p-3.5 sm:p-5 landscape:p-3"
         >
-          <div className="flex flex-col landscape:flex-row landscape:items-center gap-4 sm:gap-5 w-full">
+          <div className="flex flex-col landscape:flex-row landscape:items-center gap-3 sm:gap-4 w-full">
             {/* 1. GROSSE ZEICHENFLÄCHE MIT GESICHT */}
-            <div className="flex flex-col items-center justify-center shrink-0 gap-2">
+            <div className="flex flex-col items-center justify-center shrink-0 gap-1.5">
               <div
-                className="relative aspect-square w-[250px] sm:w-[300px] landscape:w-[210px] landscape:sm:w-[245px] rounded-full border-[4px] border-[#334155] shadow-[0_6px_0_rgba(15,23,42,0.28)] overflow-hidden"
+                className="relative aspect-square w-[220px] sm:w-[275px] landscape:w-[205px] landscape:sm:w-[240px] rounded-full border-[4px] border-[#334155] shadow-[0_6px_0_rgba(15,23,42,0.28)] overflow-hidden"
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${bgMeta.from}, ${bgMeta.to})`,
                 }}
