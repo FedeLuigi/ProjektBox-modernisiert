@@ -46,20 +46,35 @@
     -ms-overflow-style: none !important;
   }
 
-  /* ─── Globale Text- & Platzhalterfarbe für alle dunklen Eingabefelder ─── */
-  input,
-  input[type="text"],
-  input[type="search"] {
+  /* ─── Globale Text- & Platzhalterfarbe für dunkle Eingabefelder ─── */
+  input:not(.crystal-input-light),
+  input[type="text"]:not(.crystal-input-light),
+  input[type="search"]:not(.crystal-input-light) {
     color: #FFFFFF !important;
     caret-color: #FFFFFF !important;
     -webkit-text-fill-color: #FFFFFF;
   }
 
-  input::placeholder,
-  input[type="text"]::placeholder,
-  input[type="search"]::placeholder {
+  input:not(.crystal-input-light)::placeholder,
+  input[type="text"]:not(.crystal-input-light)::placeholder,
+  input[type="search"]:not(.crystal-input-light)::placeholder {
     color: rgba(255, 255, 255, 0.55) !important;
     -webkit-text-fill-color: rgba(255, 255, 255, 0.55);
+    opacity: 1 !important;
+  }
+
+  /* ─── Helle Crystal-Frost-Eingabefelder (hoher Kontrast & klare Lesbarkeit) ─── */
+  input.crystal-input-light,
+  input.crystal-input-light[type="text"] {
+    color: #0F172A !important;
+    caret-color: #4F46E5 !important;
+    -webkit-text-fill-color: #0F172A !important;
+  }
+
+  input.crystal-input-light::placeholder,
+  input.crystal-input-light[type="text"]::placeholder {
+    color: #64748B !important;
+    -webkit-text-fill-color: #64748B !important;
     opacity: 1 !important;
   }
 }

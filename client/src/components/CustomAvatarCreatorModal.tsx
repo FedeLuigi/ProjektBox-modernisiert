@@ -453,11 +453,11 @@ export function CustomAvatarCreatorModal({
                       clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
                       paddingInline: '14px',
                     }}
-                    className={`font-arcade h-9 sm:h-10 w-full bg-[#F8FAFC] border-2 ${
+                    className={`crystal-input-light font-sans h-9 sm:h-10 w-full bg-[#F8FAFC] border-2 ${
                       errorMsg
                         ? 'border-[#E11D48]'
                         : 'border-[#CBD5E1] focus:border-[#4F46E5]'
-                    } px-3 text-center text-sm font-bold tracking-wider text-[#0F172A] placeholder:text-[#64748B] uppercase focus:outline-none caret-[#4F46E5]`}
+                    } px-3 text-center text-sm sm:text-base font-extrabold tracking-wide text-[#0F172A] placeholder:text-[#64748B] focus:outline-none caret-[#4F46E5]`}
                   />
                 </div>
                 {errorMsg && (

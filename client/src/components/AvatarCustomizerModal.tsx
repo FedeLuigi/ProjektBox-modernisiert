@@ -10,7 +10,7 @@ import {
   AVATAR_SKIN_COLORS,
   DEFAULT_AVATAR,
 } from './Avatar';
-import { CrystalButton, CrystalIconButton, CrystalPanel } from './CrystalUI';
+import { CrystalButton, CrystalPanel } from './CrystalUI';
 import { CustomAvatarCreatorModal } from './CustomAvatarCreatorModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
 import {
@@ -48,29 +48,6 @@ export function AvatarCustomizerModal({
   const [nameError, setNameError] = useState<string | null>(null);
   const [customAvatars, setCustomAvatars] = useState<CustomAvatar[]>(() => getCustomAvatars());
   const [showCreator, setShowCreator] = useState(false);
-
-  const handleRandomize = () => {
-    const randomBase =
-      AVATAR_BASES[Math.floor(Math.random() * AVATAR_BASES.length)].id;
-    const randomSkin =
-      AVATAR_SKIN_COLORS[Math.floor(Math.random() * AVATAR_SKIN_COLORS.length)].id;
-    const randomHat =
-      AVATAR_HATS[Math.floor(Math.random() * AVATAR_HATS.length)].id;
-    const randomAcc =
-      AVATAR_ACCESSORIES[
-        Math.floor(Math.random() * AVATAR_ACCESSORIES.length)
-      ].id;
-    const randomBg =
-      AVATAR_BGS[Math.floor(Math.random() * AVATAR_BGS.length)].id;
-
-    setCurrent({
-      base: randomBase,
-      skinColor: randomSkin,
-      hat: randomHat,
-      accessory: randomAcc,
-      bg: randomBg,
-    });
-  };
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -116,29 +93,19 @@ export function AvatarCustomizerModal({
         <CrystalPanel topTabLabel="PROFIL" accent="indigo" contentClassName="w-full gap-3.5 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
           <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3.5 sm:gap-4">
-            {/* Linke Seite: Vorschau, Würfel, Spielername & Aktions-Buttons im Querformat */}
+            {/* Linke Seite: Zentrierte Avatar-Vorschau, Spielername & Aktions-Buttons im Querformat */}
             <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-3 landscape:gap-2">
-              <div className="flex items-center justify-center gap-3 sm:gap-4">
-                <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
-                  <Avatar config={current} size={74} className="landscape:w-[60px] landscape:h-[60px]" />
+              <div className="flex w-full items-center justify-center">
+                <div className="flex items-center justify-center rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
+                  <Avatar config={current} size={78} className="landscape:w-[64px] landscape:h-[64px]" />
                 </div>
-                <CrystalIconButton
-                  size="md"
-                  variant="amber"
-                  tilt="right"
-                  onClick={handleRandomize}
-                  title="Zufälliger Avatar"
-                  aria-label="Zufälligen Avatar würfeln"
-                >
-                  <Dices className="h-5 w-5 text-[#0F172A] stroke-[2.4]" />
-                </CrystalIconButton>
               </div>
 
               {/* Spielername direkt unter dem Avatar – Teil des persönlichen Profils */}
               <div className="w-full flex flex-col items-center">
                 <label
                   htmlFor="player-profile-name-input"
-                  className="font-arcade mb-1 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase"
+                  className="font-arcade mb-1.5 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase"
                 >
                   SPIELERNAME
                 </label>
@@ -168,9 +135,9 @@ export function AvatarCustomizerModal({
                         clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
                         paddingInline: '14px',
                       }}
-                      className={`font-arcade h-9 sm:h-10 landscape:h-8 w-full bg-[#F8FAFC] border-2 ${
+                      className={`crystal-input-light font-sans h-9 sm:h-10 landscape:h-8 w-full bg-[#F8FAFC] border-2 ${
                         nameError ? 'border-[#E11D48]' : 'border-[#CBD5E1] focus:border-[#4F46E5]'
-                      } px-3 text-center text-sm landscape:text-xs font-bold tracking-wider text-[#0F172A] placeholder:text-[#64748B] uppercase focus:outline-none caret-[#4F46E5]`}
+                      } px-3 text-center text-sm sm:text-base landscape:text-xs font-extrabold tracking-wide text-[#0F172A] placeholder:text-[#64748B] focus:outline-none caret-[#4F46E5]`}
                     />
                   </div>
 
