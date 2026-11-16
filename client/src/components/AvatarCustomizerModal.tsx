@@ -136,10 +136,14 @@ export function AvatarCustomizerModal({
                 >
                   SPIELERNAME
                 </label>
-                <div className="flex items-stretch gap-1.5 w-full max-w-[290px] justify-center">
+                {/* Symmetrisches 3-Spalten-Raster: linker Platzhalter entspricht der Button-Breite rechts,
+                    dadurch bleibt das Namensfeld unabhängig vom Button immer exakt mittig zentriert */}
+                <div className="grid w-full grid-cols-[38px_minmax(0,228px)_38px] sm:grid-cols-[42px_minmax(0,260px)_42px] landscape:grid-cols-[34px_minmax(0,1fr)_34px] items-stretch justify-center gap-1.5">
+                  <div aria-hidden="true" />
+
                   <div
                     style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                    className="flex-1 min-w-0 bg-[#334155] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
+                    className="w-full min-w-0 bg-[#334155] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
                   >
                     <input
                       id="player-profile-name-input"
@@ -174,7 +178,7 @@ export function AvatarCustomizerModal({
                     title="Zufälligen Spielernamen generieren"
                     aria-label="Zufälligen Spielernamen generieren"
                     style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
-                    className="flex w-9 sm:w-10 landscape:w-8 items-center justify-center bg-[#78350F] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)] active:scale-95 cursor-pointer shrink-0"
+                    className="flex w-full items-center justify-center bg-[#78350F] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)] active:scale-95 cursor-pointer"
                   >
                     <div
                       style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
