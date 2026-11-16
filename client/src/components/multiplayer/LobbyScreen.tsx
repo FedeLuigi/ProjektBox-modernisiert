@@ -20,8 +20,6 @@ import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper'
 import { Avatar } from '../Avatar';
 import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { ACCENT_PALETTES } from '../CrystalUI';
-import { GamePreviewArtwork } from '../GamePreviewArtwork';
 import { OpenButton, OpenModalFrame } from '../OpenSubpageUI';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
@@ -77,7 +75,6 @@ export function LobbyScreen({
 
   const currentUser = useUserProfile();
   const gameId = game.id;
-  const palette = ACCENT_PALETTES[game.accent];
 
   const createFreshLobby = useCallback(
     async (tvFlag: boolean) => {
@@ -153,7 +150,7 @@ export function LobbyScreen({
 
   useEffect(() => {
     if (qrCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 360).catch(console.error);
+      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 480).catch(console.error);
     }
   }, [joinUrl, currentLobby?.code, lobbyLayout]);
 
@@ -386,9 +383,38 @@ export function LobbyScreen({
     </div>
   );
 
-  const inviteBlock = (compactQr = false) =>
+  const titleBlock = (alignLeft = false) => (
+    <div className={`flex flex-col ${alignLeft ? 'items-start text-left' : 'items-center text-center'}`}>
+      <div className="border-b-2 border-[#F59E0B] px-1 pb-1">
+        <h2 className="font-arcade text-2xl sm:text-4xl lg:text-[42px] leading-tight tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
+          {game.title}
+        </h2>
+      </div>
+      <span className="font-arcade mt-1.5 text-[11px] sm:text-xs tracking-widest text-[#94A3B8] uppercase">
+        {game.players} • {game.duration}
+      </span>
+    </div>
+  );
+
+  const inviteBlock = (extraLargeQr = false) =>
     currentLobby ? (
-      <div className="flex flex-col items-center gap-3.5 text-center">
+      <div className="flex flex-col items-center gap-4 text-center">
+        <button
+          type="button"
+          onClick={() => setIsQrModalOpen(true)}
+          title="QR-Code vergrößern"
+          className="rounded-2xl border border-white/20 bg-white p-3 sm:p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.45)] transition-transform hover:scale-[1.03] active:scale-95 cursor-pointer"
+        >
+          <canvas
+            ref={qrCanvasRef}
+            className={`${
+              extraLargeQr
+                ? 'h-52 w-52 sm:h-60 sm:w-60 lg:h-64 lg:w-64'
+                : 'h-44 w-44 sm:h-52 sm:w-52 lg:h-56 lg:w-56'
+            } block`}
+          />
+        </button>
+
         <div className="flex flex-col items-center gap-1.5">
           <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#94A3B8] uppercase">
             {copiedCode ? 'KOPIERT ✓' : 'LOBBY-CODE (TIPPEN ZUM KOPIEREN)'}
@@ -422,18 +448,6 @@ export function LobbyScreen({
             </OpenButton>
           </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsQrModalOpen(true)}
-          title="QR-Code vergrößern"
-          className="rounded-2xl border border-white/20 bg-white p-2.5 shadow-[0_14px_30px_rgba(0,0,0,0.4)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
-        >
-          <canvas
-            ref={qrCanvasRef}
-            className={`${compactQr ? 'h-28 w-28 sm:h-32 sm:w-32' : 'h-36 w-36 sm:h-44 sm:w-44'} block`}
-          />
-        </button>
       </div>
     ) : null;
 
@@ -588,15 +602,11 @@ export function LobbyScreen({
             </div>
           ) : (
             <>
-              {/* 1. OFFENE BÜHNE (2-SPALTEN) */}
+              {/* 1. OFFENE BÜHNE (KLASSIK) */}
               {lobbyLayout === 'lobby-open-stage' && (
-                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.9fr_1.1fr] items-center gap-8 md:gap-12">
+                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-center gap-8 md:gap-12">
                   <div className="flex flex-col items-center gap-5 border-b md:border-b-0 md:border-r border-white/15 pb-6 md:pb-0 md:pr-10">
-                    <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
-                      <span className="font-arcade text-xl tracking-wider text-white uppercase">
-                        {game.title}
-                      </span>
-                    </div>
+                    {titleBlock(false)}
                     {modeTabs}
                     {inviteBlock(false)}
                   </div>
@@ -609,71 +619,76 @@ export function LobbyScreen({
                 </div>
               )}
 
-              {/* 2. SPLIT-SHOWCASE (MIT SPIEL-ARTWORK) */}
-              {lobbyLayout === 'lobby-split-showcase' && (
-                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 lg:grid-cols-[1fr_1.1fr] items-center gap-8 lg:gap-12">
-                  <div className="flex flex-col gap-4">
-                    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-                      <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
-                      <span
-                        style={{ backgroundColor: palette.bg }}
-                        className="font-arcade absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] text-white uppercase shadow"
-                      >
-                        {game.players} • {game.duration}
-                      </span>
-                    </div>
-                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+              {/* 2. OFFENE BÜHNE (TITEL OBEN) */}
+              {lobbyLayout === 'lobby-open-hero-top' && (
+                <div className="my-auto mx-auto flex w-full max-w-5xl flex-col gap-7">
+                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-4">
+                    {titleBlock(true)}
+                    {modeTabs}
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-center gap-8 md:gap-12">
+                    <div className="flex flex-col items-center md:border-r md:border-white/15 md:pr-10">
                       {inviteBlock(true)}
                     </div>
-                  </div>
 
-                  <div className="flex flex-col gap-4">
-                    <div className="flex items-center justify-between flex-wrap gap-2">
-                      <span className="font-arcade text-lg tracking-wider text-white uppercase">
-                        LOBBY <span className="text-[#FBBF24]">SETUP</span>
-                      </span>
-                      {modeTabs}
+                    <div className="flex flex-col gap-4">
+                      {settingsBlock}
+                      {playersBlock}
+                      <div className="pt-1">{actionButton}</div>
                     </div>
+                  </div>
+                </div>
+              )}
+
+              {/* 3. OFFENE BÜHNE (GESPIEGELT) */}
+              {lobbyLayout === 'lobby-open-reversed' && (
+                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[1.05fr_0.95fr] items-center gap-8 md:gap-12">
+                  <div className="flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/15 pb-6 md:pb-0 md:pr-10">
+                    {titleBlock(true)}
                     {settingsBlock}
                     {playersBlock}
-                    {actionButton}
+                    <div className="pt-1">{actionButton}</div>
+                  </div>
+
+                  <div className="flex flex-col items-center gap-5">
+                    {modeTabs}
+                    {inviteBlock(true)}
                   </div>
                 </div>
               )}
 
-              {/* 3. EDITORIAL 3-ZONEN */}
-              {lobbyLayout === 'lobby-editorial-grid' && (
+              {/* 4. OFFENE BÜHNE (3-SPALTEN) */}
+              {lobbyLayout === 'lobby-open-columns' && (
                 <div className="my-auto flex w-full flex-col gap-6">
-                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-3">
-                    <div>
-                      <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
-                        {game.players} • {game.duration}
-                      </span>
-                      <h2 className="font-arcade mt-0.5 text-2xl sm:text-3xl tracking-wider text-white uppercase">
-                        {game.title}
-                      </h2>
+                  <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1fr_1.1fr] items-center gap-8">
+                    <div className="flex flex-col items-start gap-5 border-b lg:border-b-0 lg:border-r border-white/15 pb-6 lg:pb-0 lg:pr-8">
+                      {titleBlock(true)}
+                      {modeTabs}
+                      <div className="w-full pt-2">{actionButton}</div>
                     </div>
-                    {modeTabs}
-                    <div className="w-full sm:w-64">{actionButton}</div>
-                  </div>
 
-                  <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-6 lg:gap-8">
-                    <div className="flex flex-col items-center lg:border-r lg:border-white/15 lg:pr-6">
+                    <div className="flex flex-col items-center border-b lg:border-b-0 lg:border-r border-white/15 pb-6 lg:pb-0 lg:pr-8">
                       {inviteBlock(false)}
                     </div>
-                    <div className="lg:border-r lg:border-white/15 lg:pr-6">
+
+                    <div className="flex flex-col gap-4">
                       {settingsBlock}
+                      {playersBlock}
                     </div>
-                    <div>{playersBlock}</div>
                   </div>
                 </div>
               )}
 
-              {/* 4. BÜHNE + BOTTOM-LEISTE */}
-              {lobbyLayout === 'lobby-bottom-action' && (
+              {/* 5. OFFENE BÜHNE (BOTTOM-LEISTE) */}
+              {lobbyLayout === 'lobby-open-docked' && (
                 <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
-                  <div className="my-auto grid w-full grid-cols-1 md:grid-cols-[0.85fr_1.15fr] items-center gap-8">
-                    <div className="flex flex-col items-center">{inviteBlock(false)}</div>
+                  <div className="my-auto grid w-full grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
+                    <div className="flex flex-col items-center gap-5">
+                      {titleBlock(false)}
+                      {inviteBlock(true)}
+                    </div>
+
                     <div className="flex flex-col gap-4">
                       {settingsBlock}
                       {playersBlock}
@@ -684,41 +699,6 @@ export function LobbyScreen({
                     {modeTabs}
                     <div className="w-full sm:w-72">{actionButton}</div>
                   </div>
-                </div>
-              )}
-
-              {/* 5. SCHWEBENDE GLAS-PANELS */}
-              {lobbyLayout === 'lobby-glass-panels' && (
-                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-stretch gap-5">
-                  <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-5 sm:p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-                    {modeTabs}
-                    {inviteBlock(false)}
-                  </div>
-
-                  <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-5 sm:p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-                    <div className="flex flex-col gap-4">
-                      {settingsBlock}
-                      {playersBlock}
-                    </div>
-                    {actionButton}
-                  </div>
-                </div>
-              )}
-
-              {/* 6. KINO / TV-FOKUS */}
-              {lobbyLayout === 'lobby-compact-tv' && (
-                <div className="my-auto mx-auto flex w-full max-w-3xl flex-col items-center gap-6">
-                  <div className="flex flex-col items-center gap-3">
-                    {modeTabs}
-                    {inviteBlock(false)}
-                  </div>
-
-                  <div className="grid w-full grid-cols-1 md:grid-cols-2 items-start gap-4">
-                    {settingsBlock}
-                    {playersBlock}
-                  </div>
-
-                  <div className="w-full max-w-sm">{actionButton}</div>
                 </div>
               )}
             </>

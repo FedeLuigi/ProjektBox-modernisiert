@@ -2,11 +2,10 @@ import { ArrowLeft, Check, Layers } from 'lucide-react';
 
 export type LobbyLayoutId =
   | 'lobby-open-stage'
-  | 'lobby-split-showcase'
-  | 'lobby-editorial-grid'
-  | 'lobby-bottom-action'
-  | 'lobby-glass-panels'
-  | 'lobby-compact-tv';
+  | 'lobby-open-hero-top'
+  | 'lobby-open-reversed'
+  | 'lobby-open-columns'
+  | 'lobby-open-docked';
 
 export interface LobbyLayoutOption {
   id: LobbyLayoutId;
@@ -17,126 +16,110 @@ export interface LobbyLayoutOption {
 export const LOBBY_LAYOUT_OPTIONS: LobbyLayoutOption[] = [
   {
     id: 'lobby-open-stage',
-    title: 'Offene Bühne (2-Spalten)',
+    title: 'Offene Bühne (Klassik)',
     description:
-      'Komplett rahmenlos mit Haarlinie: Links Code, QR & Modus, rechts Optionen, Spieler & Start.',
+      'Links großer Titel, Modus, Code & großer QR-Code; rechts Optionen, Spieler & Start mit feiner Haarlinie.',
   },
   {
-    id: 'lobby-split-showcase',
-    title: 'Split-Showcase',
+    id: 'lobby-open-hero-top',
+    title: 'Offene Bühne (Titel oben)',
     description:
-      'Links Spiel-Artwork mit Code & QR, rechts Spielmodus, Einstellungen, Spieler und Start.',
+      'Großformatiger Titel & Modus-Tabs oben über die volle Breite, darunter extragroßer QR-Code & Setup.',
   },
   {
-    id: 'lobby-editorial-grid',
-    title: 'Editorial 3-Zonen',
+    id: 'lobby-open-reversed',
+    title: 'Offene Bühne (Gespiegelt)',
     description:
-      'Kopfzeile mit Modus & Start-Button oben, darunter drei offene Spalten für QR, Optionen & Spieler.',
+      'Links Titel, Optionen, Spieler & Start; rechts der große QR-Code & Einladungslink.',
   },
   {
-    id: 'lobby-bottom-action',
-    title: 'Bühne + Bottom-Leiste',
+    id: 'lobby-open-columns',
+    title: 'Offene Bühne (3-Spalten)',
     description:
-      'Oben QR-Code & Spielerliste, unten eine durchgängige offene Leiste für Modus & Start.',
+      'Drei offene Spalten nebeneinander: Titel & Start links, großer QR-Code mittig, Optionen & Spieler rechts.',
   },
   {
-    id: 'lobby-glass-panels',
-    title: 'Schwebende Glas-Panels',
+    id: 'lobby-open-docked',
+    title: 'Offene Bühne (Bottom-Leiste)',
     description:
-      'Zwei ausgewogene dunkle Glas-Karten für Einladung/QR links und Optionen/Spieler rechts.',
-  },
-  {
-    id: 'lobby-compact-tv',
-    title: 'Kino / TV-Fokus',
-    description:
-      'Großer QR-Code und prominenter Lobby-Code im Fokus, Spieler und Start klar strukturiert.',
+      'Großer Titel & QR-Code oben im Fokus, Moduswechsel und Start-Button als offene Leiste unten.',
   },
 ];
 
 function LobbyWireframe({ layoutId, active }: { layoutId: LobbyLayoutId; active: boolean }) {
   const accent = active ? 'bg-[#F59E0B]' : 'bg-[#F59E0B]/70';
-  const line = 'bg-white/25';
   const soft = 'bg-white/12';
 
-  if (layoutId === 'lobby-split-showcase') {
-    return (
-      <div className="grid h-20 w-full grid-cols-2 gap-2.5 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-        <div className="flex flex-col justify-between gap-1.5">
-          <div className={`h-7 w-full rounded-md ${soft}`} />
-          <div className="flex items-center gap-1.5">
-            <div className={`h-5 w-5 rounded-sm bg-white/75`} />
-            <div className={`h-2.5 flex-1 rounded-sm ${accent}`} />
-          </div>
-        </div>
-        <div className="flex flex-col justify-between gap-1">
-          <div className={`h-2 w-full rounded-sm ${line}`} />
-          <div className={`h-3 w-full rounded-sm ${soft}`} />
-          <div className={`h-3 w-full rounded-sm ${soft}`} />
-          <div className="h-3 w-full rounded-sm bg-[#10B981]/80" />
-        </div>
-      </div>
-    );
-  }
-
-  if (layoutId === 'lobby-editorial-grid') {
+  if (layoutId === 'lobby-open-hero-top') {
     return (
       <div className="flex h-20 w-full flex-col justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
         <div className="flex items-center justify-between border-b border-white/15 pb-1">
-          <div className={`h-2 w-12 rounded-full ${accent}`} />
-          <div className="h-2.5 w-12 rounded-sm bg-[#10B981]/80" />
+          <div className={`h-2.5 w-16 rounded-sm bg-white/80`} />
+          <div className={`h-1.5 w-10 rounded-full ${accent}`} />
         </div>
-        <div className="grid flex-1 grid-cols-3 gap-1.5 pt-1.5">
-          <div className={`rounded-md ${soft}`} />
-          <div className={`rounded-md ${soft}`} />
-          <div className={`rounded-md ${soft}`} />
+        <div className="grid flex-1 grid-cols-2 items-center gap-2 pt-1.5">
+          <div className="flex items-center justify-center">
+            <div className="h-9 w-9 rounded-sm bg-white/85" />
+          </div>
+          <div className="flex flex-col justify-between gap-1">
+            <div className={`h-2.5 w-full rounded-sm ${soft}`} />
+            <div className={`h-3 w-full rounded-sm ${soft}`} />
+            <div className="h-2.5 w-full rounded-sm bg-[#10B981]/80" />
+          </div>
         </div>
       </div>
     );
   }
 
-  if (layoutId === 'lobby-bottom-action') {
+  if (layoutId === 'lobby-open-reversed') {
+    return (
+      <div className="grid h-20 w-full grid-cols-2 gap-2.5 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+        <div className="flex flex-col justify-between gap-1 border-r border-white/15 pr-2">
+          <div className="h-2.5 w-14 rounded-sm bg-white/80" />
+          <div className={`h-4 w-full rounded-sm ${soft}`} />
+          <div className="h-3 w-full rounded-sm bg-[#10B981]/80" />
+        </div>
+        <div className="flex flex-col items-center justify-between">
+          <div className={`h-2 w-12 rounded-full ${accent}`} />
+          <div className="h-9 w-9 rounded-sm bg-white/85" />
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutId === 'lobby-open-columns') {
+    return (
+      <div className="grid h-20 w-full grid-cols-3 gap-2 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+        <div className="flex flex-col justify-between border-r border-white/15 pr-1.5">
+          <div className="h-2.5 w-full rounded-sm bg-white/80" />
+          <div className={`h-1.5 w-8 rounded-full ${accent}`} />
+          <div className="h-3 w-full rounded-sm bg-[#10B981]/80" />
+        </div>
+        <div className="flex flex-col items-center justify-center border-r border-white/15 pr-1.5">
+          <div className="h-9 w-9 rounded-sm bg-white/85" />
+        </div>
+        <div className="flex flex-col justify-between gap-1">
+          <div className={`h-3 w-full rounded-sm ${soft}`} />
+          <div className={`h-7 w-full rounded-sm ${soft}`} />
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutId === 'lobby-open-docked') {
     return (
       <div className="flex h-20 w-full flex-col justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-        <div className="grid flex-1 grid-cols-2 gap-2 pb-1.5">
-          <div className={`rounded-md ${soft}`} />
-          <div className={`rounded-md ${soft}`} />
+        <div className="grid flex-1 grid-cols-2 items-center gap-2 pb-1">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-sm bg-white/85" />
+            <div className="h-2.5 w-10 rounded-sm bg-white/80" />
+          </div>
+          <div className={`h-8 rounded-sm ${soft}`} />
         </div>
-        <div className="flex items-center justify-between gap-2 border-t border-white/15 pt-1.5">
-          <div className={`h-2 w-14 rounded-full ${accent}`} />
-          <div className="h-3 w-16 rounded-md bg-[#10B981]/80" />
+        <div className="flex items-center justify-between border-t border-white/15 pt-1">
+          <div className={`h-1.5 w-12 rounded-full ${accent}`} />
+          <div className="h-2.5 w-14 rounded-sm bg-[#10B981]/80" />
         </div>
-      </div>
-    );
-  }
-
-  if (layoutId === 'lobby-glass-panels') {
-    return (
-      <div className="grid h-20 w-full grid-cols-2 gap-2 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-        <div className="flex flex-col items-center justify-between rounded-lg border border-white/15 bg-white/[0.06] p-1.5">
-          <div className={`h-2 w-10 rounded-sm ${accent}`} />
-          <div className="h-7 w-7 rounded-sm bg-white/80" />
-        </div>
-        <div className="flex flex-col justify-between rounded-lg border border-white/15 bg-white/[0.06] p-1.5">
-          <div className={`h-2 w-full rounded-sm ${soft}`} />
-          <div className={`h-3 w-full rounded-sm ${soft}`} />
-          <div className="h-2.5 w-full rounded-sm bg-[#10B981]/80" />
-        </div>
-      </div>
-    );
-  }
-
-  if (layoutId === 'lobby-compact-tv') {
-    return (
-      <div className="flex h-20 w-full flex-col items-center justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-        <div className="flex items-center gap-2">
-          <div className="h-7 w-7 rounded-sm bg-white/80" />
-          <div className={`h-3 w-14 rounded-sm ${accent}`} />
-        </div>
-        <div className="flex w-full gap-1.5">
-          <div className={`h-2.5 flex-1 rounded-sm ${soft}`} />
-          <div className={`h-2.5 flex-1 rounded-sm ${soft}`} />
-        </div>
-        <div className="h-3 w-28 rounded-md bg-[#10B981]/80" />
       </div>
     );
   }
@@ -145,8 +128,8 @@ function LobbyWireframe({ layoutId, active }: { layoutId: LobbyLayoutId; active:
   return (
     <div className="grid h-20 w-full grid-cols-2 gap-2.5 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
       <div className="flex flex-col items-center justify-between border-r border-white/15 pr-2">
-        <div className={`h-2 w-12 rounded-sm ${accent}`} />
-        <div className="h-8 w-8 rounded-sm bg-white/80" />
+        <div className="h-2.5 w-14 rounded-sm bg-white/80" />
+        <div className="h-9 w-9 rounded-sm bg-white/85" />
       </div>
       <div className="flex flex-col justify-between gap-1">
         <div className={`h-2.5 w-full rounded-sm ${soft}`} />
@@ -187,18 +170,18 @@ export function LobbyLayoutModal({
         <div className="flex items-center gap-2 border-b-2 border-[#F59E0B] pb-0.5 select-none">
           <Layers className="h-4 w-4 text-[#FBBF24]" />
           <span className="font-arcade text-base sm:text-xl tracking-wider text-white uppercase">
-            LOBBY <span className="text-[#FBBF24]">LAYOUTS</span>
+            OFFENE BÜHNE <span className="text-[#FBBF24]">LAYOUTS</span>
           </span>
         </div>
 
         <span className="hidden sm:block font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
-          6 DESIGN- & LAYOUTARTEN
+          5 OFFENE VARIANTEN
         </span>
       </div>
 
       <div className="no-scrollbar mx-auto w-full max-w-5xl flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5">
         <p className="mb-5 text-xs sm:text-sm text-[#CBD5E1]">
-          Wähle eine Anordnung für die vereinte Lobby-Seite. Zurück-Button und Verbindungsstatus oben bleiben unverändert.
+          Alle 5 Layouts basieren auf dem offenen, rahmenlosen „Offene Bühne“-Design mit großem Titel und großem QR-Code.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-6">
