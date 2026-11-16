@@ -12,6 +12,7 @@ import { IslandBackground } from './components/IslandBackground';
 import {
   ArcadeLogoHeader,
   ArcadeMenuModal,
+  PlayerAvatarButton,
   PlayerProfileBar,
   SectionFilterBar,
 } from './components/ArcadeHudElements';
@@ -631,11 +632,20 @@ export function App() {
 
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
-        {/* ═══ OBERE LEISTE: PROJEKT BOX Logo (links auf Mobile, mittig ab Tablet) • TV-Code & Spielerprofil rechts ═══ */}
+        {/* ═══ OBERE LEISTE: Avatar links • PROJEKT BOX Logo & Button Mitte • TV-Code & Optionen rechts ═══ */}
         <header className="tablet-header landscape-top-bar relative z-30 flex md:grid md:grid-cols-[1fr_auto_1fr] shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
-          <div className="hidden md:block landscape:hidden!" aria-hidden="true" />
+          {/* Links: Spieler-Avatar */}
+          <div className="shrink-0 flex items-center md:justify-self-start">
+            <PlayerAvatarButton
+              avatar={userProfile.avatar}
+              onClick={() => {
+                triggerHaptic();
+                setShowAvatarModal(true);
+              }}
+            />
+          </div>
 
-          {/* Mitte (ab Tablet) / Links (Mobile Portrait): Trapezförmiger Crystal-Header ("PROJEKT BOX") + neuer Button daneben */}
+          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") + neuer Button daneben */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 md:justify-self-center">
             <div className="landscape-hide-logo landscape:hidden!">
               <ArcadeLogoHeader />
@@ -655,8 +665,8 @@ export function App() {
             </CrystalIconButton>
           </div>
 
-          {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen */}
-          <div className="shrink-0 flex items-center gap-1 sm:gap-2 ml-auto md:justify-self-end">
+          {/* Rechts: TV-Join Button + Optionen */}
+          <div className="shrink-0 flex items-center gap-1 sm:gap-2 md:justify-self-end">
             <CrystalButton
               size="sm"
               tilt="right"
@@ -672,11 +682,7 @@ export function App() {
             </CrystalButton>
 
             <PlayerProfileBar
-              avatar={userProfile.avatar}
-              onOpenProfile={() => {
-                triggerHaptic();
-                setShowAvatarModal(true);
-              }}
+              showAvatar={false}
               onOpenSettings={() => {
                 triggerHaptic();
                 setShowSettings(true);

@@ -34,39 +34,55 @@ export function ArcadeLogoHeader() {
   );
 }
 
-/* ─── 2. SPIELER-PROFIL & KRISTALL-ICON-BUTTONS OBEN RECHTS ─── */
+/* ─── 2. SPIELER-AVATAR-BUTTON (OBEN LINKS) & OPTIONEN (OBEN RECHTS) ─── */
+export function PlayerAvatarButton({
+  avatar,
+  onClick,
+}: {
+  avatar?: AvatarConfig;
+  onClick?: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title="Profil & Avatar anpassen"
+      aria-label="Profil & Avatar anpassen"
+      className="group relative flex h-9 w-9 sm:h-11 sm:w-11 landscape:h-9 landscape:w-9 items-center justify-center rounded-full border-2 border-[#F59E0B] bg-[#0F172A] p-[2px] shadow-[0_3px_0_rgba(15,23,42,0.35)] transition-transform hover:scale-105 active:scale-92 cursor-pointer shrink-0 focus:outline-none"
+    >
+      {avatar ? (
+        <Avatar config={avatar} size={28} className="sm:w-[34px] sm:h-[34px]" />
+      ) : (
+        <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#1E293B] text-[#FBBF24]">
+          <User className="h-4 w-4 sm:h-5 sm:w-5" />
+        </div>
+      )}
+    </button>
+  );
+}
+
 export function PlayerProfileBar({
   avatar,
   onOpenMenu,
   onOpenSettings,
   onOpenProfile,
+  showAvatar = true,
 }: {
   playerName?: string;
   avatar?: AvatarConfig;
   onOpenMenu?: () => void;
   onOpenSettings?: () => void;
   onOpenProfile?: () => void;
+  showAvatar?: boolean;
 }) {
   const handleProfileClick = onOpenProfile || onOpenSettings;
 
   return (
     <div className="flex items-center gap-1 sm:gap-2">
-      {/* Anklickbares Profil-Icon (Avatar) direkt neben dem Einstellungs-Button */}
-      <button
-        type="button"
-        onClick={handleProfileClick}
-        title="Profil & Avatar anpassen"
-        aria-label="Profil & Avatar anpassen"
-        className="group relative flex h-9 w-9 sm:h-11 sm:w-11 landscape:h-9 landscape:w-9 items-center justify-center rounded-full border-2 border-[#F59E0B] bg-[#0F172A] p-[2px] shadow-[0_3px_0_rgba(15,23,42,0.35)] transition-transform hover:scale-105 active:scale-92 cursor-pointer shrink-0 focus:outline-none"
-      >
-        {avatar ? (
-          <Avatar config={avatar} size={28} className="sm:w-[34px] sm:h-[34px]" />
-        ) : (
-          <div className="flex h-7 w-7 sm:h-8 sm:w-8 items-center justify-center rounded-full bg-[#1E293B] text-[#FBBF24]">
-            <User className="h-4 w-4 sm:h-5 sm:w-5" />
-          </div>
-        )}
-      </button>
+      {/* Optionales Profil-Icon (Avatar) */}
+      {showAvatar && (
+        <PlayerAvatarButton avatar={avatar} onClick={handleProfileClick} />
+      )}
 
       {/* Zahnrad Icon-Button (neutrales Frost-Perlmutt) */}
       {onOpenSettings && (
