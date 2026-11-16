@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ArrowUpDown, ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import {
   GAMES,
   type Game,
-  type SortOption,
 } from './data/games';
 import { GameCard } from './components/GameCard';
 import { SplashScreen } from './components/SplashScreen';
@@ -40,14 +39,6 @@ interface BeforeInstallPromptEvent extends Event {
 
 export type NavSection = 'all' | 'duel' | 'party' | 'favorites' | 'recent';
 
-const SORT_CYCLE: { id: SortOption; label: string }[] = [
-  { id: 'alpha', label: 'A–Z' },
-  { id: 'featured', label: 'EMPFOHLEN' },
-  { id: 'players-asc', label: '2 → 8 SPIELER' },
-  { id: 'players-desc', label: '8 → 2 SPIELER' },
-  { id: 'duration-asc', label: 'DAUER' },
-];
-
 export function App() {
   const userProfile = useUserProfile();
 
@@ -68,10 +59,9 @@ export function App() {
   const [tvJoinError, setTvJoinError] = useState<string | null>(null);
   const [isJoiningLobby, setIsJoiningLobby] = useState(false);
 
-  // Filter, Suche, Sortierung, Favoriten & Zuletzt gespielt
+  // Filter, Suche, Favoriten & Zuletzt gespielt
   const [activeSection, setActiveSection] = useState<NavSection>('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortBy, setSortBy] = useState<SortOption>('featured');
   const [favoriteIds, setFavoriteIds] = useState<string[]>(() => getFavoriteGameIds());
   const [recentEntries, setRecentEntries] = useState<RecentGameEntry[]>(() => getRecentGames());
 
@@ -171,25 +161,13 @@ export function App() {
       return true;
     });
 
-    return [...filtered].sort((a, b) => {
-      if (activeSection === 'recent') {
-        return (recentPlayedMap.get(b.id) || 0) - (recentPlayedMap.get(a.id) || 0);
-      }
-      if (sortBy === 'players-asc') {
-        return a.maxPlayers - b.maxPlayers || a.title.localeCompare(b.title);
-      }
-      if (sortBy === 'players-desc') {
-        return b.maxPlayers - a.maxPlayers || a.title.localeCompare(b.title);
-      }
-      if (sortBy === 'duration-asc') {
-        return a.durationMinutes - b.durationMinutes;
-      }
-      if (sortBy === 'alpha') {
-        return a.title.localeCompare(b.title);
-      }
-      return 0;
-    });
-  }, [activeSection, favoriteIds, recentPlayedMap, searchQuery, sortBy]);
+    if (activeSection === 'recent') {
+      return [...filtered].sort(
+        (a, b) => (recentPlayedMap.get(b.id) || 0) - (recentPlayedMap.get(a.id) || 0)
+      );
+    }
+    return filtered;
+  }, [activeSection, favoriteIds, recentPlayedMap, searchQuery]);
 
   // Aktives Spiel bestimmen
   const activeGame = useMemo(() => {
@@ -276,13 +254,6 @@ export function App() {
     [triggerHaptic]
   );
 
-  const handleCycleSort = () => {
-    triggerHaptic();
-    const currentIdx = SORT_CYCLE.findIndex((s) => s.id === sortBy);
-    const nextIdx = (currentIdx + 1) % SORT_CYCLE.length;
-    setSortBy(SORT_CYCLE[nextIdx].id);
-  };
-
   // Gemeinsamer Filter-Status für Inline-Leiste und kompaktes Sandwich-Modal:
   // Beim Umschalten der Darstellung bleibt die Auswahl daher immer erhalten.
   const handleSelectSection = useCallback(
@@ -338,7 +309,7 @@ export function App() {
       scrollToCenterCard(targetIdx, true);
     });
     return () => cancelAnimationFrame(raf);
-  }, [isMobileViewport, isLandscapeMobile, showSplash, activeSection, sortBy, displayedGames, activeGame.id, scrollToCenterCard]);
+  }, [isMobileViewport, isLandscapeMobile, showSplash, activeSection, displayedGames, activeGame.id, scrollToCenterCard]);
 
   const handleCarouselScroll = useCallback(() => {
     if ((!isMobileViewport && !isLandscapeMobile) || programmaticScrollRef.current) return;
@@ -592,8 +563,6 @@ export function App() {
     isPointerDown.current = false;
   };
 
-  const currentSortLabel = SORT_CYCLE.find((s) => s.id === sortBy)?.label || 'EMPFOHLEN';
-
   return (
     <div className="relative flex h-dvh min-h-dvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
@@ -711,20 +680,6 @@ export function App() {
                   gapClassName="gap-1.5"
                   buttonClassName="h-7 px-2.5 text-xs"
                 />
-
-                <div className="shrink-0">
-                  <CrystalButton
-                    size="sm"
-                    tilt="right"
-                    variant="secondary"
-                    onClick={handleCycleSort}
-                    title="Sortierreihenfolge ändern"
-                    className="h-7 px-2.5 text-xs"
-                  >
-                    <ArrowUpDown className="h-3 w-3" />
-                    <span>{currentSortLabel}</span>
-                  </CrystalButton>
-                </div>
               </div>
 
               {/* ═══ STANDARDFALL (PORTRAIT & DESKTOP): 2 ZEILEN ═══ */}
@@ -733,20 +688,6 @@ export function App() {
                   <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
                     SPIELAUSWAHL
                   </span>
-
-                  {/* Auf Mobile (< 768px) rechtsbündig direkt neben "SPIELAUSWAHL" */}
-                  <div className="md:hidden shrink-0">
-                    <CrystalButton
-                      size="sm"
-                      tilt="right"
-                      variant="secondary"
-                      onClick={handleCycleSort}
-                      title="Sortierreihenfolge ändern"
-                    >
-                      <ArrowUpDown className="h-3.5 w-3.5" />
-                      <span>{currentSortLabel}</span>
-                    </CrystalButton>
-                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 py-0.5">
@@ -757,21 +698,6 @@ export function App() {
                     onOpenMenu={handleOpenFilterMenu}
                     counts={filterCounts}
                   />
-
-                  {/* Auf Desktop (>= 768px) ganz rechts bündig mit der rechten Spielkarte */}
-                  <div className="hidden md:block ml-auto shrink-0 pl-2">
-                    <CrystalButton
-                      size="sm"
-                      tilt="right"
-                      variant="secondary"
-                      onClick={handleCycleSort}
-                      title="Sortierreihenfolge ändern"
-                      className="xl:h-10 xl:px-4"
-                    >
-                      <ArrowUpDown className="h-3.5 w-3.5 xl:h-4 xl:w-4" />
-                      <span className="xl:text-xs">{currentSortLabel}</span>
-                    </CrystalButton>
-                  </div>
                 </div>
               </div>
             </div>
