@@ -68,12 +68,14 @@ export function OpenSubpageHeader({
   onBack,
   title,
   accentWord,
+  titleAction,
   rightSlot,
 }: {
   backLabel?: string;
   onBack: () => void;
   title: string;
   accentWord?: string;
+  titleAction?: ReactNode;
   rightSlot?: ReactNode;
 }) {
   return (
@@ -88,11 +90,14 @@ export function OpenSubpageHeader({
           <span>{backLabel}</span>
         </button>
 
-        <div className="min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
-          <span className="font-arcade block truncate text-sm sm:text-lg md:text-xl tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
-            {title}
-            {accentWord && <span className="text-[#FBBF24]"> {accentWord}</span>}
-          </span>
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
+            <span className="font-arcade block truncate text-sm sm:text-lg md:text-xl tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
+              {title}
+              {accentWord && <span className="text-[#FBBF24]"> {accentWord}</span>}
+            </span>
+          </div>
+          {titleAction}
         </div>
 
         <div className="shrink-0 flex items-center">{rightSlot}</div>
