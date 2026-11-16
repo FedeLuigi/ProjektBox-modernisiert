@@ -1,6 +1,3 @@
-import { useState } from 'react';
-import { Check, Copy } from 'lucide-react';
-import { useUserProfile } from '../utils/userProfile';
 import {
   CrystalButton,
   CrystalPanel,
@@ -30,20 +27,7 @@ export function SettingsSheet({
   onToggleVibration,
   onInstall,
 }: SettingsSheetProps) {
-  const profile = useUserProfile();
-  const [copiedId, setCopiedId] = useState(false);
-
   if (!isOpen) return null;
-
-  const handleCopyId = async () => {
-    try {
-      await navigator.clipboard.writeText(profile.id);
-      setCopiedId(true);
-      setTimeout(() => setCopiedId(false), 2000);
-    } catch {
-      // ignore
-    }
-  };
 
   return (
     <div
@@ -55,69 +39,42 @@ export function SettingsSheet({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-xl pt-3 landscape:pt-0"
+        className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-md pt-3 landscape:pt-0"
       >
         <CrystalPanel
           topTabLabel="OPTIONEN"
           title="EINSTELLUNGEN"
           accent="amber"
-          contentClassName="gap-3.5 landscape:gap-2.5 py-5 px-5 sm:px-6 landscape:py-3 landscape:px-4"
+          contentClassName="gap-3.5 landscape:gap-2.5 py-5 px-5 sm:px-6 landscape:py-3.5 landscape:px-5"
         >
-          {/* In Portrait untereinander, in Landscape 2-spaltig nebeneinander */}
-          <div className="flex flex-col landscape:grid landscape:grid-cols-2 gap-3.5 landscape:gap-4 w-full">
-            {/* SPALTE 1: Audio / Haptik */}
-            <div className="flex flex-col items-center gap-2.5 sm:gap-3 w-full justify-center">
-              <CrystalSlider
-                label="MUSIK"
-                value={soundEnabled ? 82 : 18}
-                onChange={(val) => onToggleSound(val > 50)}
-              />
+          {/* Gleichmäßig zentrierte Audio-/Haptik-Optionen & optionale Installation */}
+          <div className="flex flex-col items-center gap-3 landscape:gap-2.5 w-full">
+            <CrystalSlider
+              label="MUSIK"
+              value={soundEnabled ? 82 : 18}
+              onChange={(val) => onToggleSound(val > 50)}
+            />
 
-              <CrystalSlider
-                label="SOUNDEFFEKTE"
-                value={vibrationEnabled ? 82 : 18}
-                onChange={(val) => onToggleVibration(val > 50)}
-              />
-            </div>
+            <CrystalSlider
+              label="SOUNDEFFEKTE"
+              value={vibrationEnabled ? 82 : 18}
+              onChange={(val) => onToggleVibration(val > 50)}
+            />
 
-            {/* SPALTE 2: Installation & Spieler-ID */}
-            <div className="flex flex-col items-center gap-2.5 w-full justify-center">
-              {onInstall && (
-                <CrystalButton
-                  size="sm"
-                  variant="secondary"
-                  onClick={onInstall}
-                  className="w-full max-w-[240px] h-8 text-xs"
-                >
-                  APP INSTALLIEREN
-                </CrystalButton>
-              )}
-
+            {onInstall && (
               <CrystalButton
                 size="sm"
                 variant="secondary"
-                tilt="right"
-                onClick={handleCopyId}
-                title="Spieler-ID in die Zwischenablage kopieren"
-                className="w-full max-w-[240px] h-8 text-xs"
+                onClick={onInstall}
+                className="w-full max-w-[240px] h-8 text-xs mt-0.5"
               >
-                {copiedId ? (
-                  <>
-                    <Check className="h-3.5 w-3.5 text-[#059669] stroke-[3]" />
-                    <span>ID KOPIERT!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy className="h-3.5 w-3.5" />
-                    <span>SPIELER-ID KOPIEREN</span>
-                  </>
-                )}
+                APP INSTALLIEREN
               </CrystalButton>
-            </div>
+            )}
           </div>
 
           {/* Schließen / Speichern Button unten */}
-          <div className="w-full pt-2 landscape:pt-1 flex justify-center">
+          <div className="w-full pt-1.5 landscape:pt-1 flex justify-center">
             <CrystalButton
               size="md"
               variant="primary"
