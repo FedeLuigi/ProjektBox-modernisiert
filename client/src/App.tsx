@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react';
 import {
   GAMES,
   type Game,
@@ -15,7 +15,7 @@ import {
   PlayerProfileBar,
   SectionFilterBar,
 } from './components/ArcadeHudElements';
-import { CrystalButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
+import { CrystalButton, CrystalIconButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import {
@@ -71,6 +71,7 @@ export function App() {
   const [showSettings, setShowSettings] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [showMenuModal, setShowMenuModal] = useState(false);
+  const [showBlankPage, setShowBlankPage] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
 
   // Standardmäßig liegt der Fokus auf dem mittleren Spiel (Index 1 = Vier gewinnt)
@@ -502,6 +503,10 @@ export function App() {
         if (e.key === 'Escape') setShowMenuModal(false);
         return;
       }
+      if (showBlankPage) {
+        if (e.key === 'Escape') setShowBlankPage(false);
+        return;
+      }
       if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
         e.preventDefault();
         handleNext();
@@ -538,6 +543,7 @@ export function App() {
     multiplayerGame,
     showTvJoinModal,
     showMenuModal,
+    showBlankPage,
     activeGame,
     handleNext,
     handlePrev,
@@ -629,9 +635,24 @@ export function App() {
         <header className="tablet-header landscape-top-bar relative z-30 flex md:grid md:grid-cols-[1fr_auto_1fr] shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
           <div className="hidden md:block landscape:hidden!" aria-hidden="true" />
 
-          {/* Mitte (ab Tablet) / Links (Mobile Portrait): Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
-          <div className="landscape-hide-logo md:justify-self-center landscape:hidden!">
-            <ArcadeLogoHeader />
+          {/* Mitte (ab Tablet) / Links (Mobile Portrait): Trapezförmiger Crystal-Header ("PROJEKT BOX") + neuer Button daneben */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 md:justify-self-center">
+            <div className="landscape-hide-logo landscape:hidden!">
+              <ArcadeLogoHeader />
+            </div>
+            <CrystalIconButton
+              size="sm"
+              variant="crystal"
+              tilt="right"
+              onClick={() => {
+                triggerHaptic();
+                setShowBlankPage(true);
+              }}
+              title="Leere Ansicht öffnen"
+              aria-label="Leere Ansicht öffnen"
+            >
+              <Plus className="h-4 w-4 stroke-[2.8]" />
+            </CrystalIconButton>
           </div>
 
           {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen */}
@@ -867,6 +888,36 @@ export function App() {
             saveUserProfile({ avatar, name });
           }}
         />
+      )}
+
+      {/* ─── 8. Leere Fläche mit Hauptscreen-Hintergrund & Zurück-Button ─── */}
+      {showBlankPage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Leere Ansicht"
+          className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden bg-[#1B2B40] text-[#1E293B] select-none animate-fade-in"
+        >
+          <IslandBackground />
+
+          <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-hidden">
+            <header className="tablet-header flex shrink-0 items-center justify-start gap-2 pb-2">
+              <CrystalButton
+                size="sm"
+                variant="secondary"
+                tilt="left"
+                onClick={() => {
+                  triggerHaptic();
+                  setShowBlankPage(false);
+                }}
+              >
+                ZURÜCK
+              </CrystalButton>
+            </header>
+
+            <main className="flex flex-1 min-h-0 w-full" />
+          </div>
+        </div>
       )}
     </div>
   );
