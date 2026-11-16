@@ -57,7 +57,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
     } catch {
       // ignore
     }
-    return 'lobby-open';
+    return 'lobby-open-cinema';
   });
 
   const gameId = game.id;
@@ -303,46 +303,131 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
           rightSlot={<ConnectionStatusBadge />}
         />
 
-        <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto overflow-x-hidden px-4 sm:px-6 pt-3 pb-4 landscape:py-2">
+        <main className="tablet-screen-main relative mx-auto flex w-full max-w-[1440px] flex-1 min-h-0 flex-col overflow-y-auto overflow-x-hidden px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
           {errorMsg && (
-            <div className="font-arcade mb-4 w-full max-w-xl rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
+            <div className="font-arcade mb-4 w-full rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
               {errorMsg}
             </div>
           )}
 
-          {/* 1. OFFENE BÜHNE (SPLIT): Links frei schwebendes Artwork, rechts rahmenloses Setup */}
-          {lobbyLayout === 'lobby-open-split' && (
-            <div className="my-auto grid w-full max-w-4xl grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
-              <div className="flex flex-col gap-3">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+          {/* 1. KINO-PANORAMA: Volle Breite – links großes Artwork, rechts offenes Setup */}
+          {lobbyLayout === 'lobby-open-cinema' && (
+            <div className="my-auto grid w-full grid-cols-1 lg:grid-cols-[1.2fr_1fr] items-center gap-8 lg:gap-14">
+              <div className="flex flex-col gap-4">
+                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-3xl border border-white/15 shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
                   <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
                   <span
                     style={{ backgroundColor: palette.bg }}
-                    className="font-arcade absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] text-white uppercase shadow"
+                    className="font-arcade absolute bottom-4 left-4 rounded-full px-3.5 py-1 text-xs text-white uppercase shadow"
                   >
                     {game.players} • {game.duration}
                   </span>
                 </div>
                 <div className="px-1">
-                  <h2 id="lobby-screen-title" className="font-arcade text-xl tracking-wider text-white uppercase">
+                  <h2 id="lobby-screen-title" className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
                     {game.title}
                   </h2>
-                  <p className="mt-1 text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
+                  <p className="mt-1 text-sm text-[#94A3B8]">{game.description}</p>
                 </div>
               </div>
 
-              <form onSubmit={handleCreateLobby} className="flex flex-col gap-6">
-                <div className="border-b-2 border-[#F59E0B] self-start pb-0.5">
-                  <span className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
+              <form onSubmit={handleCreateLobby} className="flex flex-col gap-7">
+                <div className="border-b-2 border-[#F59E0B] self-start pb-1">
+                  <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
                     LOBBY <span className="text-[#FBBF24]">STARTEN</span>
                   </span>
                 </div>
 
-                <div className="flex flex-col gap-1.5">
+                <div className="flex flex-col gap-2">
                   <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
                     RAUM-NAME
                   </label>
-                  {roomNameInput(true)}
+                  {roomNameInput(true, true)}
+                </div>
+
+                <div className="flex flex-col items-start gap-2.5">
+                  <span className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
+                    SPIELMODUS
+                  </span>
+                  {underlineModeTabs}
+                  <p className="text-xs sm:text-sm text-[#CBD5E1]">
+                    {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
+                  </p>
+                </div>
+
+                <div className="max-w-sm">{createButton}</div>
+              </form>
+            </div>
+          )}
+
+          {/* 2. VOLLBREITE BÜHNE: Streckt Kopfzeile, Eingabe und Start über die gesamte Höhe */}
+          {lobbyLayout === 'lobby-open-stage' && (
+            <form onSubmit={handleCreateLobby} className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6 py-2 sm:py-6">
+              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-4">
+                <div>
+                  <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
+                    {game.title} • {game.players}
+                  </span>
+                  <h2 id="lobby-screen-title" className="font-arcade mt-1 text-3xl sm:text-5xl tracking-wider text-white uppercase">
+                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
+                  </h2>
+                </div>
+                <p className="max-w-md text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
+              </div>
+
+              <div className="my-auto flex w-full flex-col gap-3">
+                <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-[0.2em] text-[#94A3B8] uppercase">
+                  RAUM-NAME
+                </label>
+                {roomNameInput(true, true)}
+              </div>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-end justify-between gap-5 border-t border-white/15 pt-5">
+                <div className="flex flex-col gap-2">
+                  {underlineModeTabs}
+                  <p className="text-xs text-[#94A3B8]">
+                    {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
+                  </p>
+                </div>
+                <div className="w-full sm:w-64">{createButton}</div>
+              </div>
+            </form>
+          )}
+
+          {/* 3. ASYMMETRISCHES STUDIO: Schlanke Info-Spalte links, große Setup-Fläche rechts */}
+          {lobbyLayout === 'lobby-open-asymmetric' && (
+            <div className="flex flex-1 min-h-0 w-full flex-col lg:flex-row gap-8 lg:gap-12">
+              <aside className="flex shrink-0 flex-col justify-between gap-5 border-b lg:border-b-0 lg:border-r border-white/15 pb-5 lg:pb-0 lg:pr-10 lg:w-80">
+                <div className="flex flex-col gap-3">
+                  <span
+                    style={{ backgroundColor: palette.bg }}
+                    className="font-arcade self-start rounded-full px-3 py-1 text-[11px] text-white uppercase"
+                  >
+                    {game.players} • {game.duration}
+                  </span>
+                  <h2 id="lobby-screen-title" className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+                    {game.title}
+                  </h2>
+                  <p className="text-sm leading-relaxed text-[#94A3B8]">{game.description}</p>
+                </div>
+
+                <div className="hidden lg:block overflow-hidden rounded-2xl border border-white/15 aspect-[16/10]">
+                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
+                </div>
+              </aside>
+
+              <form onSubmit={handleCreateLobby} className="my-auto flex flex-1 flex-col justify-center gap-7">
+                <div className="border-b-2 border-[#F59E0B] self-start pb-1">
+                  <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
+                  </span>
+                </div>
+
+                <div className="flex flex-col gap-2 max-w-2xl">
+                  <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
+                    RAUM-NAME
+                  </label>
+                  {roomNameInput(true, true)}
                 </div>
 
                 <div className="flex flex-col items-start gap-2">
@@ -350,9 +435,6 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                     SPIELMODUS
                   </span>
                   {underlineModeTabs}
-                  <p className="text-xs text-[#CBD5E1]">
-                    {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
-                  </p>
                 </div>
 
                 <div className="max-w-xs">{createButton}</div>
@@ -360,27 +442,120 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
             </div>
           )}
 
-          {/* 2. OFFENE BÜHNE (EDITORIAL): Großzügige linksbündige Typografie + Haarlinie */}
-          {lobbyLayout === 'lobby-open-editorial' && (
-            <form onSubmit={handleCreateLobby} className="my-auto flex w-full max-w-4xl flex-col gap-7">
-              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-3">
-                <div>
-                  <span className="font-arcade text-[11px] tracking-widest text-[#FBBF24] uppercase">
-                    {game.players} • {game.duration}
-                  </span>
-                  <h2 id="lobby-screen-title" className="font-arcade mt-1 text-2xl sm:text-4xl tracking-wider text-white uppercase">
+          {/* 4. ATMOSPHÄRISCHES VOLLBILD: Spiel-Artwork als weicher Vollbild-Hintergrund */}
+          {lobbyLayout === 'lobby-open-backdrop' && (
+            <div className="relative flex flex-1 min-h-0 w-full items-center justify-center">
+              <div className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-25">
+                <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover scale-105 blur-[3px]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#1B2B40] via-[#1B2B40]/65 to-[#1B2B40]/90" />
+              </div>
+
+              <form onSubmit={handleCreateLobby} className="relative z-10 my-auto flex w-full max-w-3xl flex-col items-center gap-7 text-center">
+                <div className="border-b-2 border-[#F59E0B] px-4 pb-1">
+                  <h2 id="lobby-screen-title" className="font-arcade text-3xl sm:text-5xl tracking-wider text-white uppercase">
                     LOBBY <span className="text-[#FBBF24]">STARTEN</span>
                   </h2>
                 </div>
-                <p className="max-w-xs text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
+
+                <div className="w-full max-w-xl">{roomNameInput(false, true)}</div>
+
+                {underlineModeTabs}
+
+                <p className="text-xs sm:text-sm text-[#CBD5E1] -mt-3">
+                  {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
+                </p>
+
+                <div className="w-full max-w-sm">{createButton}</div>
+              </form>
+            </div>
+          )}
+
+          {/* 5. 3-ZONEN-COCKPIT: Drei offene Spalten über die ganze Bildschirmbreite */}
+          {lobbyLayout === 'lobby-open-cockpit' && (
+            <form onSubmit={handleCreateLobby} className="my-auto grid w-full grid-cols-1 lg:grid-cols-3 items-stretch gap-8">
+              <div className="flex flex-col justify-center gap-3 lg:border-r lg:border-white/15 lg:pr-8">
+                <div className="aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/15">
+                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
+                </div>
+                <h2 id="lobby-screen-title" className="font-arcade text-xl tracking-wider text-white uppercase">
+                  {game.title}
+                </h2>
+                <p className="text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-[1.2fr_auto_auto] items-end gap-6">
-                <div className="flex flex-col gap-1.5">
+              <div className="flex flex-col justify-center gap-3 lg:border-r lg:border-white/15 lg:pr-8">
+                <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
+                  SCHRITT 1 • RAUM-NAME
+                </span>
+                {roomNameInput(true, true)}
+                <p className="text-xs text-[#94A3B8]">
+                  Wähle einen eigenen Namen oder würfle einen zufälligen.
+                </p>
+              </div>
+
+              <div className="flex flex-col justify-center gap-5">
+                <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
+                  SCHRITT 2 • MODUS & START
+                </span>
+                {underlineModeTabs}
+                <p className="text-xs text-[#CBD5E1]">
+                  {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
+                </p>
+                {createButton}
+              </div>
+            </form>
+          )}
+
+          {/* 6. BÜHNE + BOTTOM-LEISTE: Oben Showcase, unten durchgängige offene Steuerleiste */}
+          {lobbyLayout === 'lobby-open-bottom-dock' && (
+            <form onSubmit={handleCreateLobby} className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
+              <div className="my-auto grid w-full grid-cols-1 md:grid-cols-[1fr_1.1fr] items-center gap-8 py-4">
+                <div className="aspect-[16/10] w-full max-w-xl overflow-hidden rounded-3xl border border-white/15 shadow-[0_24px_60px_rgba(0,0,0,0.45)]">
+                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
+                </div>
+                <div className="flex flex-col gap-3">
+                  <span
+                    style={{ backgroundColor: palette.bg }}
+                    className="font-arcade self-start rounded-full px-3 py-1 text-xs text-white uppercase"
+                  >
+                    {game.players} • {game.duration}
+                  </span>
+                  <h2 id="lobby-screen-title" className="font-arcade text-3xl sm:text-5xl tracking-wider text-white uppercase">
+                    {game.title}
+                  </h2>
+                  <p className="max-w-lg text-sm sm:text-base text-[#CBD5E1]">{game.description}</p>
+                </div>
+              </div>
+
+              <div className="flex w-full flex-col lg:flex-row items-stretch lg:items-end gap-5 border-t border-white/15 pt-5">
+                <div className="flex-1 min-w-0">{roomNameInput(true)}</div>
+                <div className="self-center lg:self-end shrink-0">{underlineModeTabs}</div>
+                <div className="w-full lg:w-56 shrink-0">{createButton}</div>
+              </div>
+            </form>
+          )}
+
+          {/* 7. EDITORIAL VOLLBILD: Großformatige Magazin-Typografie über die volle Breite */}
+          {lobbyLayout === 'lobby-open-editorial' && (
+            <form onSubmit={handleCreateLobby} className="my-auto flex w-full flex-col gap-8">
+              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-4">
+                <div>
+                  <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
+                    {game.players} • {game.duration}
+                  </span>
+                  <h2 id="lobby-screen-title" className="font-arcade mt-1 text-3xl sm:text-5xl tracking-wider text-white uppercase">
+                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
+                  </h2>
+                </div>
+                <p className="max-w-md text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-[1.4fr_auto_auto] items-end gap-8">
+                <div className="flex flex-col gap-2">
                   <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
                     RAUM-NAME
                   </label>
-                  {roomNameInput(true)}
+                  {roomNameInput(true, true)}
                 </div>
 
                 <div className="flex flex-col gap-2">
@@ -390,39 +565,18 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                   {underlineModeTabs}
                 </div>
 
-                <div className="w-full md:w-52">{createButton}</div>
+                <div className="w-full lg:w-60">{createButton}</div>
               </div>
             </form>
           )}
 
-          {/* 3. OFFENE BÜHNE (INLINE): Alles schwebt ohne Rahmen in einer offenen Zeile */}
-          {lobbyLayout === 'lobby-open-inline' && (
-            <form onSubmit={handleCreateLobby} className="my-auto flex w-full max-w-4xl flex-col items-center gap-6">
-              <div className="border-b-2 border-[#F59E0B] px-3 pb-1 text-center">
-                <h2 id="lobby-screen-title" className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
-                  LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                </h2>
-              </div>
-
-              <div className="flex w-full flex-col md:flex-row items-stretch md:items-end gap-5 border-b border-white/15 pb-5">
-                <div className="flex-1 min-w-0">{roomNameInput(true)}</div>
-                <div className="self-center md:self-end shrink-0">{underlineModeTabs}</div>
-                <div className="w-full md:w-52 shrink-0">{createButton}</div>
-              </div>
-
-              <p className="text-xs text-[#94A3B8]">
-                {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
-              </p>
-            </form>
-          )}
-
-          {/* 4. OFFENE BÜHNE (FOKUS / MINIMAL): Großes Raum-Eingabefeld im Mittelpunkt */}
+          {/* 8. ZEN-FOKUS: Extra breites Eingabefeld mit maximalem Freiraum */}
           {lobbyLayout === 'lobby-open-minimal' && (
             <form
               onSubmit={handleCreateLobby}
-              className="my-auto flex w-full max-w-lg flex-col items-center gap-7 px-2 text-center"
+              className="my-auto mx-auto flex w-full max-w-3xl flex-col items-center gap-8 px-2 text-center"
             >
-              <span className="font-arcade text-xs tracking-[0.2em] text-[#94A3B8] uppercase">
+              <span className="font-arcade text-xs sm:text-sm tracking-[0.25em] text-[#94A3B8] uppercase">
                 RAUM-NAME FÜR {game.title}
               </span>
 
@@ -430,36 +584,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
 
               {underlineModeTabs}
 
-              <div className="w-full max-w-xs">{createButton}</div>
-            </form>
-          )}
-
-          {/* 5. OFFENE BÜHNE (KLASSIK): Zentriert und komplett rahmenlos */}
-          {lobbyLayout === 'lobby-open' && (
-            <form
-              onSubmit={handleCreateLobby}
-              className="my-auto flex w-full max-w-md flex-col items-center gap-6 px-2 text-center"
-            >
-              <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-                <h2 id="lobby-screen-title" className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
-                  LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                </h2>
-              </div>
-
-              <div className="flex w-full flex-col items-center gap-2">
-                <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                  RAUM-NAME
-                </label>
-                {roomNameInput(false)}
-              </div>
-
-              {underlineModeTabs}
-
-              <p className="text-xs text-[#CBD5E1] -mt-3">
-                {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
-              </p>
-
-              <div className="w-full max-w-xs">{createButton}</div>
+              <div className="w-full max-w-sm">{createButton}</div>
             </form>
           )}
         </main>
