@@ -175,7 +175,7 @@ export function OpenGalleryLayout({
       {/* Filter-Tabs links & adaptive Suchleiste rechts auf derselben Höhe ohne Zeilenumbruch */}
       <div
         ref={barRef}
-        className="flex w-full shrink-0 flex-nowrap items-end justify-between gap-3 border-b border-white/15"
+        className="flex w-full shrink-0 flex-nowrap items-end justify-between gap-3"
       >
         <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-4 sm:gap-5 overflow-x-auto">
           {SECTION_ITEMS.map((item) => {
