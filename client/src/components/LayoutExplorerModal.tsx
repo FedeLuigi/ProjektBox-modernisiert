@@ -1,10 +1,10 @@
 import {
   Check,
-  Columns2,
-  Film,
+  Compass,
   LayoutGrid,
-  List,
   Maximize2,
+  Minimize2,
+  SlidersHorizontal,
   Sparkles,
 } from 'lucide-react';
 import { type CrystalAccent } from '../data/games';
@@ -14,10 +14,10 @@ import { IslandBackground } from './IslandBackground';
 export type MenuLayoutVariant =
   | 'carousel'
   | 'open'
-  | 'grid'
-  | 'sidebar'
-  | 'compact'
-  | 'cinema';
+  | 'open-pills'
+  | 'open-dock'
+  | 'open-gallery'
+  | 'open-minimal';
 
 export interface LayoutVariantMeta {
   id: MenuLayoutVariant;
@@ -33,49 +33,49 @@ export const MENU_LAYOUT_VARIANTS: LayoutVariantMeta[] = [
     id: 'carousel',
     title: 'CLASSIC KARUSSELL',
     tag: 'STANDARD',
-    description: 'Fokus auf die mittlere Spielkarte mit seitlicher Vorschau und Pfeil-Navigation.',
+    description: 'Das gewohnte Standard-Karussell mit mittiger Fokuskarte und klassischer Filterleiste.',
     accent: 'indigo',
     icon: Sparkles,
   },
   {
     id: 'open',
     title: 'OPEN STAGE',
-    tag: 'OFFENES DESIGN',
-    description: 'Luftig & rahmenlos direkt auf dem Hintergrund – ohne schwere Boxen, viel Raum für Artwork.',
+    tag: 'OFFEN • BASIS',
+    description: 'Rahmenloses Artwork mit Akzent-Glow und offener Typografie direkt über dem Hintergrund.',
     accent: 'cyan',
     icon: Maximize2,
   },
   {
-    id: 'grid',
-    title: 'ARCADE GRID',
-    tag: 'ÜBERSICHT',
-    description: 'Alle Spiele gleichzeitig im klaren Mehrspalten-Raster für schnellen Überblick.',
+    id: 'open-pills',
+    title: 'OPEN GLASS PILLS',
+    tag: 'OFFEN + PILL-FILTER',
+    description: 'Transparente Glas-Pills für Filter & Suche, offener Split-Screen mit Artwork rechts.',
+    accent: 'emerald',
+    icon: SlidersHorizontal,
+  },
+  {
+    id: 'open-dock',
+    title: 'OPEN FLOATING DOCK',
+    tag: 'OFFEN + UNTERES DOCK',
+    description: 'Freier Kopf ohne Balken – Filter, Suche und Spielwahl schweben als Dock am unteren Rand.',
     accent: 'amber',
+    icon: Compass,
+  },
+  {
+    id: 'open-gallery',
+    title: 'OPEN GALLERY',
+    tag: 'OFFEN + UNTERSTRICH-TABS',
+    description: 'Unterstrich-Tabs & rahmenlose Suche oben, darunter alle Spiele als offene schwebende Galerie.',
+    accent: 'rose',
     icon: LayoutGrid,
   },
   {
-    id: 'sidebar',
-    title: 'COMMAND CENTER',
-    tag: 'SPLIT-VIEW',
-    description: 'Spiel-Liste links in der Seitenleiste, große Hero-Bühne rechts.',
-    accent: 'emerald',
-    icon: Columns2,
-  },
-  {
-    id: 'compact',
-    title: 'QUICK-LAUNCH LISTE',
-    tag: 'KOMPAKT',
-    description: 'Platzsparende Crystal-Zeilen mit direktem Play- & TV-Start auf einen Blick.',
-    accent: 'rose',
-    icon: List,
-  },
-  {
-    id: 'cinema',
-    title: 'SPOTLIGHT DECK',
-    tag: 'EXPERIMENTELL',
-    description: 'Breites Hero-Banner mit integriertem Artwork und schwebendem Icon-Dock unten.',
+    id: 'open-minimal',
+    title: 'OPEN MINIMAL',
+    tag: 'OFFEN + EXPAND-SUCHE',
+    description: 'Ghost-Filter & ausklappbare Suchlupe mit fokussierter Hero-Bühne und Seiten-Vorschau.',
     accent: 'violet',
-    icon: Film,
+    icon: Minimize2,
   },
 ];
 
@@ -86,8 +86,8 @@ interface LayoutExplorerModalProps {
 }
 
 /**
- * Design-Explorations-Ansicht zum Live-Testen und Vergleichen verschiedener
- * Hauptmenü-Layouts im einheitlichen Crystal-UI-Design.
+ * Design-Explorations-Ansicht zum Live-Testen und Vergleichen des Standard-Karussells
+ * mit verschiedenen offenen Hauptmenü- & Filter-Designs.
  */
 export function LayoutExplorerModal({
   activeLayout,
@@ -122,13 +122,13 @@ export function LayoutExplorerModal({
         <main className="mx-auto my-auto flex w-full max-w-5xl flex-col items-center justify-center py-2 sm:py-3">
           <CrystalPanel
             topTabLabel="DESIGN-EXPLORATION"
-            title="HAUPTMENÜ-VARIANTEN"
+            title="OFFENE DESIGNS & KARUSSELL"
             accent="indigo"
             className="w-full"
             contentClassName="gap-3 sm:gap-4 py-4 px-3.5 sm:py-5 sm:px-6"
           >
             <p className="text-center text-xs sm:text-sm font-semibold text-[#475569] max-w-xl">
-              Wähle eine Layout-Variante, um unterschiedliche Darstellungen – inklusive offenem Design – direkt live zu testen.
+              Vergleiche das Standard-Karussell mit verschiedenen offenen Design-Ansätzen inklusive neuer Filter- und Such-Varianten.
             </p>
 
             <div className="grid w-full grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5 sm:gap-3.5">

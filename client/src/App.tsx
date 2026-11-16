@@ -19,11 +19,11 @@ import {
 import { CrystalButton, CrystalIconButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LayoutExplorerModal, type MenuLayoutVariant } from './components/LayoutExplorerModal';
 import {
-  ArcadeGridLayout,
-  CommandCenterLayout,
+  OpenFloatingDockLayout,
+  OpenGalleryLayout,
+  OpenGlassPillsLayout,
+  OpenMinimalLayout,
   OpenStageLayout,
-  QuickLaunchListLayout,
-  SpotlightDeckLayout,
 } from './components/MainMenuLayouts';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
@@ -87,10 +87,10 @@ export function App() {
       if (
         saved === 'carousel' ||
         saved === 'open' ||
-        saved === 'grid' ||
-        saved === 'sidebar' ||
-        saved === 'compact' ||
-        saved === 'cinema'
+        saved === 'open-pills' ||
+        saved === 'open-dock' ||
+        saved === 'open-gallery' ||
+        saved === 'open-minimal'
       ) {
         return saved;
       }
@@ -722,7 +722,8 @@ export function App() {
             dadurch bleibt die Filterleiste bei vielen, wenigen und null Spielen exakt an derselben Position. */}
         <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:p-0 landscape:justify-stretch">
           <div className="widescreen-main-container landscape-main-container mx-auto flex w-full flex-1 min-h-0 md:max-h-[46rem] max-w-[1005px] xl:max-w-[1420px] landscape:max-w-none flex-col gap-1.5 sm:gap-2">
-            {/* 1. FILTERBEREICH: ÜBERSCHRIFT, FILTER- & SUCH-LEISTE (fester Platz, schrumpft nie) */}
+            {/* 1. STANDARD-FILTERBEREICH: Nur bei Classic Karussell & Basis Open Stage (die anderen offenen Designs bringen eigene Filter-/Such-Varianten mit) */}
+            {(menuLayout === 'carousel' || menuLayout === 'open') && (
             <div className="shrink-0">
               {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
               <div className="hidden landscape:flex items-center justify-between gap-2.5 px-0.5 py-0 w-full">
@@ -773,62 +774,83 @@ export function App() {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* 2. SPIELEBEREICH: Karussell oder Leer-Meldung – nimmt den restlichen Platz ein */}
+            {/* 2. SPIELEBEREICH: Karussell, Offene Designs oder Leer-Meldung */}
             <section
               aria-label="Spiele"
               className="flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center landscape:justify-stretch"
             >
-            {displayedGames.length > 0 ? (
+            {menuLayout === 'open-pills' ? (
+              <OpenGlassPillsLayout
+                games={displayedGames}
+                activeGame={activeGame}
+                favoriteIds={favoriteIds}
+                activeSection={activeSection}
+                searchQuery={searchQuery}
+                filterCounts={filterCounts}
+                onSelectGame={setActiveGameId}
+                onLaunchGame={handleLaunchGame}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectSection={handleSelectSection}
+                onSearchChange={setSearchQuery}
+              />
+            ) : menuLayout === 'open-dock' ? (
+              <OpenFloatingDockLayout
+                games={displayedGames}
+                activeGame={activeGame}
+                favoriteIds={favoriteIds}
+                activeSection={activeSection}
+                searchQuery={searchQuery}
+                filterCounts={filterCounts}
+                onSelectGame={setActiveGameId}
+                onLaunchGame={handleLaunchGame}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectSection={handleSelectSection}
+                onSearchChange={setSearchQuery}
+              />
+            ) : menuLayout === 'open-gallery' ? (
+              <OpenGalleryLayout
+                games={displayedGames}
+                activeGame={activeGame}
+                favoriteIds={favoriteIds}
+                activeSection={activeSection}
+                searchQuery={searchQuery}
+                filterCounts={filterCounts}
+                onSelectGame={setActiveGameId}
+                onLaunchGame={handleLaunchGame}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectSection={handleSelectSection}
+                onSearchChange={setSearchQuery}
+              />
+            ) : menuLayout === 'open-minimal' ? (
+              <OpenMinimalLayout
+                games={displayedGames}
+                activeGame={activeGame}
+                favoriteIds={favoriteIds}
+                activeSection={activeSection}
+                searchQuery={searchQuery}
+                filterCounts={filterCounts}
+                onSelectGame={setActiveGameId}
+                onLaunchGame={handleLaunchGame}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectSection={handleSelectSection}
+                onSearchChange={setSearchQuery}
+              />
+            ) : displayedGames.length > 0 ? (
               menuLayout === 'open' ? (
                 <OpenStageLayout
                   games={displayedGames}
                   activeGame={activeGame}
                   favoriteIds={favoriteIds}
-                  lastPlayedGameId={mostRecentGameId}
+                  activeSection={activeSection}
+                  searchQuery={searchQuery}
+                  filterCounts={filterCounts}
                   onSelectGame={setActiveGameId}
                   onLaunchGame={handleLaunchGame}
                   onToggleFavorite={handleToggleFavorite}
-                />
-              ) : menuLayout === 'grid' ? (
-                <ArcadeGridLayout
-                  games={displayedGames}
-                  activeGame={activeGame}
-                  favoriteIds={favoriteIds}
-                  lastPlayedGameId={mostRecentGameId}
-                  onSelectGame={setActiveGameId}
-                  onLaunchGame={handleLaunchGame}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ) : menuLayout === 'sidebar' ? (
-                <CommandCenterLayout
-                  games={displayedGames}
-                  activeGame={activeGame}
-                  favoriteIds={favoriteIds}
-                  lastPlayedGameId={mostRecentGameId}
-                  onSelectGame={setActiveGameId}
-                  onLaunchGame={handleLaunchGame}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ) : menuLayout === 'compact' ? (
-                <QuickLaunchListLayout
-                  games={displayedGames}
-                  activeGame={activeGame}
-                  favoriteIds={favoriteIds}
-                  lastPlayedGameId={mostRecentGameId}
-                  onSelectGame={setActiveGameId}
-                  onLaunchGame={handleLaunchGame}
-                  onToggleFavorite={handleToggleFavorite}
-                />
-              ) : menuLayout === 'cinema' ? (
-                <SpotlightDeckLayout
-                  games={displayedGames}
-                  activeGame={activeGame}
-                  favoriteIds={favoriteIds}
-                  lastPlayedGameId={mostRecentGameId}
-                  onSelectGame={setActiveGameId}
-                  onLaunchGame={handleLaunchGame}
-                  onToggleFavorite={handleToggleFavorite}
+                  onSelectSection={handleSelectSection}
+                  onSearchChange={setSearchQuery}
                 />
               ) : (
               <div className="landscape-carousel-row relative flex w-full landscape:flex-1 landscape:min-h-0 items-center landscape:items-stretch justify-center">
