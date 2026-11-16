@@ -123,31 +123,27 @@ export function AvatarCustomizerModal({
 
   const renderPager = (safePage: number, totalPages: number) => (
     <div className="flex h-7 shrink-0 items-center justify-center gap-2.5">
-      {totalPages > 1 ? (
-        <>
-          <button
-            type="button"
-            disabled={safePage === 0}
-            onClick={() => setPage((p) => Math.max(0, p - 1))}
-            aria-label="Vorherige Ansicht"
-            className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed active:scale-95"
-          >
-            <ChevronLeft className="h-4 w-4 stroke-[2.6]" />
-          </button>
-          <span className="font-arcade text-xs text-[#334155] min-w-[36px] text-center">
-            {safePage + 1} / {totalPages}
-          </span>
-          <button
-            type="button"
-            disabled={safePage >= totalPages - 1}
-            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-            aria-label="Nächste Ansicht"
-            className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed active:scale-95"
-          >
-            <ChevronRight className="h-4 w-4 stroke-[2.6]" />
-          </button>
-        </>
-      ) : null}
+      <button
+        type="button"
+        disabled={safePage === 0}
+        onClick={() => setPage((p) => Math.max(0, p - 1))}
+        aria-label="Vorherige Ansicht"
+        className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer active:scale-95 disabled:opacity-45 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:border-[#94A3B8] disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+      >
+        <ChevronLeft className="h-4 w-4 stroke-[2.6]" />
+      </button>
+      <span className="font-arcade text-xs text-[#334155] min-w-[36px] text-center">
+        {safePage + 1} / {totalPages}
+      </span>
+      <button
+        type="button"
+        disabled={safePage >= totalPages - 1}
+        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+        aria-label="Nächste Ansicht"
+        className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer active:scale-95 disabled:opacity-45 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:border-[#94A3B8] disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+      >
+        <ChevronRight className="h-4 w-4 stroke-[2.6]" />
+      </button>
     </div>
   );
 
