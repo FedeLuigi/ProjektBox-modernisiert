@@ -1,11 +1,11 @@
 import { ArrowLeft, Check, Layers } from 'lucide-react';
 
 export type LobbyLayoutId =
-  | 'lobby-card'
-  | 'lobby-split'
   | 'lobby-open'
-  | 'lobby-compact-dock'
-  | 'lobby-hero-banner';
+  | 'lobby-open-split'
+  | 'lobby-open-editorial'
+  | 'lobby-open-inline'
+  | 'lobby-open-minimal';
 
 export interface LobbyLayoutOption {
   id: LobbyLayoutId;
@@ -15,123 +15,125 @@ export interface LobbyLayoutOption {
 
 export const LOBBY_LAYOUT_OPTIONS: LobbyLayoutOption[] = [
   {
-    id: 'lobby-split',
-    title: 'Split-Bühne',
-    description:
-      'Links schwebende Spiel-Vorschau mit Infos, rechts das offene Lobby-Setup direkt daneben.',
-  },
-  {
     id: 'lobby-open',
-    title: 'Offene Bühne',
+    title: 'Offene Bühne (Klassik)',
     description:
-      'Komplett rahmenlos über dem Hintergrund mit Unterstrich-Eingabe und frei schwebendem Start-Button.',
+      'Zentriert und komplett rahmenlos über dem Hintergrund mit Unterstrich-Eingabe und Modus-Tabs.',
   },
   {
-    id: 'lobby-hero-banner',
-    title: 'Banner-Fokus',
+    id: 'lobby-open-split',
+    title: 'Offene Bühne (Split)',
     description:
-      'Großes Spiel-Artwork als atmosphärischer Header-Streifen, nahtlos verschmolzen mit dem Setup darunter.',
+      'Links frei schwebendes Spiel-Artwork, rechts das rahmenlose Setup mit Unterstrich-Elementen.',
   },
   {
-    id: 'lobby-compact-dock',
-    title: 'Kompakt-Streifen',
+    id: 'lobby-open-editorial',
+    title: 'Offene Bühne (Editorial)',
     description:
-      'Schlanke horizontale Steuerleiste für Raumname, Modus und Start-Button auf einer Linie.',
+      'Großzügige linksbündige Typografie mit feiner Haarlinie und zweispaltiger Steuerung.',
   },
   {
-    id: 'lobby-card',
-    title: 'Klassik-Glas',
+    id: 'lobby-open-inline',
+    title: 'Offene Bühne (Inline)',
     description:
-      'Zentrierte dunkle Glasfläche mit klarer vertikaler Struktur für Name, Modus und Raum-Start.',
+      'Alle Eingaben und der Start-Button schweben ohne Rahmen nebeneinander in einer offenen Zeile.',
+  },
+  {
+    id: 'lobby-open-minimal',
+    title: 'Offene Bühne (Fokus)',
+    description:
+      'Maximal reduziert auf das große Raum-Eingabefeld in der Mitte mit viel freiem Raum.',
   },
 ];
 
 function LobbyWireframe({ layoutId, active }: { layoutId: LobbyLayoutId; active: boolean }) {
   const accent = active ? 'bg-[#F59E0B]' : 'bg-[#F59E0B]/70';
   const line = 'bg-white/25';
-  const soft = 'bg-white/12';
 
-  if (layoutId === 'lobby-split') {
+  if (layoutId === 'lobby-open-split') {
     return (
-      <div className="grid h-20 w-full grid-cols-2 gap-2 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+      <div className="grid h-20 w-full grid-cols-2 items-center gap-3 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
         <div className="flex flex-col gap-1.5">
-          <div className={`flex-1 rounded-lg ${soft}`} />
+          <div className="h-10 w-full rounded-lg bg-white/12" />
           <div className="h-2 w-14 rounded-full bg-white/60" />
         </div>
-        <div className="flex flex-col justify-between gap-1.5">
-          <div className="h-3 w-full rounded-md border border-white/20 bg-white/10" />
-          <div className="grid grid-cols-2 gap-1">
-            <div className={`h-3 rounded-md ${accent}`} />
-            <div className={`h-3 rounded-md ${soft}`} />
+        <div className="flex flex-col justify-between gap-2">
+          <div className="h-2.5 w-full border-b border-white/40" />
+          <div className="flex gap-2 border-b border-white/15 pb-1">
+            <div className={`h-1.5 w-8 rounded-full ${accent}`} />
+            <div className={`h-1.5 w-8 rounded-full ${line}`} />
           </div>
-          <div className="h-3.5 w-full rounded-md bg-[#10B981]/75" />
+          <div className="h-3.5 w-full rounded-lg bg-[#10B981]/80" />
         </div>
       </div>
     );
   }
 
-  if (layoutId === 'lobby-open') {
+  if (layoutId === 'lobby-open-editorial') {
     return (
-      <div className="flex h-20 w-full flex-col items-center justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+      <div className="flex h-20 w-full flex-col justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+        <div className="flex items-end justify-between border-b border-white/15 pb-1.5">
+          <div className="flex flex-col gap-1">
+            <div className="h-2.5 w-20 rounded-sm bg-white/80" />
+            <div className={`h-0.5 w-14 rounded-full ${accent}`} />
+          </div>
+          <div className={`h-1.5 w-10 rounded-full ${line}`} />
+        </div>
+        <div className="flex items-end justify-between gap-3">
+          <div className="h-2.5 flex-1 border-b border-white/40" />
+          <div className="flex gap-1.5 pb-0.5">
+            <div className={`h-1.5 w-6 rounded-full ${accent}`} />
+            <div className={`h-1.5 w-6 rounded-full ${line}`} />
+          </div>
+          <div className="h-3.5 w-14 rounded-lg bg-[#10B981]/80" />
+        </div>
+      </div>
+    );
+  }
+
+  if (layoutId === 'lobby-open-inline') {
+    return (
+      <div className="flex h-20 w-full flex-col items-center justify-center gap-3 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
         <div className="flex flex-col items-center gap-0.5">
-          <div className="h-2.5 w-16 rounded-sm bg-white/80" />
-          <div className={`h-0.5 w-14 rounded-full ${accent}`} />
+          <div className="h-2 w-16 rounded-sm bg-white/80" />
+          <div className={`h-0.5 w-12 rounded-full ${accent}`} />
         </div>
-        <div className="h-2.5 w-32 border-b border-white/40" />
-        <div className="flex w-32 items-center justify-between gap-2">
-          <div className={`h-2 w-12 rounded-full ${accent}`} />
-          <div className={`h-2 w-12 rounded-full ${line}`} />
+        <div className="flex w-full items-center gap-2 border-b border-white/15 pb-2">
+          <div className="h-2.5 flex-1 border-b border-white/40" />
+          <div className={`h-2 w-7 rounded-full ${accent}`} />
+          <div className={`h-2 w-7 rounded-full ${line}`} />
+          <div className="h-3.5 w-12 rounded-lg bg-[#10B981]/80" />
         </div>
-        <div className="h-3.5 w-28 rounded-lg bg-[#10B981]/80" />
       </div>
     );
   }
 
-  if (layoutId === 'lobby-hero-banner') {
+  if (layoutId === 'lobby-open-minimal') {
     return (
-      <div className="flex h-20 w-full flex-col overflow-hidden rounded-xl border border-white/12 bg-[#0F172A]/65">
-        <div className="h-7 w-full bg-gradient-to-r from-[#6366F1]/45 via-[#F59E0B]/30 to-[#0F172A] px-2.5 flex items-end pb-1">
-          <div className="h-2 w-14 rounded-full bg-white/80" />
+      <div className="flex h-20 w-full flex-col items-center justify-center gap-2.5 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+        <div className="h-3 w-36 border-b-2 border-[#F59E0B]/75" />
+        <div className="flex items-center gap-3">
+          <div className={`h-1.5 w-9 rounded-full ${accent}`} />
+          <div className={`h-1.5 w-9 rounded-full ${line}`} />
         </div>
-        <div className="flex flex-1 flex-col justify-between p-2">
-          <div className="flex gap-1.5">
-            <div className="h-3 flex-1 rounded-md border border-white/20 bg-white/10" />
-            <div className={`h-3 w-8 rounded-md ${accent}`} />
-          </div>
-          <div className="h-3.5 w-full rounded-md bg-[#10B981]/80" />
-        </div>
+        <div className="h-3.5 w-24 rounded-full bg-[#10B981]/80" />
       </div>
     );
   }
 
-  if (layoutId === 'lobby-compact-dock') {
-    return (
-      <div className="flex h-20 w-full flex-col items-center justify-center gap-2 rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-        <div className="flex items-center gap-1.5">
-          <div className="h-2 w-16 rounded-full bg-white/75" />
-          <div className={`h-2 w-8 rounded-full ${accent}`} />
-        </div>
-        <div className="flex w-full items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] p-1.5">
-          <div className="h-4 flex-1 rounded-md bg-white/10" />
-          <div className={`h-4 w-10 rounded-md ${accent}`} />
-          <div className="h-4 w-12 rounded-md bg-[#10B981]/80" />
-        </div>
-      </div>
-    );
-  }
-
-  // lobby-card
+  // lobby-open
   return (
-    <div className="flex h-20 w-full items-center justify-center rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
-      <div className="flex h-full w-28 flex-col justify-between rounded-lg border border-white/15 bg-white/[0.06] p-2">
-        <div className="mx-auto h-2 w-12 rounded-sm bg-white/75" />
-        <div className="h-2.5 w-full rounded-sm bg-white/12" />
-        <div className="grid grid-cols-2 gap-1">
-          <div className={`h-2.5 rounded-sm ${accent}`} />
-          <div className={`h-2.5 rounded-sm ${soft}`} />
-        </div>
-        <div className="h-3 w-full rounded-sm bg-[#10B981]/80" />
+    <div className="flex h-20 w-full flex-col items-center justify-between rounded-xl border border-white/12 bg-[#0F172A]/65 p-2.5">
+      <div className="flex flex-col items-center gap-0.5">
+        <div className="h-2.5 w-16 rounded-sm bg-white/80" />
+        <div className={`h-0.5 w-14 rounded-full ${accent}`} />
       </div>
+      <div className="h-2.5 w-32 border-b border-white/40" />
+      <div className="flex w-32 items-center justify-between gap-2">
+        <div className={`h-2 w-12 rounded-full ${accent}`} />
+        <div className={`h-2 w-12 rounded-full ${line}`} />
+      </div>
+      <div className="h-3.5 w-28 rounded-lg bg-[#10B981]/80" />
     </div>
   );
 }
@@ -166,18 +168,18 @@ export function LobbyLayoutModal({
         <div className="flex items-center gap-2 border-b-2 border-[#F59E0B] pb-0.5 select-none">
           <Layers className="h-4 w-4 text-[#FBBF24]" />
           <span className="font-arcade text-base sm:text-xl tracking-wider text-white uppercase">
-            LOBBY <span className="text-[#FBBF24]">LAYOUTS</span>
+            OFFENE <span className="text-[#FBBF24]">LOBBY-DESIGNS</span>
           </span>
         </div>
 
         <span className="hidden sm:block font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
-          GLEICHE DESIGNPRINZIPIEN
+          RAHMENLOS & OFFEN
         </span>
       </div>
 
       <div className="no-scrollbar mx-auto w-full max-w-5xl flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-5">
         <p className="mb-5 text-xs sm:text-sm text-[#CBD5E1]">
-          Wähle eine Layout-Variante für das Lobby-Menü. Alle Varianten nutzen dieselben Open-Gallery-Designprinzipien.
+          Wähle eine offene, rahmenlose Lobby-Variante. Alle Layouts schweben frei über dem Hintergrund ohne schwere Kartenrahmen.
         </p>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5 pb-6">
