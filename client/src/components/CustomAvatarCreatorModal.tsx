@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { Eraser, Paintbrush, Trash2, Undo2 } from 'lucide-react';
 import {
   AVATAR_SKIN_COLORS,
@@ -212,12 +213,12 @@ export function CustomAvatarCreatorModal({
     onSave(created);
   };
 
-  return (
+  const modalContent = (
     <div
       role="dialog"
       aria-modal="true"
       aria-label="Eigenen Avatar erstellen"
-      className="fixed inset-0 min-h-dvh z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2 sm:p-4 bg-[#0F172A]/85 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 h-dvh w-screen z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2 sm:p-4 bg-[#0F172A]/85 backdrop-blur-xs animate-fade-in select-none"
       onClick={onCancel}
     >
       <div
@@ -497,4 +498,8 @@ export function CustomAvatarCreatorModal({
       </div>
     </div>
   );
+
+  return typeof document !== 'undefined'
+    ? createPortal(modalContent, document.body)
+    : modalContent;
 }
