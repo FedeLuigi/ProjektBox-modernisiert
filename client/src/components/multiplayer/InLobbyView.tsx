@@ -186,7 +186,7 @@ export function InLobbyView({
   return (
     <div className="flex flex-1 min-h-0 w-full flex-col justify-between animate-fade-in select-none">
       {/* 1. HEADER: "VERLASSEN" links, Spieltitel Mitte, Verbindungsstatus rechts */}
-      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2 landscape:pb-1 w-full max-w-5xl mx-auto px-1">
+      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2">
         <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
           VERLASSEN
         </CrystalButton>
