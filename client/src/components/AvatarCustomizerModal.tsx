@@ -74,7 +74,7 @@ export function AvatarCustomizerModal({
   };
 
   const optionCardClass = (isSelected: boolean) =>
-    `min-w-0 w-full h-[68px] sm:h-[74px] landscape:h-[62px] flex flex-col items-center justify-center p-1.5 sm:p-2 landscape:p-1 border-[3px] transition-transform cursor-pointer active:scale-95 ${
+    `min-w-0 w-full h-[76px] sm:h-[82px] landscape:h-[68px] flex flex-col items-center justify-center py-1.5 px-1.5 landscape:py-1 landscape:px-1 border-[3px] transition-transform cursor-pointer active:scale-95 ${
       isSelected
         ? 'bg-[#4F46E5] border-[#312E81] text-white shadow-[inset_0_2px_0_#A5B4FC,0_3px_0_rgba(15,23,42,0.28)]'
         : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
@@ -324,10 +324,10 @@ export function AvatarCustomizerModal({
                                   customImage: ca.imageData,
                                   skinColor: ca.skinColor,
                                 }}
-                                size={36}
-                                className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                                size={34}
+                                className="sm:w-[38px] sm:h-[38px] landscape:w-[30px] landscape:h-[30px]"
                               />
-                              <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                              <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                                 {ca.name}
                               </span>
                             </button>
@@ -378,10 +378,10 @@ export function AvatarCustomizerModal({
                               base: b.id,
                               customImage: undefined,
                             }}
-                            size={36}
-                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                            size={34}
+                            className="sm:w-[38px] sm:h-[38px] landscape:w-[30px] landscape:h-[30px]"
                           />
-                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                             {b.label}
                           </span>
                         </button>
@@ -413,12 +413,12 @@ export function AvatarCustomizerModal({
                           className={optionCardClass(isSelected)}
                         >
                           <div
-                            className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                            className="h-7 w-7 sm:h-8 sm:w-8 landscape:h-6 landscape:w-6 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
                             style={{ backgroundColor: s.id }}
                           >
                             {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                           </div>
-                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                             {s.label}
                           </span>
                         </button>
@@ -450,10 +450,10 @@ export function AvatarCustomizerModal({
                         >
                           <Avatar
                             config={{ ...current, hat: h.id }}
-                            size={36}
-                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                            size={34}
+                            className="sm:w-[38px] sm:h-[38px] landscape:w-[30px] landscape:h-[30px]"
                           />
-                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                             {h.label}
                           </span>
                         </button>
@@ -485,10 +485,10 @@ export function AvatarCustomizerModal({
                         >
                           <Avatar
                             config={{ ...current, accessory: acc.id }}
-                            size={36}
-                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                            size={34}
+                            className="sm:w-[38px] sm:h-[38px] landscape:w-[30px] landscape:h-[30px]"
                           />
-                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                             {acc.label}
                           </span>
                         </button>
@@ -519,14 +519,14 @@ export function AvatarCustomizerModal({
                           className={optionCardClass(isSelected)}
                         >
                           <div
-                            className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                            className="h-7 w-7 sm:h-8 sm:w-8 landscape:h-6 landscape:w-6 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
                             style={{
                               backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
                             }}
                           >
                             {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
                           </div>
-                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          <span className="font-arcade mt-1 w-full truncate text-center text-[10px] sm:text-[11px] leading-tight uppercase">
                             {bg.label}
                           </span>
                         </button>
