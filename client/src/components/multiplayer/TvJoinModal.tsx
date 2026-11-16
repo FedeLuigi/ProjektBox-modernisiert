@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { QrCode, RefreshCw } from 'lucide-react';
 import { QrScannerModal } from './QrScannerModal';
-import { CrystalButton, CrystalPanel } from '../CrystalUI';
+import { OpenButton, OpenModalFrame } from '../OpenSubpageUI';
 
 interface TvJoinModalProps {
   isOpen: boolean;
@@ -45,57 +45,47 @@ export function TvJoinModal({
         role="dialog"
         aria-modal="true"
         onClick={onClose}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden p-4 landscape:p-2 bg-[#0F172A]/80 backdrop-blur-xs select-none animate-fade-in"
+        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden p-4 landscape:p-2 bg-[#0F172A]/80 backdrop-blur-sm select-none animate-fade-in"
       >
-        <div onClick={(e) => e.stopPropagation()} className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-lg pt-3 landscape:pt-0">
-          <CrystalPanel
-            topTabLabel="TV BEITRETEN"
-            title="CODE EINGEBEN"
-            accent="amber"
-            contentClassName="gap-3.5 landscape:gap-2 py-6 px-5 sm:px-6 landscape:py-3 landscape:px-4"
+        <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-lg">
+          <OpenModalFrame
+            title="TV"
+            accentWord="BEITRETEN"
+            onClose={onClose}
+            contentClassName="gap-4 landscape:gap-2.5"
           >
-            <p className="-mt-2 landscape:-mt-1 text-center text-xs sm:text-sm landscape:text-xs font-semibold text-[#475569] leading-snug">
+            <p className="text-center text-xs sm:text-sm text-[#CBD5E1] leading-snug">
               Gib den 5-stelligen Lobby-Code vom TV-Bildschirm ein.
             </p>
 
             {errorMessage && (
-              <div className="font-arcade w-full border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-1.5 landscape:py-1 text-center text-xs text-white uppercase">
+              <div className="font-arcade w-full rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
                 {errorMessage}
               </div>
             )}
 
-            <form onSubmit={handleSubmit} className="w-full flex flex-col landscape:flex-row items-center gap-3 landscape:gap-2">
-              {/* Abgeschrägtes Code-Eingabefeld in voller Button-Breite */}
-              <div
-                style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                className="w-full landscape:flex-1 bg-[#0F172A] p-[3px] shadow-[0_4px_0_rgba(15,23,42,0.28)]"
-              >
-                <input
-                  type="text"
-                  maxLength={6}
-                  autoCapitalize="characters"
-                  autoComplete="off"
-                  spellCheck={false}
-                  value={code}
-                  onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="z. B. 9ZPZW"
-                  aria-label="5-stelliger Lobby-Code"
-                  style={{
-                    clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
-                    paddingInline: '16px',
-                    color: '#FFFFFF',
-                    caretColor: '#FFFFFF',
-                  }}
-                  className="font-arcade h-12 sm:h-14 landscape:h-10 w-full border-2 border-[#475569] focus:border-[#F59E0B] bg-[#1E293B] px-4 text-center text-xl sm:text-2xl landscape:text-base font-bold tracking-[0.28em] placeholder:tracking-[0.14em] text-white placeholder:text-white/55 focus:outline-none uppercase transition-colors caret-white"
-                />
-              </div>
+            <form
+              onSubmit={handleSubmit}
+              className="w-full flex flex-col landscape:flex-row items-center gap-3 landscape:gap-2"
+            >
+              <input
+                type="text"
+                maxLength={6}
+                autoCapitalize="characters"
+                autoComplete="off"
+                spellCheck={false}
+                value={code}
+                onChange={(e) => setCode(e.target.value.toUpperCase())}
+                placeholder="z. B. 9ZPZW"
+                aria-label="5-stelliger Lobby-Code"
+                className="font-arcade h-12 sm:h-14 landscape:h-10 w-full landscape:flex-1 rounded-xl border border-white/20 bg-white/[0.06] px-4 text-center text-xl sm:text-2xl landscape:text-base font-bold tracking-[0.28em] placeholder:tracking-[0.14em] text-white placeholder:text-white/40 focus:border-[#F59E0B] focus:bg-white/[0.09] focus:outline-none uppercase transition-colors caret-[#FBBF24]"
+              />
 
-              <CrystalButton
+              <OpenButton
                 type="submit"
                 fullWidth
                 size="lg"
                 variant="primary"
-                tilt="left"
                 disabled={!isValidCode || isJoining}
                 className="landscape:w-auto landscape:min-w-[140px] landscape:h-10 landscape:text-xs"
               >
@@ -107,45 +97,41 @@ export function TvJoinModal({
                 ) : (
                   <span>BEITRETEN</span>
                 )}
-              </CrystalButton>
+              </OpenButton>
             </form>
 
-            {/* Dezente horizontale Trennlinie mit "ODER"-Label */}
-            <div className="flex landscape:hidden w-full items-center gap-3 py-0.5">
-              <div className="h-[2px] flex-1 bg-[#CBD5E1]" />
-              <span className="font-arcade text-xs tracking-widest text-[#64748B] uppercase">
+            <div className="flex landscape:hidden w-full items-center gap-3">
+              <div className="h-px flex-1 bg-white/15" />
+              <span className="font-arcade text-[11px] tracking-widest text-[#94A3B8] uppercase">
                 ODER
               </span>
-              <div className="h-[2px] flex-1 bg-[#CBD5E1]" />
+              <div className="h-px flex-1 bg-white/15" />
             </div>
 
             <div className="flex flex-col landscape:grid landscape:grid-cols-2 items-center gap-2.5 landscape:gap-2 w-full">
-              <CrystalButton
+              <OpenButton
                 fullWidth
                 size="md"
-                variant="amber"
-                tilt="right"
+                variant="outline-amber"
                 disabled={isJoining}
                 onClick={() => setShowScanner(true)}
                 className="landscape:h-9 landscape:text-xs"
               >
                 <QrCode className="h-4 w-4" />
                 <span>QR-CODE SCANNEN</span>
-              </CrystalButton>
+              </OpenButton>
 
-              <div className="w-full pt-1 landscape:pt-0 flex justify-center">
-                <CrystalButton
-                  size="sm"
-                  variant="secondary"
-                  tilt="left"
-                  onClick={onClose}
-                  className="min-w-[140px] landscape:w-full landscape:h-9 landscape:text-xs"
-                >
-                  ABBRECHEN
-                </CrystalButton>
-              </div>
+              <OpenButton
+                size="sm"
+                variant="secondary"
+                onClick={onClose}
+                fullWidth
+                className="landscape:h-9 landscape:text-xs"
+              >
+                ABBRECHEN
+              </OpenButton>
             </div>
-          </CrystalPanel>
+          </OpenModalFrame>
         </div>
       </div>
 

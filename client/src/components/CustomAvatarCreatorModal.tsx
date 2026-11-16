@@ -6,7 +6,7 @@ import {
   getAvatarBgMeta,
   type AvatarBg,
 } from './Avatar';
-import { CrystalButton, CrystalPanel } from './CrystalUI';
+import { OpenButton, OpenModalFrame } from './OpenSubpageUI';
 import { saveCustomAvatar, type CustomAvatar } from '../utils/userProfile';
 
 interface CustomAvatarCreatorModalProps {
@@ -218,17 +218,15 @@ export function CustomAvatarCreatorModal({
       role="dialog"
       aria-modal="true"
       aria-label="Eigenen Avatar erstellen"
-      className="fixed inset-0 h-dvh w-screen z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2 sm:p-4 bg-[#0F172A]/85 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 h-dvh w-screen z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2 sm:p-4 bg-[#0F172A]/85 backdrop-blur-sm animate-fade-in select-none"
       onClick={onCancel}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="tablet-modal-box my-auto w-full max-w-md md:max-w-3xl landscape:max-w-3xl pt-2 md:pt-0 landscape:pt-0 flex flex-col"
-      >
-        <CrystalPanel
-          topTabLabel="AVATAR ERSTELLEN"
-          accent="indigo"
-          contentClassName="w-full gap-2 sm:gap-3 p-3 sm:p-4 md:p-5 landscape:p-3"
+      <div className="tablet-modal-box my-auto w-full max-w-md md:max-w-3xl landscape:max-w-3xl flex flex-col">
+        <OpenModalFrame
+          title="AVATAR"
+          accentWord="ERSTELLEN"
+          onClose={onCancel}
+          contentClassName="w-full gap-2.5 sm:gap-3.5 p-3.5 sm:p-5 landscape:p-3"
         >
           <div className="flex flex-col md:flex-row md:items-center landscape:flex-row landscape:items-center gap-2.5 sm:gap-4 md:gap-5 w-full">
             {/* 1. GROSSE ZEICHENFLÄCHE MIT GESICHT */}
@@ -278,7 +276,7 @@ export function CustomAvatarCreatorModal({
                 />
               </div>
 
-              <span className="font-arcade text-[10px] sm:text-[11px] tracking-wide text-[#475569] uppercase text-center">
+              <span className="font-arcade text-[10px] sm:text-[11px] tracking-wide text-[#94A3B8] uppercase text-center">
                 {hasStrokes ? 'Male weiter direkt aufs Gesicht' : 'Male direkt auf das Gesicht'}
               </span>
             </div>
@@ -286,7 +284,7 @@ export function CustomAvatarCreatorModal({
             {/* 2. WERKZEUGE, FARBEN, HAUTTON & NAME */}
             <div className="flex flex-1 min-w-0 flex-col gap-2 sm:gap-2.5 w-full">
               {/* Werkzeuge & Pinselgröße */}
-              <div className="flex flex-wrap items-center justify-between gap-1.5 bg-[#E2ECF5]/85 border-2 border-[#CBD5E1] p-1.5">
+              <div className="flex flex-wrap items-center justify-between gap-1.5 rounded-xl border border-white/15 bg-white/[0.04] p-1.5">
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
@@ -294,10 +292,10 @@ export function CustomAvatarCreatorModal({
                     title="Pinsel"
                     aria-label="Pinsel"
                     aria-pressed={tool === 'brush'}
-                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center border-2 cursor-pointer transition-transform active:scale-95 ${
+                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg border cursor-pointer transition-colors active:scale-95 ${
                       tool === 'brush'
-                        ? 'bg-[#4F46E5] border-[#312E81] text-white'
-                        : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
+                        ? 'bg-[#F59E0B] border-[#FEF3C7]/40 text-[#0F172A]'
+                        : 'bg-white/[0.06] border-white/15 text-white/80 hover:text-white'
                     }`}
                   >
                     <Paintbrush className="h-4 w-4" />
@@ -308,10 +306,10 @@ export function CustomAvatarCreatorModal({
                     title="Radierer"
                     aria-label="Radierer"
                     aria-pressed={tool === 'eraser'}
-                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center border-2 cursor-pointer transition-transform active:scale-95 ${
+                    className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg border cursor-pointer transition-colors active:scale-95 ${
                       tool === 'eraser'
-                        ? 'bg-[#4F46E5] border-[#312E81] text-white'
-                        : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
+                        ? 'bg-[#F59E0B] border-[#FEF3C7]/40 text-[#0F172A]'
+                        : 'bg-white/[0.06] border-white/15 text-white/80 hover:text-white'
                     }`}
                   >
                     <Eraser className="h-4 w-4" />
@@ -322,7 +320,7 @@ export function CustomAvatarCreatorModal({
                     disabled={!canUndo}
                     title="Rückgängig"
                     aria-label="Rückgängig"
-                    className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed active:scale-95"
+                    className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg border border-white/15 bg-white/[0.06] text-white/85 hover:text-white cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed active:scale-95"
                   >
                     <Undo2 className="h-4 w-4" />
                   </button>
@@ -331,7 +329,7 @@ export function CustomAvatarCreatorModal({
                     onClick={handleClear}
                     title="Zeichnung leeren"
                     aria-label="Zeichnung leeren"
-                    className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] cursor-pointer active:scale-95"
+                    className="flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg border border-[#FDA4AF]/30 bg-[#E11D48]/15 text-[#FDA4AF] hover:bg-[#E11D48]/25 cursor-pointer active:scale-95"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
@@ -349,10 +347,10 @@ export function CustomAvatarCreatorModal({
                         title={`Pinselgröße: ${b.label}`}
                         aria-label={`Pinselgröße ${b.label}`}
                         aria-pressed={active}
-                        className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center border-2 cursor-pointer transition-transform active:scale-95 ${
+                        className={`flex h-8 w-8 md:h-9 md:w-9 items-center justify-center rounded-lg border cursor-pointer transition-colors active:scale-95 ${
                           active
-                            ? 'bg-[#4F46E5] border-[#312E81] text-white'
-                            : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
+                            ? 'bg-[#F59E0B] border-[#FEF3C7]/40 text-[#0F172A]'
+                            : 'bg-white/[0.06] border-white/15 text-white/80 hover:text-white'
                         }`}
                       >
                         <span className={`rounded-full bg-current ${b.dotClass}`} />
@@ -364,7 +362,7 @@ export function CustomAvatarCreatorModal({
 
               {/* Malfarben */}
               <div className="flex flex-col gap-1">
-                <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#334155] uppercase">
+                <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                   MALFARBE
                 </span>
                 <div className="grid grid-cols-12 md:grid-cols-6 gap-1 md:gap-1.5">
@@ -381,10 +379,10 @@ export function CustomAvatarCreatorModal({
                         aria-label={`Malfarbe ${c}`}
                         aria-pressed={active}
                         style={{ backgroundColor: c }}
-                        className={`h-6 sm:h-7 w-full border-2 cursor-pointer transition-transform active:scale-95 ${
+                        className={`h-6 sm:h-7 w-full rounded-md border cursor-pointer transition-transform active:scale-95 ${
                           active
-                            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5] scale-105'
-                            : 'border-[#334155]'
+                            ? 'border-[#F59E0B] ring-2 ring-[#F59E0B] scale-105'
+                            : 'border-white/25'
                         }`}
                       />
                     );
@@ -394,7 +392,7 @@ export function CustomAvatarCreatorModal({
 
               {/* Gesichtsfarbe / Hautton */}
               <div className="flex flex-col gap-1">
-                <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#334155] uppercase">
+                <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                   GESICHTSFARBE
                 </span>
                 <div className="grid grid-cols-8 gap-1.5">
@@ -409,10 +407,10 @@ export function CustomAvatarCreatorModal({
                         aria-label={`Gesichtsfarbe ${s.label}`}
                         aria-pressed={active}
                         style={{ backgroundColor: s.id }}
-                        className={`h-6 w-6 sm:h-7 sm:w-7 mx-auto rounded-full border-2 cursor-pointer transition-transform active:scale-95 ${
+                        className={`h-6 w-6 sm:h-7 sm:w-7 mx-auto rounded-full border cursor-pointer transition-transform active:scale-95 ${
                           active
-                            ? 'border-[#4F46E5] ring-2 ring-[#4F46E5] scale-105'
-                            : 'border-[#334155]'
+                            ? 'border-[#F59E0B] ring-2 ring-[#F59E0B] scale-105'
+                            : 'border-white/25'
                         }`}
                       />
                     );
@@ -420,51 +418,42 @@ export function CustomAvatarCreatorModal({
                 </div>
               </div>
 
-              {/* Avatar-Name Eingabe im hellen, harmonischen Crystal-Design */}
-              <div className="flex flex-col gap-0.5">
+              {/* Avatar-Name Eingabe */}
+              <div className="flex flex-col gap-1">
                 <label
                   htmlFor="custom-avatar-name-input"
-                  className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#334155] uppercase"
+                  className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase"
                 >
                   NAME DES AVATARS
                 </label>
-                <div
-                  style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                  className="w-full bg-[#334155] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
-                >
-                  <input
-                    id="custom-avatar-name-input"
-                    type="text"
-                    value={avatarName}
-                    onChange={(e) => {
-                      setAvatarName(e.target.value);
-                      if (errorMsg) setErrorMsg(null);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter') {
-                        e.preventDefault();
-                        handleSaveCustomAvatar();
-                      }
-                    }}
-                    maxLength={18}
-                    autoComplete="off"
-                    spellCheck={false}
-                    placeholder="Z. B. MEIN HELD"
-                    style={{
-                      clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
-                      paddingInline: '14px',
-                    }}
-                    className={`crystal-input-light font-sans h-8 sm:h-9 w-full bg-[#F8FAFC] border-2 ${
-                      errorMsg
-                        ? 'border-[#E11D48]'
-                        : 'border-[#CBD5E1] focus:border-[#4F46E5]'
-                    } px-3 text-center text-sm font-extrabold tracking-wide text-[#0F172A] placeholder:text-[#64748B] focus:outline-none caret-[#4F46E5]`}
-                  />
-                </div>
+                <input
+                  id="custom-avatar-name-input"
+                  type="text"
+                  value={avatarName}
+                  onChange={(e) => {
+                    setAvatarName(e.target.value);
+                    if (errorMsg) setErrorMsg(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleSaveCustomAvatar();
+                    }
+                  }}
+                  maxLength={18}
+                  autoComplete="off"
+                  spellCheck={false}
+                  placeholder="Z. B. MEIN HELD"
+                  className={`font-sans h-9 sm:h-10 w-full rounded-xl border bg-white/[0.06] ${
+                    errorMsg
+                      ? 'border-[#FDA4AF]'
+                      : 'border-white/20 focus:border-[#F59E0B]'
+                  } px-3 text-center text-sm font-bold tracking-wide text-white placeholder:text-white/40 focus:bg-white/[0.09] focus:outline-none caret-[#FBBF24]`}
+                />
                 {errorMsg && (
                   <span
                     role="alert"
-                    className="font-arcade text-xs text-[#E11D48] uppercase text-center mt-0.5"
+                    className="font-arcade text-xs text-[#FDA4AF] uppercase text-center mt-0.5"
                   >
                     {errorMsg}
                   </span>
@@ -473,28 +462,26 @@ export function CustomAvatarCreatorModal({
 
               {/* Aktionsbuttons */}
               <div className="flex items-center justify-center gap-2.5 sm:gap-3 pt-0.5">
-                <CrystalButton
+                <OpenButton
                   size="sm"
                   variant="secondary"
-                  tilt="right"
                   onClick={onCancel}
                   className="min-w-[115px] sm:min-w-[125px] h-9 sm:h-10"
                 >
                   ABBRECHEN
-                </CrystalButton>
-                <CrystalButton
+                </OpenButton>
+                <OpenButton
                   size="sm"
-                  variant="emerald"
-                  tilt="left"
+                  variant="primary"
                   onClick={handleSaveCustomAvatar}
                   className="min-w-[125px] sm:min-w-[140px] h-9 sm:h-10"
                 >
                   SPEICHERN
-                </CrystalButton>
+                </OpenButton>
               </div>
             </div>
           </div>
-        </CrystalPanel>
+        </OpenModalFrame>
       </div>
     </div>
   );

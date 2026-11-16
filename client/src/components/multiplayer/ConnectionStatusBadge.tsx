@@ -20,11 +20,8 @@ export function ConnectionStatusBadge() {
 
   if (status === 'connected') {
     return (
-      <div
-        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#059669] border-[2.5px] border-[#064E3B] px-3.5 text-xs text-white shadow-[inset_0_1.5px_0_#6EE7B7,0_3px_0_rgba(15,23,42,0.2)] shrink-0"
-      >
-        <span className="h-2 w-2 rounded-full bg-[#A7F3D0] animate-pulse" />
+      <div className="font-arcade uppercase tracking-wider inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border border-[#34D399]/40 bg-[#10B981]/15 px-3 text-[11px] sm:text-xs text-[#6EE7B7] shrink-0">
+        <span className="h-2 w-2 rounded-full bg-[#34D399] animate-pulse" />
         <Wifi className="h-3.5 w-3.5" />
         <span>ONLINE</span>
       </div>
@@ -33,10 +30,7 @@ export function ConnectionStatusBadge() {
 
   if (status === 'connecting') {
     return (
-      <div
-        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-        className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#FEF3C7] border-[2.5px] border-[#92400E] px-3.5 text-xs text-[#78350F] shadow-[0_3px_0_rgba(15,23,42,0.2)] shrink-0"
-      >
+      <div className="font-arcade uppercase tracking-wider inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 text-[11px] sm:text-xs text-[#FDE68A] shrink-0">
         <RefreshCw className="h-3.5 w-3.5 animate-spin" />
         <span>VERBINDE...</span>
       </div>
@@ -50,8 +44,7 @@ export function ConnectionStatusBadge() {
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       title="Tippen zum erneuten Verbinden"
-      style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-      className="font-arcade uppercase tracking-wider inline-flex h-9 items-center gap-1.5 bg-[#DC2626] border-[2.5px] border-[#7F1D1D] px-3.5 text-xs text-white transition-transform active:scale-95 cursor-pointer shrink-0"
+      className="font-arcade uppercase tracking-wider inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border border-[#FDA4AF]/50 bg-[#E11D48]/20 px-3 text-[11px] sm:text-xs text-[#FECDD3] transition-colors hover:bg-[#E11D48]/35 active:scale-95 cursor-pointer shrink-0"
     >
       <WifiOff className="h-3.5 w-3.5" />
       <span>{isHovered ? 'NEU VERBINDEN' : 'OFFLINE'}</span>

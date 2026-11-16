@@ -1,16 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Check, Crown } from 'lucide-react';
-import { GAMES } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { Avatar } from '../Avatar';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
-import {
-  CrystalButton,
-  CrystalPanel,
-  CrystalReadout,
-} from '../CrystalUI';
+import { OpenButton, OpenSubpageHeader } from '../OpenSubpageUI';
 
 interface TvLobbyViewProps {
   lobby: Lobby;
@@ -33,7 +28,6 @@ export function TvLobbyView({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const joinUrl = getLobbyJoinUrl(lobby.code);
-  const gameAccent = GAMES.find((g) => g.id === lobby.gameId)?.accent ?? 'emerald';
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const readyCount = activePlayers.filter((p) => p.isReady).length;
   const allReady =
@@ -84,57 +78,59 @@ export function TvLobbyView({
   };
 
   return (
-    <div className="flex h-full w-full flex-col justify-between text-[#1E293B] select-none animate-fade-in">
-      <header className="tablet-header flex shrink-0 items-center justify-between gap-2 pb-2">
-        <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
-          VERLASSEN
-        </CrystalButton>
+    <div className="flex h-full w-full flex-col justify-between text-white select-none animate-fade-in">
+      <OpenSubpageHeader
+        backLabel="VERLASSEN"
+        onBack={onLeave}
+        title={gameTitle || lobby.name}
+        rightSlot={<ConnectionStatusBadge />}
+      />
 
-        <CrystalReadout value={gameTitle || lobby.name} />
-
-        <ConnectionStatusBadge />
-      </header>
-
-      <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto overflow-x-hidden px-2.5 pt-4 pb-3">
+      <main className="tablet-screen-main mx-auto flex w-full max-w-5xl flex-1 min-h-0 flex-col overflow-y-auto overflow-x-hidden px-4 sm:px-6 pt-4 pb-4">
         <div className="tablet-portrait-stack my-auto grid w-full items-stretch gap-6 grid-cols-1 md:grid-cols-2">
-          {/* Linkes Kristall-Panel: QR-Code & Lobby-Code */}
-          <CrystalPanel
-            title="TV-LOBBY"
-            accent="amber"
-            className="h-full"
-            contentClassName="justify-between gap-4 py-6 px-6 sm:px-8"
-          >
-            <p className="-mt-2 text-center text-xs sm:text-sm font-semibold text-[#475569]">
+          {/* Linkes Open-Gallery-Panel: QR-Code & Lobby-Code */}
+          <div className="flex h-full flex-col items-center justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-6 sm:p-8 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+              <span className="font-arcade text-base tracking-wider text-white uppercase">
+                TV-<span className="text-[#FBBF24]">LOBBY</span>
+              </span>
+            </div>
+
+            <p className="text-center text-xs sm:text-sm text-[#CBD5E1]">
               Scanne den Code mit deinem Smartphone zum Beitreten.
             </p>
 
-            <div className="w-[75%] max-w-[230px] aspect-square border-[4px] border-[#1E293B] bg-white p-4 shadow-[0_6px_0_rgba(15,23,42,0.3)] flex items-center justify-center mx-auto">
+            <div className="w-[75%] max-w-[230px] aspect-square rounded-2xl border border-white/20 bg-white p-4 shadow-[0_14px_30px_rgba(0,0,0,0.4)] flex items-center justify-center mx-auto">
               <canvas ref={canvasRef} className="w-full h-full block" />
             </div>
 
-            <div onClick={handleCopy} className="cursor-pointer">
-              <CrystalReadout
-                variant="gold"
-                label={copiedCode ? 'KOPIERT!' : 'LOBBY-CODE'}
-                value={
-                  <span className="tracking-[0.22em] pl-[0.22em] text-xl sm:text-2xl">
-                    {lobby.code}
-                  </span>
-                }
-              />
-            </div>
-          </CrystalPanel>
+            <button
+              type="button"
+              onClick={handleCopy}
+              className="flex flex-col items-center gap-1 rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-6 py-2.5 transition-colors hover:bg-[#F59E0B]/25 cursor-pointer active:scale-95"
+            >
+              <span className="font-arcade text-[10px] tracking-wider text-[#FDE68A]/80 uppercase">
+                {copiedCode ? 'KOPIERT!' : 'LOBBY-CODE'}
+              </span>
+              <span className="font-arcade tracking-[0.22em] pl-[0.22em] text-xl sm:text-2xl text-[#FDE68A] uppercase">
+                {lobby.code}
+              </span>
+            </button>
+          </div>
 
-          {/* Rechtes Kristall-Panel: Verbundene Smartphone-Spieler & SPIEL STARTEN */}
-          <CrystalPanel
-            title={`SPIELER (${activePlayers.length}/${lobby.maxPlayers})`}
-            accent={gameAccent}
-            className="h-full"
-            contentClassName="justify-between gap-4 py-6 px-5 sm:px-6"
-          >
+          {/* Rechtes Open-Gallery-Panel: Verbundene Smartphone-Spieler & SPIEL STARTEN */}
+          <div className="flex h-full flex-col justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-6 sm:p-8 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+            <div className="flex items-center justify-center">
+              <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+                <span className="font-arcade text-base tracking-wider text-white uppercase">
+                  SPIELER <span className="text-[#FBBF24]">({activePlayers.length}/{lobby.maxPlayers})</span>
+                </span>
+              </div>
+            </div>
+
             {activePlayers.length === 0 ? (
-              <div className="my-auto w-full py-8 px-4 text-center border-[3px] border-dashed border-[#64748B] bg-[#E2E8F0]/70">
-                <span className="font-arcade text-sm sm:text-base tracking-wider text-[#475569] uppercase">
+              <div className="my-auto w-full rounded-xl border border-dashed border-white/20 bg-white/[0.03] py-8 px-4 text-center">
+                <span className="font-arcade text-sm sm:text-base tracking-wider text-[#94A3B8] uppercase">
                   Warte auf Mitspieler per QR-Code oder Lobby-Code...
                 </span>
               </div>
@@ -143,32 +139,31 @@ export function TvLobbyView({
                 {activePlayers.map((player, idx) => (
                   <div
                     key={player.id || idx}
-                    className={`flex w-full items-center justify-between gap-2.5 border-[3px] px-3.5 py-2 shadow-[0_3px_0_rgba(15,23,42,0.18)] ${
+                    className={`flex w-full items-center justify-between gap-2.5 rounded-xl border px-3.5 py-2.5 ${
                       player.isReady
-                        ? 'bg-[#059669] border-[#064E3B] text-white'
-                        : 'bg-[#F8FAFC] border-[#334155] text-[#1E293B]'
+                        ? 'bg-[#10B981]/20 border-[#34D399]/50 text-white'
+                        : 'bg-white/[0.04] border-white/15 text-white/90'
                     }`}
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <Avatar config={player.avatar} size={34} />
                       <span className="font-arcade text-sm uppercase break-all">{player.name}</span>
                       {idx === 0 && (
-                        <span className="inline-flex items-center gap-1 border-2 border-[#78350F] bg-[#F59E0B] px-1.5 py-0.5 font-arcade text-[10px] text-[#0F172A] shrink-0">
+                        <span className="inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B] px-1.5 py-0.5 font-arcade text-[10px] text-[#0F172A] shrink-0">
                           <Crown className="h-3 w-3 fill-current" />
                         </span>
                       )}
                     </div>
-                    {player.isReady && <Check className="h-4 w-4 shrink-0 stroke-[3]" />}
+                    {player.isReady && <Check className="h-4 w-4 shrink-0 text-[#34D399] stroke-[3]" />}
                   </div>
                 ))}
               </div>
             )}
 
-            <CrystalButton
+            <OpenButton
               fullWidth
               size="lg"
               variant="primary"
-              tilt="left"
               disabled={!allReady || isStarting}
               onClick={handleStartGame}
             >
@@ -177,8 +172,8 @@ export function TvLobbyView({
                 : !allReady
                   ? `BEREIT (${readyCount}/${activePlayers.length})`
                   : 'SPIEL STARTEN'}
-            </CrystalButton>
-          </CrystalPanel>
+            </OpenButton>
+          </div>
         </div>
       </main>
     </div>

@@ -10,7 +10,7 @@ import {
   AVATAR_SKIN_COLORS,
   DEFAULT_AVATAR,
 } from './Avatar';
-import { CrystalButton, CrystalPanel } from './CrystalUI';
+import { OpenButton, OpenModalFrame } from './OpenSubpageUI';
 import { CustomAvatarCreatorModal } from './CustomAvatarCreatorModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
 import {
@@ -74,10 +74,10 @@ export function AvatarCustomizerModal({
   };
 
   const optionCardClass = (isSelected: boolean) =>
-    `min-w-0 w-full h-[76px] sm:h-[82px] landscape:h-[68px] flex flex-col items-center justify-center py-1.5 px-1.5 landscape:py-1 landscape:px-1 border-[3px] transition-transform cursor-pointer active:scale-95 ${
+    `min-w-0 w-full h-[76px] sm:h-[82px] landscape:h-[68px] flex flex-col items-center justify-center rounded-xl py-1.5 px-1.5 landscape:py-1 landscape:px-1 border transition-all cursor-pointer active:scale-95 ${
       isSelected
-        ? 'bg-[#4F46E5] border-[#312E81] text-white shadow-[inset_0_2px_0_#A5B4FC,0_3px_0_rgba(15,23,42,0.28)]'
-        : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
+        ? 'bg-[#F59E0B]/15 border-[#F59E0B] text-[#FDE68A] shadow-[0_0_18px_rgba(245,158,11,0.2)]'
+        : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/15 text-white/85 hover:text-white'
     }`;
 
   const ITEMS_PER_PAGE = 6; // Exakt 2 Reihen × 3 Spalten
@@ -128,11 +128,11 @@ export function AvatarCustomizerModal({
         disabled={safePage === 0}
         onClick={() => setPage((p) => Math.max(0, p - 1))}
         aria-label="Vorherige Ansicht"
-        className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer active:scale-95 disabled:opacity-45 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:border-[#94A3B8] disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+        className="flex h-6 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/[0.06] text-white cursor-pointer active:scale-95 hover:bg-white/15 disabled:opacity-35 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         <ChevronLeft className="h-4 w-4 stroke-[2.6]" />
       </button>
-      <span className="font-arcade text-xs text-[#334155] min-w-[36px] text-center">
+      <span className="font-arcade text-xs text-[#94A3B8] min-w-[36px] text-center">
         {safePage + 1} / {totalPages}
       </span>
       <button
@@ -140,7 +140,7 @@ export function AvatarCustomizerModal({
         disabled={safePage >= totalPages - 1}
         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
         aria-label="Nächste Ansicht"
-        className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer active:scale-95 disabled:opacity-45 disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] disabled:border-[#94A3B8] disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100"
+        className="flex h-6 w-8 items-center justify-center rounded-lg border border-white/20 bg-white/[0.06] text-white cursor-pointer active:scale-95 hover:bg-white/15 disabled:opacity-35 disabled:cursor-not-allowed disabled:active:scale-100"
       >
         <ChevronRight className="h-4 w-4 stroke-[2.6]" />
       </button>
@@ -152,20 +152,22 @@ export function AvatarCustomizerModal({
       role="dialog"
       aria-modal="true"
       aria-label="Profil & Avatar anpassen"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-xs animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-sm animate-fade-in select-none"
       onClick={onClose}
     >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        className="tablet-modal-box my-auto w-full max-w-xl landscape:max-w-3xl pt-3 landscape:pt-0 flex flex-col"
-      >
-        <CrystalPanel topTabLabel="PROFIL" accent="indigo" contentClassName="w-full gap-2.5 sm:gap-3.5 landscape:gap-2 p-3.5 sm:p-5 landscape:p-2.5">
+      <div className="tablet-modal-box my-auto w-full max-w-xl landscape:max-w-3xl flex flex-col">
+        <OpenModalFrame
+          title="SPIELER"
+          accentWord="PROFIL"
+          onClose={onClose}
+          contentClassName="w-full gap-2.5 sm:gap-3.5 landscape:gap-2 p-3.5 sm:p-5 landscape:p-3"
+        >
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
           <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3 sm:gap-4">
             {/* Linke Seite: Zentrierte Avatar-Vorschau, Spielername & Aktions-Buttons im Querformat */}
             <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-2.5 landscape:gap-2">
               <div className="flex w-full items-center justify-center">
-                <div className="flex items-center justify-center rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
+                <div className="flex items-center justify-center rounded-full ring-2 ring-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
                   <Avatar config={current} size={68} className="sm:w-[76px] sm:h-[76px] landscape:w-[60px] landscape:h-[60px]" />
                 </div>
               </div>
@@ -174,60 +176,43 @@ export function AvatarCustomizerModal({
               <div className="w-full flex flex-col items-center">
                 <label
                   htmlFor="player-profile-name-input"
-                  className="font-arcade mb-1.5 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#334155] uppercase"
+                  className="font-arcade mb-1.5 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#94A3B8] uppercase"
                 >
                   SPIELERNAME
                 </label>
-                {/* Symmetrisches 3-Spalten-Raster: linker Platzhalter entspricht der Button-Breite rechts,
-                    dadurch bleibt das Namensfeld unabhängig vom Button immer exakt mittig zentriert */}
                 <div className="grid w-full grid-cols-[38px_minmax(0,228px)_38px] sm:grid-cols-[42px_minmax(0,260px)_42px] landscape:grid-cols-[34px_minmax(0,1fr)_34px] items-stretch justify-center gap-1.5">
                   <div aria-hidden="true" />
 
-                  <div
-                    style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                    className="w-full min-w-0 bg-[#334155] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
-                  >
-                    <input
-                      id="player-profile-name-input"
-                      type="text"
-                      value={nameInput}
-                      onChange={handleNameChange}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter') {
-                          e.preventDefault();
-                          handleSave();
-                        }
-                      }}
-                      maxLength={20}
-                      autoComplete="off"
-                      spellCheck={false}
-                      placeholder="Spielername eingeben..."
-                      aria-invalid={Boolean(nameError)}
-                      aria-describedby={nameError ? 'player-profile-name-error' : undefined}
-                      style={{
-                        clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
-                        paddingInline: '14px',
-                      }}
-                      className={`crystal-input-light font-sans h-9 sm:h-10 landscape:h-8 w-full bg-[#F8FAFC] border-2 ${
-                        nameError ? 'border-[#E11D48]' : 'border-[#CBD5E1] focus:border-[#4F46E5]'
-                      } px-3 text-center text-sm sm:text-base landscape:text-xs font-extrabold tracking-wide text-[#0F172A] placeholder:text-[#64748B] focus:outline-none caret-[#4F46E5]`}
-                    />
-                  </div>
+                  <input
+                    id="player-profile-name-input"
+                    type="text"
+                    value={nameInput}
+                    onChange={handleNameChange}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSave();
+                      }
+                    }}
+                    maxLength={20}
+                    autoComplete="off"
+                    spellCheck={false}
+                    placeholder="Spielername eingeben..."
+                    aria-invalid={Boolean(nameError)}
+                    aria-describedby={nameError ? 'player-profile-name-error' : undefined}
+                    className={`font-sans h-9 sm:h-10 landscape:h-8 w-full min-w-0 rounded-xl border bg-white/[0.06] ${
+                      nameError ? 'border-[#FDA4AF]' : 'border-white/20 focus:border-[#F59E0B]'
+                    } px-3 text-center text-sm sm:text-base landscape:text-xs font-bold tracking-wide text-white placeholder:text-white/40 focus:bg-white/[0.09] focus:outline-none caret-[#FBBF24]`}
+                  />
 
                   <button
                     type="button"
                     onClick={handleRollNewName}
                     title="Zufälligen Spielernamen generieren"
                     aria-label="Zufälligen Spielernamen generieren"
-                    style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
-                    className="flex w-full items-center justify-center bg-[#78350F] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.25)] active:scale-95 cursor-pointer"
+                    className="flex w-full items-center justify-center rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 text-[#FDE68A] hover:bg-[#F59E0B]/25 transition-colors active:scale-95 cursor-pointer"
                   >
-                    <div
-                      style={{ clipPath: 'polygon(4% 0%, 100% 6%, 96% 100%, 0% 94%)' }}
-                      className="flex h-full w-full items-center justify-center border-t-2 border-l-2 border-[#FEF3C7] bg-gradient-to-b from-[#FBBF24] to-[#F59E0B] text-[#0F172A]"
-                    >
-                      <Dices className="h-4 w-4 stroke-[2.4]" />
-                    </div>
+                    <Dices className="h-4 w-4 stroke-[2.4]" />
                   </button>
                 </div>
 
@@ -235,7 +220,7 @@ export function AvatarCustomizerModal({
                   <span
                     id="player-profile-name-error"
                     role="alert"
-                    className="font-arcade mt-1 text-center text-xs text-[#E11D48] uppercase"
+                    className="font-arcade mt-1 text-center text-xs text-[#FDA4AF] uppercase"
                   >
                     {nameError}
                   </span>
@@ -244,19 +229,19 @@ export function AvatarCustomizerModal({
 
               {/* Aktions-Buttons direkt links im Querformat */}
               <div className="hidden landscape:flex flex-col gap-1.5 w-full pt-1">
-                <CrystalButton size="sm" tilt="left" onClick={handleSave} fullWidth>
+                <OpenButton size="sm" variant="primary" onClick={handleSave} fullWidth>
                   SPEICHERN
-                </CrystalButton>
-                <CrystalButton size="sm" variant="secondary" tilt="right" onClick={onClose} fullWidth>
+                </OpenButton>
+                <OpenButton size="sm" variant="secondary" onClick={onClose} fullWidth>
                   ABBRECHEN
-                </CrystalButton>
+                </OpenButton>
               </div>
             </div>
 
             {/* Rechte Seite: Tabs & Auswahl-Gitter (kompakt & ohne Scrollleiste) */}
-            <div className="flex flex-1 min-w-0 flex-col gap-2 sm:gap-2.5 w-full">
-              {/* Kategorie-Tabs als abgeschrägte Crystal-Buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 landscape:gap-1.5 w-full">
+            <div className="flex flex-1 min-w-0 flex-col gap-2.5 w-full">
+              {/* Kategorie-Tabs im Open-Gallery-Underline-Stil */}
+              <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-5 w-full border-b border-white/12 pb-0.5">
                 {(
                   [
                     { id: 'base', label: 'FIGUR' },
@@ -265,21 +250,27 @@ export function AvatarCustomizerModal({
                     { id: 'accessory', label: 'BRILLE' },
                     { id: 'bg', label: 'AURA' },
                   ] as const
-                ).map((tab, idx) => (
-                  <CrystalButton
-                    key={tab.id}
-                    size="sm"
-                    tilt={idx % 2 === 0 ? 'left' : 'right'}
-                    variant={activeTab === tab.id ? 'indigo' : 'secondary'}
-                    onClick={() => {
-                      setActiveTab(tab.id);
-                      setPage(0);
-                    }}
-                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs min-w-[54px] sm:min-w-[60px]"
-                  >
-                    {tab.label}
-                  </CrystalButton>
-                ))}
+                ).map((tab) => {
+                  const active = activeTab === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => {
+                        setActiveTab(tab.id);
+                        setPage(0);
+                      }}
+                      className={`font-arcade relative pb-1.5 text-xs sm:text-sm tracking-wider uppercase transition-colors cursor-pointer ${
+                        active ? 'text-[#FDE68A]' : 'text-[#94A3B8] hover:text-white'
+                      }`}
+                    >
+                      <span>{tab.label}</span>
+                      {active && (
+                        <span className="absolute right-0 bottom-0 left-0 h-[3px] rounded-full bg-[#F59E0B] shadow-[0_0_10px_#F59E0B]" />
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               {/* Einheitlicher 2×3-Auswahlbereich (immer max. 6 Elemente in 2 Reihen, kein Scrollen, kein Überlappen) */}
@@ -540,29 +531,29 @@ export function AvatarCustomizerModal({
           </div>
 
           {/* „Eigenen Avatar erstellen“ unterhalb der Auswahlmöglichkeiten */}
-          <CrystalButton
+          <OpenButton
             size="sm"
-            variant="indigo"
+            variant="outline-amber"
             fullWidth
             onClick={() => setShowCreator(true)}
             className="h-9 sm:h-10 landscape:h-8"
           >
             <Paintbrush className="h-4 w-4 shrink-0" />
             <span className="text-xs sm:text-sm landscape:text-xs">EIGENEN AVATAR ERSTELLEN</span>
-          </CrystalButton>
+          </OpenButton>
         </div>
       </div>
 
       {/* Untere Aktionsleiste in Portrait: ABBRECHEN & SPEICHERN */}
       <div className="flex landscape:hidden w-full items-center justify-center gap-3.5 sm:gap-4 pt-2 sm:pt-3">
-        <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose} className="min-w-[130px]">
+        <OpenButton size="md" variant="secondary" onClick={onClose} className="min-w-[130px]">
           ABBRECHEN
-        </CrystalButton>
-        <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[145px]">
+        </OpenButton>
+        <OpenButton size="md" variant="primary" onClick={handleSave} className="min-w-[145px]">
           SPEICHERN
-        </CrystalButton>
+        </OpenButton>
       </div>
-        </CrystalPanel>
+        </OpenModalFrame>
       </div>
 
       {showCreator && (
