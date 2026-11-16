@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Dices, Paintbrush, X } from 'lucide-react';
 import {
   Avatar,
@@ -45,25 +45,11 @@ export function AvatarCustomizerModal({
   const [current, setCurrent] = useState<AvatarConfig>(() => ({ ...DEFAULT_AVATAR, ...config }));
   const [activeTab, setActiveTab] = useState<TabType>('base');
   const [page, setPage] = useState(0);
-  const [isLandscape, setIsLandscape] = useState(() =>
-    typeof window !== 'undefined'
-      ? window.matchMedia('(orientation: landscape)').matches
-      : false
-  );
   const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [nameInput, setNameInput] = useState(name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [customAvatars, setCustomAvatars] = useState<CustomAvatar[]>(() => getCustomAvatars());
   const [showCreator, setShowCreator] = useState(false);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(orientation: landscape)');
-    const onChange = () => setIsLandscape(mq.matches);
-    onChange();
-    mq.addEventListener('change', onChange);
-    return () => mq.removeEventListener('change', onChange);
-  }, []);
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value;
@@ -88,19 +74,21 @@ export function AvatarCustomizerModal({
   };
 
   const optionCardClass = (isSelected: boolean) =>
-    `min-w-0 w-full flex flex-col items-center justify-center p-1.5 sm:p-2 landscape:p-1.5 border-[3px] transition-transform cursor-pointer active:scale-95 ${
+    `min-w-0 w-full h-[68px] sm:h-[74px] landscape:h-[62px] flex flex-col items-center justify-center p-1.5 sm:p-2 landscape:p-1 border-[3px] transition-transform cursor-pointer active:scale-95 ${
       isSelected
         ? 'bg-[#4F46E5] border-[#312E81] text-white shadow-[inset_0_2px_0_#A5B4FC,0_3px_0_rgba(15,23,42,0.28)]'
         : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
     }`;
 
-  // Berechnet Seiteninhalt für das aktive 2-Reihen-Raster
-  const paginate = <T,>(items: T[], perPage: number) => {
-    const totalPages = Math.max(1, Math.ceil(items.length / perPage));
+  const ITEMS_PER_PAGE = 6; // Exakt 2 Reihen × 3 Spalten
+
+  // Berechnet Seiteninhalt für das aktive 2×3-Raster
+  const paginate = <T,>(items: T[]) => {
+    const totalPages = Math.max(1, Math.ceil(items.length / ITEMS_PER_PAGE));
     const safePage = Math.min(page, totalPages - 1);
-    const start = safePage * perPage;
+    const start = safePage * ITEMS_PER_PAGE;
     return {
-      slice: items.slice(start, start + perPage),
+      slice: items.slice(start, start + ITEMS_PER_PAGE),
       totalPages,
       safePage,
     };
@@ -298,24 +286,21 @@ export function AvatarCustomizerModal({
                 ))}
               </div>
 
-              {/* Einheitlich großer 2-Reihen-Auswahlbereich für alle Untermenüs (kein Scrollen, kein Größensprung) */}
-              <div className="flex w-full flex-col justify-between h-[186px] sm:h-[202px] landscape:h-[174px] touch-pan-y">
+              {/* Einheitlicher 2×3-Auswahlbereich (immer max. 6 Elemente in 2 Reihen, kein Scrollen, kein Überlappen) */}
+              <div className="flex w-full flex-col gap-2 touch-pan-y">
             {activeTab === 'base' && (() => {
               const allBaseItems = [
                 ...customAvatars.map((ca) => ({ kind: 'custom' as const, data: ca })),
                 ...AVATAR_BASES.map((b) => ({ kind: 'preset' as const, data: b })),
               ];
-              const { slice, totalPages, safePage } = paginate(
-                allBaseItems,
-                isLandscape ? 8 : 6
-              );
+              const { slice, totalPages, safePage } = paginate(allBaseItems);
               return (
                 <div
-                  className="flex flex-1 flex-col justify-between"
+                  className="flex flex-col gap-2"
                   onTouchStart={handleTouchStart}
                   onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
                 >
-                  <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 grid-rows-2 gap-2">
                     {slice.map((entry) => {
                       if (entry.kind === 'custom') {
                         const ca = entry.data;
@@ -413,47 +398,51 @@ export function AvatarCustomizerModal({
               );
             })()}
 
-            {activeTab === 'skin' && (
-              <div className="flex flex-1 flex-col justify-between">
-                <div className="grid grid-cols-4 gap-2">
-                  {AVATAR_SKIN_COLORS.map((s) => {
-                    const isSelected = current.skinColor === s.id;
-                    return (
-                      <button
-                        key={s.id}
-                        type="button"
-                        onClick={() => setCurrent({ ...current, skinColor: s.id })}
-                        className={optionCardClass(isSelected)}
-                      >
-                        <div
-                          className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
-                          style={{ backgroundColor: s.id }}
-                        >
-                          {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
-                        </div>
-                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                          {s.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {renderPager(0, 1)}
-              </div>
-            )}
-
-            {activeTab === 'hat' && (() => {
-              const { slice, totalPages, safePage } = paginate(
-                AVATAR_HATS,
-                isLandscape ? 8 : 6
-              );
+            {activeTab === 'skin' && (() => {
+              const { slice, totalPages, safePage } = paginate(AVATAR_SKIN_COLORS);
               return (
                 <div
-                  className="flex flex-1 flex-col justify-between"
+                  className="flex flex-col gap-2"
                   onTouchStart={handleTouchStart}
                   onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
                 >
-                  <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
+                  <div className="grid grid-cols-3 grid-rows-2 gap-2">
+                    {slice.map((s) => {
+                      const isSelected = current.skinColor === s.id;
+                      return (
+                        <button
+                          key={s.id}
+                          type="button"
+                          onClick={() => setCurrent({ ...current, skinColor: s.id })}
+                          className={optionCardClass(isSelected)}
+                        >
+                          <div
+                            className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                            style={{ backgroundColor: s.id }}
+                          >
+                            {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
+                          </div>
+                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                            {s.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {renderPager(safePage, totalPages)}
+                </div>
+              );
+            })()}
+
+            {activeTab === 'hat' && (() => {
+              const { slice, totalPages, safePage } = paginate(AVATAR_HATS);
+              return (
+                <div
+                  className="flex flex-col gap-2"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
+                >
+                  <div className="grid grid-cols-3 grid-rows-2 gap-2">
                     {slice.map((h) => {
                       const isSelected = current.hat === h.id;
                       return (
@@ -480,64 +469,78 @@ export function AvatarCustomizerModal({
               );
             })()}
 
-            {activeTab === 'accessory' && (
-              <div className="flex flex-1 flex-col justify-between">
-                <div className="grid grid-cols-3 gap-2">
-                  {AVATAR_ACCESSORIES.map((acc) => {
-                    const isSelected = current.accessory === acc.id;
-                    return (
-                      <button
-                        key={acc.id}
-                        type="button"
-                        onClick={() => setCurrent({ ...current, accessory: acc.id })}
-                        className={optionCardClass(isSelected)}
-                      >
-                        <Avatar
-                          config={{ ...current, accessory: acc.id }}
-                          size={36}
-                          className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
-                        />
-                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                          {acc.label}
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-                {renderPager(0, 1)}
-              </div>
-            )}
-
-            {activeTab === 'bg' && (
-              <div className="flex flex-1 flex-col justify-between">
-                <div className="grid grid-cols-3 gap-2">
-                  {AVATAR_BGS.map((bg) => {
-                    const isSelected = current.bg === bg.id;
-                    return (
-                      <button
-                        key={bg.id}
-                        type="button"
-                        onClick={() => setCurrent({ ...current, bg: bg.id })}
-                        className={optionCardClass(isSelected)}
-                      >
-                        <div
-                          className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
-                          style={{
-                            backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
-                          }}
+            {activeTab === 'accessory' && (() => {
+              const { slice, totalPages, safePage } = paginate(AVATAR_ACCESSORIES);
+              return (
+                <div
+                  className="flex flex-col gap-2"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
+                >
+                  <div className="grid grid-cols-3 grid-rows-2 gap-2">
+                    {slice.map((acc) => {
+                      const isSelected = current.accessory === acc.id;
+                      return (
+                        <button
+                          key={acc.id}
+                          type="button"
+                          onClick={() => setCurrent({ ...current, accessory: acc.id })}
+                          className={optionCardClass(isSelected)}
                         >
-                          {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
-                        </div>
-                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                          {bg.label}
-                        </span>
-                      </button>
-                    );
-                  })}
+                          <Avatar
+                            config={{ ...current, accessory: acc.id }}
+                            size={36}
+                            className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                          />
+                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                            {acc.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {renderPager(safePage, totalPages)}
                 </div>
-                {renderPager(0, 1)}
-              </div>
-            )}
+              );
+            })()}
+
+            {activeTab === 'bg' && (() => {
+              const { slice, totalPages, safePage } = paginate(AVATAR_BGS);
+              return (
+                <div
+                  className="flex flex-col gap-2"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
+                >
+                  <div className="grid grid-cols-3 grid-rows-2 gap-2">
+                    {slice.map((bg) => {
+                      const isSelected = current.bg === bg.id;
+                      return (
+                        <button
+                          key={bg.id}
+                          type="button"
+                          onClick={() => setCurrent({ ...current, bg: bg.id })}
+                          className={optionCardClass(isSelected)}
+                        >
+                          <div
+                            className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                            style={{
+                              backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
+                            }}
+                          >
+                            {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
+                          </div>
+                          <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                            {bg.label}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                  {renderPager(safePage, totalPages)}
+                </div>
+              );
+            })()}
           </div>
 
           {/* „Eigenen Avatar erstellen“ unterhalb der Auswahlmöglichkeiten */}
