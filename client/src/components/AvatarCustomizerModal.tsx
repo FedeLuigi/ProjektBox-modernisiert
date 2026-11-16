@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Check, ChevronLeft, ChevronRight, Dices, Paintbrush, X } from 'lucide-react';
 import {
   Avatar,
@@ -45,11 +45,12 @@ export function AvatarCustomizerModal({
   const [current, setCurrent] = useState<AvatarConfig>(() => ({ ...DEFAULT_AVATAR, ...config }));
   const [activeTab, setActiveTab] = useState<TabType>('base');
   const [page, setPage] = useState(0);
-  const [isShortLandscape, setIsShortLandscape] = useState(() =>
+  const [isLandscape, setIsLandscape] = useState(() =>
     typeof window !== 'undefined'
-      ? window.matchMedia('(orientation: landscape) and (max-height: 540px)').matches
+      ? window.matchMedia('(orientation: landscape)').matches
       : false
   );
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
   const [nameInput, setNameInput] = useState(name);
   const [nameError, setNameError] = useState<string | null>(null);
   const [customAvatars, setCustomAvatars] = useState<CustomAvatar[]>(() => getCustomAvatars());
@@ -57,8 +58,8 @@ export function AvatarCustomizerModal({
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const mq = window.matchMedia('(orientation: landscape) and (max-height: 540px)');
-    const onChange = () => setIsShortLandscape(mq.matches);
+    const mq = window.matchMedia('(orientation: landscape)');
+    const onChange = () => setIsLandscape(mq.matches);
     onChange();
     mq.addEventListener('change', onChange);
     return () => mq.removeEventListener('change', onChange);
@@ -93,7 +94,7 @@ export function AvatarCustomizerModal({
         : 'bg-[#F8FAFC] hover:bg-[#FFFFFF] border-[#334155] text-[#1E293B] shadow-[inset_0_2px_0_#FFFFFF]'
     }`;
 
-  // Berechnet Seiteninhalt für das aktive Gitter – verhindert Scrollbars bei vielen Elementen
+  // Berechnet Seiteninhalt für das aktive 2-Reihen-Raster
   const paginate = <T,>(items: T[], perPage: number) => {
     const totalPages = Math.max(1, Math.ceil(items.length / perPage));
     const safePage = Math.min(page, totalPages - 1);
@@ -104,6 +105,63 @@ export function AvatarCustomizerModal({
       safePage,
     };
   };
+
+  const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+    const touch = e.touches[0];
+    if (touch) {
+      swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent<HTMLDivElement>, totalPages: number) => {
+    if (!swipeStartRef.current || totalPages <= 1) {
+      swipeStartRef.current = null;
+      return;
+    }
+    const touch = e.changedTouches[0];
+    if (!touch) return;
+    const dx = touch.clientX - swipeStartRef.current.x;
+    const dy = touch.clientY - swipeStartRef.current.y;
+    swipeStartRef.current = null;
+
+    if (Math.abs(dx) > 35 && Math.abs(dx) > Math.abs(dy)) {
+      if (dx < 0) {
+        setPage((p) => Math.min(totalPages - 1, p + 1));
+      } else {
+        setPage((p) => Math.max(0, p - 1));
+      }
+    }
+  };
+
+  const renderPager = (safePage: number, totalPages: number) => (
+    <div className="flex h-7 shrink-0 items-center justify-center gap-2.5">
+      {totalPages > 1 ? (
+        <>
+          <button
+            type="button"
+            disabled={safePage === 0}
+            onClick={() => setPage((p) => Math.max(0, p - 1))}
+            aria-label="Vorherige Ansicht"
+            className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed active:scale-95"
+          >
+            <ChevronLeft className="h-4 w-4 stroke-[2.6]" />
+          </button>
+          <span className="font-arcade text-xs text-[#334155] min-w-[36px] text-center">
+            {safePage + 1} / {totalPages}
+          </span>
+          <button
+            type="button"
+            disabled={safePage >= totalPages - 1}
+            onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+            aria-label="Nächste Ansicht"
+            className="flex h-6 w-8 items-center justify-center border-2 border-[#334155] bg-[#F8FAFC] text-[#1E293B] shadow-[0_2px_0_rgba(15,23,42,0.2)] cursor-pointer disabled:opacity-35 disabled:cursor-not-allowed active:scale-95"
+          >
+            <ChevronRight className="h-4 w-4 stroke-[2.6]" />
+          </button>
+        </>
+      ) : null}
+    </div>
+  );
 
   return (
     <div
@@ -240,8 +298,8 @@ export function AvatarCustomizerModal({
                 ))}
               </div>
 
-              {/* Einheitlich großer Auswahlbereich für alle Untermenüs (kein Größensprung beim Tab-Wechsel) */}
-              <div className="flex w-full flex-col justify-between h-[264px] sm:h-[288px] landscape:h-[172px]">
+              {/* Einheitlich großer 2-Reihen-Auswahlbereich für alle Untermenüs (kein Scrollen, kein Größensprung) */}
+              <div className="flex w-full flex-col justify-between h-[186px] sm:h-[202px] landscape:h-[174px] touch-pan-y">
             {activeTab === 'base' && (() => {
               const allBaseItems = [
                 ...customAvatars.map((ca) => ({ kind: 'custom' as const, data: ca })),
@@ -249,10 +307,14 @@ export function AvatarCustomizerModal({
               ];
               const { slice, totalPages, safePage } = paginate(
                 allBaseItems,
-                isShortLandscape ? 8 : 9
+                isLandscape ? 8 : 6
               );
               return (
-                <div className="flex flex-1 flex-col justify-between">
+                <div
+                  className="flex flex-1 flex-col justify-between"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
+                >
                   <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
                     {slice.map((entry) => {
                       if (entry.kind === 'custom') {
@@ -346,70 +408,51 @@ export function AvatarCustomizerModal({
                     })}
                   </div>
 
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-0.5">
-                      <CrystalButton
-                        size="sm"
-                        variant="secondary"
-                        disabled={safePage === 0}
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        aria-label="Vorherige Seite"
-                        className="h-7 px-2.5"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </CrystalButton>
-                      <span className="font-arcade text-xs text-[#334155] min-w-[44px] text-center">
-                        {safePage + 1} / {totalPages}
-                      </span>
-                      <CrystalButton
-                        size="sm"
-                        variant="secondary"
-                        disabled={safePage >= totalPages - 1}
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        aria-label="Nächste Seite"
-                        className="h-7 px-2.5"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </CrystalButton>
-                    </div>
-                  )}
+                  {renderPager(safePage, totalPages)}
                 </div>
               );
             })()}
 
             {activeTab === 'skin' && (
-              <div className="grid grid-cols-4 gap-2">
-                {AVATAR_SKIN_COLORS.map((s) => {
-                  const isSelected = current.skinColor === s.id;
-                  return (
-                    <button
-                      key={s.id}
-                      type="button"
-                      onClick={() => setCurrent({ ...current, skinColor: s.id })}
-                      className={optionCardClass(isSelected)}
-                    >
-                      <div
-                        className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
-                        style={{ backgroundColor: s.id }}
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="grid grid-cols-4 gap-2">
+                  {AVATAR_SKIN_COLORS.map((s) => {
+                    const isSelected = current.skinColor === s.id;
+                    return (
+                      <button
+                        key={s.id}
+                        type="button"
+                        onClick={() => setCurrent({ ...current, skinColor: s.id })}
+                        className={optionCardClass(isSelected)}
                       >
-                        {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
-                      </div>
-                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                        {s.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div
+                          className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                          style={{ backgroundColor: s.id }}
+                        >
+                          {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
+                        </div>
+                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          {s.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {renderPager(0, 1)}
               </div>
             )}
 
             {activeTab === 'hat' && (() => {
               const { slice, totalPages, safePage } = paginate(
                 AVATAR_HATS,
-                isShortLandscape ? 8 : 9
+                isLandscape ? 8 : 6
               );
               return (
-                <div className="flex flex-1 flex-col justify-between">
+                <div
+                  className="flex flex-1 flex-col justify-between"
+                  onTouchStart={handleTouchStart}
+                  onTouchEnd={(e) => handleTouchEnd(e, totalPages)}
+                >
                   <div className="grid grid-cols-3 landscape:grid-cols-4 gap-2">
                     {slice.map((h) => {
                       const isSelected = current.hat === h.id;
@@ -432,87 +475,67 @@ export function AvatarCustomizerModal({
                       );
                     })}
                   </div>
-                  {totalPages > 1 && (
-                    <div className="flex items-center justify-center gap-2 pt-0.5">
-                      <CrystalButton
-                        size="sm"
-                        variant="secondary"
-                        disabled={safePage === 0}
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        aria-label="Vorherige Seite"
-                        className="h-7 px-2.5"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </CrystalButton>
-                      <span className="font-arcade text-xs text-[#334155] min-w-[44px] text-center">
-                        {safePage + 1} / {totalPages}
-                      </span>
-                      <CrystalButton
-                        size="sm"
-                        variant="secondary"
-                        disabled={safePage >= totalPages - 1}
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        aria-label="Nächste Seite"
-                        className="h-7 px-2.5"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </CrystalButton>
-                    </div>
-                  )}
+                  {renderPager(safePage, totalPages)}
                 </div>
               );
             })()}
 
             {activeTab === 'accessory' && (
-              <div className="grid grid-cols-3 gap-2">
-                {AVATAR_ACCESSORIES.map((acc) => {
-                  const isSelected = current.accessory === acc.id;
-                  return (
-                    <button
-                      key={acc.id}
-                      type="button"
-                      onClick={() => setCurrent({ ...current, accessory: acc.id })}
-                      className={optionCardClass(isSelected)}
-                    >
-                      <Avatar
-                        config={{ ...current, accessory: acc.id }}
-                        size={36}
-                        className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
-                      />
-                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                        {acc.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="grid grid-cols-3 gap-2">
+                  {AVATAR_ACCESSORIES.map((acc) => {
+                    const isSelected = current.accessory === acc.id;
+                    return (
+                      <button
+                        key={acc.id}
+                        type="button"
+                        onClick={() => setCurrent({ ...current, accessory: acc.id })}
+                        className={optionCardClass(isSelected)}
+                      >
+                        <Avatar
+                          config={{ ...current, accessory: acc.id }}
+                          size={36}
+                          className="sm:w-[40px] sm:h-[40px] landscape:w-[32px] landscape:h-[32px]"
+                        />
+                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          {acc.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {renderPager(0, 1)}
               </div>
             )}
 
             {activeTab === 'bg' && (
-              <div className="grid grid-cols-3 gap-2">
-                {AVATAR_BGS.map((bg) => {
-                  const isSelected = current.bg === bg.id;
-                  return (
-                    <button
-                      key={bg.id}
-                      type="button"
-                      onClick={() => setCurrent({ ...current, bg: bg.id })}
-                      className={optionCardClass(isSelected)}
-                    >
-                      <div
-                        className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
-                        style={{
-                          backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
-                        }}
+              <div className="flex flex-1 flex-col justify-between">
+                <div className="grid grid-cols-3 gap-2">
+                  {AVATAR_BGS.map((bg) => {
+                    const isSelected = current.bg === bg.id;
+                    return (
+                      <button
+                        key={bg.id}
+                        type="button"
+                        onClick={() => setCurrent({ ...current, bg: bg.id })}
+                        className={optionCardClass(isSelected)}
                       >
-                        {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
-                      </div>
-                      <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
-                        {bg.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div
+                          className="h-8 w-8 sm:h-9 sm:w-9 landscape:h-7 landscape:w-7 shrink-0 border-2 border-[#17608E] flex items-center justify-center"
+                          style={{
+                            backgroundImage: `linear-gradient(to top right, ${bg.from}, ${bg.to})`,
+                          }}
+                        >
+                          {isSelected && <Check className="h-4 w-4 text-white drop-shadow" />}
+                        </div>
+                        <span className="font-arcade mt-0.5 w-full truncate text-center text-[10px] sm:text-[11px] uppercase">
+                          {bg.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+                {renderPager(0, 1)}
               </div>
             )}
           </div>
