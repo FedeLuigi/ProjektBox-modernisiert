@@ -3,11 +3,7 @@ import { ChevronLeft, ChevronRight, Heart, Play, Search, Tv, X } from 'lucide-re
 import { type NavSection } from '../App';
 import { type Game } from '../data/games';
 import { SECTION_ITEMS } from './ArcadeHudElements';
-import {
-  ACCENT_PALETTES,
-  CrystalButton,
-  CrystalIconButton,
-} from './CrystalUI';
+import { ACCENT_PALETTES } from './CrystalUI';
 import { GamePreviewArtwork } from './GamePreviewArtwork';
 
 export interface OpenLayoutProps {
@@ -47,6 +43,87 @@ function OpenEmptyState({
       >
         ALLE SPIELE ZEIGEN
       </button>
+    </div>
+  );
+}
+
+function OpenActionButtons({
+  game,
+  isFav,
+  shape = 'pill',
+  compact = false,
+  onLaunch,
+  onToggleFavorite,
+}: {
+  game: Game;
+  isFav: boolean;
+  shape?: 'pill' | 'rounded' | 'square';
+  compact?: boolean;
+  onLaunch: (tvMode: boolean) => void;
+  onToggleFavorite: () => void;
+}) {
+  const palette = ACCENT_PALETTES[game.accent];
+  const radius =
+    shape === 'pill'
+      ? 'rounded-full'
+      : shape === 'rounded'
+        ? 'rounded-xl'
+        : 'rounded-lg';
+
+  return (
+    <div className="flex flex-wrap items-center gap-2 sm:gap-2.5">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          onLaunch(false);
+        }}
+        style={{
+          backgroundColor: palette.bg,
+          borderColor: palette.topBorder,
+        }}
+        className={`font-arcade inline-flex items-center justify-center gap-2 border text-white uppercase shadow-[0_6px_20px_rgba(0,0,0,0.35)] transition-transform hover:scale-105 active:scale-95 cursor-pointer ${radius} ${
+          compact ? 'h-8 px-3.5 text-xs' : 'h-11 sm:h-12 px-7 text-sm sm:text-base'
+        }`}
+      >
+        <Play className={`${compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} fill-current`} />
+        {!compact && <span>SPIELEN</span>}
+      </button>
+
+      {game.supportsTv && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onLaunch(true);
+          }}
+          className={`font-arcade inline-flex items-center justify-center gap-1.5 border border-white/25 bg-white/10 text-white uppercase backdrop-blur-xs transition hover:bg-white/20 active:scale-95 cursor-pointer ${radius} ${
+            compact ? 'h-8 px-2.5 text-xs' : 'h-11 sm:h-12 px-5 text-sm sm:text-base'
+          }`}
+        >
+          <Tv className={compact ? 'h-3.5 w-3.5' : 'h-4 w-4'} />
+          {!compact && <span>TV</span>}
+        </button>
+      )}
+
+      {!compact && (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+          aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+          className={`flex h-11 w-11 sm:h-12 sm:w-12 items-center justify-center border transition active:scale-95 cursor-pointer ${radius} ${
+            isFav
+              ? 'border-[#FDA4AF] bg-[#E11D48]/85 text-white shadow-[0_0_18px_rgba(225,29,72,0.45)]'
+              : 'border-white/25 bg-white/10 text-white/80 hover:bg-white/20 hover:text-white backdrop-blur-xs'
+          }`}
+        >
+          <Heart className={`h-4 w-4 sm:h-5 sm:w-5 ${isFav ? 'fill-current' : ''}`} />
+        </button>
+      )}
     </div>
   );
 }
@@ -101,41 +178,14 @@ export function OpenStageLayout({
             {activeGame.description}
           </p>
 
-          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
-            <CrystalButton
-              size="lg"
-              variant={activeGame.accent}
-              tilt="left"
-              onClick={() => onLaunchGame(activeGame, false)}
-              className="h-11 sm:h-12 px-7 text-sm sm:text-base"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              <span>SPIELEN</span>
-            </CrystalButton>
-
-            {activeGame.supportsTv && (
-              <CrystalButton
-                size="lg"
-                variant="secondary"
-                tilt="right"
-                onClick={() => onLaunchGame(activeGame, true)}
-                className="h-11 sm:h-12 px-5 text-sm sm:text-base"
-              >
-                <Tv className="h-4 w-4" />
-                <span>TV</span>
-              </CrystalButton>
-            )}
-
-            <CrystalIconButton
-              size="md"
-              tilt="right"
-              variant={isFav ? 'rose' : 'neutral'}
-              onClick={() => onToggleFavorite(activeGame.id)}
-              title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-              aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
-            >
-              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-            </CrystalIconButton>
+          <div className="pt-1">
+            <OpenActionButtons
+              game={activeGame}
+              isFav={isFav}
+              shape="pill"
+              onLaunch={(tv) => onLaunchGame(activeGame, tv)}
+              onToggleFavorite={() => onToggleFavorite(activeGame.id)}
+            />
           </div>
         </div>
       </div>
@@ -271,40 +321,14 @@ export function OpenGlassPillsLayout({
                 {activeGame.description}
               </p>
 
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
-                <CrystalButton
-                  size="lg"
-                  variant={activeGame.accent}
-                  tilt="left"
-                  onClick={() => onLaunchGame(activeGame, false)}
-                  className="h-11 px-7 text-sm sm:text-base"
-                >
-                  <Play className="h-4 w-4 fill-current" />
-                  <span>PLAY</span>
-                </CrystalButton>
-
-                {activeGame.supportsTv && (
-                  <CrystalButton
-                    size="lg"
-                    variant="secondary"
-                    tilt="right"
-                    onClick={() => onLaunchGame(activeGame, true)}
-                    className="h-11 px-5 text-sm sm:text-base"
-                  >
-                    <Tv className="h-4 w-4" />
-                    <span>TV</span>
-                  </CrystalButton>
-                )}
-
-                <CrystalIconButton
-                  size="md"
-                  tilt="right"
-                  variant={isFav ? 'rose' : 'neutral'}
-                  onClick={() => onToggleFavorite(activeGame.id)}
-                  aria-label="Favorit umschalten"
-                >
-                  <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-                </CrystalIconButton>
+              <div className="pt-1">
+                <OpenActionButtons
+                  game={activeGame}
+                  isFav={isFav}
+                  shape="pill"
+                  onLaunch={(tv) => onLaunchGame(activeGame, tv)}
+                  onToggleFavorite={() => onToggleFavorite(activeGame.id)}
+                />
               </div>
             </div>
 
@@ -398,41 +422,13 @@ export function OpenFloatingDockLayout({
             </p>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5">
-            <CrystalButton
-              size="lg"
-              variant={activeGame.accent}
-              tilt="left"
-              onClick={() => onLaunchGame(activeGame, false)}
-              className="h-11 px-8 text-sm sm:text-base"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              <span>SPIELEN</span>
-            </CrystalButton>
-
-            {activeGame.supportsTv && (
-              <CrystalButton
-                size="lg"
-                variant="secondary"
-                tilt="right"
-                onClick={() => onLaunchGame(activeGame, true)}
-                className="h-11 px-5 text-sm sm:text-base"
-              >
-                <Tv className="h-4 w-4" />
-                <span>TV</span>
-              </CrystalButton>
-            )}
-
-            <CrystalIconButton
-              size="md"
-              tilt="right"
-              variant={isFav ? 'rose' : 'neutral'}
-              onClick={() => onToggleFavorite(activeGame.id)}
-              aria-label="Favorit umschalten"
-            >
-              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-            </CrystalIconButton>
-          </div>
+          <OpenActionButtons
+            game={activeGame}
+            isFav={isFav}
+            shape="rounded"
+            onLaunch={(tv) => onLaunchGame(activeGame, tv)}
+            onToggleFavorite={() => onToggleFavorite(activeGame.id)}
+          />
         </div>
       )}
 
@@ -632,33 +628,15 @@ export function OpenGalleryLayout({
                       <p className="text-xs text-[#94A3B8] truncate">{game.description}</p>
                     </div>
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <CrystalButton
-                        size="sm"
-                        variant={game.accent}
-                        tilt="left"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onLaunchGame(game, false);
-                        }}
-                        className="h-8 px-3 text-xs"
-                      >
-                        <Play className="h-3.5 w-3.5 fill-current" />
-                      </CrystalButton>
-                      {game.supportsTv && (
-                        <CrystalButton
-                          size="sm"
-                          variant="secondary"
-                          tilt="right"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onLaunchGame(game, true);
-                          }}
-                          className="h-8 px-2.5 text-xs"
-                        >
-                          <Tv className="h-3.5 w-3.5" />
-                        </CrystalButton>
-                      )}
+                    <div className="shrink-0">
+                      <OpenActionButtons
+                        game={game}
+                        isFav={isFav}
+                        shape="square"
+                        compact
+                        onLaunch={(tv) => onLaunchGame(game, tv)}
+                        onToggleFavorite={() => onToggleFavorite(game.id)}
+                      />
                     </div>
                   </div>
                 </div>
@@ -819,41 +797,13 @@ export function OpenMinimalLayout({
             </span>
           </div>
 
-          <div className="flex items-center justify-center gap-2.5">
-            <CrystalButton
-              size="lg"
-              variant={activeGame.accent}
-              tilt="left"
-              onClick={() => onLaunchGame(activeGame, false)}
-              className="h-11 sm:h-12 px-8 text-sm sm:text-base"
-            >
-              <Play className="h-4 w-4 fill-current" />
-              <span>SPIELEN</span>
-            </CrystalButton>
-
-            {activeGame.supportsTv && (
-              <CrystalButton
-                size="lg"
-                variant="secondary"
-                tilt="right"
-                onClick={() => onLaunchGame(activeGame, true)}
-                className="h-11 sm:h-12 px-5 text-sm sm:text-base"
-              >
-                <Tv className="h-4 w-4" />
-                <span>TV</span>
-              </CrystalButton>
-            )}
-
-            <CrystalIconButton
-              size="md"
-              tilt="right"
-              variant={isFav ? 'rose' : 'neutral'}
-              onClick={() => onToggleFavorite(activeGame.id)}
-              aria-label="Favorit umschalten"
-            >
-              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
-            </CrystalIconButton>
-          </div>
+          <OpenActionButtons
+            game={activeGame}
+            isFav={isFav}
+            shape="pill"
+            onLaunch={(tv) => onLaunchGame(activeGame, tv)}
+            onToggleFavorite={() => onToggleFavorite(activeGame.id)}
+          />
         </div>
       )}
 

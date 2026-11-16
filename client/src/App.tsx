@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ChevronLeft, ChevronRight, Plus, Search, X } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search, X } from 'lucide-react';
 import {
   GAMES,
   type Game,
@@ -10,14 +10,12 @@ import { SettingsSheet } from './components/SettingsSheet';
 import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { IslandBackground } from './components/IslandBackground';
 import {
-  ArcadeLogoHeader,
   ArcadeMenuModal,
-  PlayerAvatarButton,
-  PlayerProfileBar,
   SectionFilterBar,
 } from './components/ArcadeHudElements';
-import { CrystalButton, CrystalIconButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
+import { CrystalButton, CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { LayoutExplorerModal, type MenuLayoutVariant } from './components/LayoutExplorerModal';
+import { MainMenuHeader } from './components/MainMenuHeader';
 import {
   OpenFloatingDockLayout,
   OpenGalleryLayout,
@@ -658,64 +656,28 @@ export function App() {
 
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
-        {/* ═══ OBERE LEISTE: Avatar links • PROJEKT BOX Logo & Button Mitte • TV-Code & Optionen rechts ═══ */}
-        <header className="tablet-header landscape-top-bar relative z-30 flex md:grid md:grid-cols-[1fr_auto_1fr] shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
-          {/* Links: Spieler-Avatar */}
-          <div className="shrink-0 flex items-center md:justify-self-start">
-            <PlayerAvatarButton
-              avatar={userProfile.avatar}
-              onClick={() => {
-                triggerHaptic();
-                setShowAvatarModal(true);
-              }}
-            />
-          </div>
-
-          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") + neuer Button daneben */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 md:justify-self-center">
-            <div className="landscape-hide-logo landscape:hidden!">
-              <ArcadeLogoHeader />
-            </div>
-            <CrystalIconButton
-              size="sm"
-              variant="crystal"
-              tilt="right"
-              onClick={() => {
-                triggerHaptic();
-                setShowBlankPage(true);
-              }}
-              title="Leere Ansicht öffnen"
-              aria-label="Leere Ansicht öffnen"
-            >
-              <Plus className="h-4 w-4 stroke-[2.8]" />
-            </CrystalIconButton>
-          </div>
-
-          {/* Rechts: TV-Join Button + Optionen */}
-          <div className="shrink-0 flex items-center gap-1 sm:gap-2 md:justify-self-end">
-            <CrystalButton
-              size="sm"
-              tilt="right"
-              variant="amber"
-              title="Mit einem bestehenden 6-stelligen TV- oder Raum-Code beitreten"
-              onClick={() => {
-                triggerHaptic();
-                setTvJoinError(null);
-                setShowTvJoinModal(true);
-              }}
-            >
-              TV CODE
-            </CrystalButton>
-
-            <PlayerProfileBar
-              showAvatar={false}
-              onOpenSettings={() => {
-                triggerHaptic();
-                setShowSettings(true);
-              }}
-            />
-          </div>
-        </header>
+        {/* ═══ OBERE LEISTE: Passt sich nahtlos an das jeweilige Hauptmenü-Design an ═══ */}
+        <MainMenuHeader
+          layout={menuLayout}
+          avatar={userProfile.avatar}
+          onOpenProfile={() => {
+            triggerHaptic();
+            setShowAvatarModal(true);
+          }}
+          onOpenExplorer={() => {
+            triggerHaptic();
+            setShowBlankPage(true);
+          }}
+          onOpenTvJoin={() => {
+            triggerHaptic();
+            setTvJoinError(null);
+            setShowTvJoinModal(true);
+          }}
+          onOpenSettings={() => {
+            triggerHaptic();
+            setShowSettings(true);
+          }}
+        />
 
         {/* ═══ HAUPT-BÜHNE: Klare Aufteilung in festen FILTERBEREICH (oben) und flexiblen SPIELEBEREICH ═══
             Der Container hat eine von der Spieleanzahl unabhängige Höhe (flex-1, auf großen Screens begrenzt),
