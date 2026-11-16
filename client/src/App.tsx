@@ -563,6 +563,44 @@ export function App() {
     isPointerDown.current = false;
   };
 
+  const renderSearchBox = (compact = false) => (
+    <div
+      style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
+      className="w-full min-w-0 bg-[#0F172A] p-[2.5px] sm:p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
+    >
+      <div
+        style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
+        className={`relative flex min-w-0 items-center bg-[#1E293B] border border-[#475569] ${
+          compact ? 'px-2 py-0.5 h-7' : 'px-2.5 sm:px-3 py-1 sm:py-1.5 xl:h-9'
+        }`}
+      >
+        <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#FBBF24] shrink-0 mr-1.5 sm:mr-2" />
+        <input
+          type="text"
+          size={1}
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder={isCompactScreen || compact ? 'SUCHEN...' : 'SPIEL SUCHEN...'}
+          aria-label="Spiele durchsuchen"
+          style={{ color: '#FFFFFF', caretColor: '#FFFFFF' }}
+          className={`font-arcade min-w-0 flex-1 w-full bg-transparent font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white ${
+            compact ? 'text-[11px]' : 'text-xs sm:text-sm'
+          }`}
+        />
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            aria-label="Suche löschen"
+            className="ml-1 shrink-0 text-[#94A3B8] hover:text-white cursor-pointer"
+          >
+            <X className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="relative flex h-dvh min-h-dvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
@@ -587,50 +625,17 @@ export function App() {
 
       {/* ─── 2. Haupt-HUD & Crystal-Bühne (kompakte Abstände ohne unnötigen vertikalen Leerraum) ─── */}
       <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
-        {/* ═══ OBERE LEISTE: Crystal-Suchfeld links • PROJEKT BOX Logo Mitte • TV-Code & Spielerprofil rechts ═══ */}
-        <header className="tablet-header landscape-top-bar relative z-30 flex shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
-          {/* Links: Flexibel schrumpfende Crystal-Suchleiste (flex-1 min-w-0) */}
-          <div className="tablet-search-container flex flex-1 min-w-0 items-center max-w-[220px] sm:max-w-[270px] landscape:max-w-[320px]">
-            <div
-              style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-              className="w-full min-w-0 bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.45)]"
-            >
-              <div
-                style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 95%, 2% 100%)' }}
-                className="relative flex min-w-0 items-center bg-[#1E293B] border border-[#475569] px-2.5 sm:px-3 py-1 sm:py-1.5"
-              >
-                <Search className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-[#FBBF24] shrink-0 mr-1.5 sm:mr-2" />
-                <input
-                  type="text"
-                  size={1}
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder={isCompactScreen ? 'SUCHEN...' : 'SPIEL SUCHEN...'}
-                  aria-label="Spiele durchsuchen"
-                  style={{ color: '#FFFFFF', caretColor: '#FFFFFF' }}
-                  className="font-arcade min-w-0 flex-1 w-full bg-transparent text-xs sm:text-sm font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
-                />
-                {searchQuery && (
-                  <button
-                    type="button"
-                    onClick={() => setSearchQuery('')}
-                    aria-label="Suche löschen"
-                    className="ml-1 shrink-0 text-[#94A3B8] hover:text-white cursor-pointer"
-                  >
-                    <X className="h-4 w-4" />
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
+        {/* ═══ OBERE LEISTE: PROJEKT BOX Logo (links auf Mobile, mittig ab Tablet) • TV-Code & Spielerprofil rechts ═══ */}
+        <header className="tablet-header landscape-top-bar relative z-30 flex md:grid md:grid-cols-[1fr_auto_1fr] shrink-0 flex-nowrap items-center justify-between gap-1.5 sm:gap-2 px-1.5 sm:px-4 pt-0.5 pb-1 landscape:py-0.5 landscape:px-0">
+          <div className="hidden md:block landscape:hidden!" aria-hidden="true" />
 
-          {/* Mitte: Trapezförmiger Crystal-Header ("PROJEKT BOX") - im Smartphone-Querformat ausgeblendet */}
-          <div className="landscape-hide-logo mx-auto hidden md:block landscape:hidden!">
+          {/* Mitte (ab Tablet) / Links (Mobile Portrait): Trapezförmiger Crystal-Header ("PROJEKT BOX") */}
+          <div className="landscape-hide-logo md:justify-self-center landscape:hidden!">
             <ArcadeLogoHeader />
           </div>
 
-          {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen & Menü Icon-Buttons */}
-          <div className="shrink-0 flex items-center gap-1 sm:gap-2">
+          {/* Rechts: TV-Join Button + Spieler-Anzeige + Optionen */}
+          <div className="shrink-0 flex items-center gap-1 sm:gap-2 ml-auto md:justify-self-end">
             <CrystalButton
               size="sm"
               tilt="right"
@@ -664,7 +669,7 @@ export function App() {
             dadurch bleibt die Filterleiste bei vielen, wenigen und null Spielen exakt an derselben Position. */}
         <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center pt-3 md:pt-0 px-0 sm:px-6 landscape:p-0 landscape:justify-stretch">
           <div className="widescreen-main-container landscape-main-container mx-auto flex w-full flex-1 min-h-0 md:max-h-[46rem] max-w-[1005px] xl:max-w-[1420px] landscape:max-w-none flex-col gap-1.5 sm:gap-2">
-            {/* 1. FILTERBEREICH: ÜBERSCHRIFT, FILTER- & SORTIER-LEISTE (fester Platz, schrumpft nie) */}
+            {/* 1. FILTERBEREICH: ÜBERSCHRIFT, FILTER- & SUCH-LEISTE (fester Platz, schrumpft nie) */}
             <div className="shrink-0">
               {/* ═══ MOBILE LANDSCAPE (max-height: 540px): ALLES IN EINER EINZIGEN HORIZONTALEN ZEILE ═══ */}
               <div className="hidden landscape:flex items-center justify-between gap-2.5 px-0.5 py-0 w-full">
@@ -680,6 +685,10 @@ export function App() {
                   gapClassName="gap-1.5"
                   buttonClassName="h-7 px-2.5 text-xs"
                 />
+
+                <div className="shrink-0 w-[145px] sm:w-[185px]">
+                  {renderSearchBox(true)}
+                </div>
               </div>
 
               {/* ═══ STANDARDFALL (PORTRAIT & DESKTOP): 2 ZEILEN ═══ */}
@@ -688,6 +697,11 @@ export function App() {
                   <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A] drop-shadow-[0_2px_0_rgba(15,23,42,0.85)] uppercase">
                     SPIELAUSWAHL
                   </span>
+
+                  {/* Auf Mobile (< 768px) rechtsbündig direkt neben "SPIELAUSWAHL" */}
+                  <div className="md:hidden shrink-0 w-[165px] sm:w-[205px]">
+                    {renderSearchBox()}
+                  </div>
                 </div>
 
                 <div className="flex items-center justify-between gap-2 py-0.5">
@@ -698,6 +712,11 @@ export function App() {
                     onOpenMenu={handleOpenFilterMenu}
                     counts={filterCounts}
                   />
+
+                  {/* Auf Desktop & Tablet (>= 768px) rechts neben den Kategorien */}
+                  <div className="hidden md:block ml-auto shrink-0 pl-2 w-[210px] lg:w-[240px] xl:w-[260px]">
+                    {renderSearchBox()}
+                  </div>
                 </div>
               </div>
             </div>
