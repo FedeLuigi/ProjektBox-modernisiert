@@ -1,24 +1,37 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Dices, Plus, RefreshCw, Smartphone, Tv } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+  ArrowLeft,
+  Check,
+  Copy,
+  Crown,
+  Loader2,
+  Plus,
+  RefreshCw,
+  Share2,
+  Smartphone,
+  Tv,
+} from 'lucide-react';
 import { type Game } from '../../data/games';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
-import { useUserProfile } from '../../utils/userProfile';
+import { saveUserProfile, useUserProfile } from '../../utils/userProfile';
 import { generateSimpleLobbyName } from '../../utils/nameGenerator';
+import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper';
+import { Avatar } from '../Avatar';
+import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
+import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
+import { ACCENT_PALETTES } from '../CrystalUI';
+import { GamePreviewArtwork } from '../GamePreviewArtwork';
+import { OpenButton, OpenModalFrame } from '../OpenSubpageUI';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
-import { InLobbyView } from './InLobbyView';
-import { TvLobbyView } from './TvLobbyView';
-import { MultiplayerGameView } from './MultiplayerGameView';
-import { TvGameView } from './TvGameView';
+import { LobbyGameSettings } from './LobbyGameSettings';
 import {
   LOBBY_LAYOUT_OPTIONS,
   LobbyLayoutModal,
   type LobbyLayoutId,
 } from './LobbyLayoutModal';
-import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { ACCENT_PALETTES } from '../CrystalUI';
-import { GamePreviewArtwork } from '../GamePreviewArtwork';
-import { OpenButton } from '../OpenSubpageUI';
+import { MultiplayerGameView } from './MultiplayerGameView';
+import { TvGameView } from './TvGameView';
 
 interface LobbyScreenProps {
   game: Game;
@@ -27,27 +40,25 @@ interface LobbyScreenProps {
   initialTvMode?: boolean;
 }
 
-export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false }: LobbyScreenProps) {
+export function LobbyScreen({
+  game,
+  onClose,
+  initialLobby,
+  initialTvMode = false,
+}: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
   const [isInGame, setIsInGame] = useState(Boolean(initialLobby?.status === 'in-game'));
-
-  useEffect(() => {
-    if (initialLobby) {
-      setCurrentLobby(initialLobby);
-      if (initialLobby.status === 'in-game') {
-        setIsInGame(true);
-      }
-    }
-  }, [initialLobby]);
-
+  const [isTvMode, setIsTvMode] = useState(initialLobby?.isTvMode ?? initialTvMode);
+  const [isCreating, setIsCreating] = useState(!initialLobby);
+  const [isStarting, setIsStarting] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  const currentUser = useUserProfile();
-  const [createName, setCreateName] = useState(() => generateSimpleLobbyName(initialTvMode));
-  const [hasCustomLobbyName, setHasCustomLobbyName] = useState(false);
-  const [isTvMode, setIsTvMode] = useState(initialTvMode);
-  const [isCreating, setIsCreating] = useState(false);
+  const [copiedCode, setCopiedCode] = useState(false);
+  const [copiedLink, setCopiedLink] = useState(false);
+  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
+  const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
   const [showLayoutModal, setShowLayoutModal] = useState(false);
+
   const [lobbyLayout, setLobbyLayout] = useState<LobbyLayoutId>(() => {
     try {
       const saved = localStorage.getItem('projektbox.lobbyLayout') as LobbyLayoutId | null;
@@ -57,10 +68,57 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
     } catch {
       // ignore
     }
-    return 'lobby-open-centered';
+    return 'lobby-open-stage';
   });
 
+  const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  const hasAutoCreatedRef = useRef(false);
+
+  const currentUser = useUserProfile();
   const gameId = game.id;
+  const palette = ACCENT_PALETTES[game.accent];
+
+  const createFreshLobby = useCallback(
+    async (tvFlag: boolean) => {
+      setIsCreating(true);
+      setErrorMsg(null);
+      try {
+        const created = await socketService.createLobby(
+          generateSimpleLobbyName(tvFlag),
+          true,
+          gameId,
+          tvFlag
+        );
+        setCurrentLobby(created);
+        setIsTvMode(Boolean(created.isTvMode));
+      } catch (err: any) {
+        setErrorMsg(err.message || 'Lobby konnte nicht erstellt werden.');
+      } finally {
+        setIsCreating(false);
+      }
+    },
+    [gameId]
+  );
+
+  // Synchronisiere initialLobby, falls über Deep-Link beigetreten
+  useEffect(() => {
+    if (initialLobby) {
+      setCurrentLobby(initialLobby);
+      setIsTvMode(Boolean(initialLobby.isTvMode));
+      setIsCreating(false);
+      if (initialLobby.status === 'in-game') {
+        setIsInGame(true);
+      }
+    }
+  }, [initialLobby]);
+
+  // Erstellt die Lobby beim Öffnen direkt automatisch (kein Zwischenschritt mehr)
+  useEffect(() => {
+    if (initialLobby || hasAutoCreatedRef.current) return;
+    hasAutoCreatedRef.current = true;
+    void createFreshLobby(initialTvMode);
+  }, [createFreshLobby, initialLobby, initialTvMode]);
 
   useEffect(() => {
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
@@ -68,13 +126,19 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
       setIsInGame(true);
     });
 
-    const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby }) => {
+    const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
       setCurrentLobby((prev) => (prev ? { ...prev, ...updatedLobby } : updatedLobby));
+      if (message) setErrorMsg(message);
+    });
+
+    const unsubDiscon = socketService.onPlayerDisconnected(({ playerName }) => {
+      setErrorMsg(`${playerName} hat die Verbindung verloren.`);
     });
 
     return () => {
       unsubStarted();
       unsubUpdated();
+      unsubDiscon();
     };
   }, [gameId]);
 
@@ -85,102 +149,92 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
     }
   }, [errorMsg]);
 
-  const handleRollLobbyName = () => {
-    setCreateName(generateSimpleLobbyName(isTvMode, createName));
-    setHasCustomLobbyName(false);
-  };
+  const joinUrl = currentLobby ? getLobbyJoinUrl(currentLobby.code) : '';
 
-  const handleCreateLobby = async (e?: React.FormEvent, forceTvMode?: boolean) => {
-    if (e) e.preventDefault();
-    if (isCreating) return;
-    setIsCreating(true);
-    setErrorMsg(null);
-
-    const tvFlag = typeof forceTvMode === 'boolean' ? forceTvMode : isTvMode;
-    const finalLobbyName = createName.trim() || generateSimpleLobbyName(tvFlag);
-
-    try {
-      const created = await socketService.createLobby(
-        finalLobbyName,
-        true,
-        gameId,
-        tvFlag
-      );
-      setCurrentLobby(created);
-    } catch (err: any) {
-      setErrorMsg(err.message || 'Lobby konnte nicht erstellt werden.');
-    } finally {
-      setIsCreating(false);
+  useEffect(() => {
+    if (qrCanvasRef.current && joinUrl) {
+      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 360).catch(console.error);
     }
+  }, [joinUrl, currentLobby?.code, lobbyLayout]);
+
+  useEffect(() => {
+    if (isQrModalOpen && qrModalCanvasRef.current && joinUrl) {
+      renderQrCodeToCanvas(qrModalCanvasRef.current, joinUrl, 360).catch(console.error);
+    }
+  }, [isQrModalOpen, joinUrl, currentLobby?.code]);
+
+  const handleBack = async () => {
+    if (currentLobby) {
+      await socketService.leaveLobby();
+    }
+    onClose();
   };
 
-  const handleLeaveLobby = async () => {
+  const handleLeaveGame = async () => {
     await socketService.leaveLobby();
-    setCurrentLobby(null);
     setIsInGame(false);
+    setCurrentLobby(null);
+    hasAutoCreatedRef.current = false;
+    onClose();
   };
 
-  const myPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
-  const isTvScreenHost = Boolean(currentLobby?.isTvMode && myPlayer?.isTvScreen);
-
-  if (isInGame && currentLobby) {
-    if (isTvScreenHost) {
-      return (
-        <TvGameView
-          lobby={currentLobby}
-          gameTitle={game.title}
-          onLeave={handleLeaveLobby}
-        />
-      );
+  const handleSwitchMode = async (nextTv: boolean) => {
+    if (nextTv === isTvMode || isCreating) return;
+    setIsTvMode(nextTv);
+    if (currentLobby) {
+      await socketService.leaveLobby();
+      setCurrentLobby(null);
     }
+    await createFreshLobby(nextTv);
+  };
 
-    return (
-      <MultiplayerGameView
-        lobby={currentLobby}
-        gameTitle={game.title}
-        onLeave={handleLeaveLobby}
-      />
-    );
-  }
+  const handleCopyCode = async () => {
+    if (!currentLobby) return;
+    try {
+      await navigator.clipboard.writeText(currentLobby.code);
+      setCopiedCode(true);
+      setTimeout(() => setCopiedCode(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
-  if (currentLobby) {
-    return (
-      <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in">
-        <BackgroundCometCanvas opacity={0.85} />
+  const handleCopyLink = async () => {
+    if (!joinUrl) return;
+    try {
+      await navigator.clipboard.writeText(joinUrl);
+      setCopiedLink(true);
+      setTimeout(() => setCopiedLink(false), 2000);
+    } catch {
+      // ignore
+    }
+  };
 
-        <div className="app-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between overflow-visible">
-          {isTvScreenHost ? (
-            <TvLobbyView
-              lobby={currentLobby}
-              gameTitle={game.title}
-              categoryLabel={game.category}
-              onLeave={handleLeaveLobby}
-              onGameStart={(startedLobby) => {
-                if (startedLobby) setCurrentLobby(startedLobby);
-                setIsInGame(true);
-              }}
-            />
-          ) : (
-            <InLobbyView
-              lobby={currentLobby}
-              gameTitle={game.title}
-              onLeave={handleLeaveLobby}
-              onGameStart={(startedLobby) => {
-                if (startedLobby) setCurrentLobby(startedLobby);
-                setIsInGame(true);
-              }}
-            />
-          )}
-        </div>
-      </div>
-    );
-  }
+  const handleToggleReady = async () => {
+    try {
+      await socketService.toggleReady();
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
+  };
 
-  const palette = ACCENT_PALETTES[game.accent];
+  const handleStartGame = async () => {
+    if (!currentLobby || isStarting) return;
+    setIsStarting(true);
+    try {
+      await socketService.startLobby();
+    } catch (err: any) {
+      setErrorMsg(err.message);
+      setIsStarting(false);
+    }
+  };
 
-  const handleSelectMode = (tv: boolean) => {
-    setIsTvMode(tv);
-    if (!hasCustomLobbyName) setCreateName(generateSimpleLobbyName(tv));
+  const handleUpdateSettings = async (newSettings: Record<string, any>) => {
+    try {
+      await socketService.updateLobbySettings(newSettings);
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    }
   };
 
   const handleSelectLayout = (next: LobbyLayoutId) => {
@@ -192,52 +246,115 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
     }
   };
 
-  const roomNameInput = (boxed = false, alignLeft = false) => (
-    <div className="flex items-stretch gap-2 w-full">
-      <input
-        id="lobby-name-input"
-        type="text"
-        maxLength={30}
-        value={createName}
-        onChange={(e) => {
-          const val = e.target.value;
-          setCreateName(val);
-          setHasCustomLobbyName(val.trim().length > 0);
-        }}
-        placeholder="Raumnamen eingeben..."
-        className={
-          boxed
-            ? 'font-sans h-11 sm:h-12 landscape:h-9 flex-1 min-w-0 rounded-xl border border-white/20 bg-white/[0.06] px-4 text-center text-sm sm:text-base landscape:text-xs font-bold tracking-wide text-white placeholder:text-white/40 uppercase focus:border-[#F59E0B] focus:bg-white/[0.09] focus:outline-none caret-[#FBBF24]'
-            : `font-sans h-11 landscape:h-9 flex-1 min-w-0 border-b-2 border-white/25 bg-transparent px-2 text-base sm:text-lg landscape:text-sm font-bold tracking-wide text-white placeholder:text-white/40 uppercase focus:border-[#F59E0B] focus:outline-none caret-[#FBBF24] ${
-                alignLeft ? 'text-left' : 'text-center'
-              }`
-        }
+  const myRawPlayer = currentLobby?.players.find((p) => p.id === currentUser.id);
+  const isTvScreenHost = Boolean(currentLobby?.isTvMode && myRawPlayer?.isTvScreen);
+
+  if (isInGame && currentLobby) {
+    if (isTvScreenHost) {
+      return (
+        <TvGameView
+          lobby={currentLobby}
+          gameTitle={game.title}
+          onLeave={handleLeaveGame}
+        />
+      );
+    }
+    return (
+      <MultiplayerGameView
+        lobby={currentLobby}
+        gameTitle={game.title}
+        onLeave={handleLeaveGame}
       />
+    );
+  }
 
-      <div className="group/dice relative flex shrink-0">
-        <button
-          type="button"
-          onClick={handleRollLobbyName}
-          title="Zufälligen Namen generieren"
-          aria-label="Zufälligen Namen generieren"
-          className={`flex items-center justify-center border border-[#F59E0B]/60 text-[#FDE68A] transition-colors active:scale-95 cursor-pointer ${
-            boxed
-              ? 'h-11 sm:h-12 landscape:h-9 w-11 sm:w-12 landscape:w-9 rounded-xl bg-[#F59E0B]/15 hover:bg-[#F59E0B]/25'
-              : 'h-10 w-10 landscape:h-8 landscape:w-8 rounded-lg bg-transparent hover:bg-[#F59E0B]/15 self-end mb-0.5'
-          }`}
-        >
-          <Dices className="h-4.5 w-4.5 landscape:h-4 landscape:w-4 stroke-[2.2]" />
-        </button>
+  const activePlayers = currentLobby
+    ? currentLobby.isTvMode
+      ? currentLobby.players.filter((p) => !p.isTvScreen)
+      : currentLobby.players
+    : [];
 
-        <div className="pointer-events-none absolute -top-9 right-0 z-30 whitespace-nowrap rounded-lg border border-[#F59E0B]/60 bg-[#0F172A] px-2.5 py-1 font-arcade text-[10px] tracking-wider text-[#FDE68A] uppercase opacity-0 scale-95 group-hover/dice:opacity-100 group-hover/dice:scale-100 group-focus-within/dice:opacity-100 transition-all duration-150 shadow-lg">
-          Zufälligen Namen generieren
-        </div>
-      </div>
-    </div>
+  const myPlayer =
+    activePlayers.find((p) => p.id === currentUser.id) || myRawPlayer;
+
+  const isHost = myPlayer?.isHost ?? false;
+  const isRoomLeader = currentLobby?.isTvMode
+    ? activePlayers[0]?.id === currentUser.id || isTvScreenHost
+    : isHost;
+  const isReady = myPlayer?.isReady ?? false;
+
+  const minPlayers = currentLobby?.minPlayers ?? 2;
+  const maxPlayers = currentLobby?.maxPlayers ?? 8;
+  const readyCount = activePlayers.filter((p) => p.isReady).length;
+  const targetReadyTotal = Math.max(minPlayers, activePlayers.length);
+  const missingPlayersCount = Math.max(0, minPlayers - activePlayers.length);
+
+  const allReady =
+    Boolean(currentLobby) &&
+    activePlayers.length >= minPlayers &&
+    activePlayers.length <= maxPlayers &&
+    activePlayers.every((p) => p.isReady);
+
+  const canStartGame = currentLobby?.isTvMode
+    ? isTvScreenHost || isRoomLeader || allReady
+    : isHost;
+  const canEditSettings = isRoomLeader;
+  const canSwitchMode = activePlayers.length <= 1 && (isHost || isTvScreenHost);
+
+  const actionButton = isTvScreenHost ? (
+    <OpenButton
+      fullWidth
+      size="lg"
+      variant="primary"
+      disabled={!allReady || isStarting}
+      onClick={handleStartGame}
+      className="landscape:h-9 landscape:text-xs"
+    >
+      {activePlayers.length < minPlayers
+        ? `WARTE AUF SPIELER (${activePlayers.length}/${minPlayers})`
+        : !allReady
+          ? `BEREIT (${readyCount}/${activePlayers.length})`
+          : 'SPIEL STARTEN'}
+    </OpenButton>
+  ) : !isReady ? (
+    <OpenButton
+      fullWidth
+      size="lg"
+      variant="primary"
+      onClick={handleToggleReady}
+      className="landscape:h-9 landscape:text-xs"
+    >
+      BEREIT
+    </OpenButton>
+  ) : canStartGame ? (
+    <OpenButton
+      fullWidth
+      size="lg"
+      variant="primary"
+      disabled={!allReady || isStarting}
+      onClick={handleStartGame}
+      className="landscape:h-9 landscape:text-xs"
+    >
+      {!allReady
+        ? activePlayers.length < minPlayers
+          ? `WARTE AUF SPIELER (${activePlayers.length}/${minPlayers})`
+          : `BEREIT (${readyCount}/${activePlayers.length})`
+        : 'SPIEL STARTEN'}
+    </OpenButton>
+  ) : (
+    <OpenButton
+      fullWidth
+      size="lg"
+      variant="secondary"
+      onClick={handleToggleReady}
+      className="landscape:h-9 landscape:text-xs"
+    >
+      BEREIT ✓
+    </OpenButton>
   );
 
-  const underlineModeTabs = (
-    <div className="flex items-center gap-6 border-b border-white/15">
+  const modeTabs = (
+    <div className="flex items-center gap-5 border-b border-white/15">
       {[
         { tv: false, label: 'STANDARD', Icon: Smartphone },
         { tv: true, label: 'TV SCREEN', Icon: Tv },
@@ -247,12 +364,18 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
           <button
             key={label}
             type="button"
-            onClick={() => handleSelectMode(tv)}
-            className={`font-arcade relative inline-flex items-center gap-2 pb-2 text-xs sm:text-sm tracking-wider uppercase transition-colors cursor-pointer ${
+            disabled={!canSwitchMode || isCreating}
+            onClick={() => void handleSwitchMode(tv)}
+            title={
+              !canSwitchMode
+                ? 'Moduswechsel nur möglich, solange noch keine Mitspieler beigetreten sind'
+                : undefined
+            }
+            className={`font-arcade relative inline-flex items-center gap-1.5 pb-1.5 text-xs tracking-wider uppercase transition-colors ${
               active ? 'text-[#FDE68A]' : 'text-[#94A3B8] hover:text-white'
-            }`}
+            } ${!canSwitchMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <Icon className="h-3.5 w-3.5 shrink-0" />
             <span>{label}</span>
             {active && (
               <span className="absolute right-0 bottom-0 left-0 h-[3px] rounded-full bg-[#F59E0B] shadow-[0_0_10px_#F59E0B]" />
@@ -263,65 +386,150 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
     </div>
   );
 
-  const pillModeButtons = (
-    <div className="grid w-full grid-cols-2 gap-2">
-      <OpenButton
-        size="sm"
-        variant={!isTvMode ? 'amber' : 'secondary'}
-        onClick={() => handleSelectMode(false)}
-        className="h-10 landscape:h-8"
-      >
-        <Smartphone className="h-4 w-4 landscape:h-3.5 landscape:w-3.5 shrink-0" />
-        <span>STANDARD</span>
-      </OpenButton>
+  const inviteBlock = (compactQr = false) =>
+    currentLobby ? (
+      <div className="flex flex-col items-center gap-3.5 text-center">
+        <div className="flex flex-col items-center gap-1.5">
+          <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#94A3B8] uppercase">
+            {copiedCode ? 'KOPIERT ✓' : 'LOBBY-CODE (TIPPEN ZUM KOPIEREN)'}
+          </span>
 
-      <OpenButton
-        size="sm"
-        variant={isTvMode ? 'amber' : 'secondary'}
-        onClick={() => handleSelectMode(true)}
-        className="h-10 landscape:h-8"
-      >
-        <Tv className="h-4 w-4 landscape:h-3.5 landscape:w-3.5 shrink-0" />
-        <span>TV SCREEN</span>
-      </OpenButton>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={handleCopyCode}
+              className="font-arcade rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-4 py-1.5 text-xl sm:text-2xl tracking-[0.22em] pl-[calc(1rem+0.22em)] text-[#FDE68A] uppercase transition-colors hover:bg-[#F59E0B]/25 active:scale-95 cursor-pointer"
+            >
+              {currentLobby.code}
+            </button>
+
+            <OpenButton
+              size="sm"
+              variant={copiedLink ? 'primary' : 'secondary'}
+              onClick={handleCopyLink}
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  <span>KOPIERT ✓</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>LINK TEILEN</span>
+                </>
+              )}
+            </OpenButton>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setIsQrModalOpen(true)}
+          title="QR-Code vergrößern"
+          className="rounded-2xl border border-white/20 bg-white p-2.5 shadow-[0_14px_30px_rgba(0,0,0,0.4)] transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+        >
+          <canvas
+            ref={qrCanvasRef}
+            className={`${compactQr ? 'h-28 w-28 sm:h-32 sm:w-32' : 'h-36 w-36 sm:h-44 sm:w-44'} block`}
+          />
+        </button>
+      </div>
+    ) : null;
+
+  const playersBlock = currentLobby ? (
+    <div className="flex w-full flex-col gap-2">
+      <div className="flex items-center justify-between px-1">
+        <span className="font-arcade text-xs text-[#94A3B8] uppercase">
+          SPIELER ({activePlayers.length}/{maxPlayers})
+        </span>
+        <span className="font-arcade text-xs text-[#34D399] uppercase">
+          {readyCount}/{targetReadyTotal} BEREIT
+        </span>
+      </div>
+
+      <div className="flex w-full flex-col gap-2 max-h-56 overflow-y-auto no-scrollbar">
+        {activePlayers.map((p, idx) => {
+          const isMe = p.id === currentUser.id;
+          return (
+            <div
+              key={p.id || idx}
+              onClick={isMe ? () => setIsAvatarModalOpen(true) : undefined}
+              title={isMe ? 'Klicken, um Name und Avatar anzupassen' : undefined}
+              className={`flex w-full items-center justify-between gap-2.5 rounded-xl border px-3 py-2 transition-colors ${
+                isMe ? 'cursor-pointer hover:border-[#F59E0B]/70 ' : ''
+              }${
+                p.isReady
+                  ? 'bg-[#10B981]/20 border-[#34D399]/50 text-white'
+                  : 'bg-white/[0.04] border-white/15 text-white/90'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                <div className="shrink-0">
+                  <Avatar config={p.avatar} size={28} />
+                </div>
+                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
+                  <span className="font-arcade text-xs sm:text-sm uppercase break-all">
+                    {p.name}
+                    {isMe ? ' (DU)' : ''}
+                  </span>
+                  {p.isHost && (
+                    <span
+                      title="Host dieser Lobby"
+                      className="inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B] px-1.5 py-0.5 font-arcade text-[10px] text-[#0F172A] shrink-0"
+                    >
+                      <Crown className="h-3 w-3 fill-current" />
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {p.isReady && <Check className="h-4 w-4 shrink-0 text-[#34D399] stroke-[3]" />}
+            </div>
+          );
+        })}
+
+        {Array.from({ length: missingPlayersCount }).map((_, slotIdx) => (
+          <div
+            key={`open-slot-${slotIdx}`}
+            className="flex w-full items-center gap-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-2 text-[#94A3B8]"
+          >
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-white/25 bg-white/5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#94A3B8]" />
+            </div>
+            <span className="font-arcade text-xs tracking-wide uppercase">
+              Warte auf Mitspieler...
+            </span>
+          </div>
+        ))}
+      </div>
     </div>
-  );
+  ) : null;
 
-  const createButton = (
-    <OpenButton
-      type="submit"
-      fullWidth
-      size="lg"
-      variant="primary"
-      disabled={isCreating}
-      className="landscape:h-9 landscape:text-xs"
-    >
-      {isCreating ? (
-        <>
-          <RefreshCw className="h-5 w-5 animate-spin" />
-          <span>ERSTELLE...</span>
-        </>
-      ) : (
-        <span>RAUM ERSTELLEN</span>
-      )}
-    </OpenButton>
-  );
+  const settingsBlock = currentLobby ? (
+    <LobbyGameSettings
+      gameId={currentLobby.gameId}
+      settings={currentLobby.settings}
+      isHost={canEditSettings}
+      onUpdate={handleUpdateSettings}
+    />
+  ) : null;
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-labelledby="lobby-screen-title"
+      aria-label={`${game.title} Lobby`}
       className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in"
     >
       <BackgroundCometCanvas opacity={0.85} />
 
       <div className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5 landscape:py-2">
-        {/* Kopfzeile: ZURÜCK-Button links & Internetverbindungsanzeige rechts bleiben unverändert; „+“ mittig neben Spieltitel */}
+        {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts bleiben unverändert; „+“ mittig */}
         <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <button
             type="button"
-            onClick={onClose}
+            onClick={() => void handleBack()}
             className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-[11px] sm:text-xs tracking-wider text-white/90 uppercase transition-all hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
           >
             <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
@@ -330,7 +538,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
 
           <div className="flex items-center gap-2 select-none">
             <span className="font-arcade hidden sm:inline text-sm md:text-base tracking-wider text-white/85 uppercase">
-              {game.title}
+              {currentLobby?.name || game.title}
             </span>
             <button
               type="button"
@@ -346,256 +554,255 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
           <ConnectionStatusBadge />
         </header>
 
-        <main className="tablet-screen-main flex flex-1 min-h-0 w-full flex-col items-center justify-center overflow-y-auto overflow-x-hidden py-4 landscape:py-1">
+        <main className="tablet-screen-main flex flex-1 min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden py-4">
           {errorMsg && (
-            <div className="font-arcade mb-4 w-full max-w-md rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
+            <div className="font-arcade mx-auto mb-4 w-full max-w-xl rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
               {errorMsg}
             </div>
           )}
 
-          {/* 1. SPLIT-SHOWCASE: Links Artwork, rechts offenes Setup */}
-          {lobbyLayout === 'lobby-split-showcase' && (
-            <div className="my-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[1.15fr_1fr] items-center gap-8 md:gap-12">
-              <div className="flex flex-col gap-3">
-                <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
-                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
-                  <span
-                    style={{ backgroundColor: palette.bg }}
-                    className="font-arcade absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] text-white uppercase shadow"
+          {!currentLobby ? (
+            <div className="my-auto flex flex-col items-center justify-center gap-4 text-center">
+              {isCreating ? (
+                <>
+                  <Loader2 className="h-8 w-8 animate-spin text-[#FBBF24]" />
+                  <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
+                    LOBBY WIRD ERSTELLT...
+                  </span>
+                </>
+              ) : (
+                <>
+                  <span className="font-arcade text-sm tracking-wider text-[#FECDD3] uppercase">
+                    LOBBY KONNTE NICHT GESTARTET WERDEN
+                  </span>
+                  <OpenButton
+                    size="md"
+                    variant="outline-amber"
+                    onClick={() => void createFreshLobby(isTvMode)}
                   >
-                    {game.players} • {game.duration}
-                  </span>
-                </div>
-                <div className="px-1">
-                  <h2 id="lobby-screen-title" className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
-                    {game.title}
-                  </h2>
-                  <p className="mt-1 text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
-                </div>
-              </div>
-
-              <form onSubmit={handleCreateLobby} className="flex flex-col gap-6">
-                <div className="border-b-2 border-[#F59E0B] self-start pb-0.5">
-                  <span className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
-                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    RAUM-NAME
-                  </label>
-                  {roomNameInput(false, true)}
-                </div>
-
-                <div className="flex flex-col items-start gap-2">
-                  <span className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    SPIELMODUS
-                  </span>
-                  {underlineModeTabs}
-                  <p className="text-xs text-[#CBD5E1]">
-                    {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
-                  </p>
-                </div>
-
-                <div className="max-w-xs">{createButton}</div>
-              </form>
+                    <RefreshCw className="h-4 w-4" />
+                    <span>ERNEUT VERSUCHEN</span>
+                  </OpenButton>
+                </>
+              )}
             </div>
-          )}
+          ) : (
+            <>
+              {/* 1. OFFENE BÜHNE (2-SPALTEN) */}
+              {lobbyLayout === 'lobby-open-stage' && (
+                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.9fr_1.1fr] items-center gap-8 md:gap-12">
+                  <div className="flex flex-col items-center gap-5 border-b md:border-b-0 md:border-r border-white/15 pb-6 md:pb-0 md:pr-10">
+                    <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+                      <span className="font-arcade text-xl tracking-wider text-white uppercase">
+                        {game.title}
+                      </span>
+                    </div>
+                    {modeTabs}
+                    {inviteBlock(false)}
+                  </div>
 
-          {/* 2. EDITORIAL BREITBILD: Großzügige linksbündige Typografie + horizontale Zeile */}
-          {lobbyLayout === 'lobby-editorial-wide' && (
-            <form onSubmit={handleCreateLobby} className="my-auto flex w-full max-w-5xl flex-col gap-8">
-              <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-4">
-                <div>
-                  <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
-                    {game.players} • {game.duration}
-                  </span>
-                  <h2 id="lobby-screen-title" className="font-arcade mt-1 text-3xl sm:text-5xl tracking-wider text-white uppercase">
-                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                  </h2>
+                  <div className="flex flex-col gap-4">
+                    {settingsBlock}
+                    {playersBlock}
+                    <div className="pt-1">{actionButton}</div>
+                  </div>
                 </div>
-                <p className="max-w-md text-xs sm:text-sm text-[#94A3B8]">{game.description}</p>
-              </div>
+              )}
 
-              <div className="grid grid-cols-1 lg:grid-cols-[1.3fr_auto_auto] items-end gap-6 lg:gap-8">
-                <div className="flex flex-col gap-1.5">
-                  <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    RAUM-NAME
-                  </label>
-                  {roomNameInput(false, true)}
+              {/* 2. SPLIT-SHOWCASE (MIT SPIEL-ARTWORK) */}
+              {lobbyLayout === 'lobby-split-showcase' && (
+                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 lg:grid-cols-[1fr_1.1fr] items-center gap-8 lg:gap-12">
+                  <div className="flex flex-col gap-4">
+                    <div className="relative aspect-[16/9] w-full overflow-hidden rounded-2xl border border-white/15 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+                      <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
+                      <span
+                        style={{ backgroundColor: palette.bg }}
+                        className="font-arcade absolute bottom-3 left-3 rounded-full px-3 py-1 text-[11px] text-white uppercase shadow"
+                      >
+                        {game.players} • {game.duration}
+                      </span>
+                    </div>
+                    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-1">
+                      {inviteBlock(true)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center justify-between flex-wrap gap-2">
+                      <span className="font-arcade text-lg tracking-wider text-white uppercase">
+                        LOBBY <span className="text-[#FBBF24]">SETUP</span>
+                      </span>
+                      {modeTabs}
+                    </div>
+                    {settingsBlock}
+                    {playersBlock}
+                    {actionButton}
+                  </div>
                 </div>
+              )}
 
-                <div className="flex flex-col gap-2">
-                  <span className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    MODUS
-                  </span>
-                  {underlineModeTabs}
+              {/* 3. EDITORIAL 3-ZONEN */}
+              {lobbyLayout === 'lobby-editorial-grid' && (
+                <div className="my-auto flex w-full flex-col gap-6">
+                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-3">
+                    <div>
+                      <span className="font-arcade text-xs tracking-widest text-[#FBBF24] uppercase">
+                        {game.players} • {game.duration}
+                      </span>
+                      <h2 className="font-arcade mt-0.5 text-2xl sm:text-3xl tracking-wider text-white uppercase">
+                        {game.title}
+                      </h2>
+                    </div>
+                    {modeTabs}
+                    <div className="w-full sm:w-64">{actionButton}</div>
+                  </div>
+
+                  <div className="grid grid-cols-1 lg:grid-cols-3 items-start gap-6 lg:gap-8">
+                    <div className="flex flex-col items-center lg:border-r lg:border-white/15 lg:pr-6">
+                      {inviteBlock(false)}
+                    </div>
+                    <div className="lg:border-r lg:border-white/15 lg:pr-6">
+                      {settingsBlock}
+                    </div>
+                    <div>{playersBlock}</div>
+                  </div>
                 </div>
+              )}
 
-                <div className="w-full lg:w-56">{createButton}</div>
-              </div>
-            </form>
-          )}
+              {/* 4. BÜHNE + BOTTOM-LEISTE */}
+              {lobbyLayout === 'lobby-bottom-action' && (
+                <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
+                  <div className="my-auto grid w-full grid-cols-1 md:grid-cols-[0.85fr_1.15fr] items-center gap-8">
+                    <div className="flex flex-col items-center">{inviteBlock(false)}</div>
+                    <div className="flex flex-col gap-4">
+                      {settingsBlock}
+                      {playersBlock}
+                    </div>
+                  </div>
 
-          {/* 3. BÜHNE + BOTTOM-LEISTE: Oben Showcase, unten durchgängige offene Startleiste */}
-          {lobbyLayout === 'lobby-bottom-bar' && (
-            <form onSubmit={handleCreateLobby} className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
-              <div className="my-auto grid w-full grid-cols-1 md:grid-cols-[1fr_1.1fr] items-center gap-8 py-4">
-                <div className="aspect-[16/10] w-full max-w-lg overflow-hidden rounded-2xl border border-white/15 shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
-                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
+                  <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/15 pt-4">
+                    {modeTabs}
+                    <div className="w-full sm:w-72">{actionButton}</div>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <span
-                    style={{ backgroundColor: palette.bg }}
-                    className="font-arcade self-start rounded-full px-3 py-1 text-xs text-white uppercase"
-                  >
-                    {game.players} • {game.duration}
-                  </span>
-                  <h2 id="lobby-screen-title" className="font-arcade text-3xl sm:text-5xl tracking-wider text-white uppercase">
-                    {game.title}
-                  </h2>
-                  <p className="max-w-lg text-sm sm:text-base text-[#CBD5E1]">{game.description}</p>
+              )}
+
+              {/* 5. SCHWEBENDE GLAS-PANELS */}
+              {lobbyLayout === 'lobby-glass-panels' && (
+                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-stretch gap-5">
+                  <div className="flex flex-col items-center justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-5 sm:p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+                    {modeTabs}
+                    {inviteBlock(false)}
+                  </div>
+
+                  <div className="flex flex-col justify-between gap-4 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-5 sm:p-6 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.45)]">
+                    <div className="flex flex-col gap-4">
+                      {settingsBlock}
+                      {playersBlock}
+                    </div>
+                    {actionButton}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className="flex w-full flex-col lg:flex-row items-stretch lg:items-end gap-5 border-t border-white/15 pt-5">
-                <div className="flex-1 min-w-0">{roomNameInput(false, true)}</div>
-                <div className="self-center lg:self-end shrink-0">{underlineModeTabs}</div>
-                <div className="w-full lg:w-56 shrink-0">{createButton}</div>
-              </div>
-            </form>
-          )}
+              {/* 6. KINO / TV-FOKUS */}
+              {lobbyLayout === 'lobby-compact-tv' && (
+                <div className="my-auto mx-auto flex w-full max-w-3xl flex-col items-center gap-6">
+                  <div className="flex flex-col items-center gap-3">
+                    {modeTabs}
+                    {inviteBlock(false)}
+                  </div>
 
-          {/* 4. SCHWEBENDE GLAS-KARTE */}
-          {lobbyLayout === 'lobby-glass-card' && (
-            <div className="my-auto w-full max-w-md md:max-w-lg rounded-2xl border border-white/15 bg-[#0F172A]/75 p-5 sm:p-6 landscape:p-4 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)]">
-              <div className="mb-4 landscape:mb-2.5 flex items-center justify-center">
-                <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
-                  <h2
-                    id="lobby-screen-title"
-                    className="font-arcade text-base sm:text-xl landscape:text-sm tracking-wider text-white uppercase"
-                  >
-                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                  </h2>
+                  <div className="grid w-full grid-cols-1 md:grid-cols-2 items-start gap-4">
+                    {settingsBlock}
+                    {playersBlock}
+                  </div>
+
+                  <div className="w-full max-w-sm">{actionButton}</div>
                 </div>
-              </div>
-
-              <form onSubmit={handleCreateLobby} className="flex w-full flex-col justify-between gap-4 sm:gap-5 landscape:gap-2.5">
-                <div className="flex flex-col items-center w-full">
-                  <label
-                    htmlFor="lobby-name-input"
-                    className="font-arcade mb-1.5 landscape:mb-1 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#94A3B8] uppercase"
-                  >
-                    RAUM-NAME
-                  </label>
-                  {roomNameInput(true, false)}
-                </div>
-
-                <div className="flex flex-col items-center w-full">
-                  <span className="font-arcade mb-1.5 landscape:mb-1 text-xs sm:text-sm landscape:text-xs tracking-wider text-[#94A3B8] uppercase">
-                    SPIELMODUS
-                  </span>
-                  {pillModeButtons}
-                  <p className="landscape:hidden mt-2 text-center text-xs text-[#CBD5E1] min-h-[1.15rem]">
-                    {isTvMode ? 'TV als Hauptbildschirm, Smartphones als Controller' : 'Alle spielen direkt auf diesem Gerät'}
-                  </p>
-                </div>
-
-                <div className="w-full pt-1 landscape:pt-0">{createButton}</div>
-              </form>
-            </div>
-          )}
-
-          {/* 5. SEITENLEISTE + BÜHNE */}
-          {lobbyLayout === 'lobby-left-rail' && (
-            <div className="flex flex-1 min-h-0 w-full flex-col lg:flex-row gap-8 lg:gap-12">
-              <aside className="flex shrink-0 flex-col justify-between gap-5 border-b lg:border-b-0 lg:border-r border-white/15 pb-5 lg:pb-0 lg:pr-10 lg:w-80">
-                <div className="flex flex-col gap-3">
-                  <span
-                    style={{ backgroundColor: palette.bg }}
-                    className="font-arcade self-start rounded-full px-3 py-1 text-[11px] text-white uppercase"
-                  >
-                    {game.players} • {game.duration}
-                  </span>
-                  <h2 id="lobby-screen-title" className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
-                    {game.title}
-                  </h2>
-                  <p className="text-sm leading-relaxed text-[#94A3B8]">{game.description}</p>
-                </div>
-
-                <div className="hidden lg:block overflow-hidden rounded-2xl border border-white/15 aspect-[16/10]">
-                  <GamePreviewArtwork gameId={game.id} variant="card" className="h-full w-full object-cover" />
-                </div>
-              </aside>
-
-              <form onSubmit={handleCreateLobby} className="my-auto flex flex-1 flex-col justify-center gap-7">
-                <div className="border-b-2 border-[#F59E0B] self-start pb-1">
-                  <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
-                    LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2 max-w-2xl">
-                  <label htmlFor="lobby-name-input" className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    RAUM-NAME
-                  </label>
-                  {roomNameInput(false, true)}
-                </div>
-
-                <div className="flex flex-col items-start gap-2">
-                  <span className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase">
-                    SPIELMODUS
-                  </span>
-                  {underlineModeTabs}
-                </div>
-
-                <div className="max-w-xs">{createButton}</div>
-              </form>
-            </div>
-          )}
-
-          {/* 6. OFFENE BÜHNE (ZENTRIERT) */}
-          {lobbyLayout === 'lobby-open-centered' && (
-            <form
-              onSubmit={handleCreateLobby}
-              className="my-auto flex w-full max-w-md flex-col items-center gap-6 landscape:gap-3 px-2 text-center"
-            >
-              <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-                <h2
-                  id="lobby-screen-title"
-                  className="font-arcade text-2xl sm:text-3xl landscape:text-xl tracking-wider text-white uppercase"
-                >
-                  LOBBY <span className="text-[#FBBF24]">STARTEN</span>
-                </h2>
-              </div>
-
-              <div className="flex w-full flex-col items-center gap-2 landscape:gap-1">
-                <label
-                  htmlFor="lobby-name-input"
-                  className="font-arcade text-xs tracking-wider text-[#94A3B8] uppercase"
-                >
-                  RAUM-NAME
-                </label>
-                {roomNameInput(false, false)}
-              </div>
-
-              {underlineModeTabs}
-
-              <p className="landscape:hidden text-xs text-[#CBD5E1] -mt-3">
-                {isTvMode
-                  ? 'TV als Hauptbildschirm, Smartphones als Controller'
-                  : 'Alle spielen direkt auf diesem Gerät'}
-              </p>
-
-              <div className="w-full max-w-xs">{createButton}</div>
-            </form>
+              )}
+            </>
           )}
         </main>
-
-        <div aria-hidden="true" className="hidden sm:block h-2" />
       </div>
 
+      {/* QR-Code Zoom-Modal */}
+      {isQrModalOpen && currentLobby && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          className="fixed inset-0 z-60 flex items-center justify-center overflow-y-auto bg-[#0F172A]/80 backdrop-blur-sm p-4 animate-fade-in"
+          onClick={() => setIsQrModalOpen(false)}
+        >
+          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-xl">
+            <OpenModalFrame
+              title="QR-"
+              accentWord="CODE"
+              onClose={() => setIsQrModalOpen(false)}
+              contentClassName="gap-4 landscape:gap-2.5"
+            >
+              <div className="flex flex-col items-center gap-4 w-full landscape:grid landscape:grid-cols-[auto_1fr] landscape:items-center landscape:gap-x-5">
+                <div className="flex flex-col items-center landscape:items-start gap-1.5 text-center landscape:text-left landscape:col-start-2 landscape:row-start-1">
+                  <span className="font-arcade text-3xl sm:text-4xl tracking-[0.25em] pl-[0.25em] landscape:pl-0 text-[#FDE68A] uppercase">
+                    {currentLobby.code}
+                  </span>
+                  <p className="text-xs sm:text-sm text-[#CBD5E1] leading-snug max-w-[260px]">
+                    Scanne den Code mit deinem Smartphone zum Beitreten.
+                  </p>
+                </div>
+
+                <div className="w-[78%] max-w-[240px] landscape:w-36 landscape:h-36 aspect-square rounded-2xl border border-white/20 bg-white p-4 flex items-center justify-center mx-auto landscape:mx-0 landscape:col-start-1 landscape:row-start-1 landscape:row-span-2">
+                  <canvas ref={qrModalCanvasRef} className="w-full h-full block" />
+                </div>
+
+                <div className="grid grid-cols-2 gap-3 w-full landscape:col-start-2 landscape:row-start-2">
+                  <OpenButton
+                    size="md"
+                    fullWidth
+                    variant={copiedCode ? 'primary' : 'secondary'}
+                    onClick={handleCopyCode}
+                  >
+                    {copiedCode ? (
+                      <>
+                        <Check className="h-4 w-4 shrink-0 stroke-[3]" />
+                        <span>KOPIERT!</span>
+                      </>
+                    ) : (
+                      <>
+                        <Copy className="h-4 w-4 shrink-0" />
+                        <span>KOPIEREN</span>
+                      </>
+                    )}
+                  </OpenButton>
+
+                  <OpenButton
+                    size="md"
+                    fullWidth
+                    variant="outline-amber"
+                    onClick={() => setIsQrModalOpen(false)}
+                  >
+                    SCHLIESSEN
+                  </OpenButton>
+                </div>
+              </div>
+            </OpenModalFrame>
+          </div>
+        </div>
+      )}
+
+      {/* Profil- & Avatar-Modal direkt aus der Lobby */}
+      {isAvatarModalOpen && (
+        <AvatarCustomizerModal
+          onClose={() => setIsAvatarModalOpen(false)}
+          config={currentUser.avatar}
+          name={currentUser.name}
+          onSave={({ avatar, name }) => {
+            saveUserProfile({ avatar, name });
+          }}
+        />
+      )}
+
+      {/* Layout-Auswahl („+“-Button) */}
       <LobbyLayoutModal
         isOpen={showLayoutModal}
         activeLayout={lobbyLayout}
