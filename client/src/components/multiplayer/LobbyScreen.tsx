@@ -210,7 +210,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                   <div className="flex items-stretch gap-1.5 w-full">
                     <div
                       style={{ clipPath: 'polygon(0% 5%, 100% 0%, 99% 96%, 1% 100%)' }}
-                      className="flex-1 bg-[#0F172A] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.25)]"
+                      className="flex-1 bg-[#334155] p-[3px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
                     >
                       <input
                         id="lobby-name-input"
@@ -226,10 +226,8 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                         style={{
                           clipPath: 'polygon(0% 5%, 100% 0%, 99% 96%, 1% 100%)',
                           paddingInline: '16px',
-                          color: '#FFFFFF',
-                          caretColor: '#FFFFFF',
                         }}
-                        className="font-arcade h-11 sm:h-12 landscape:h-8 w-full bg-[#1E293B] px-4 text-center text-sm sm:text-base landscape:text-xs font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white"
+                        className="crystal-input-light font-sans h-11 sm:h-12 landscape:h-8 w-full bg-[#F8FAFC] border-2 border-[#CBD5E1] focus:border-[#4F46E5] px-4 text-center text-sm sm:text-base landscape:text-xs font-extrabold tracking-wide text-[#0F172A] placeholder:text-[#64748B] uppercase focus:outline-none caret-[#4F46E5]"
                       />
                     </div>
 
@@ -267,10 +265,7 @@ export function LobbyScreen({ game, onClose, initialLobby, initialTvMode = false
                     SPIELMODUS
                   </span>
 
-                  <div
-                    style={{ clipPath: 'polygon(0% 4%, 100% 0%, 99% 96%, 1% 100%)' }}
-                    className="grid w-full grid-cols-2 gap-1.5 bg-[#CBD5E1] border-[3px] border-[#334155] p-1.5 landscape:p-1 shadow-inner"
-                  >
+                  <div className="grid w-full grid-cols-2 gap-1.5 border-[3px] border-transparent p-1.5 landscape:p-1">
                     <CrystalButton
                       size="sm"
                       tilt="left"
