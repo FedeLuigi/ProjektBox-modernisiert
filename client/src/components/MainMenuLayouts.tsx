@@ -404,3 +404,244 @@ export function QuickLaunchListLayout({
     </div>
   );
 }
+
+/**
+ * Variante 5: OPEN STAGE (Offenes Design)
+ * Luftiges, rahmenloses Layout direkt über dem Hintergrund – ohne schwere Boxen,
+ * mit viel Raum für Artwork, klarer Typografie und schwebender Spielauswahl unten.
+ */
+export function OpenStageLayout({
+  games,
+  activeGame,
+  favoriteIds,
+  onSelectGame,
+  onLaunchGame,
+  onToggleFavorite,
+}: LayoutCommonProps) {
+  const palette = ACCENT_PALETTES[activeGame.accent];
+  const isFav = favoriteIds.includes(activeGame.id);
+
+  return (
+    <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-4 px-4 sm:px-6 py-2">
+      {/* Offene Hauptbühne ohne schwere Box */}
+      <div className="my-auto mx-auto flex w-full max-w-5xl flex-col md:flex-row items-center gap-5 sm:gap-8">
+        {/* Schwebendes Artwork mit sanftem Akzent-Glow */}
+        <div className="relative w-full max-w-[300px] sm:max-w-[360px] md:w-[46%] shrink-0">
+          <div
+            style={{ backgroundColor: palette.bg }}
+            className="pointer-events-none absolute -inset-3 rounded-3xl opacity-30 blur-2xl"
+          />
+          <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/20 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+            <GamePreviewArtwork gameId={activeGame.id} variant="card" className="h-full w-full object-cover" />
+          </div>
+        </div>
+
+        {/* Offene Typografie & klare Aktionen direkt auf dem Hintergrund */}
+        <div className="flex flex-1 flex-col items-center md:items-start text-center md:text-left gap-3 min-w-0">
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2">
+            <span
+              style={{ borderColor: palette.topBorder, color: palette.topBorder }}
+              className="font-arcade border bg-white/10 backdrop-blur-xs px-2.5 py-0.5 text-[10px] sm:text-xs tracking-widest uppercase rounded-full"
+            >
+              {activeGame.gameTypeLabel} • {activeGame.category}
+            </span>
+            <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#94A3B8] uppercase">
+              {activeGame.players} • {activeGame.duration}
+            </span>
+          </div>
+
+          <h2 className="font-arcade text-3xl sm:text-5xl tracking-wider text-white uppercase drop-shadow-[0_3px_0_rgba(15,23,42,0.85)]">
+            {activeGame.title}
+          </h2>
+
+          <p className="text-sm sm:text-base font-medium text-[#CBD5E1] max-w-lg leading-relaxed">
+            {activeGame.description}
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center md:justify-start gap-2.5 pt-1">
+            <CrystalButton
+              size="lg"
+              variant={activeGame.accent}
+              tilt="left"
+              onClick={() => onLaunchGame(activeGame, false)}
+              className="h-11 sm:h-12 px-7 text-sm sm:text-base"
+            >
+              <Play className="h-4 w-4 fill-current" />
+              <span>SPIELEN</span>
+            </CrystalButton>
+
+            {activeGame.supportsTv && (
+              <CrystalButton
+                size="lg"
+                variant="secondary"
+                tilt="right"
+                onClick={() => onLaunchGame(activeGame, true)}
+                className="h-11 sm:h-12 px-5 text-sm sm:text-base"
+              >
+                <Tv className="h-4 w-4" />
+                <span>TV</span>
+              </CrystalButton>
+            )}
+
+            <CrystalIconButton
+              size="md"
+              tilt="right"
+              variant={isFav ? 'rose' : 'neutral'}
+              onClick={() => onToggleFavorite(activeGame.id)}
+              title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+            >
+              <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+            </CrystalIconButton>
+          </div>
+        </div>
+      </div>
+
+      {/* Offene Schnellwechsel-Leiste unten */}
+      <div className="no-scrollbar mx-auto flex w-full max-w-4xl items-center justify-start sm:justify-center gap-2.5 overflow-x-auto py-1">
+        {games.map((game) => {
+          const selected = game.id === activeGame.id;
+          const Icon = game.icon;
+          const itemPalette = ACCENT_PALETTES[game.accent];
+
+          return (
+            <button
+              key={game.id}
+              type="button"
+              onClick={() => onSelectGame(game.id)}
+              className={`flex shrink-0 items-center gap-2 rounded-full border px-3.5 py-1.5 transition-all cursor-pointer active:scale-95 ${
+                selected
+                  ? 'border-white/60 bg-white/20 text-white shadow-[0_0_20px_rgba(255,255,255,0.18)] backdrop-blur-xs'
+                  : 'border-white/10 bg-white/5 text-[#CBD5E1] hover:bg-white/12 hover:text-white'
+              }`}
+            >
+              <span
+                style={{ backgroundColor: itemPalette.bg }}
+                className="flex h-6 w-6 items-center justify-center rounded-full text-white"
+              >
+                <Icon className="h-3.5 w-3.5" />
+              </span>
+              <span className="font-arcade text-xs tracking-wide uppercase whitespace-nowrap">
+                {game.title}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Variante 6: SPOTLIGHT DECK
+ * Breites Kino-Banner mit integriertem Artwork und schwebendem Icon-Dock darunter.
+ */
+export function SpotlightDeckLayout({
+  games,
+  activeGame,
+  favoriteIds,
+  onSelectGame,
+  onLaunchGame,
+  onToggleFavorite,
+}: LayoutCommonProps) {
+  const palette = ACCENT_PALETTES[activeGame.accent];
+  const isFav = favoriteIds.includes(activeGame.id);
+
+  return (
+    <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-3 px-3 sm:px-4 py-1">
+      <div className="my-auto mx-auto w-full max-w-4xl">
+        <div
+          style={{ clipPath: 'polygon(0.5% 2%, 99.5% 0%, 99% 98%, 1% 100%)' }}
+          className="relative overflow-hidden border-[3px] border-[#334155] bg-[#0F172A] shadow-[0_12px_30px_rgba(0,0,0,0.45)]"
+        >
+          {/* Integriertes Hintergrund-Artwork rechts */}
+          <div className="absolute inset-0 md:left-1/3 opacity-45 md:opacity-75">
+            <GamePreviewArtwork gameId={activeGame.id} variant="card" className="h-full w-full object-cover" />
+            <div className="absolute inset-0 bg-gradient-to-t md:bg-gradient-to-r from-[#0F172A] via-[#0F172A]/85 to-transparent" />
+          </div>
+
+          <div className="relative z-10 flex flex-col justify-between gap-4 p-5 sm:p-8 min-h-[240px] sm:min-h-[290px]">
+            <div className="flex items-center justify-between gap-2">
+              <span
+                style={{
+                  backgroundColor: palette.bg,
+                  borderColor: palette.topBorder,
+                }}
+                className="font-arcade border px-2.5 py-0.5 text-[10px] sm:text-xs text-white uppercase"
+              >
+                {activeGame.gameTypeLabel} • {activeGame.players} • {activeGame.duration}
+              </span>
+
+              <CrystalIconButton
+                size="sm"
+                tilt="right"
+                variant={isFav ? 'rose' : 'neutral'}
+                onClick={() => onToggleFavorite(activeGame.id)}
+                title={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+                aria-label={isFav ? 'Aus Favoriten entfernen' : 'Zu Favoriten hinzufügen'}
+              >
+                <Heart className={`h-4 w-4 ${isFav ? 'fill-current' : ''}`} />
+              </CrystalIconButton>
+            </div>
+
+            <div className="flex flex-col gap-2 max-w-lg">
+              <h2 className="font-arcade text-2xl sm:text-4xl tracking-wider text-white uppercase drop-shadow">
+                {activeGame.title}
+              </h2>
+              <p className="text-xs sm:text-sm font-medium text-[#CBD5E1] leading-relaxed">
+                {activeGame.description}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2.5">
+              <CrystalButton
+                size="md"
+                variant={activeGame.accent}
+                tilt="left"
+                onClick={() => onLaunchGame(activeGame, false)}
+                className="h-10 sm:h-11 px-6 text-sm"
+              >
+                <Play className="h-4 w-4 fill-current" />
+                <span>PLAY</span>
+              </CrystalButton>
+
+              {activeGame.supportsTv && (
+                <CrystalButton
+                  size="md"
+                  variant="secondary"
+                  tilt="right"
+                  onClick={() => onLaunchGame(activeGame, true)}
+                  className="h-10 sm:h-11 px-4 text-sm"
+                >
+                  <Tv className="h-4 w-4" />
+                  <span>TV</span>
+                </CrystalButton>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Schwebendes Mini-Dock */}
+      <div className="no-scrollbar mx-auto flex w-full max-w-3xl items-center justify-start sm:justify-center gap-2 overflow-x-auto pb-1">
+        {games.map((game) => {
+          const selected = game.id === activeGame.id;
+          const Icon = game.icon;
+          return (
+            <CrystalButton
+              key={game.id}
+              size="sm"
+              variant={selected ? game.accent : 'secondary'}
+              tilt="left"
+              onClick={() => onSelectGame(game.id)}
+              className="shrink-0 h-9 px-3 text-xs"
+            >
+              <Icon className="h-3.5 w-3.5 shrink-0" />
+              <span>{game.title}</span>
+            </CrystalButton>
+          );
+        })}
+      </div>
+    </div>
+  );
+}

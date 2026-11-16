@@ -21,7 +21,9 @@ import { LayoutExplorerModal, type MenuLayoutVariant } from './components/Layout
 import {
   ArcadeGridLayout,
   CommandCenterLayout,
+  OpenStageLayout,
   QuickLaunchListLayout,
+  SpotlightDeckLayout,
 } from './components/MainMenuLayouts';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
@@ -82,7 +84,14 @@ export function App() {
   const [menuLayout, setMenuLayout] = useState<MenuLayoutVariant>(() => {
     try {
       const saved = localStorage.getItem('projektbox_menu_layout');
-      if (saved === 'carousel' || saved === 'grid' || saved === 'sidebar' || saved === 'compact') {
+      if (
+        saved === 'carousel' ||
+        saved === 'open' ||
+        saved === 'grid' ||
+        saved === 'sidebar' ||
+        saved === 'compact' ||
+        saved === 'cinema'
+      ) {
         return saved;
       }
     } catch {
@@ -771,7 +780,17 @@ export function App() {
               className="flex flex-1 min-h-0 w-full flex-col justify-start md:justify-center landscape:justify-stretch"
             >
             {displayedGames.length > 0 ? (
-              menuLayout === 'grid' ? (
+              menuLayout === 'open' ? (
+                <OpenStageLayout
+                  games={displayedGames}
+                  activeGame={activeGame}
+                  favoriteIds={favoriteIds}
+                  lastPlayedGameId={mostRecentGameId}
+                  onSelectGame={setActiveGameId}
+                  onLaunchGame={handleLaunchGame}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ) : menuLayout === 'grid' ? (
                 <ArcadeGridLayout
                   games={displayedGames}
                   activeGame={activeGame}
@@ -793,6 +812,16 @@ export function App() {
                 />
               ) : menuLayout === 'compact' ? (
                 <QuickLaunchListLayout
+                  games={displayedGames}
+                  activeGame={activeGame}
+                  favoriteIds={favoriteIds}
+                  lastPlayedGameId={mostRecentGameId}
+                  onSelectGame={setActiveGameId}
+                  onLaunchGame={handleLaunchGame}
+                  onToggleFavorite={handleToggleFavorite}
+                />
+              ) : menuLayout === 'cinema' ? (
+                <SpotlightDeckLayout
                   games={displayedGames}
                   activeGame={activeGame}
                   favoriteIds={favoriteIds}
