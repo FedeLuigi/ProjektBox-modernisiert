@@ -1,6 +1,6 @@
 import { useId } from 'react';
 
-export type AvatarBase = 'human' | 'bot' | 'cat' | 'alien' | 'skull' | 'ninja';
+export type AvatarBase = 'human' | 'bot' | 'cat' | 'alien' | 'skull' | 'ninja' | 'custom';
 export type AvatarHat =
   | 'none'
   | 'headset'
@@ -32,6 +32,8 @@ export interface AvatarConfig {
   hat: AvatarHat;
   accessory: AvatarAccessory;
   bg: AvatarBg;
+  customImage?: string;
+  customId?: string;
 }
 
 export const DEFAULT_AVATAR: AvatarConfig = {
@@ -365,6 +367,25 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
           <ellipse cx="58" cy="46" rx="3.5" ry="2.2" fill="#090A14" />
           <circle cx="43" cy="45.5" r="1" fill="#FFFFFF" />
           <circle cx="59" cy="45.5" r="1" fill="#FFFFFF" />
+        </g>
+      )}
+
+      {base === 'custom' && (
+        <g>
+          {/* Ohren & leere Gesichtsfläche als Basis für die eigene Zeichnung */}
+          <circle cx="25" cy="48" r="5" fill={skinColor} />
+          <circle cx="75" cy="48" r="5" fill={skinColor} />
+          <circle cx="50" cy="48" r="24" fill={skinColor} />
+          {config.customImage && (
+            <image
+              href={config.customImage}
+              x="0"
+              y="0"
+              width="100"
+              height="100"
+              preserveAspectRatio="xMidYMid meet"
+            />
+          )}
         </g>
       )}
 

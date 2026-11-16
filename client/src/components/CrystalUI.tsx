@@ -365,7 +365,7 @@ export function CrystalIconButton({
             facet1: '#FDE68A',
             facet2: '#FEF3C7',
             stroke: '#FFFBEB',
-            iconText: 'text-white drop-shadow-[0_1.5px_0_rgba(120,53,15,0.65)]',
+            iconText: 'text-[#0F172A] drop-shadow-[0_1px_0_rgba(255,255,255,0.7)]',
           }
         : variant === 'rose'
           ? {

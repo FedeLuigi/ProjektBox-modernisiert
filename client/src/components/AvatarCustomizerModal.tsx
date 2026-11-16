@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Check, Dices } from 'lucide-react';
+import { Check, Dices, Paintbrush, X } from 'lucide-react';
 import {
   Avatar,
   type AvatarConfig,
@@ -11,8 +11,14 @@ import {
   DEFAULT_AVATAR,
 } from './Avatar';
 import { CrystalButton, CrystalIconButton, CrystalPanel } from './CrystalUI';
+import { CustomAvatarCreatorModal } from './CustomAvatarCreatorModal';
 import { generateUniquePlayerName } from '../utils/nameGenerator';
-import { validatePlayerName } from '../utils/userProfile';
+import {
+  deleteCustomAvatar,
+  getCustomAvatars,
+  validatePlayerName,
+  type CustomAvatar,
+} from '../utils/userProfile';
 
 interface AvatarCustomizerModalProps {
   onClose: () => void;
@@ -40,6 +46,8 @@ export function AvatarCustomizerModal({
   const [activeTab, setActiveTab] = useState<TabType>('base');
   const [nameInput, setNameInput] = useState(name);
   const [nameError, setNameError] = useState<string | null>(null);
+  const [customAvatars, setCustomAvatars] = useState<CustomAvatar[]>(() => getCustomAvatars());
+  const [showCreator, setShowCreator] = useState(false);
 
   const handleRandomize = () => {
     const randomBase =
@@ -105,12 +113,12 @@ export function AvatarCustomizerModal({
         onClick={(e) => e.stopPropagation()}
         className="tablet-modal-box my-auto w-full max-w-lg landscape:max-w-2xl pt-3 landscape:pt-0 flex flex-col"
       >
-        <CrystalPanel topTabLabel="PROFIL & AVATAR" accent="indigo" contentClassName="w-full gap-3 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
+        <CrystalPanel topTabLabel="PROFIL" accent="indigo" contentClassName="w-full gap-3.5 landscape:gap-2 p-4 sm:p-5 landscape:p-2.5">
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
-          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-4 w-full">
+          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3.5 sm:gap-4">
             {/* Linke Seite: Vorschau, Würfel, Spielername & Aktions-Buttons im Querformat */}
             <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-3 landscape:gap-2">
-              <div className="flex items-center justify-center gap-3">
+              <div className="flex items-center justify-center gap-3 sm:gap-4">
                 <div className="rounded-full drop-shadow-[0_5px_0_rgba(15,23,42,0.3)]">
                   <Avatar config={current} size={74} className="landscape:w-[60px] landscape:h-[60px]" />
                 </div>
@@ -122,7 +130,7 @@ export function AvatarCustomizerModal({
                   title="Zufälliger Avatar"
                   aria-label="Zufälligen Avatar würfeln"
                 >
-                  <Dices className="h-5 w-5" />
+                  <Dices className="h-5 w-5 text-[#0F172A] stroke-[2.4]" />
                 </CrystalIconButton>
               </div>
 
@@ -137,7 +145,7 @@ export function AvatarCustomizerModal({
                 <div className="flex items-stretch gap-1.5 w-full max-w-[290px] justify-center">
                   <div
                     style={{ clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)' }}
-                    className="flex-1 min-w-0 bg-[#0F172A] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.2)]"
+                    className="flex-1 min-w-0 bg-[#334155] p-[2.5px] shadow-[0_3px_0_rgba(15,23,42,0.16)]"
                   >
                     <input
                       id="player-profile-name-input"
@@ -159,12 +167,10 @@ export function AvatarCustomizerModal({
                       style={{
                         clipPath: 'polygon(0% 6%, 100% 0%, 98% 96%, 2% 100%)',
                         paddingInline: '14px',
-                        color: '#FFFFFF',
-                        caretColor: '#FFFFFF',
                       }}
-                      className={`font-arcade h-9 sm:h-10 landscape:h-8 w-full bg-[#1E293B] border ${
-                        nameError ? 'border-[#E11D48]' : 'border-[#475569] focus:border-[#F59E0B]'
-                      } px-3 text-center text-sm landscape:text-xs font-bold tracking-wider text-white placeholder:text-white/55 uppercase focus:outline-none caret-white`}
+                      className={`font-arcade h-9 sm:h-10 landscape:h-8 w-full bg-[#F8FAFC] border-2 ${
+                        nameError ? 'border-[#E11D48]' : 'border-[#CBD5E1] focus:border-[#4F46E5]'
+                      } px-3 text-center text-sm landscape:text-xs font-bold tracking-wider text-[#0F172A] placeholder:text-[#64748B] uppercase focus:outline-none caret-[#4F46E5]`}
                     />
                   </div>
 
@@ -208,9 +214,9 @@ export function AvatarCustomizerModal({
             </div>
 
             {/* Rechte Seite: Tabs & Auswahl-Gitter */}
-            <div className="flex flex-1 min-w-0 flex-col gap-2 w-full">
+            <div className="flex flex-1 min-w-0 flex-col gap-2.5 sm:gap-3 w-full">
               {/* Kategorie-Tabs als abgeschrägte Crystal-Buttons */}
-              <div className="flex flex-wrap items-center justify-center gap-1.5 landscape:gap-1 w-full">
+              <div className="flex flex-wrap items-center justify-center gap-2 sm:gap-2.5 landscape:gap-1.5 w-full pb-0.5">
                 {(
                   [
                     { id: 'base', label: 'FIGUR' },
@@ -226,7 +232,7 @@ export function AvatarCustomizerModal({
                     tilt={idx % 2 === 0 ? 'left' : 'right'}
                     variant={activeTab === tab.id ? 'indigo' : 'secondary'}
                     onClick={() => setActiveTab(tab.id)}
-                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs"
+                    className="landscape:h-7 landscape:px-2.5 landscape:text-xs min-w-[56px] sm:min-w-[62px]"
                   >
                     {tab.label}
                   </CrystalButton>
@@ -234,30 +240,113 @@ export function AvatarCustomizerModal({
               </div>
 
               {/* Auswahl-Gitter */}
-              <div className="w-full max-h-[38dvh] landscape:max-h-[30dvh] overflow-y-auto px-1 py-1">
+              <div className="w-full max-h-[36dvh] sm:max-h-[38dvh] landscape:max-h-[30dvh] overflow-y-auto px-1 py-1">
             {activeTab === 'base' && (
-              <div className="grid grid-cols-3 gap-2">
-                {AVATAR_BASES.map((b) => {
-                  const isSelected = current.base === b.id;
-                  return (
-                    <button
-                      key={b.id}
-                      type="button"
-                      onClick={() => setCurrent({ ...current, base: b.id })}
-                      className={optionCardClass(isSelected)}
-                    >
-                      <Avatar config={{ ...current, base: b.id }} size={44} />
-                      <span className="font-arcade mt-1 w-full truncate text-center text-xs uppercase">
-                        {b.label}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="flex flex-col gap-2.5 sm:gap-3">
+                <CrystalButton
+                  size="sm"
+                  variant="indigo"
+                  fullWidth
+                  onClick={() => setShowCreator(true)}
+                  className="h-9 sm:h-10"
+                >
+                  <Paintbrush className="h-4 w-4 shrink-0" />
+                  <span>EIGENEN AVATAR ERSTELLEN</span>
+                </CrystalButton>
+
+                <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
+                  {customAvatars.map((ca) => {
+                    const isSelected =
+                      current.base === 'custom' && current.customId === ca.id;
+                    return (
+                      <div key={ca.id} className="relative">
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setCurrent({
+                              ...current,
+                              base: 'custom',
+                              customImage: ca.imageData,
+                              customId: ca.id,
+                              skinColor: ca.skinColor,
+                            })
+                          }
+                          className={optionCardClass(isSelected)}
+                        >
+                          <Avatar
+                            config={{
+                              ...current,
+                              base: 'custom',
+                              customImage: ca.imageData,
+                              skinColor: ca.skinColor,
+                            }}
+                            size={44}
+                          />
+                          <span className="font-arcade mt-1 w-full truncate text-center text-xs uppercase">
+                            {ca.name}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const remaining = deleteCustomAvatar(ca.id);
+                            setCustomAvatars(remaining);
+                            if (current.base === 'custom' && current.customId === ca.id) {
+                              setCurrent({
+                                ...current,
+                                base: 'human',
+                                customImage: undefined,
+                                customId: undefined,
+                              });
+                            }
+                          }}
+                          title={`Avatar "${ca.name}" löschen`}
+                          aria-label={`Avatar ${ca.name} löschen`}
+                          className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] shadow-xs hover:bg-[#FEE2E2] cursor-pointer"
+                        >
+                          <X className="h-3 w-3 stroke-[2.8]" />
+                        </button>
+                      </div>
+                    );
+                  })}
+
+                  {AVATAR_BASES.map((b) => {
+                    const isSelected = current.base === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() =>
+                          setCurrent({
+                            ...current,
+                            base: b.id,
+                            customImage: undefined,
+                            customId: undefined,
+                          })
+                        }
+                        className={optionCardClass(isSelected)}
+                      >
+                        <Avatar
+                          config={{
+                            ...current,
+                            base: b.id,
+                            customImage: undefined,
+                          }}
+                          size={44}
+                        />
+                        <span className="font-arcade mt-1 w-full truncate text-center text-xs uppercase">
+                          {b.label}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
             {activeTab === 'skin' && (
-              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-3 sm:grid-cols-4 gap-2.5 sm:gap-3">
                 {AVATAR_SKIN_COLORS.map((s) => {
                   const isSelected = current.skinColor === s.id;
                   return (
@@ -283,7 +372,7 @@ export function AvatarCustomizerModal({
             )}
 
             {activeTab === 'hat' && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 {AVATAR_HATS.map((h) => {
                   const isSelected = current.hat === h.id;
                   return (
@@ -304,7 +393,7 @@ export function AvatarCustomizerModal({
             )}
 
             {activeTab === 'accessory' && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 {AVATAR_ACCESSORIES.map((acc) => {
                   const isSelected = current.accessory === acc.id;
                   return (
@@ -325,7 +414,7 @@ export function AvatarCustomizerModal({
             )}
 
             {activeTab === 'bg' && (
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-2.5 sm:gap-3">
                 {AVATAR_BGS.map((bg) => {
                   const isSelected = current.bg === bg.id;
                   return (
@@ -356,16 +445,35 @@ export function AvatarCustomizerModal({
       </div>
 
       {/* Untere Aktionsleiste in Portrait: ABBRECHEN & SPEICHERN */}
-      <div className="flex landscape:hidden w-full items-center justify-center gap-3 pt-2">
-        <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose}>
+      <div className="flex landscape:hidden w-full items-center justify-center gap-3.5 sm:gap-4 pt-3 sm:pt-4">
+        <CrystalButton size="md" variant="secondary" tilt="right" onClick={onClose} className="min-w-[130px]">
           ABBRECHEN
         </CrystalButton>
-        <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[140px]">
+        <CrystalButton size="md" tilt="left" onClick={handleSave} className="min-w-[145px]">
           SPEICHERN
         </CrystalButton>
       </div>
         </CrystalPanel>
       </div>
+
+      {showCreator && (
+        <CustomAvatarCreatorModal
+          initialSkinColor={current.skinColor}
+          initialBg={current.bg}
+          onCancel={() => setShowCreator(false)}
+          onSave={(created) => {
+            setCustomAvatars(getCustomAvatars());
+            setCurrent({
+              ...current,
+              base: 'custom',
+              customImage: created.imageData,
+              customId: created.id,
+              skinColor: created.skinColor,
+            });
+            setShowCreator(false);
+          }}
+        />
+      )}
     </div>
   );
 }

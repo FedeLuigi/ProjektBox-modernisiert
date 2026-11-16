@@ -12,12 +12,72 @@ export const STORAGE_KEYS = {
   USER_ID: 'projektbox_user_id',
   PLAYER_NAME: 'projektbox_player_name',
   PLAYER_AVATAR: 'projektbox_player_avatar',
+  CUSTOM_AVATARS: 'projektbox_custom_avatars',
   SOCKET_URL: 'projektbox_socket_url',
   SOUND_ENABLED: 'projektbox_sound_enabled',
   VIBRATION_ENABLED: 'projektbox_vibration_enabled',
   FAVORITE_GAMES: 'projektbox_favorite_games',
   RECENT_GAMES: 'projektbox_recent_games',
 } as const;
+
+export interface CustomAvatar {
+  id: string;
+  name: string;
+  imageData: string;
+  skinColor: string;
+  createdAt: number;
+}
+
+export function getCustomAvatars(): CustomAvatar[] {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEYS.CUSTOM_AVATARS);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (item) =>
+        item &&
+        typeof item.id === 'string' &&
+        typeof item.name === 'string' &&
+        typeof item.imageData === 'string' &&
+        typeof item.skinColor === 'string'
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function saveCustomAvatar(input: {
+  name: string;
+  imageData: string;
+  skinColor: string;
+}): CustomAvatar {
+  const existing = getCustomAvatars();
+  const created: CustomAvatar = {
+    id: `custom_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 6)}`,
+    name: input.name.trim().slice(0, 18) || 'Mein Avatar',
+    imageData: input.imageData,
+    skinColor: input.skinColor,
+    createdAt: Date.now(),
+  };
+  const updated = [created, ...existing];
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_AVATARS, JSON.stringify(updated));
+  } catch {
+    // ignore storage quota errors
+  }
+  return created;
+}
+
+export function deleteCustomAvatar(id: string): CustomAvatar[] {
+  const updated = getCustomAvatars().filter((item) => item.id !== id);
+  try {
+    localStorage.setItem(STORAGE_KEYS.CUSTOM_AVATARS, JSON.stringify(updated));
+  } catch {
+    // ignore
+  }
+  return updated;
+}
 
 export interface RecentGameEntry {
   gameId: string;
