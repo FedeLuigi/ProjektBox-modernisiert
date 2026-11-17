@@ -4,16 +4,18 @@ interface SplashScreenProps {
   onFinish?: () => void;
 }
 
-const SPLASH_DURATION_MS = 2700;
+const SPLASH_DURATION_MS = 3300;
 const SPLASH_REDUCED_MS = 950;
-const FADE_OUT_MS = 360;
+const FADE_OUT_MS = 380;
 
 const WARP_COLORS = ['#F59E0B', '#FBBF24', '#38BDF8', '#10B981', '#F472B6', '#FDE68A'];
 
 /**
- * Vollbild-Canvas-2D Hyperspace-Warp-Sternenfeld mit 3D-Z-Tiefenprojektion.
+ * Vollbild-Canvas-2D:
+ * 1) Hyperspace-Warp-Sternenfeld (0 - 0.9s)
+ * 2) Synchronisierte Partikel-Explosion beim Raketen-Einschlag (ab 0.9s)
  */
-function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
+function HyperspaceExplosionCanvas({ reducedMotion }: { reducedMotion: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
@@ -40,13 +42,30 @@ function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
     resize();
     window.addEventListener('resize', resize);
 
-    const starCount = reducedMotion ? 55 : 190;
+    const starCount = reducedMotion ? 50 : 190;
     const stars = Array.from({ length: starCount }, (_, i) => ({
       x: (Math.random() - 0.5) * width * 1.7,
       y: (Math.random() - 0.5) * height * 1.7,
       z: Math.random() * 1200 + 80,
       color: WARP_COLORS[i % WARP_COLORS.length],
     }));
+
+    // Explosions-Funken beim Einschlag der Rakete (t = 0.9s)
+    const sparkCount = reducedMotion ? 0 : 120;
+    const sparks = Array.from({ length: sparkCount }, (_, i) => {
+      const angle = (i / sparkCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.18;
+      const speed = 5 + Math.random() * 16;
+      return {
+        x: 0,
+        y: 0,
+        vx: Math.cos(angle) * speed,
+        vy: Math.sin(angle) * speed,
+        size: 2 + Math.random() * 3.5,
+        alpha: 1,
+        color: WARP_COLORS[i % WARP_COLORS.length],
+      };
+    });
+    let explosionTriggered = false;
 
     const startTime = performance.now();
     let rafId = 0;
@@ -55,10 +74,17 @@ function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
       const elapsed = (now - startTime) / 1000;
       const cx = width / 2;
       const cy = height / 2;
-      const speed = reducedMotion ? 3 : Math.min(30, 8 + elapsed * 14);
+
+      // Warp beschleunigt bis zum Einschlag (0.9s), danach ruhiger Drift
+      const speed = reducedMotion
+        ? 3
+        : elapsed < 0.92
+          ? 12 + elapsed * 24
+          : Math.max(4.5, 30 - (elapsed - 0.92) * 16);
 
       ctx.clearRect(0, 0, width, height);
 
+      // 1) Hyperspace-Tunnel
       for (const s of stars) {
         s.z -= speed;
         if (s.z <= 20) {
@@ -75,14 +101,40 @@ function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
 
         ctx.beginPath();
         ctx.strokeStyle = s.color;
-        ctx.lineWidth = Math.max(1, (1 - s.z / 1200) * 3.1);
-        ctx.globalAlpha = Math.min(1, (1 - s.z / 1200) * 1.15);
+        ctx.lineWidth = Math.max(1, (1 - s.z / 1200) * 3.2);
+        ctx.globalAlpha = Math.min(1, (1 - s.z / 1200) * 1.1);
         ctx.moveTo(ox, oy);
         ctx.lineTo(px, py);
         ctx.stroke();
       }
-      ctx.globalAlpha = 1;
 
+      // 2) Partikel-Explosion ab t = 0.90s
+      if (!reducedMotion && elapsed >= 0.9) {
+        if (!explosionTriggered) {
+          explosionTriggered = true;
+          for (const sp of sparks) {
+            sp.x = cx;
+            sp.y = cy;
+          }
+        }
+
+        for (const sp of sparks) {
+          if (sp.alpha <= 0.02) continue;
+          sp.vx *= 0.945;
+          sp.vy *= 0.945;
+          sp.x += sp.vx;
+          sp.y += sp.vy;
+          sp.alpha *= 0.965;
+
+          ctx.beginPath();
+          ctx.fillStyle = sp.color;
+          ctx.globalAlpha = sp.alpha;
+          ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.globalAlpha = 1;
       rafId = requestAnimationFrame(render);
     };
 
@@ -96,41 +148,63 @@ function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
   return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" />;
 }
 
-/* ─── Echte illustrierte SVG-Objekte, die aus der Spielbox fliegen ─── */
-
-function RocketSvg({ reducedMotion }: { reducedMotion: boolean }) {
+/* ─── Hero-Rakete für den Einflug vor der Explosion ─── */
+function HeroRocketSvg({ reducedMotion }: { reducedMotion: boolean }) {
   return (
-    <svg viewBox="0 0 64 64" className="h-14 w-14 sm:h-16 sm:w-16 drop-shadow-[0_8px_16px_rgba(245,158,11,0.45)]" fill="none" aria-hidden="true">
-      {/* Antriebsflamme */}
+    <svg
+      viewBox="0 0 80 110"
+      className="h-24 w-20 sm:h-32 sm:w-24 drop-shadow-[0_0_24px_rgba(245,158,11,0.75)]"
+      fill="none"
+      aria-hidden="true"
+    >
+      {/* Große Antriebsflamme */}
       <path
-        d="M27 46 L32 61 L37 46 Z"
+        d="M28 74 L40 108 L52 74 Z"
         fill="#F59E0B"
         className={reducedMotion ? '' : 'spielbox-rocket-flame'}
       />
-      <path d="M29.5 46 L32 55 L34.5 46 Z" fill="#FEF08A" />
+      <path d="M33 74 L40 97 L47 74 Z" fill="#FEF08A" />
       {/* Seitenflossen */}
-      <path d="M22 33 L12 44 L22 43 Z" fill="#E11D48" stroke="#0F172A" strokeWidth="2" strokeLinejoin="round" />
-      <path d="M42 33 L52 44 L42 43 Z" fill="#E11D48" stroke="#0F172A" strokeWidth="2" strokeLinejoin="round" />
-      {/* Raketenkörper */}
       <path
-        d="M32 6 C23 15 21 28 22 44 L42 44 C43 28 41 15 32 6 Z"
-        fill="#F8FAFC"
+        d="M24 54 L8 72 L24 70 Z"
+        fill="#E11D48"
         stroke="#0F172A"
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
+      <path
+        d="M56 54 L72 72 L56 70 Z"
+        fill="#E11D48"
+        stroke="#0F172A"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      {/* Raketenrumpf */}
+      <path
+        d="M40 6 C25 22 22 44 24 72 L56 72 C58 44 55 22 40 6 Z"
+        fill="#F8FAFC"
+        stroke="#0F172A"
+        strokeWidth="3"
+        strokeLinejoin="round"
+      />
       {/* Rote Spitze */}
-      <path d="M32 6 C27.5 11 25.5 15 24.5 19 L39.5 19 C38.5 15 36.5 11 32 6 Z" fill="#E11D48" />
+      <path d="M40 6 C32 15 29 22 27 29 L53 29 C51 22 48 15 40 6 Z" fill="#E11D48" />
       {/* Bullauge */}
-      <circle cx="32" cy="29" r="5.5" fill="#38BDF8" stroke="#0F172A" strokeWidth="2.2" />
-      <circle cx="30.5" cy="27.5" r="1.6" fill="#E0F2FE" />
+      <circle cx="40" cy="46" r="8.5" fill="#38BDF8" stroke="#0F172A" strokeWidth="2.8" />
+      <circle cx="37.5" cy="43.5" r="2.6" fill="#E0F2FE" />
     </svg>
   );
 }
 
+/* ─── Echte Spiele-Objekte, die aus der offenen Spielbox herausfliegen ─── */
 function ControllerSvg() {
   return (
-    <svg viewBox="0 0 64 64" className="h-13 w-13 sm:h-15 sm:w-15 drop-shadow-[0_8px_16px_rgba(56,189,248,0.4)]" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 64 64"
+      className="h-12 w-12 sm:h-15 sm:w-15 drop-shadow-[0_8px_18px_rgba(56,189,248,0.45)]"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M16 22 H48 C54 22 57 30 55 41 C54 46 49 48 45 45 L40 39 H24 L19 45 C15 48 10 46 9 41 C7 30 10 22 16 22 Z"
         fill="#1E293B"
@@ -138,9 +212,7 @@ function ControllerSvg() {
         strokeWidth="2.5"
         strokeLinejoin="round"
       />
-      {/* Steuerkreuz */}
       <path d="M20 28 V36 M16 32 H24" stroke="#F8FAFC" strokeWidth="3" strokeLinecap="round" />
-      {/* Aktionstasten */}
       <circle cx="44" cy="29" r="2.2" fill="#F59E0B" />
       <circle cx="48" cy="33" r="2.2" fill="#10B981" />
       <circle cx="40" cy="33" r="2.2" fill="#EC4899" />
@@ -151,7 +223,12 @@ function ControllerSvg() {
 
 function PaintPaletteSvg() {
   return (
-    <svg viewBox="0 0 64 64" className="h-13 w-13 sm:h-15 sm:w-15 drop-shadow-[0_8px_16px_rgba(236,72,153,0.4)]" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 64 64"
+      className="h-12 w-12 sm:h-15 sm:w-15 drop-shadow-[0_8px_18px_rgba(236,72,153,0.45)]"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M32 10 C17 10 8 20 8 33 C8 44 17 52 28 52 C33 52 35 48 34 45 C33 42 36 39 40 40 C48 42 56 37 56 29 C56 17 45 10 32 10 Z"
         fill="#FDE68A"
@@ -169,7 +246,12 @@ function PaintPaletteSvg() {
 
 function CrownSvg() {
   return (
-    <svg viewBox="0 0 64 64" className="h-12 w-12 sm:h-14 sm:w-14 drop-shadow-[0_8px_16px_rgba(251,191,36,0.45)]" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 64 64"
+      className="h-11 w-11 sm:h-14 sm:w-14 drop-shadow-[0_8px_18px_rgba(251,191,36,0.5)]"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M10 46 L14 20 L25 31 L32 14 L39 31 L50 20 L54 46 Z"
         fill="#FBBF24"
@@ -185,7 +267,12 @@ function CrownSvg() {
 
 function DiceSvg() {
   return (
-    <svg viewBox="0 0 64 64" className="h-11 w-11 sm:h-13 sm:w-13 drop-shadow-[0_8px_16px_rgba(16,185,129,0.4)]" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 64 64"
+      className="h-10 w-10 sm:h-13 sm:w-13 drop-shadow-[0_8px_18px_rgba(16,185,129,0.45)]"
+      fill="none"
+      aria-hidden="true"
+    >
       <rect
         x="12"
         y="12"
@@ -207,7 +294,12 @@ function DiceSvg() {
 
 function StarGemSvg() {
   return (
-    <svg viewBox="0 0 64 64" className="h-11 w-11 sm:h-12 sm:w-12 drop-shadow-[0_8px_16px_rgba(245,158,11,0.4)]" fill="none" aria-hidden="true">
+    <svg
+      viewBox="0 0 64 64"
+      className="h-10 w-10 sm:h-12 sm:w-12 drop-shadow-[0_8px_18px_rgba(245,158,11,0.45)]"
+      fill="none"
+      aria-hidden="true"
+    >
       <path
         d="M32 8 L39 23 L55 25 L43 36 L46 53 L32 45 L18 53 L21 36 L9 25 L25 23 Z"
         fill="#38BDF8"
@@ -226,61 +318,53 @@ interface FlyingObject {
   rot: string;
   delay: string;
   mobileHide: boolean;
-  render: (reducedMotion: boolean) => ReactNode;
+  render: () => ReactNode;
 }
 
+// Koordinaten bewusst weit außen um den Titel („PROJEKT BOX“) herum platziert, damit nichts überlappt
 const FLYING_OBJECTS: FlyingObject[] = [
   {
-    id: 'rocket',
-    tx: '-148px',
-    ty: '-150px',
-    rot: '-22deg',
-    delay: '620ms',
+    id: 'palette',
+    tx: '-128px',
+    ty: '-185px',
+    rot: '-14deg',
+    delay: '1680ms',
     mobileHide: false,
-    render: (rm) => <RocketSvg reducedMotion={rm} />,
+    render: () => <PaintPaletteSvg />,
   },
   {
     id: 'controller',
-    tx: '150px',
-    ty: '-142px',
+    tx: '128px',
+    ty: '-180px',
     rot: '14deg',
-    delay: '690ms',
+    delay: '1750ms',
     mobileHide: false,
     render: () => <ControllerSvg />,
   },
   {
-    id: 'palette',
-    tx: '-110px',
-    ty: '-225px',
-    rot: '-10deg',
-    delay: '760ms',
-    mobileHide: true,
-    render: () => <PaintPaletteSvg />,
-  },
-  {
     id: 'crown',
-    tx: '112px',
-    ty: '-220px',
-    rot: '12deg',
-    delay: '820ms',
+    tx: '0px',
+    ty: '-218px',
+    rot: '-4deg',
+    delay: '1820ms',
     mobileHide: true,
     render: () => <CrownSvg />,
   },
   {
     id: 'dice',
-    tx: '-215px',
-    ty: '-55px',
+    tx: '-255px',
+    ty: '-85px',
     rot: '-18deg',
-    delay: '880ms',
+    delay: '1880ms',
     mobileHide: true,
     render: () => <DiceSvg />,
   },
   {
     id: 'star',
-    tx: '215px',
-    ty: '-58px',
+    tx: '255px',
+    ty: '-85px',
     rot: '20deg',
-    delay: '930ms',
+    delay: '1940ms',
     mobileHide: true,
     render: () => <StarGemSvg />,
   },
@@ -351,11 +435,13 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const isReadyState = progress >= 88;
   const statusText =
-    progress < 36
-      ? 'HYPERSPACE-WARP AKTIV...'
-      : progress < 86
-        ? 'SPIELBOX WIRD GEÖFFNET...'
-        : 'BEREIT ZUM SPIELEN!';
+    progress < 32
+      ? 'RAKETE IM ANFLUG...'
+      : progress < 56
+        ? 'SPIELBOX ERSCHEINT...'
+        : progress < 88
+          ? 'SPIELE WERDEN GELADEN...'
+          : 'BEREIT ZUM SPIELEN!';
 
   return (
     <div
@@ -365,10 +451,10 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
-      {/* 1. Vollbild Canvas-2D Hyperspace-Warp Tunnel */}
-      <HyperspaceWarpCanvas reducedMotion={prefersReducedMotion} />
+      {/* 1. Vollbild Canvas-2D Hyperspace-Warp + Partikel-Explosion */}
+      <HyperspaceExplosionCanvas reducedMotion={prefersReducedMotion} />
 
-      {/* Subtiler Studio-Radialschein hinter der Spielbox */}
+      {/* Subtiler Studio-Radialschein */}
       <div className="pointer-events-none fixed inset-0 z-0">
         <div className="absolute top-1/2 left-1/2 h-[54vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E0B]/[0.09] blur-[110px]" />
       </div>
@@ -382,9 +468,30 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         <span className="text-white/45">TIPPEN ZUM ÜBERSPRINGEN</span>
       </div>
 
-      {/* 3. ZENTRUM: SPIELBOX UNBOXING + HERAUSFLIEGENDE OBJEKTE */}
-      <div className="relative z-20 my-auto flex flex-col items-center justify-center px-2">
-        {/* Aufsteigender Lichtkegel aus der Box */}
+      {/* 3. ZENTRUM: AKT 1 RAKETE -> AKT 2 EXPLOSION -> AKT 3 SPIELBOX -> AKT 4 SPIELE & TITEL */}
+      <div
+        className={`relative z-20 my-auto flex flex-col items-center justify-center px-2 ${
+          prefersReducedMotion ? '' : 'spielbox-stage-shake'
+        }`}
+      >
+        {/* AKT 1: Hero-Rakete fliegt von links unten ins Zentrum */}
+        {!prefersReducedMotion && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+            <div className="spielbox-rocket-in">
+              <HeroRocketSvg reducedMotion={prefersReducedMotion} />
+            </div>
+          </div>
+        )}
+
+        {/* AKT 2: Explosions-Blitz & Schockwelle beim Einschlag */}
+        {!prefersReducedMotion && (
+          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center">
+            <div className="spielbox-blast-flash h-44 w-44 sm:h-56 sm:w-56 rounded-full bg-[radial-gradient(circle,#FFFFFF_0%,#FBBF24_38%,rgba(245,158,11,0)_72%)] blur-md" />
+            <div className="spielbox-shockwave absolute h-36 w-36 sm:h-48 sm:w-48 rounded-full border-[#FDE68A] shadow-[0_0_32px_#F59E0B]" />
+          </div>
+        )}
+
+        {/* AKT 4a: Aufsteigender Lichtkegel aus der geöffneten Box */}
         <div
           className={`pointer-events-none absolute bottom-[36%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 bg-gradient-to-t from-[#F59E0B]/35 via-[#38BDF8]/15 to-transparent blur-xl ${
             prefersReducedMotion ? '' : 'spielbox-beam'
@@ -392,8 +499,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           style={{ clipPath: 'polygon(30% 100%, 70% 100%, 100% 0%, 0% 0%)' }}
         />
 
-        {/* Echte Objekte (Rakete, Controller, Palette, Krone, Würfel, Stern), die aus der Box fliegen */}
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+        {/* AKT 4b: Echte Spiele-Objekte fliegen um den Titel herum aus der Box */}
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
           {FLYING_OBJECTS.map((obj) => (
             <div
               key={obj.id}
@@ -402,19 +509,19 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                   '--tx': obj.tx,
                   '--ty': obj.ty,
                   '--rot': obj.rot,
-                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 1450ms`,
+                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 2550ms`,
                 } as CSSProperties
               }
-              className={`absolute -top-7 -left-7 ${obj.mobileHide ? 'hidden sm:block' : 'block'} ${
+              className={`absolute -top-6 -left-6 ${obj.mobileHide ? 'hidden sm:block' : 'block'} ${
                 prefersReducedMotion ? 'opacity-100' : 'spielbox-burst'
               }`}
             >
-              {obj.render(prefersReducedMotion)}
+              {obj.render()}
             </div>
           ))}
         </div>
 
-        {/* Titel über der offenen Spielbox */}
+        {/* AKT 4c: Titel über der offenen Spielbox */}
         <div
           className={`relative z-20 mb-3 sm:mb-4 flex flex-col items-center text-center ${
             prefersReducedMotion ? '' : 'spielbox-title'
@@ -429,7 +536,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
         </div>
 
-        {/* Isometrische 3D-Spielbox */}
+        {/* AKT 3: Isometrische 3D-Spielbox erscheint aus der Explosion & öffnet sich */}
         <div className={`relative z-10 ${prefersReducedMotion ? '' : 'spielbox-drop'}`}>
           <div
             className={`pointer-events-none absolute -bottom-3 left-1/2 h-6 w-36 sm:w-44 -translate-x-1/2 rounded-full bg-[#F59E0B]/30 blur-md ${

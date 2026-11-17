@@ -368,22 +368,94 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ─── Vollbild-Startanimation: Spielbox Unboxing Choreography ─── */
-@keyframes boxDropBounce {
+/* ─── Vollbild-Startanimation: Rakete -> Explosion -> Spielbox Unboxing -> Spiele ─── */
+@keyframes rocketFlyIn {
   0% {
     opacity: 0;
-    transform: translateY(-70px) scale(0.72);
+    transform: translate(-48vw, 32vh) rotate(38deg) scale(1.25);
   }
-  55% {
+  12% {
     opacity: 1;
-    transform: translateY(8px) scale(1.04);
   }
-  78% {
-    transform: translateY(-4px) scale(0.98);
+  88% {
+    opacity: 1;
+    transform: translate(-10px, 6px) rotate(28deg) scale(0.92);
+  }
+  96% {
+    opacity: 1;
+    transform: translate(0, 0) rotate(24deg) scale(0.75);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(0, 0) rotate(24deg) scale(0.4);
+  }
+}
+
+@keyframes blastFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.15);
+  }
+  18% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2.8);
+  }
+}
+
+@keyframes blastShockwave {
+  0% {
+    opacity: 0;
+    transform: scale(0.12);
+    border-width: 6px;
+  }
+  15% {
+    opacity: 0.95;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(3.8);
+    border-width: 1px;
+  }
+}
+
+@keyframes stageImpactShake {
+  0%,
+  100% {
+    transform: translate3d(0, 0, 0);
+  }
+  20% {
+    transform: translate3d(-6px, 4px, 0);
+  }
+  40% {
+    transform: translate3d(6px, -5px, 0);
+  }
+  60% {
+    transform: translate3d(-4px, -3px, 0);
+  }
+  80% {
+    transform: translate3d(3px, 3px, 0);
+  }
+}
+
+@keyframes boxEmergeFromBlast {
+  0% {
+    opacity: 0;
+    transform: scale(0.15) translateY(18px);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.09) translateY(-6px);
+  }
+  82% {
+    transform: scale(0.97) translateY(2px);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
+    transform: scale(1) translateY(0);
   }
 }
 
@@ -416,10 +488,12 @@ body::-webkit-scrollbar,
 @keyframes boxBurstItem {
   0% {
     opacity: 0;
-    transform: translate(0, 20px) scale(0.2) rotate(-20deg);
+    transform: translate(0, 34px) scale(0.15) rotate(-25deg);
   }
-  45% {
+  50% {
     opacity: 1;
+    transform: translate(calc(var(--tx, 0px) * 1.06), calc(var(--ty, -60px) * 1.06)) scale(1.08)
+      rotate(var(--rot, 0deg));
   }
   100% {
     opacity: 1;
@@ -440,7 +514,7 @@ body::-webkit-scrollbar,
 @keyframes boxTitleEmerge {
   0% {
     opacity: 0;
-    transform: translateY(22px) scale(0.88);
+    transform: translateY(28px) scale(0.84);
     filter: blur(6px);
   }
   100% {
@@ -461,32 +535,48 @@ body::-webkit-scrollbar,
   }
 }
 
+.spielbox-rocket-in {
+  animation: rocketFlyIn 0.92s cubic-bezier(0.32, 0, 0.72, 0.28) both;
+}
+
+.spielbox-blast-flash {
+  animation: blastFlash 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+}
+
+.spielbox-shockwave {
+  animation: blastShockwave 0.78s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+}
+
+.spielbox-stage-shake {
+  animation: stageImpactShake 0.34s ease-out 0.9s both;
+}
+
 .spielbox-drop {
-  animation: boxDropBounce 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: boxEmergeFromBlast 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.04s both;
 }
 
 .spielbox-lid {
   transform-origin: 35% 40%;
-  animation: boxLidOpen 0.65s cubic-bezier(0.22, 1, 0.36, 1) 0.55s both;
+  animation: boxLidOpen 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.56s both;
 }
 
 .spielbox-beam {
   transform-origin: bottom center;
-  animation: boxCoreBeam 0.8s cubic-bezier(0.22, 1, 0.36, 1) 0.58s both;
+  animation: boxCoreBeam 0.75s cubic-bezier(0.22, 1, 0.36, 1) 1.6s both;
 }
 
 .spielbox-burst {
   animation:
-    boxBurstItem 0.75s cubic-bezier(0.22, 1, 0.36, 1) both,
-    boxBurstFloat 3.2s ease-in-out 1.4s infinite;
+    boxBurstItem 0.72s cubic-bezier(0.22, 1, 0.36, 1) both,
+    boxBurstFloat 3.2s ease-in-out 2.55s infinite;
 }
 
 .spielbox-title {
-  animation: boxTitleEmerge 0.7s cubic-bezier(0.22, 1, 0.36, 1) 0.78s both;
+  animation: boxTitleEmerge 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.72s both;
 }
 
 .spielbox-floor {
-  animation: boxFloorGlow 0.7s ease-out 0.15s both;
+  animation: boxFloorGlow 0.65s ease-out 1.15s both;
 }
 
 @keyframes rocketFlameFlicker {
@@ -503,7 +593,7 @@ body::-webkit-scrollbar,
 
 .spielbox-rocket-flame {
   transform-origin: center top;
-  animation: rocketFlameFlicker 0.16s ease-in-out infinite;
+  animation: rocketFlameFlicker 0.14s ease-in-out infinite;
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
