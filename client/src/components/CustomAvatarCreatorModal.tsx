@@ -232,7 +232,7 @@ export function CustomAvatarCreatorModal({
             {/* 1. GROSSE ZEICHENFLÄCHE MIT GESICHT */}
             <div className="flex flex-col items-center justify-center shrink-0 gap-1">
               <div
-                className="relative aspect-square w-[172px] sm:w-[196px] md:w-[250px] landscape:w-[190px] landscape:md:w-[240px] rounded-full border-[3.5px] sm:border-[4px] border-[#334155] shadow-[0_5px_0_rgba(15,23,42,0.28)] overflow-hidden"
+                className="avatar-creator-canvas-landscape relative aspect-square w-[172px] sm:w-[196px] md:w-[250px] rounded-full border-[3.5px] sm:border-[4px] border-[#334155] shadow-[0_5px_0_rgba(15,23,42,0.28)] overflow-hidden"
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${bgMeta.from}, ${bgMeta.to})`,
                 }}

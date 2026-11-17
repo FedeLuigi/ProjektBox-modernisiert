@@ -129,7 +129,7 @@ export function TvJoinModal({
       disabled={isJoining}
       onClick={() => setEntryMode('qr')}
       aria-label="QR-Code scannen"
-      className={`group flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-[#F59E0B]/45 bg-[#F59E0B]/[0.08] text-[#FDE68A] transition-all hover:border-[#F59E0B] hover:bg-[#F59E0B]/15 hover:scale-[1.03] active:scale-95 disabled:opacity-45 cursor-pointer ${
+      className={`join-landscape-qr-tile group flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-[#F59E0B]/45 bg-[#F59E0B]/[0.08] text-[#FDE68A] transition-all hover:border-[#F59E0B] hover:bg-[#F59E0B]/15 hover:scale-[1.03] active:scale-95 disabled:opacity-45 cursor-pointer ${
         large ? 'px-10 py-7' : 'px-8 py-4'
       }`}
     >
@@ -188,7 +188,7 @@ export function TvJoinModal({
           </div>
 
           {entryMode === 'qr' ? (
-            <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 py-4 text-center">
+            <div className="join-landscape-form my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 py-4 text-center">
               <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
                 <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
                   QR-CODE <span className="text-[#FBBF24]">SCANNEN</span>
@@ -207,7 +207,7 @@ export function TvJoinModal({
           {design === 'join-open-stage' && (
             <form
               onSubmit={handleSubmit}
-              className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-6 py-4 text-center"
+              className="join-landscape-form my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-6 py-4 text-center"
             >
               <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
                 <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
@@ -245,7 +245,7 @@ export function TvJoinModal({
           {design === 'join-split-portal' && (
             <form
               onSubmit={handleSubmit}
-              className="my-auto flex w-full flex-col items-center gap-7 py-4"
+              className="join-landscape-form my-auto flex w-full flex-col items-center gap-7 py-4"
             >
               <div className="border-b-2 border-[#F59E0B] px-3 pb-1 text-center">
                 <span className="font-arcade text-2xl sm:text-4xl tracking-wider text-white uppercase">

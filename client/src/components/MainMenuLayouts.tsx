@@ -171,7 +171,7 @@ export function OpenGalleryLayout({
   }, []);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-1 min-h-0 flex-col gap-2.5 px-4 sm:px-6 pt-2.5">
+    <div className="mx-auto flex w-full max-w-6xl flex-1 min-h-0 flex-col gap-2.5 landscape:gap-1.5 px-4 sm:px-6 pt-2.5 landscape:pt-1">
       {/* Filter-Tabs links & adaptive Suchleiste rechts auf derselben Höhe ohne Zeilenumbruch */}
       <div
         ref={barRef}
@@ -217,7 +217,7 @@ export function OpenGalleryLayout({
         />
       ) : (
         <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto py-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 pb-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-7 landscape:gap-4 pb-4 landscape:pb-2">
             {games.map((game) => {
               const isFav = favoriteIds.includes(game.id);
               const palette = ACCENT_PALETTES[game.accent];

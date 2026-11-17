@@ -294,7 +294,7 @@ export function InlineQrScanner({
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="relative w-full max-w-[280px] sm:max-w-[320px] landscape:max-w-[200px] aspect-square overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center touch-none"
+        className="qr-scanner-landscape relative w-full max-w-[280px] sm:max-w-[320px] aspect-square overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center touch-none"
       >
         <video
           ref={videoRef}

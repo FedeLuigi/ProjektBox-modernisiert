@@ -89,7 +89,7 @@ export function LobbyGameSettings({
       </button>
 
       {isOpen && (
-        <div className="px-4 pb-3.5 pt-2.5 space-y-3 border-t border-white/12 animate-fade-in">
+        <div className="px-3 sm:px-4 pb-3 pt-2 space-y-2.5 border-t border-white/12 animate-fade-in">
           {isDrawAndGuess ? (
             <>
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">

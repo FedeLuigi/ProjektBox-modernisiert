@@ -572,7 +572,8 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-main {
-    overflow: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
     padding-top: 4px !important;
     padding-bottom: 4px !important;
   }
@@ -634,5 +635,24 @@ body::-webkit-scrollbar,
     justify-content: space-between !important;
     padding-top: 2px !important;
     gap: 8px !important;
+  }
+
+  .qr-scanner-landscape {
+    max-width: 190px !important;
+    max-height: 190px !important;
+  }
+
+  .join-landscape-form {
+    gap: 10px !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .join-landscape-qr-tile {
+    padding: 12px 24px !important;
+  }
+
+  .avatar-creator-canvas-landscape {
+    width: 168px !important;
   }
 }
