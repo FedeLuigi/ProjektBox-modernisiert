@@ -33,9 +33,7 @@ export function MultiplayerGameView({
 
   const currentUser = useUserProfile();
   const gameAccent = GAMES.find((g) => g.id === lobby.gameId)?.accent ?? 'emerald';
-  const activePlayers = lobby.isTvMode
-    ? lobby.players.filter((p) => !p.isTvScreen)
-    : lobby.players;
+  const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const myPlayer =
     activePlayers.find((p) => p.id === currentUser.id) ||
     lobby.players.find((p) => p.id === currentUser.id);

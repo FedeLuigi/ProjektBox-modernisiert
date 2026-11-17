@@ -229,9 +229,7 @@ export function LobbyScreen({
   }
 
   const activePlayers = currentLobby
-    ? currentLobby.isTvMode
-      ? currentLobby.players.filter((p) => !p.isTvScreen)
-      : currentLobby.players
+    ? currentLobby.players.filter((p) => !p.isTvScreen)
     : [];
 
   const myPlayer =
