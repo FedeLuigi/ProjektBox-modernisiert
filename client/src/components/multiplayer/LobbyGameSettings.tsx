@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChevronDown, ChevronUp, Crown, Lock } from 'lucide-react';
+import { ChevronDown, ChevronUp, Crown, Lock, Plus, X } from 'lucide-react';
 import { OpenButton } from '../OpenSubpageUI';
 
 interface LobbyGameSettingsProps {
@@ -9,7 +9,7 @@ interface LobbyGameSettingsProps {
   onUpdate: (newSettings: Record<string, any>) => void;
 }
 
-const CATEGORIES = ['Alle', 'Tiere', 'Essen', 'Fahrzeuge', 'Natur', 'Gegenstände'];
+const CATEGORIES = ['Alle', 'Eigene', 'Tiere', 'Essen', 'Fahrzeuge', 'Natur', 'Gegenstände'];
 const ROUND_OPTIONS = [3, 5, 8];
 const DURATION_OPTIONS = [45, 60, 90];
 
@@ -20,12 +20,14 @@ export function LobbyGameSettings({
   onUpdate,
 }: LobbyGameSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [wordDraft, setWordDraft] = useState('');
 
   const isDrawAndGuess = gameId === 'draw-and-guess';
   const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
   const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
-  const hints = settings?.hints !== false;
+  const hints = settings?.hints === true;
   const category = settings?.category || 'Alle';
+  const customWords: string[] = Array.isArray(settings?.customWords) ? settings.customWords : [];
 
   const handleSetRounds = (val: number) => {
     if (!isHost) return;
@@ -47,8 +49,47 @@ export function LobbyGameSettings({
     onUpdate({ ...settings, category: cat });
   };
 
+  const handleAddCustomWords = () => {
+    if (!isHost) return;
+    const incoming = wordDraft
+      .split(/[,;\n]+/)
+      .map((w) => w.trim().slice(0, 28))
+      .filter((w) => w.length >= 2);
+    if (incoming.length === 0) return;
+
+    const existingLower = new Set(customWords.map((w) => w.toLowerCase()));
+    const nextWords = [...customWords];
+    for (const w of incoming) {
+      if (!existingLower.has(w.toLowerCase()) && nextWords.length < 40) {
+        existingLower.add(w.toLowerCase());
+        nextWords.push(w);
+      }
+    }
+    setWordDraft('');
+    onUpdate({
+      ...settings,
+      customWords: nextWords,
+      category: 'Eigene',
+    });
+  };
+
+  const handleRemoveCustomWord = (wordToRemove: string) => {
+    if (!isHost) return;
+    const nextWords = customWords.filter((w) => w !== wordToRemove);
+    onUpdate({
+      ...settings,
+      customWords: nextWords,
+      category: nextWords.length === 0 && category === 'Eigene' ? 'Alle' : category,
+    });
+  };
+
+  const categorySummary =
+    category === 'Eigene' && customWords.length > 0
+      ? `EIGENE (${customWords.length})`
+      : category;
+
   const summaryText = isDrawAndGuess
-    ? `${rounds} RUNDEN • ${roundDuration}S • ${hints ? 'TIPPS AN' : 'OHNE TIPPS'} • ${category}`
+    ? `${rounds} RUNDEN • ${roundDuration}S • ${hints ? 'TIPPS AN' : 'TIPPS AUS'} • ${categorySummary}`
     : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
 
   return (
@@ -163,6 +204,72 @@ export function LobbyGameSettings({
                     </OpenButton>
                   ))}
                 </div>
+              </div>
+
+              {/* Eigene Wörter hinzufügen & verwalten */}
+              <div className="flex flex-col gap-2 border-t border-white/10 pt-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-arcade text-xs text-[#94A3B8] uppercase">
+                    EIGENE WÖRTER ({customWords.length})
+                  </span>
+                  {customWords.length > 0 && (
+                    <span className="font-arcade text-[10px] text-[#FDE68A] uppercase">
+                      {category === 'Eigene' ? 'NUR EIGENE AKTIV' : 'GEMISCHT MIT ALLE'}
+                    </span>
+                  )}
+                </div>
+
+                {isHost && (
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="text"
+                      value={wordDraft}
+                      onChange={(e) => setWordDraft(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddCustomWords();
+                        }
+                      }}
+                      maxLength={120}
+                      placeholder="Wort eingeben (z. B. Pizza, Rakete)..."
+                      aria-label="Eigenes Wort hinzufügen"
+                      className="h-8 flex-1 min-w-0 rounded-lg border border-white/20 bg-white/[0.06] px-2.5 text-xs text-white placeholder:text-white/40 focus:border-[#F59E0B] focus:outline-none"
+                    />
+                    <OpenButton
+                      size="sm"
+                      variant="amber"
+                      disabled={wordDraft.trim().length < 2}
+                      onClick={handleAddCustomWords}
+                      aria-label="Eigenes Wort hinzufügen"
+                    >
+                      <Plus className="h-3.5 w-3.5" />
+                    </OpenButton>
+                  </div>
+                )}
+
+                {customWords.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto no-scrollbar">
+                    {customWords.map((word) => (
+                      <span
+                        key={word}
+                        className="inline-flex items-center gap-1 rounded-lg border border-[#F59E0B]/45 bg-[#F59E0B]/15 px-2 py-0.5 font-arcade text-[10px] text-[#FDE68A] uppercase"
+                      >
+                        <span>{word}</span>
+                        {isHost && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveCustomWord(word)}
+                            aria-label={`${word} entfernen`}
+                            className="text-[#FDE68A]/75 hover:text-white cursor-pointer"
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+                )}
               </div>
             </>
           ) : (

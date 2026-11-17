@@ -26,6 +26,8 @@ export interface DrawAndGuessState extends BaseGameState {
   wordHint: string;
   categoryName: string;
   categoryFilter?: string;
+  customWords?: string[];
+  usedWords?: string[];
   hintsEnabled?: boolean;
   round: number;
   maxRounds: number;
@@ -147,18 +149,50 @@ const WORDS: { word: string; category: string }[] = [
   { word: 'Schatzkiste', category: 'Gegenstände' },
 ];
 
-function getRandomWord(categoryFilter?: string): { word: string; category: string } {
-  let pool = WORDS;
+function normalizeCustomWords(raw: unknown): string[] {
+  if (!Array.isArray(raw)) return [];
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const item of raw) {
+    if (typeof item !== 'string') continue;
+    const cleaned = item.trim().slice(0, 28);
+    if (cleaned.length < 2) continue;
+    const key = cleaned.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(cleaned);
+    if (result.length >= 40) break;
+  }
+  return result;
+}
+
+function getRandomWord(
+  categoryFilter?: string,
+  customWords: string[] = [],
+  usedWords: string[] = []
+): { word: string; category: string } {
+  const customEntries = customWords.map((w) => ({ word: w, category: 'Eigene' }));
+  let pool = customEntries.length > 0 ? [...WORDS, ...customEntries] : WORDS;
+
   if (categoryFilter && categoryFilter !== 'Alle') {
-    const filtered = WORDS.filter(
-      (w) => w.category.toLowerCase() === categoryFilter.toLowerCase()
-    );
-    if (filtered.length > 0) {
-      pool = filtered;
+    if (categoryFilter.toLowerCase() === 'eigene' && customEntries.length > 0) {
+      pool = customEntries;
+    } else {
+      const filtered = WORDS.filter(
+        (w) => w.category.toLowerCase() === categoryFilter.toLowerCase()
+      );
+      if (filtered.length > 0) {
+        pool = filtered;
+      }
     }
   }
-  const index = Math.floor(Math.random() * pool.length);
-  return pool[index];
+
+  const usedSet = new Set(usedWords.map((w) => w.toLowerCase()));
+  const freshPool = pool.filter((entry) => !usedSet.has(entry.word.toLowerCase()));
+  const activePool = freshPool.length > 0 ? freshPool : pool;
+
+  const index = Math.floor(Math.random() * activePool.length);
+  return activePool[index];
 }
 
 function makeWordHint(word: string, hintsEnabled = true): string {
@@ -197,10 +231,11 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
     const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
-    const hintsEnabled = settings?.hints !== false;
+    const hintsEnabled = settings?.hints === true;
     const categoryFilter = settings?.category || 'Alle';
+    const customWords = normalizeCustomWords(settings?.customWords);
 
-    const { word, category } = getRandomWord(categoryFilter);
+    const { word, category } = getRandomWord(categoryFilter, customWords);
     const now = Date.now();
 
     return {
@@ -211,6 +246,8 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       wordHint: makeWordHint(word, hintsEnabled),
       categoryName: category,
       categoryFilter,
+      customWords,
+      usedWords: [word],
       hintsEnabled,
       round: 1,
       maxRounds: rounds,
@@ -424,8 +461,10 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       }
 
       const categoryFilter = state.categoryFilter || 'Alle';
-      const hintsEnabled = state.hintsEnabled !== false;
-      const { word, category } = getRandomWord(categoryFilter);
+      const customWords = state.customWords || [];
+      const prevUsed = state.usedWords || [];
+      const hintsEnabled = state.hintsEnabled === true;
+      const { word, category } = getRandomWord(categoryFilter, customWords, prevUsed);
       const roundDuration = state.roundDuration || 60;
       const now = Date.now();
 
@@ -438,6 +477,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           secretWord: word,
           wordHint: makeWordHint(word, hintsEnabled),
           categoryName: category,
+          usedWords: [...prevUsed, word],
           round: nextRoundNum,
           roundDuration,
           roundEndsAt: now + roundDuration * 1000,

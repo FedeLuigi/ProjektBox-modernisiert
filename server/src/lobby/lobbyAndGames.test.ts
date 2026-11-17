@@ -189,3 +189,24 @@ test('SocketSchemas: Zod-Validierung und Payload-Größenlimits greifen zuverlä
   const oversized = { text: 'X'.repeat(EVENT_MAX_PAYLOAD_BYTES['game:move'] + 100) };
   assert.equal(isPayloadWithinLimit(oversized, EVENT_MAX_PAYLOAD_BYTES['game:move']), false);
 });
+
+test('Draw & Guess: Tipps standardmäßig aus und eigene Wörter werden gewählt', () => {
+  const manager = new LobbyManager();
+  const created = manager.createLobby({
+    name: 'TestLobby',
+    isPrivate: true,
+    gameId: 'draw-and-guess',
+    userProfile: { id: 'u1', name: 'Host', avatar: {} },
+    socketId: 's1',
+  });
+  assert.equal(created.lobby?.settings?.hints, false);
+
+  const state = drawAndGuessGame.initGameState(mockPlayers, 'p1', {
+    category: 'Eigene',
+    customWords: ['SuperRakete'],
+  });
+  assert.equal(state.hintsEnabled, false);
+  assert.equal(state.secretWord, 'SuperRakete');
+  assert.equal(state.categoryName, 'Eigene');
+  assert.equal(state.wordHint, '_ _ _ _ _ _ _ _ _ _ _');
+});

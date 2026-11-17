@@ -27,8 +27,9 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
     return {
       rounds: 3,
       roundDuration: 60,
-      hints: true,
+      hints: false,
       category: 'Alle',
+      customWords: [],
     };
   }
   return {};

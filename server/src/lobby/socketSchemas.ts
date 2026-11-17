@@ -6,7 +6,7 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   'lobby:create': 64 * 1024,
   'lobby:join': 64 * 1024,
   'lobby:update-profile': 64 * 1024,
-  'lobby:update-settings': 2048,
+  'lobby:update-settings': 4096,
   'lobby:reconnect': 1024,
   'game:move': 4096,
   'draw:strokes': 24 * 1024,
@@ -71,6 +71,7 @@ export const LobbyUpdateSettingsSchema = z.object({
     roundDuration: z.number().int().min(15).max(180).optional(),
     hints: z.boolean().optional(),
     category: z.string().trim().min(1).max(32).optional(),
+    customWords: z.array(z.string().trim().min(2).max(28)).max(40).optional(),
   }),
 });
 
