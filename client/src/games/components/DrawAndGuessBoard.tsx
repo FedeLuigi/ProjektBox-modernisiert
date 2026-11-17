@@ -914,10 +914,16 @@ export function DrawAndGuessBoard({
   const isRaterTwoCol = !isTvMode && !isRoundOver;
 
   const statusBar = !isRoundOver ? (
-    <div className="w-full flex items-center justify-between gap-2 shrink-0 px-1">
+    <div
+      className={`w-full flex items-center justify-between gap-2 shrink-0 ${
+        isRaterTwoCol
+          ? 'border-b border-white/12 pb-2.5 landscape:pb-1.5 mb-1 landscape:mb-0.5'
+          : 'px-1'
+      }`}
+    >
       <div className="flex items-center gap-2 min-w-0">
         <div className="border-b-2 border-[#F59E0B] pb-0.5 min-w-0">
-          <span className="block truncate text-xs sm:text-sm font-arcade uppercase tracking-wider text-white">
+          <span className="block truncate text-xs sm:text-sm landscape:text-xs font-arcade uppercase tracking-wider text-white">
             {drawerPlayer?.name || 'SPIELER'}{' '}
             <span className="text-[#FBBF24]">ZEICHNET</span>
           </span>
@@ -925,7 +931,7 @@ export function DrawAndGuessBoard({
       </div>
 
       <div
-        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs sm:text-sm shrink-0 transition-colors ${
+        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 landscape:px-2.5 landscape:py-0.5 font-arcade text-xs sm:text-sm landscape:text-xs shrink-0 transition-colors ${
           timeLeft <= 10
             ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
             : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
@@ -945,10 +951,12 @@ export function DrawAndGuessBoard({
           : 'max-w-xl mx-auto items-center'
       }`}
     >
-      {/* Linke Spalte (oder oben bei Mobile Portrait / TV-Controller) */}
+      {/* Linke Spalte: Im Hochformat Statuszeile oben + Leinwand; im Quermodus nur große Leinwand */}
       {!isTvMode ? (
         <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
-          {statusBar}
+          {isRaterTwoCol && (
+            <div className="md:hidden landscape:hidden">{statusBar}</div>
+          )}
 
           <div
             ref={canvasStageRef}
@@ -977,17 +985,20 @@ export function DrawAndGuessBoard({
         statusBar
       )}
 
-      {/* Rechte Spalte (bzw. unterer Ratebereich): Buchstabenfelder & Tastatur */}
+      {/* Rechte Spalte (bzw. unterer Ratebereich): Im Quermodus Name + Zeit über Buchstabenfeldern & Tastatur */}
       {!(isRoundOver && !isTvMode) && (
         <div
           className={`w-full flex flex-col items-center text-center shrink-0 min-w-0 ${
             isRaterTwoCol
-              ? 'md:justify-center landscape:justify-center'
+              ? 'md:justify-center md:gap-2.5 landscape:justify-center landscape:gap-1.5'
               : isTvMode
               ? 'my-auto py-2'
               : ''
           } ${isWrongGuess ? 'screen-shake' : ''}`}
         >
+          {isRaterTwoCol && (
+            <div className="hidden md:block landscape:block w-full">{statusBar}</div>
+          )}
           {wrongText && (
             <div className="mb-2 rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/25 px-3 py-1 text-[11px] font-arcade uppercase text-[#FECDD3] animate-fade-in">
               {wrongText}
