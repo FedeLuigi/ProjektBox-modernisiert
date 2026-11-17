@@ -61,7 +61,6 @@ export interface DrawAndGuessState {
 const COLORS = [
   '#000000', // Schwarz
   '#6B7280', // Grau
-  '#FFFFFF', // Weiß / Radierer
   '#8B4513', // Braun
   '#DC2626', // Rot
   '#EA580C', // Orange
@@ -73,6 +72,7 @@ const COLORS = [
   '#7C3AED', // Lila / Violett
   '#EC4899', // Pink
   '#FBCFE8', // Rosa / Hautfarbe
+  '#FFFFFF', // Weiß / Radierer (am Schluss)
 ];
 
 function renderAllStrokes(
@@ -780,7 +780,7 @@ export function DrawAndGuessBoard({
           }`}
         >
           <Clock className="h-3.5 w-3.5 shrink-0" />
-          <span>{timeLeft}S</span>
+          <span>{timeLeft} S</span>
         </div>
       </div>
     );
@@ -954,7 +954,7 @@ export function DrawAndGuessBoard({
         }`}
       >
         <Clock className="h-3.5 w-3.5 shrink-0" />
-        <span>{timeLeft}S</span>
+        <span>{timeLeft} S</span>
       </div>
     </div>
   ) : null;

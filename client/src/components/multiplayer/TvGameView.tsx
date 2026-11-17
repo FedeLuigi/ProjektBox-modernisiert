@@ -124,7 +124,7 @@ export function TvGameView({
           <div className="flex items-center gap-2">
             {isDrawAndGuess && !isGameOver && !isRoundOver && (
               <span className="font-arcade rounded-lg border border-white/20 bg-white/[0.06] px-3 py-1 text-xs text-white">
-                {timeLeft}S
+                {timeLeft} S
               </span>
             )}
             <span className="font-arcade rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 text-xs tracking-widest text-[#FDE68A] uppercase">
