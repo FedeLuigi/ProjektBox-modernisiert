@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
-  Copy,
   Crown,
   Loader2,
   RefreshCw,
@@ -19,7 +18,7 @@ import { getLobbyJoinUrl, renderQrCodeToCanvas } from '../../utils/qrCodeHelper'
 import { Avatar } from '../Avatar';
 import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
-import { OpenButton, OpenModalFrame } from '../OpenSubpageUI';
+import { OpenButton } from '../OpenSubpageUI';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
 import { MultiplayerGameView } from './MultiplayerGameView';
@@ -47,11 +46,9 @@ export function LobbyScreen({
 
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
-  const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
-  const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hasAutoCreatedRef = useRef(false);
 
   const currentUser = useUserProfile();
@@ -134,12 +131,6 @@ export function LobbyScreen({
       renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 480).catch(console.error);
     }
   }, [joinUrl, currentLobby?.code]);
-
-  useEffect(() => {
-    if (isQrModalOpen && qrModalCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(qrModalCanvasRef.current, joinUrl, 360).catch(console.error);
-    }
-  }, [isQrModalOpen, joinUrl, currentLobby?.code]);
 
   const handleBack = async () => {
     if (currentLobby) {
@@ -368,12 +359,7 @@ export function LobbyScreen({
   const inviteBlock = (extraLargeQr = false) =>
     currentLobby ? (
       <div className="flex flex-col items-center gap-4 text-center">
-        <button
-          type="button"
-          onClick={() => setIsQrModalOpen(true)}
-          title="QR-Code vergrößern"
-          className="rounded-2xl border border-white/20 bg-white p-3 sm:p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.45)] transition-transform hover:scale-[1.03] active:scale-95 cursor-pointer"
-        >
+        <div className="rounded-2xl border border-white/20 bg-white p-3 sm:p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
           <canvas
             ref={qrCanvasRef}
             className={`${
@@ -382,7 +368,7 @@ export function LobbyScreen({
                 : 'h-44 w-44 sm:h-52 sm:w-52 lg:h-56 lg:w-56'
             } block`}
           />
-        </button>
+        </div>
 
         <div className="flex flex-wrap items-center justify-center gap-2">
           <button
@@ -575,70 +561,6 @@ export function LobbyScreen({
           )}
         </main>
       </div>
-
-      {/* QR-Code Zoom-Modal */}
-      {isQrModalOpen && currentLobby && (
-        <div
-          role="dialog"
-          aria-modal="true"
-          className="fixed inset-0 z-60 flex items-center justify-center overflow-y-auto bg-[#0F172A]/80 backdrop-blur-sm p-4 animate-fade-in"
-          onClick={() => setIsQrModalOpen(false)}
-        >
-          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-xl">
-            <OpenModalFrame
-              title="QR-"
-              accentWord="CODE"
-              onClose={() => setIsQrModalOpen(false)}
-              contentClassName="gap-4 landscape:gap-2.5"
-            >
-              <div className="flex flex-col items-center gap-4 w-full landscape:grid landscape:grid-cols-[auto_1fr] landscape:items-center landscape:gap-x-5">
-                <div className="flex flex-col items-center landscape:items-start gap-1.5 text-center landscape:text-left landscape:col-start-2 landscape:row-start-1">
-                  <span className="font-arcade text-3xl sm:text-4xl tracking-[0.25em] pl-[0.25em] landscape:pl-0 text-[#FDE68A] uppercase">
-                    {currentLobby.code}
-                  </span>
-                  <p className="text-xs sm:text-sm text-[#CBD5E1] leading-snug max-w-[260px]">
-                    Scanne den Code mit deinem Smartphone zum Beitreten.
-                  </p>
-                </div>
-
-                <div className="w-[78%] max-w-[240px] landscape:w-36 landscape:h-36 aspect-square rounded-2xl border border-white/20 bg-white p-4 flex items-center justify-center mx-auto landscape:mx-0 landscape:col-start-1 landscape:row-start-1 landscape:row-span-2">
-                  <canvas ref={qrModalCanvasRef} className="w-full h-full block" />
-                </div>
-
-                <div className="grid grid-cols-2 gap-3 w-full landscape:col-start-2 landscape:row-start-2">
-                  <OpenButton
-                    size="md"
-                    fullWidth
-                    variant={copiedCode ? 'primary' : 'secondary'}
-                    onClick={handleCopyCode}
-                  >
-                    {copiedCode ? (
-                      <>
-                        <Check className="h-4 w-4 shrink-0 stroke-[3]" />
-                        <span>KOPIERT!</span>
-                      </>
-                    ) : (
-                      <>
-                        <Copy className="h-4 w-4 shrink-0" />
-                        <span>KOPIEREN</span>
-                      </>
-                    )}
-                  </OpenButton>
-
-                  <OpenButton
-                    size="md"
-                    fullWidth
-                    variant="outline-amber"
-                    onClick={() => setIsQrModalOpen(false)}
-                  >
-                    SCHLIESSEN
-                  </OpenButton>
-                </div>
-              </div>
-            </OpenModalFrame>
-          </div>
-        </div>
-      )}
 
       {/* Profil- & Avatar-Modal direkt aus der Lobby */}
       {isAvatarModalOpen && (
