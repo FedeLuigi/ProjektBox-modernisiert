@@ -436,13 +436,15 @@ export function App() {
       )}
 
       {/* ─── 4. Modal für TV-Beitritt (QR-Code Scan & Code-Eingabe) ─── */}
-      <TvJoinModal
-        isOpen={showTvJoinModal}
-        onClose={() => setShowTvJoinModal(false)}
-        onJoin={joinByCode}
-        isJoining={isJoiningLobby}
-        errorMessage={tvJoinError}
-      />
+      {showTvJoinModal && (
+        <TvJoinModal
+          isOpen={showTvJoinModal}
+          onClose={() => setShowTvJoinModal(false)}
+          onJoin={joinByCode}
+          isJoining={isJoiningLobby}
+          errorMessage={tvJoinError}
+        />
+      )}
 
       {/* ─── 5. Einstellungen ("OPTIONS" Panel) ─── */}
       <SettingsSheet

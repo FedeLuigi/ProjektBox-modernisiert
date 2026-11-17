@@ -57,6 +57,7 @@ export function TvJoinModal({
   };
 
   const handleClose = () => {
+    setCode('');
     setEntryMode('code');
     onClose();
   };
