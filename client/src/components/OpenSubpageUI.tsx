@@ -112,6 +112,7 @@ export function OpenSubpageHeader({
 export function OpenModalFrame({
   title,
   accentWord,
+  headerAction,
   onClose,
   children,
   className = '',
@@ -119,6 +120,7 @@ export function OpenModalFrame({
 }: {
   title: string;
   accentWord?: string;
+  headerAction?: ReactNode;
   onClose: () => void;
   children: ReactNode;
   className?: string;
@@ -130,11 +132,14 @@ export function OpenModalFrame({
       className={`relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#0F172A]/90 text-white backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.65)] ${className}`}
     >
       <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 py-3 landscape:py-2">
-        <div className="border-b-2 border-[#F59E0B] pb-0.5 select-none">
-          <span className="font-arcade text-base sm:text-lg tracking-wider text-white uppercase">
-            {title}
-            {accentWord && <span className="text-[#FBBF24]"> {accentWord}</span>}
-          </span>
+        <div className="flex items-center gap-2">
+          <div className="border-b-2 border-[#F59E0B] pb-0.5 select-none">
+            <span className="font-arcade text-base sm:text-lg tracking-wider text-white uppercase">
+              {title}
+              {accentWord && <span className="text-[#FBBF24]"> {accentWord}</span>}
+            </span>
+          </div>
+          {headerAction}
         </div>
 
         <button
