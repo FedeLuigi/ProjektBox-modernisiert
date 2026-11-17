@@ -48,7 +48,7 @@ export function PlayerAvatarButton({
       onClick={onClick}
       title="Profil & Avatar anpassen"
       aria-label="Profil & Avatar anpassen"
-      className="group relative flex h-9 w-9 sm:h-11 sm:w-11 landscape:h-9 landscape:w-9 items-center justify-center rounded-full border-2 border-[#F59E0B] bg-[#0F172A] p-[2px] shadow-[0_3px_0_rgba(15,23,42,0.35)] transition-transform hover:scale-105 active:scale-92 cursor-pointer shrink-0 focus:outline-none"
+      className="group relative flex h-9 w-9 sm:h-11 sm:w-11 landscape:h-9 landscape:w-9 items-center justify-center rounded-full bg-[#0F172A] shadow-[0_3px_0_rgba(15,23,42,0.35)] transition-transform hover:scale-105 active:scale-92 cursor-pointer shrink-0 focus:outline-none"
     >
       {avatar ? (
         <Avatar config={avatar} size={28} className="sm:w-[34px] sm:h-[34px]" />
