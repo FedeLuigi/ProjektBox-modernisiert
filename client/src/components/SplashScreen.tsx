@@ -4,9 +4,9 @@ interface SplashScreenProps {
   onFinish?: () => void;
 }
 
-const SPLASH_DURATION_MS = 3300;
+const SPLASH_DURATION_MS = 4600;
 const SPLASH_REDUCED_MS = 950;
-const FADE_OUT_MS = 380;
+const FADE_OUT_MS = 420;
 
 const WARP_COLORS = ['#F59E0B', '#FBBF24', '#38BDF8', '#10B981', '#F472B6', '#FDE68A'];
 
@@ -75,12 +75,12 @@ function HyperspaceExplosionCanvas({ reducedMotion }: { reducedMotion: boolean }
       const cx = width / 2;
       const cy = height / 2;
 
-      // Warp beschleunigt bis zum Einschlag (0.9s), danach ruhiger Drift
+      // Warp beschleunigt bis zum Einschlag (1.22s), danach ruhiger Drift
       const speed = reducedMotion
         ? 3
-        : elapsed < 0.92
-          ? 12 + elapsed * 24
-          : Math.max(4.5, 30 - (elapsed - 0.92) * 16);
+        : elapsed < 1.24
+          ? 12 + elapsed * 18
+          : Math.max(4.5, 32 - (elapsed - 1.24) * 14);
 
       ctx.clearRect(0, 0, width, height);
 
@@ -108,8 +108,8 @@ function HyperspaceExplosionCanvas({ reducedMotion }: { reducedMotion: boolean }
         ctx.stroke();
       }
 
-      // 2) Partikel-Explosion ab t = 0.90s
-      if (!reducedMotion && elapsed >= 0.9) {
+      // 2) Partikel-Explosion ab t = 1.22s
+      if (!reducedMotion && elapsed >= 1.22) {
         if (!explosionTriggered) {
           explosionTriggered = true;
           for (const sp of sparks) {
@@ -328,7 +328,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '-128px',
     ty: '-185px',
     rot: '-14deg',
-    delay: '1680ms',
+    delay: '2220ms',
     mobileHide: false,
     render: () => <PaintPaletteSvg />,
   },
@@ -337,7 +337,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '128px',
     ty: '-180px',
     rot: '14deg',
-    delay: '1750ms',
+    delay: '2310ms',
     mobileHide: false,
     render: () => <ControllerSvg />,
   },
@@ -346,7 +346,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '0px',
     ty: '-218px',
     rot: '-4deg',
-    delay: '1820ms',
+    delay: '2400ms',
     mobileHide: true,
     render: () => <CrownSvg />,
   },
@@ -355,7 +355,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '-255px',
     ty: '-85px',
     rot: '-18deg',
-    delay: '1880ms',
+    delay: '2480ms',
     mobileHide: true,
     render: () => <DiceSvg />,
   },
@@ -364,7 +364,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '255px',
     ty: '-85px',
     rot: '20deg',
-    delay: '1940ms',
+    delay: '2560ms',
     mobileHide: true,
     render: () => <StarGemSvg />,
   },
@@ -509,7 +509,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                   '--tx': obj.tx,
                   '--ty': obj.ty,
                   '--rot': obj.rot,
-                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 2550ms`,
+                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 3250ms`,
                 } as CSSProperties
               }
               className={`absolute -top-6 -left-6 ${obj.mobileHide ? 'hidden sm:block' : 'block'} ${

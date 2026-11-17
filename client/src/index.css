@@ -536,47 +536,47 @@ body::-webkit-scrollbar,
 }
 
 .spielbox-rocket-in {
-  animation: rocketFlyIn 0.92s cubic-bezier(0.32, 0, 0.72, 0.28) both;
+  animation: rocketFlyIn 1.25s cubic-bezier(0.32, 0, 0.72, 0.28) both;
 }
 
 .spielbox-blast-flash {
-  animation: blastFlash 0.58s cubic-bezier(0.22, 1, 0.36, 1) 0.88s both;
+  animation: blastFlash 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
 }
 
 .spielbox-shockwave {
-  animation: blastShockwave 0.78s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both;
+  animation: blastShockwave 0.92s cubic-bezier(0.16, 1, 0.3, 1) 1.22s both;
 }
 
 .spielbox-stage-shake {
-  animation: stageImpactShake 0.34s ease-out 0.9s both;
+  animation: stageImpactShake 0.38s ease-out 1.22s both;
 }
 
 .spielbox-drop {
-  animation: boxEmergeFromBlast 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.04s both;
+  animation: boxEmergeFromBlast 0.78s cubic-bezier(0.22, 1, 0.36, 1) 1.4s both;
 }
 
 .spielbox-lid {
   transform-origin: 35% 40%;
-  animation: boxLidOpen 0.6s cubic-bezier(0.22, 1, 0.36, 1) 1.56s both;
+  animation: boxLidOpen 0.72s cubic-bezier(0.22, 1, 0.36, 1) 2.08s both;
 }
 
 .spielbox-beam {
   transform-origin: bottom center;
-  animation: boxCoreBeam 0.75s cubic-bezier(0.22, 1, 0.36, 1) 1.6s both;
+  animation: boxCoreBeam 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.12s both;
 }
 
 .spielbox-burst {
   animation:
-    boxBurstItem 0.72s cubic-bezier(0.22, 1, 0.36, 1) both,
-    boxBurstFloat 3.2s ease-in-out 2.55s infinite;
+    boxBurstItem 0.85s cubic-bezier(0.22, 1, 0.36, 1) both,
+    boxBurstFloat 3.4s ease-in-out 3.25s infinite;
 }
 
 .spielbox-title {
-  animation: boxTitleEmerge 0.65s cubic-bezier(0.22, 1, 0.36, 1) 1.72s both;
+  animation: boxTitleEmerge 0.78s cubic-bezier(0.22, 1, 0.36, 1) 2.28s both;
 }
 
 .spielbox-floor {
-  animation: boxFloorGlow 0.65s ease-out 1.15s both;
+  animation: boxFloorGlow 0.75s ease-out 1.55s both;
 }
 
 @keyframes rocketFlameFlicker {
