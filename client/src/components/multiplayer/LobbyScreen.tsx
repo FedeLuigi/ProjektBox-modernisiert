@@ -488,7 +488,13 @@ export function LobbyScreen({
     >
       <BackgroundCometCanvas opacity={0.85} />
 
-      <div className="lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5">
+      <div
+        inert={isAvatarModalOpen}
+        aria-hidden={isAvatarModalOpen}
+        className={`lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5 ${
+          isAvatarModalOpen ? 'pointer-events-none' : ''
+        }`}
+      >
         {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts bleiben unverändert; „+“ mittig */}
         <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <button

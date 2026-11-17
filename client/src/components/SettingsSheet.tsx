@@ -85,7 +85,7 @@ export function SettingsSheet({
       aria-modal="true"
       aria-label="Einstellungen"
       onClick={onClose}
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in"
+      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in"
     >
       <div
         onClick={(e) => e.stopPropagation()}

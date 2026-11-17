@@ -150,8 +150,12 @@ export function TvJoinModal({
         role="dialog"
         aria-modal="true"
         aria-label={entryMode === 'qr' ? 'QR-Code scannen' : 'Lobby beitreten'}
+        inert={showDesignModal}
+        aria-hidden={showDesignModal}
         onClick={handleClose}
-        className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in"
+        className={`fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in ${
+          showDesignModal ? 'pointer-events-none' : ''
+        }`}
       >
         <div
           onClick={(e) => e.stopPropagation()}

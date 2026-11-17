@@ -330,6 +330,20 @@ export function App() {
     handleSplashFinish,
   ]);
 
+  const hasActiveOverlay =
+    showSplash ||
+    isJoiningDeepLink ||
+    Boolean(multiplayerGame) ||
+    showTvJoinModal ||
+    showSettings ||
+    showAvatarModal;
+
+  useEffect(() => {
+    if (hasActiveOverlay && document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur();
+    }
+  }, [hasActiveOverlay]);
+
   return (
     <div className="relative flex h-dvh min-h-dvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
@@ -353,7 +367,13 @@ export function App() {
       )}
 
       {/* ─── 2. Haupt-HUD & Verschmolzene Open-Gallery-Bühne ─── */}
-      <div className="safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden">
+      <div
+        inert={hasActiveOverlay}
+        aria-hidden={hasActiveOverlay}
+        className={`safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden ${
+          hasActiveOverlay ? 'pointer-events-none' : ''
+        }`}
+      >
         <MainMenuHeader
           avatar={userProfile.avatar}
           onOpenProfile={() => {

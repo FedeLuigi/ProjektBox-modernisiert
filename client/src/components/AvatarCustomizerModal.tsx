@@ -152,10 +152,16 @@ export function AvatarCustomizerModal({
       role="dialog"
       aria-modal="true"
       aria-label="Profil & Avatar anpassen"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-sm animate-fade-in select-none"
+      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-sm animate-fade-in select-none"
       onClick={onClose}
     >
-      <div className="tablet-modal-box my-auto w-full max-w-xl landscape:max-w-3xl flex flex-col">
+      <div
+        inert={showCreator}
+        aria-hidden={showCreator}
+        className={`tablet-modal-box my-auto w-full max-w-xl landscape:max-w-3xl flex flex-col ${
+          showCreator ? 'pointer-events-none' : ''
+        }`}
+      >
         <OpenModalFrame
           title="SPIELER"
           accentWord="PROFIL"
