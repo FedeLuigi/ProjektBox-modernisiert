@@ -357,10 +357,6 @@ export function InlineQrScanner({
         </span>
       </div>
 
-      <p className="max-w-xs text-xs text-[#94A3B8]">
-        Mit zwei Fingern oder dem Regler zoomen, oder Code manuell eingeben.
-      </p>
-
       <div className="w-full max-w-xs">
         <OpenButton
           fullWidth
