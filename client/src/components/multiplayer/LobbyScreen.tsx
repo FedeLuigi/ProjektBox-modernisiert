@@ -5,7 +5,6 @@ import {
   Copy,
   Crown,
   Loader2,
-  Plus,
   RefreshCw,
   Share2,
   Smartphone,
@@ -23,11 +22,6 @@ import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { OpenButton, OpenModalFrame } from '../OpenSubpageUI';
 import { ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
-import {
-  LOBBY_LAYOUT_OPTIONS,
-  LobbyLayoutModal,
-  type LobbyLayoutId,
-} from './LobbyLayoutModal';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
 
@@ -55,19 +49,6 @@ export function LobbyScreen({
   const [copiedLink, setCopiedLink] = useState(false);
   const [isQrModalOpen, setIsQrModalOpen] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
-  const [showLayoutModal, setShowLayoutModal] = useState(false);
-
-  const [lobbyLayout, setLobbyLayout] = useState<LobbyLayoutId>(() => {
-    try {
-      const saved = localStorage.getItem('projektbox.lobbyLayout') as LobbyLayoutId | null;
-      if (saved && LOBBY_LAYOUT_OPTIONS.some((o) => o.id === saved)) {
-        return saved;
-      }
-    } catch {
-      // ignore
-    }
-    return 'lobby-open-stage';
-  });
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const qrModalCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -152,7 +133,7 @@ export function LobbyScreen({
     if (qrCanvasRef.current && joinUrl) {
       renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 480).catch(console.error);
     }
-  }, [joinUrl, currentLobby?.code, lobbyLayout]);
+  }, [joinUrl, currentLobby?.code]);
 
   useEffect(() => {
     if (isQrModalOpen && qrModalCanvasRef.current && joinUrl) {
@@ -231,15 +212,6 @@ export function LobbyScreen({
       await socketService.updateLobbySettings(newSettings);
     } catch (err: any) {
       setErrorMsg(err.message);
-    }
-  };
-
-  const handleSelectLayout = (next: LobbyLayoutId) => {
-    setLobbyLayout(next);
-    try {
-      localStorage.setItem('projektbox.lobbyLayout', next);
-    } catch {
-      // ignore
     }
   };
 
@@ -550,20 +522,9 @@ export function LobbyScreen({
             <span>ZURÜCK</span>
           </button>
 
-          <div className="flex items-center gap-2 select-none">
-            <span className="font-arcade hidden sm:inline text-sm md:text-base tracking-wider text-white/85 uppercase">
-              {currentLobby?.name || game.title}
-            </span>
-            <button
-              type="button"
-              onClick={() => setShowLayoutModal(true)}
-              title="Lobby-Design & Layout wechseln"
-              aria-label="Lobby-Design & Layout wechseln"
-              className="flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/[0.06] text-[#FDE68A] hover:border-[#F59E0B] hover:bg-[#F59E0B]/20 hover:text-white transition-all cursor-pointer active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
-          </div>
+          <span className="font-arcade hidden sm:inline text-sm md:text-base tracking-wider text-white/85 uppercase select-none">
+            {currentLobby?.name || game.title}
+          </span>
 
           <ConnectionStatusBadge />
         </header>
@@ -601,107 +562,24 @@ export function LobbyScreen({
               )}
             </div>
           ) : (
-            <>
-              {/* 1. OFFENE BÜHNE (KLASSIK) */}
-              {lobbyLayout === 'lobby-open-stage' && (
-                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-center gap-8 md:gap-12">
-                  <div className="flex flex-col items-center gap-5 border-b md:border-b-0 md:border-r border-white/15 pb-6 md:pb-0 md:pr-10">
-                    {titleBlock(false)}
-                    {modeTabs}
-                    {inviteBlock(false)}
-                  </div>
-
-                  <div className="flex flex-col gap-4">
-                    {settingsBlock}
-                    {playersBlock}
-                    <div className="pt-1">{actionButton}</div>
-                  </div>
+            <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
+              <div className="my-auto grid w-full grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
+                <div className="flex flex-col items-center gap-5">
+                  {titleBlock(false)}
+                  {inviteBlock(true)}
                 </div>
-              )}
 
-              {/* 2. OFFENE BÜHNE (TITEL OBEN) */}
-              {lobbyLayout === 'lobby-open-hero-top' && (
-                <div className="my-auto mx-auto flex w-full max-w-5xl flex-col gap-7">
-                  <div className="flex flex-wrap items-end justify-between gap-4 border-b border-white/15 pb-4">
-                    {titleBlock(true)}
-                    {modeTabs}
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-[0.95fr_1.05fr] items-center gap-8 md:gap-12">
-                    <div className="flex flex-col items-center md:border-r md:border-white/15 md:pr-10">
-                      {inviteBlock(true)}
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      {settingsBlock}
-                      {playersBlock}
-                      <div className="pt-1">{actionButton}</div>
-                    </div>
-                  </div>
+                <div className="flex flex-col gap-4">
+                  {settingsBlock}
+                  {playersBlock}
                 </div>
-              )}
+              </div>
 
-              {/* 3. OFFENE BÜHNE (GESPIEGELT) */}
-              {lobbyLayout === 'lobby-open-reversed' && (
-                <div className="my-auto mx-auto grid w-full max-w-5xl grid-cols-1 md:grid-cols-[1.05fr_0.95fr] items-center gap-8 md:gap-12">
-                  <div className="flex flex-col gap-5 border-b md:border-b-0 md:border-r border-white/15 pb-6 md:pb-0 md:pr-10">
-                    {titleBlock(true)}
-                    {settingsBlock}
-                    {playersBlock}
-                    <div className="pt-1">{actionButton}</div>
-                  </div>
-
-                  <div className="flex flex-col items-center gap-5">
-                    {modeTabs}
-                    {inviteBlock(true)}
-                  </div>
-                </div>
-              )}
-
-              {/* 4. OFFENE BÜHNE (3-SPALTEN) */}
-              {lobbyLayout === 'lobby-open-columns' && (
-                <div className="my-auto flex w-full flex-col gap-6">
-                  <div className="grid grid-cols-1 lg:grid-cols-[0.9fr_1fr_1.1fr] items-center gap-8">
-                    <div className="flex flex-col items-start gap-5 border-b lg:border-b-0 lg:border-r border-white/15 pb-6 lg:pb-0 lg:pr-8">
-                      {titleBlock(true)}
-                      {modeTabs}
-                      <div className="w-full pt-2">{actionButton}</div>
-                    </div>
-
-                    <div className="flex flex-col items-center border-b lg:border-b-0 lg:border-r border-white/15 pb-6 lg:pb-0 lg:pr-8">
-                      {inviteBlock(false)}
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      {settingsBlock}
-                      {playersBlock}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 5. OFFENE BÜHNE (BOTTOM-LEISTE) */}
-              {lobbyLayout === 'lobby-open-docked' && (
-                <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
-                  <div className="my-auto grid w-full grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
-                    <div className="flex flex-col items-center gap-5">
-                      {titleBlock(false)}
-                      {inviteBlock(true)}
-                    </div>
-
-                    <div className="flex flex-col gap-4">
-                      {settingsBlock}
-                      {playersBlock}
-                    </div>
-                  </div>
-
-                  <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4 border-t border-white/15 pt-4">
-                    {modeTabs}
-                    <div className="w-full sm:w-72">{actionButton}</div>
-                  </div>
-                </div>
-              )}
-            </>
+              <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+                {modeTabs}
+                <div className="w-full sm:w-72">{actionButton}</div>
+              </div>
+            </div>
           )}
         </main>
       </div>
@@ -781,14 +659,6 @@ export function LobbyScreen({
           }}
         />
       )}
-
-      {/* Layout-Auswahl („+“-Button) */}
-      <LobbyLayoutModal
-        isOpen={showLayoutModal}
-        activeLayout={lobbyLayout}
-        onSelectLayout={handleSelectLayout}
-        onClose={() => setShowLayoutModal(false)}
-      />
     </div>
   );
 }
