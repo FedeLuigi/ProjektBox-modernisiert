@@ -748,34 +748,38 @@ export function DrawAndGuessBoard({
 
   // C) SPIELER-ANSICHT: DER ZEICHNER (Offenes Design, 2-spaltig auf Tablet/Desktop & Landscape)
   if (isDrawer) {
-    return (
-      <div className="game-drawer-layout flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_20rem] md:items-center md:gap-6 lg:gap-8 select-none">
-        {/* Linke Spalte: Offene Wortanzeige + 4:3 Zeichenfläche */}
-        <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
-          <div className="w-full flex items-center justify-between gap-3 shrink-0 px-1">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <div className="hidden xs:flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5 shrink-0">
-                <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
-                <span className="text-[11px] font-arcade uppercase tracking-wider text-[#FDE68A]">
-                  ZEICHNE
-                </span>
-              </div>
-              <span className="text-base sm:text-xl lg:text-2xl font-arcade uppercase tracking-wider text-white truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
-                {gameState?.secretWord}
-              </span>
-            </div>
-
-            <div
-              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs sm:text-sm shrink-0 transition-colors ${
-                timeLeft <= 10
-                  ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
-                  : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
-              }`}
-            >
-              <Clock className="h-3.5 w-3.5 shrink-0" />
-              <span>{timeLeft}S</span>
-            </div>
+    const drawerStatusBar = (
+      <div className="w-full flex items-center justify-between gap-3 shrink-0 px-1">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="hidden xs:flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5 shrink-0">
+            <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
+            <span className="text-[11px] font-arcade uppercase tracking-wider text-[#FDE68A]">
+              ZEICHNE
+            </span>
           </div>
+          <span className="text-base sm:text-xl lg:text-2xl landscape:text-base font-arcade uppercase tracking-wider text-white truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
+            {gameState?.secretWord}
+          </span>
+        </div>
+
+        <div
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 landscape:px-2.5 landscape:py-0.5 font-arcade text-xs sm:text-sm landscape:text-xs shrink-0 transition-colors ${
+            timeLeft <= 10
+              ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
+              : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span>{timeLeft}S</span>
+        </div>
+      </div>
+    );
+
+    return (
+      <div className="game-drawer-layout flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_19rem] lg:grid-cols-[minmax(0,1fr)_21rem] md:items-center md:gap-6 lg:gap-8 select-none">
+        {/* Linke Spalte: Im Hochformat Wort+Timer über Leinwand; im Quermodus nur große 4:3 Zeichenfläche */}
+        <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
+          <div className="md:hidden landscape:hidden">{drawerStatusBar}</div>
 
           <div
             ref={canvasStageRef}
@@ -811,8 +815,11 @@ export function DrawAndGuessBoard({
           </div>
         </div>
 
-        {/* Rechte Spalte / Unteres Dock: Mal-Werkzeuge im offenen Glas-Design */}
-        <div className="game-tool-dock w-full shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-4 backdrop-blur-md">
+        {/* Rechte Spalte / Unteres Dock: Im Quermodus Wort + Zeit auf gleicher Höhe über den Mal-Werkzeugen */}
+        <div className="flex w-full shrink-0 flex-col gap-2.5 landscape:gap-1.5">
+          <div className="hidden md:block landscape:block">{drawerStatusBar}</div>
+
+          <div className="game-tool-dock w-full shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-4 backdrop-blur-md">
           <div className="game-tool-title hidden md:flex items-center justify-between mb-3">
             <div className="border-b-2 border-[#F59E0B] pb-0.5">
               <span className="font-arcade text-xs tracking-wider text-white uppercase">
@@ -889,6 +896,7 @@ export function DrawAndGuessBoard({
               </div>
             </div>
           </div>
+          </div>
         </div>
       </div>
     );
@@ -916,9 +924,7 @@ export function DrawAndGuessBoard({
   const statusBar = !isRoundOver ? (
     <div
       className={`w-full flex items-center justify-between gap-2 shrink-0 ${
-        isRaterTwoCol
-          ? 'border-b border-white/12 pb-2.5 landscape:pb-1.5 mb-1 landscape:mb-0.5'
-          : 'px-1'
+        isRaterTwoCol ? 'pb-1.5 landscape:pb-0.5' : 'px-1'
       }`}
     >
       <div className="flex items-center gap-2 min-w-0">
