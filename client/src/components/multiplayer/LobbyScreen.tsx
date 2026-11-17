@@ -362,9 +362,6 @@ export function LobbyScreen({
           {game.title}
         </h2>
       </div>
-      <span className="font-arcade mt-1.5 text-[11px] sm:text-xs tracking-widest text-[#94A3B8] uppercase">
-        {game.players} • {game.duration}
-      </span>
     </div>
   );
 
@@ -387,38 +384,33 @@ export function LobbyScreen({
           />
         </button>
 
-        <div className="flex flex-col items-center gap-1.5">
-          <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#94A3B8] uppercase">
-            {copiedCode ? 'KOPIERT ✓' : 'LOBBY-CODE (TIPPEN ZUM KOPIEREN)'}
-          </span>
+        <div className="flex flex-wrap items-center justify-center gap-2">
+          <button
+            type="button"
+            onClick={handleCopyCode}
+            title="Lobby-Code kopieren"
+            className="font-arcade rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-4 py-1.5 text-xl sm:text-2xl tracking-[0.22em] pl-[calc(1rem+0.22em)] text-[#FDE68A] uppercase transition-colors hover:bg-[#F59E0B]/25 active:scale-95 cursor-pointer"
+          >
+            {copiedCode ? 'KOPIERT ✓' : currentLobby.code}
+          </button>
 
-          <div className="flex flex-wrap items-center justify-center gap-2">
-            <button
-              type="button"
-              onClick={handleCopyCode}
-              className="font-arcade rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-4 py-1.5 text-xl sm:text-2xl tracking-[0.22em] pl-[calc(1rem+0.22em)] text-[#FDE68A] uppercase transition-colors hover:bg-[#F59E0B]/25 active:scale-95 cursor-pointer"
-            >
-              {currentLobby.code}
-            </button>
-
-            <OpenButton
-              size="sm"
-              variant={copiedLink ? 'primary' : 'secondary'}
-              onClick={handleCopyLink}
-            >
-              {copiedLink ? (
-                <>
-                  <Check className="h-3.5 w-3.5 stroke-[3]" />
-                  <span>KOPIERT ✓</span>
-                </>
-              ) : (
-                <>
-                  <Share2 className="h-3.5 w-3.5" />
-                  <span>LINK TEILEN</span>
-                </>
-              )}
-            </OpenButton>
-          </div>
+          <OpenButton
+            size="sm"
+            variant={copiedLink ? 'primary' : 'secondary'}
+            onClick={handleCopyLink}
+          >
+            {copiedLink ? (
+              <>
+                <Check className="h-3.5 w-3.5 stroke-[3]" />
+                <span>KOPIERT ✓</span>
+              </>
+            ) : (
+              <>
+                <Share2 className="h-3.5 w-3.5" />
+                <span>LINK TEILEN</span>
+              </>
+            )}
+          </OpenButton>
         </div>
       </div>
     ) : null;
