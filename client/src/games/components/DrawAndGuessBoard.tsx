@@ -701,31 +701,41 @@ export function DrawAndGuessBoard({
     );
   }
 
-  // B) SMARTPHONE-ANSICHT: RUNDENENDE-SCREEN IM OFFENE-BÜHNE-STIL
+  // B) RUNDENENDE-SCREEN IM OFFENEN SIEG-STIL (OHNE KASTEN)
   if (isRoundOver && !isTv) {
     return (
-      <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 sm:p-4 animate-fade-in select-none">
-        <div className="w-full max-w-sm sm:max-w-md rounded-2xl border border-white/15 bg-[#0F172A]/85 p-6 text-center backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)] flex flex-col items-center gap-4">
-          <div className="border-b-2 border-[#F59E0B] px-3 pb-0.5">
-            <span className="font-arcade text-lg tracking-wider text-white uppercase">
+      <div className="my-auto mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-2 py-4 select-none">
+        <div className="my-auto flex w-full flex-col items-center gap-6 landscape:gap-4 text-center animate-fade-in">
+          <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+            <h2 className="font-arcade text-2xl sm:text-4xl landscape:text-2xl tracking-wider text-white uppercase">
               RUNDE <span className="text-[#FBBF24]">BEENDET</span>
-            </span>
+            </h2>
           </div>
 
-          <span className="text-2xl sm:text-3xl font-arcade uppercase tracking-[0.14em] text-[#FDE68A] rounded-xl bg-white/[0.06] border border-white/15 px-5 py-2">
-            {gameState?.secretWord}
-          </span>
+          <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
+              <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+                GESUCHTES WORT
+              </span>
+              <span className="font-arcade mt-1 text-xl sm:text-2xl text-[#FDE68A] uppercase truncate max-w-full">
+                {gameState?.secretWord}
+              </span>
+            </div>
 
-          <div className="w-full">
-            {gameState?.roundWinnerName ? (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-[#10B981]/20 border border-[#34D399]/50 px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-[#6EE7B7]">
-                <span>{gameState.roundWinnerName} HAT ES ERRATEN!</span>
-              </div>
-            ) : (
-              <div className="inline-flex items-center gap-2 rounded-lg bg-white/[0.06] border border-white/15 px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-[#CBD5E1]">
-                <span>NIEMAND HAT ES ERRATEN</span>
-              </div>
-            )}
+            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
+              <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+                ERGEBNIS
+              </span>
+              <span
+                className={`font-arcade mt-1 text-sm sm:text-base uppercase truncate max-w-full ${
+                  gameState?.roundWinnerName ? 'text-[#34D399]' : 'text-[#CBD5E1]'
+                }`}
+              >
+                {gameState?.roundWinnerName
+                  ? `${gameState.roundWinnerName} HAT ES ERRATEN!`
+                  : 'NIEMAND HAT ES ERRATEN'}
+              </span>
+            </div>
           </div>
 
           {transitionCountdown > 0 && (
