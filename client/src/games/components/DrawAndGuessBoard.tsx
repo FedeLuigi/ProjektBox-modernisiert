@@ -749,7 +749,7 @@ export function DrawAndGuessBoard({
   // C) SPIELER-ANSICHT: DER ZEICHNER (Offenes Design, 2-spaltig auf Tablet/Desktop & Landscape)
   if (isDrawer) {
     return (
-      <div className="flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_20rem] landscape:grid landscape:grid-cols-[minmax(0,1fr)_16.5rem] md:items-center landscape:items-center md:gap-6 lg:gap-8 landscape:gap-3.5 select-none">
+      <div className="game-drawer-layout flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_20rem] md:items-center md:gap-6 lg:gap-8 select-none">
         {/* Linke Spalte: Offene Wortanzeige + 4:3 Zeichenfläche */}
         <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
           <div className="w-full flex items-center justify-between gap-3 shrink-0 px-1">
@@ -812,8 +812,8 @@ export function DrawAndGuessBoard({
         </div>
 
         {/* Rechte Spalte / Unteres Dock: Mal-Werkzeuge im offenen Glas-Design */}
-        <div className="w-full shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-4 landscape:p-3 backdrop-blur-md">
-          <div className="hidden md:flex landscape:flex items-center justify-between mb-3 landscape:mb-2">
+        <div className="game-tool-dock w-full shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-4 backdrop-blur-md">
+          <div className="game-tool-title hidden md:flex items-center justify-between mb-3">
             <div className="border-b-2 border-[#F59E0B] pb-0.5">
               <span className="font-arcade text-xs tracking-wider text-white uppercase">
                 WERKZEUGE
@@ -821,8 +821,8 @@ export function DrawAndGuessBoard({
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5 sm:gap-3 landscape:gap-2.5">
-            <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain scrollbar-none px-0.5 py-1 md:grid md:grid-cols-5 md:gap-2.5 md:justify-items-center md:overflow-visible landscape:grid landscape:grid-cols-7 landscape:gap-1.5 landscape:justify-items-center landscape:overflow-visible">
+          <div className="flex flex-col gap-2.5 sm:gap-3">
+            <div className="game-color-grid flex items-center gap-2 overflow-x-auto overscroll-x-contain scrollbar-none px-0.5 py-1 md:grid md:grid-cols-5 md:gap-2.5 md:justify-items-center md:overflow-visible">
               {COLORS.map((col) => {
                 const isSelected = currentColor === col;
                 return (
@@ -831,7 +831,7 @@ export function DrawAndGuessBoard({
                     type="button"
                     onClick={() => setCurrentColor(col)}
                     aria-label={col === '#FFFFFF' ? 'Radierer / Weiß' : `Farbe ${col}`}
-                    className={`h-7 w-7 sm:h-8 sm:w-8 landscape:h-7 landscape:w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center border-2 ${
+                    className={`game-color-btn h-7 w-7 sm:h-8 sm:w-8 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center border-2 ${
                       isSelected
                         ? 'border-white ring-2 ring-[#F59E0B] scale-110 shadow-[0_0_12px_rgba(245,158,11,0.55)] z-10'
                         : 'border-white/25 hover:scale-105'
@@ -844,7 +844,7 @@ export function DrawAndGuessBoard({
               })}
             </div>
 
-            <div className="flex items-center justify-between gap-2 border-t border-white/15 pt-2.5 md:flex-col md:items-stretch md:gap-3 landscape:flex-col landscape:items-stretch landscape:gap-2">
+            <div className="game-tool-actions flex items-center justify-between gap-2 border-t border-white/15 pt-2.5 md:flex-col md:items-stretch md:gap-3">
               <div className="grid grid-cols-3 gap-1.5 flex-1 md:flex-none">
                 {BRUSH_SIZES.map((b) => (
                   <button
@@ -862,17 +862,17 @@ export function DrawAndGuessBoard({
                 ))}
               </div>
 
-              <div className="flex items-center gap-1.5 md:grid md:grid-cols-2 landscape:grid landscape:grid-cols-2">
+              <div className="game-tool-btn-row flex items-center gap-1.5 md:grid md:grid-cols-2">
                 <OpenButton
                   size="sm"
                   variant="secondary"
                   onClick={handleUndo}
                   title="Rückgängig"
                   aria-label="Rückgängig"
-                  className="md:w-full landscape:w-full"
+                  className="md:w-full"
                 >
                   <Undo2 className="h-4 w-4 shrink-0" />
-                  <span className="hidden md:inline">ZURÜCK</span>
+                  <span className="hidden md:inline landscape:hidden">ZURÜCK</span>
                 </OpenButton>
 
                 <OpenButton
@@ -881,10 +881,10 @@ export function DrawAndGuessBoard({
                   onClick={handleClear}
                   title="Leinwand leeren"
                   aria-label="Leinwand löschen"
-                  className="md:w-full landscape:w-full"
+                  className="md:w-full"
                 >
                   <Trash2 className="h-4 w-4 shrink-0" />
-                  <span className="hidden md:inline">LEEREN</span>
+                  <span className="hidden md:inline landscape:hidden">LEEREN</span>
                 </OpenButton>
               </div>
             </div>
@@ -941,7 +941,7 @@ export function DrawAndGuessBoard({
     <div
       className={`flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 select-none ${
         isRaterTwoCol
-          ? 'md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.9fr)] lg:grid-cols-[minmax(0,1.25fr)_minmax(24rem,0.9fr)] landscape:grid landscape:grid-cols-[minmax(0,1fr)_minmax(18.5rem,1fr)] md:items-center landscape:items-center md:gap-6 lg:gap-10 landscape:gap-3.5'
+          ? 'game-rater-layout md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.9fr)] lg:grid-cols-[minmax(0,1.25fr)_minmax(24rem,0.9fr)] md:items-center md:gap-6 lg:gap-10'
           : 'max-w-xl mx-auto items-center'
       }`}
     >
@@ -1009,7 +1009,7 @@ export function DrawAndGuessBoard({
 
           {/* Buchstaben-Platzhalter im offenen Glas-Design */}
           <div
-            className={`flex flex-wrap items-center justify-center w-full ${
+            className={`game-word-slots flex flex-wrap items-center justify-center w-full ${
               totalSlots > 8 ? 'gap-1' : 'gap-1.5 sm:gap-2'
             } py-1`}
           >
@@ -1019,7 +1019,7 @@ export function DrawAndGuessBoard({
                 return (
                   <div
                     key={idx}
-                    className={`relative flex items-center justify-center rounded-xl font-arcade bg-[#10B981]/25 text-[#6EE7B7] border border-[#34D399]/60 ${slotSizeClass}`}
+                    className={`game-word-slot relative flex items-center justify-center rounded-xl font-arcade bg-[#10B981]/25 text-[#6EE7B7] border border-[#34D399]/60 ${slotSizeClass}`}
                   >
                     {char}
                   </div>
@@ -1036,7 +1036,7 @@ export function DrawAndGuessBoard({
               return (
                 <div
                   key={idx}
-                  className={`relative flex items-center justify-center rounded-xl font-arcade transition-all border ${slotSizeClass} ${
+                  className={`game-word-slot relative flex items-center justify-center rounded-xl font-arcade transition-all border ${slotSizeClass} ${
                     hasGuessedCorrectly
                       ? 'bg-[#10B981]/25 text-[#6EE7B7] border-[#34D399]/60'
                       : isActive
@@ -1077,7 +1077,7 @@ export function DrawAndGuessBoard({
             <div
               role="group"
               aria-label="In-App Tastatur"
-              className="mt-2 sm:mt-3 landscape:mt-1.5 flex w-full flex-col gap-1.5 landscape:gap-1"
+              className="game-keyboard mt-2 sm:mt-3 flex w-full flex-col gap-1.5"
             >
               {KEYBOARD_ROWS.map((row, rowIdx) => (
                 <div key={rowIdx} className="flex w-full items-center gap-1 sm:gap-1.5">
@@ -1086,7 +1086,7 @@ export function DrawAndGuessBoard({
                       key={letter}
                       type="button"
                       onClick={() => handleKeyboardChar(letter)}
-                      className="flex-1 min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.08] hover:bg-white/[0.16] active:bg-[#F59E0B] active:text-[#0F172A] active:scale-95 text-white text-sm sm:text-base landscape:text-xs font-arcade transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                      className="game-key-btn flex-1 min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.08] hover:bg-white/[0.16] active:bg-[#F59E0B] active:text-[#0F172A] active:scale-95 text-white text-sm sm:text-base font-arcade transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                     >
                       {letter}
                     </button>
@@ -1098,7 +1098,7 @@ export function DrawAndGuessBoard({
                         type="button"
                         onClick={handleKeyboardBackspace}
                         aria-label="Buchstabe löschen"
-                        className="flex-[1.6] min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.12] active:scale-95 text-white/90 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                        className="game-key-btn flex-[1.6] min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.12] active:scale-95 text-white/90 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                       >
                         <Delete className="h-4 w-4 landscape:h-3.5 landscape:w-3.5" />
                       </button>
@@ -1108,7 +1108,7 @@ export function DrawAndGuessBoard({
                         onClick={handleGuessSubmit}
                         disabled={!guessInput.trim()}
                         aria-label="Tipp absenden"
-                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl font-arcade uppercase text-xs sm:text-sm landscape:text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
+                        className={`game-key-btn flex-[2.4] min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl font-arcade uppercase text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
                           guessInput.trim()
                             ? 'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-[0_6px_20px_rgba(16,185,129,0.28)] cursor-pointer'
                             : 'border border-white/10 bg-white/[0.04] text-white/35 cursor-not-allowed'

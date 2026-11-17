@@ -482,4 +482,149 @@ body::-webkit-scrollbar,
     opacity: 1 !important;
     filter: none !important;
   }
+
+  /* ─── Spiel-Ansicht & Lobby im Smartphone-Querformat (kein Überlappen, kein Scrollen) ─── */
+  .game-landscape-header {
+    padding-bottom: 4px !important;
+  }
+
+  .game-landscape-main {
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .game-drawer-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 15.5rem !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .game-rater-layout {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(17.5rem, 1fr) !important;
+    gap: 12px !important;
+    align-items: center !important;
+  }
+
+  .game-tool-dock {
+    padding: 8px 10px !important;
+  }
+
+  .game-tool-title {
+    display: none !important;
+  }
+
+  .game-color-grid {
+    display: grid !important;
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+    justify-items: center !important;
+    overflow: visible !important;
+    padding: 2px 0 !important;
+  }
+
+  .game-color-btn {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .game-tool-actions {
+    flex-direction: column !important;
+    align-items: stretch !important;
+    gap: 6px !important;
+    padding-top: 8px !important;
+  }
+
+  .game-tool-btn-row {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 6px !important;
+  }
+
+  .game-word-slots {
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
+    gap: 4px !important;
+  }
+
+  .game-word-slot {
+    width: 32px !important;
+    height: 34px !important;
+    font-size: 0.9rem !important;
+    border-radius: 8px !important;
+  }
+
+  .game-keyboard {
+    margin-top: 4px !important;
+    gap: 4px !important;
+  }
+
+  .game-key-btn {
+    height: 30px !important;
+    font-size: 0.75rem !important;
+    border-radius: 6px !important;
+  }
+
+  .lobby-landscape-shell {
+    padding-top: 8px !important;
+    padding-bottom: 8px !important;
+  }
+
+  .lobby-landscape-main {
+    overflow: hidden !important;
+    padding-top: 4px !important;
+    padding-bottom: 4px !important;
+  }
+
+  .lobby-landscape-wrap {
+    gap: 8px !important;
+  }
+
+  .lobby-landscape-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 16px !important;
+    align-items: center !important;
+  }
+
+  .lobby-landscape-left {
+    gap: 8px !important;
+  }
+
+  .lobby-landscape-title {
+    font-size: 1.15rem !important;
+    line-height: 1.2 !important;
+  }
+
+  .lobby-landscape-qr-box {
+    padding: 6px !important;
+  }
+
+  .lobby-landscape-qr-canvas {
+    width: 112px !important;
+    height: 112px !important;
+  }
+
+  .lobby-landscape-code-btn {
+    font-size: 0.95rem !important;
+    padding: 4px 10px !important;
+  }
+
+  .lobby-landscape-right {
+    gap: 8px !important;
+  }
+
+  .lobby-landscape-players {
+    max-height: 92px !important;
+    gap: 4px !important;
+  }
+
+  .lobby-landscape-footer {
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    padding-top: 2px !important;
+    gap: 8px !important;
+  }
 }

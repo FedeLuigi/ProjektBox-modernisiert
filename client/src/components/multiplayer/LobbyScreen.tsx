@@ -347,7 +347,7 @@ export function LobbyScreen({
   const titleBlock = (alignLeft = false) => (
     <div className={`flex flex-col ${alignLeft ? 'items-start text-left' : 'items-center text-center'}`}>
       <div className="border-b-2 border-[#F59E0B] px-1 pb-1">
-        <h2 className="font-arcade text-2xl sm:text-4xl lg:text-[42px] leading-tight tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
+        <h2 className="lobby-landscape-title font-arcade text-2xl sm:text-4xl lg:text-[42px] leading-tight tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
           {game.title}
         </h2>
       </div>
@@ -357,10 +357,10 @@ export function LobbyScreen({
   const inviteBlock = (extraLargeQr = false) =>
     currentLobby ? (
       <div className="flex flex-col items-center gap-4 text-center">
-        <div className="rounded-2xl border border-white/20 bg-white p-3 sm:p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
+        <div className="lobby-landscape-qr-box rounded-2xl border border-white/20 bg-white p-3 sm:p-3.5 shadow-[0_18px_40px_rgba(0,0,0,0.45)]">
           <canvas
             ref={qrCanvasRef}
-            className={`${
+            className={`lobby-landscape-qr-canvas ${
               extraLargeQr
                 ? 'h-52 w-52 sm:h-60 sm:w-60 lg:h-64 lg:w-64'
                 : 'h-44 w-44 sm:h-52 sm:w-52 lg:h-56 lg:w-56'
@@ -373,7 +373,7 @@ export function LobbyScreen({
             type="button"
             onClick={handleCopyCode}
             title="Lobby-Code kopieren"
-            className="font-arcade rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-4 py-1.5 text-xl sm:text-2xl tracking-[0.22em] pl-[calc(1rem+0.22em)] text-[#FDE68A] uppercase transition-colors hover:bg-[#F59E0B]/25 active:scale-95 cursor-pointer"
+            className="lobby-landscape-code-btn font-arcade rounded-xl border border-[#F59E0B]/60 bg-[#F59E0B]/15 px-4 py-1.5 text-xl sm:text-2xl tracking-[0.22em] pl-[calc(1rem+0.22em)] text-[#FDE68A] uppercase transition-colors hover:bg-[#F59E0B]/25 active:scale-95 cursor-pointer"
           >
             {copiedCode ? 'KOPIERT ✓' : currentLobby.code}
           </button>
@@ -412,7 +412,7 @@ export function LobbyScreen({
         </span>
       </div>
 
-      <div className="flex w-full flex-col gap-2 max-h-56 overflow-y-auto no-scrollbar">
+      <div className="lobby-landscape-players flex w-full flex-col gap-2 max-h-56 overflow-y-auto no-scrollbar">
         {activePlayers.map((p, idx) => {
           const isMe = p.id === currentUser.id;
           return (
@@ -488,7 +488,7 @@ export function LobbyScreen({
     >
       <BackgroundCometCanvas opacity={0.85} />
 
-      <div className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5 landscape:py-2">
+      <div className="lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5">
         {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts bleiben unverändert; „+“ mittig */}
         <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <button
@@ -507,7 +507,7 @@ export function LobbyScreen({
           <ConnectionStatusBadge />
         </header>
 
-        <main className="tablet-screen-main flex flex-1 min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden py-4">
+        <main className="tablet-screen-main lobby-landscape-main flex flex-1 min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden py-4">
           {errorMsg && (
             <div className="font-arcade mx-auto mb-4 w-full max-w-xl rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
               {errorMsg}
@@ -540,20 +540,20 @@ export function LobbyScreen({
               )}
             </div>
           ) : (
-            <div className="flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
-              <div className="my-auto grid w-full grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
-                <div className="flex flex-col items-center gap-5">
+            <div className="lobby-landscape-wrap flex flex-1 min-h-0 w-full flex-col justify-between gap-6">
+              <div className="lobby-landscape-grid my-auto grid w-full grid-cols-1 md:grid-cols-2 items-center gap-8 md:gap-12">
+                <div className="lobby-landscape-left flex flex-col items-center gap-5">
                   {titleBlock(false)}
                   {inviteBlock(true)}
                 </div>
 
-                <div className="flex flex-col gap-4">
+                <div className="lobby-landscape-right flex flex-col gap-4">
                   {settingsBlock}
                   {playersBlock}
                 </div>
               </div>
 
-              <div className="flex w-full flex-col sm:flex-row items-center justify-between gap-4 pt-2">
+              <div className="lobby-landscape-footer flex w-full flex-col sm:flex-row items-center justify-between gap-4 pt-2">
                 {modeTabs}
                 <div className="w-full sm:w-72">{actionButton}</div>
               </div>

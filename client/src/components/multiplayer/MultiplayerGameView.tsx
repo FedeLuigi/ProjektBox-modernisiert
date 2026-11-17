@@ -124,7 +124,7 @@ export function MultiplayerGameView({
         className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(8px+env(safe-area-inset-top,0px))] pb-[calc(8px+env(safe-area-inset-bottom,0px))] px-4 sm:px-6 lg:px-8"
       >
         {/* 1. OPEN-GALLERY TOP-BAR */}
-        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/15 pb-2">
+        <header className="game-landscape-header grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/15 pb-2">
           <div className="justify-self-start">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -233,7 +233,7 @@ export function MultiplayerGameView({
             </div>
           </main>
         ) : (
-          <main className="mx-auto flex w-full flex-1 min-h-0 flex-col items-center justify-center overflow-hidden py-2 sm:py-3">
+          <main className="game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col items-center justify-center overflow-hidden py-2 sm:py-3">
             {BoardComponent && myPlayer ? (
               <BoardComponent
                 gameId={lobby.gameId}
