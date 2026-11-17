@@ -1,108 +1,292 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
-import { Dices, Gamepad2, Palette, Sparkles, Tv, Zap } from 'lucide-react';
-import { SplashCanvasEffect } from './splash/SplashCanvasEffects';
-import {
-  getSavedSplashVariant,
-  SPLASH_VARIANTS,
-  type SplashVariantId,
-} from './splash/splashVariants';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface SplashScreenProps {
   onFinish?: () => void;
-  variantOverride?: SplashVariantId;
 }
 
-const SPLASH_DURATION_MS = 2600;
+const SPLASH_DURATION_MS = 2700;
 const SPLASH_REDUCED_MS = 950;
 const FADE_OUT_MS = 360;
 
-const BURST_TOKENS = [
-  {
-    id: 'palette',
-    icon: Palette,
-    tx: '-155px',
-    ty: '-140px',
-    rot: '-14deg',
-    delay: '640ms',
-    boxClass: 'border-[#F59E0B]/55 bg-[#F59E0B]/20 text-[#FDE68A] shadow-[0_0_24px_rgba(245,158,11,0.35)]',
-    mobileHide: false,
-  },
-  {
-    id: 'tv',
-    icon: Tv,
-    tx: '155px',
-    ty: '-135px',
-    rot: '12deg',
-    delay: '700ms',
-    boxClass: 'border-[#38BDF8]/55 bg-[#38BDF8]/20 text-[#BAE6FD] shadow-[0_0_24px_rgba(56,189,248,0.35)]',
-    mobileHide: false,
-  },
-  {
-    id: 'gamepad',
-    icon: Gamepad2,
-    tx: '-105px',
-    ty: '-210px',
-    rot: '-8deg',
-    delay: '760ms',
-    boxClass: 'border-[#34D399]/55 bg-[#10B981]/20 text-[#A7F3D0] shadow-[0_0_24px_rgba(16,185,129,0.35)]',
-    mobileHide: true,
-  },
-  {
-    id: 'dices',
-    icon: Dices,
-    tx: '110px',
-    ty: '-205px',
-    rot: '16deg',
-    delay: '820ms',
-    boxClass: 'border-[#F472B6]/55 bg-[#EC4899]/20 text-[#FBCFE8] shadow-[0_0_24px_rgba(236,72,153,0.35)]',
-    mobileHide: true,
-  },
-  {
-    id: 'spark',
-    icon: Sparkles,
-    tx: '-215px',
-    ty: '-55px',
-    rot: '-20deg',
-    delay: '860ms',
-    boxClass: 'border-white/30 bg-white/10 text-[#FDE68A]',
-    mobileHide: true,
-  },
-  {
-    id: 'zap',
-    icon: Zap,
-    tx: '215px',
-    ty: '-55px',
-    rot: '18deg',
-    delay: '900ms',
-    boxClass: 'border-[#FBBF24]/50 bg-[#F59E0B]/15 text-[#FBBF24]',
-    mobileHide: true,
-  },
-];
+const WARP_COLORS = ['#F59E0B', '#FBBF24', '#38BDF8', '#10B981', '#F472B6', '#FDE68A'];
 
-function StandardTitle({
-  eyebrow = 'PARTY & MULTIPLAYER',
-  className = '',
-}: {
-  eyebrow?: string;
-  className?: string;
-}) {
+/**
+ * Vollbild-Canvas-2D Hyperspace-Warp-Sternenfeld mit 3D-Z-Tiefenprojektion.
+ */
+function HyperspaceWarpCanvas({ reducedMotion }: { reducedMotion: boolean }) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    let width = window.innerWidth;
+    let height = window.innerHeight;
+    let dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const resize = () => {
+      width = window.innerWidth;
+      height = window.innerHeight;
+      dpr = Math.min(window.devicePixelRatio || 1, 2);
+      canvas.width = Math.floor(width * dpr);
+      canvas.height = Math.floor(height * dpr);
+      canvas.style.width = `${width}px`;
+      canvas.style.height = `${height}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+
+    resize();
+    window.addEventListener('resize', resize);
+
+    const starCount = reducedMotion ? 55 : 190;
+    const stars = Array.from({ length: starCount }, (_, i) => ({
+      x: (Math.random() - 0.5) * width * 1.7,
+      y: (Math.random() - 0.5) * height * 1.7,
+      z: Math.random() * 1200 + 80,
+      color: WARP_COLORS[i % WARP_COLORS.length],
+    }));
+
+    const startTime = performance.now();
+    let rafId = 0;
+
+    const render = (now: number) => {
+      const elapsed = (now - startTime) / 1000;
+      const cx = width / 2;
+      const cy = height / 2;
+      const speed = reducedMotion ? 3 : Math.min(30, 8 + elapsed * 14);
+
+      ctx.clearRect(0, 0, width, height);
+
+      for (const s of stars) {
+        s.z -= speed;
+        if (s.z <= 20) {
+          s.z = 1200;
+          s.x = (Math.random() - 0.5) * width * 1.7;
+          s.y = (Math.random() - 0.5) * height * 1.7;
+        }
+        const k = 320 / s.z;
+        const px = cx + s.x * k;
+        const py = cy + s.y * k;
+        const pk = 320 / (s.z + speed * 2.4);
+        const ox = cx + s.x * pk;
+        const oy = cy + s.y * pk;
+
+        ctx.beginPath();
+        ctx.strokeStyle = s.color;
+        ctx.lineWidth = Math.max(1, (1 - s.z / 1200) * 3.1);
+        ctx.globalAlpha = Math.min(1, (1 - s.z / 1200) * 1.15);
+        ctx.moveTo(ox, oy);
+        ctx.lineTo(px, py);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+
+      rafId = requestAnimationFrame(render);
+    };
+
+    rafId = requestAnimationFrame(render);
+    return () => {
+      cancelAnimationFrame(rafId);
+      window.removeEventListener('resize', resize);
+    };
+  }, [reducedMotion]);
+
+  return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" />;
+}
+
+/* ─── Echte illustrierte SVG-Objekte, die aus der Spielbox fliegen ─── */
+
+function RocketSvg({ reducedMotion }: { reducedMotion: boolean }) {
   return (
-    <div className={`flex flex-col items-center text-center ${className}`}>
-      <span className="font-arcade mb-1.5 text-[10px] sm:text-xs tracking-[0.26em] text-[#FDE68A]/85 uppercase">
-        {eyebrow}
-      </span>
-      <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
-        PROJEKT <span className="text-[#FBBF24]">BOX</span>
-      </h1>
-      <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
-    </div>
+    <svg viewBox="0 0 64 64" className="h-14 w-14 sm:h-16 sm:w-16 drop-shadow-[0_8px_16px_rgba(245,158,11,0.45)]" fill="none" aria-hidden="true">
+      {/* Antriebsflamme */}
+      <path
+        d="M27 46 L32 61 L37 46 Z"
+        fill="#F59E0B"
+        className={reducedMotion ? '' : 'spielbox-rocket-flame'}
+      />
+      <path d="M29.5 46 L32 55 L34.5 46 Z" fill="#FEF08A" />
+      {/* Seitenflossen */}
+      <path d="M22 33 L12 44 L22 43 Z" fill="#E11D48" stroke="#0F172A" strokeWidth="2" strokeLinejoin="round" />
+      <path d="M42 33 L52 44 L42 43 Z" fill="#E11D48" stroke="#0F172A" strokeWidth="2" strokeLinejoin="round" />
+      {/* Raketenkörper */}
+      <path
+        d="M32 6 C23 15 21 28 22 44 L42 44 C43 28 41 15 32 6 Z"
+        fill="#F8FAFC"
+        stroke="#0F172A"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      {/* Rote Spitze */}
+      <path d="M32 6 C27.5 11 25.5 15 24.5 19 L39.5 19 C38.5 15 36.5 11 32 6 Z" fill="#E11D48" />
+      {/* Bullauge */}
+      <circle cx="32" cy="29" r="5.5" fill="#38BDF8" stroke="#0F172A" strokeWidth="2.2" />
+      <circle cx="30.5" cy="27.5" r="1.6" fill="#E0F2FE" />
+    </svg>
   );
 }
 
-export function SplashScreen({ onFinish, variantOverride }: SplashScreenProps) {
-  const activeVariant = variantOverride ?? getSavedSplashVariant();
-  const variantMeta = SPLASH_VARIANTS.find((v) => v.id === activeVariant) ?? SPLASH_VARIANTS[0];
+function ControllerSvg() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-13 w-13 sm:h-15 sm:w-15 drop-shadow-[0_8px_16px_rgba(56,189,248,0.4)]" fill="none" aria-hidden="true">
+      <path
+        d="M16 22 H48 C54 22 57 30 55 41 C54 46 49 48 45 45 L40 39 H24 L19 45 C15 48 10 46 9 41 C7 30 10 22 16 22 Z"
+        fill="#1E293B"
+        stroke="#38BDF8"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      {/* Steuerkreuz */}
+      <path d="M20 28 V36 M16 32 H24" stroke="#F8FAFC" strokeWidth="3" strokeLinecap="round" />
+      {/* Aktionstasten */}
+      <circle cx="44" cy="29" r="2.2" fill="#F59E0B" />
+      <circle cx="48" cy="33" r="2.2" fill="#10B981" />
+      <circle cx="40" cy="33" r="2.2" fill="#EC4899" />
+      <circle cx="44" cy="37" r="2.2" fill="#38BDF8" />
+    </svg>
+  );
+}
 
+function PaintPaletteSvg() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-13 w-13 sm:h-15 sm:w-15 drop-shadow-[0_8px_16px_rgba(236,72,153,0.4)]" fill="none" aria-hidden="true">
+      <path
+        d="M32 10 C17 10 8 20 8 33 C8 44 17 52 28 52 C33 52 35 48 34 45 C33 42 36 39 40 40 C48 42 56 37 56 29 C56 17 45 10 32 10 Z"
+        fill="#FDE68A"
+        stroke="#0F172A"
+        strokeWidth="2.5"
+      />
+      <circle cx="20" cy="27" r="4" fill="#EC4899" />
+      <circle cx="30" cy="20" r="4" fill="#38BDF8" />
+      <circle cx="42" cy="22" r="4" fill="#10B981" />
+      <circle cx="45" cy="32" r="3.6" fill="#F59E0B" />
+      <circle cx="21" cy="40" r="4.2" fill="#1E293B" />
+    </svg>
+  );
+}
+
+function CrownSvg() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-12 w-12 sm:h-14 sm:w-14 drop-shadow-[0_8px_16px_rgba(251,191,36,0.45)]" fill="none" aria-hidden="true">
+      <path
+        d="M10 46 L14 20 L25 31 L32 14 L39 31 L50 20 L54 46 Z"
+        fill="#FBBF24"
+        stroke="#0F172A"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <rect x="10" y="45" width="44" height="6" rx="2.5" fill="#F59E0B" stroke="#0F172A" strokeWidth="2.2" />
+      <circle cx="32" cy="34" r="3" fill="#38BDF8" />
+    </svg>
+  );
+}
+
+function DiceSvg() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-11 w-11 sm:h-13 sm:w-13 drop-shadow-[0_8px_16px_rgba(16,185,129,0.4)]" fill="none" aria-hidden="true">
+      <rect
+        x="12"
+        y="12"
+        width="40"
+        height="40"
+        rx="9"
+        fill="#F8FAFC"
+        stroke="#10B981"
+        strokeWidth="2.8"
+      />
+      <circle cx="23" cy="23" r="3.5" fill="#0F172A" />
+      <circle cx="41" cy="23" r="3.5" fill="#0F172A" />
+      <circle cx="32" cy="32" r="3.5" fill="#F59E0B" />
+      <circle cx="23" cy="41" r="3.5" fill="#0F172A" />
+      <circle cx="41" cy="41" r="3.5" fill="#0F172A" />
+    </svg>
+  );
+}
+
+function StarGemSvg() {
+  return (
+    <svg viewBox="0 0 64 64" className="h-11 w-11 sm:h-12 sm:w-12 drop-shadow-[0_8px_16px_rgba(245,158,11,0.4)]" fill="none" aria-hidden="true">
+      <path
+        d="M32 8 L39 23 L55 25 L43 36 L46 53 L32 45 L18 53 L21 36 L9 25 L25 23 Z"
+        fill="#38BDF8"
+        stroke="#FDE68A"
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+interface FlyingObject {
+  id: string;
+  tx: string;
+  ty: string;
+  rot: string;
+  delay: string;
+  mobileHide: boolean;
+  render: (reducedMotion: boolean) => ReactNode;
+}
+
+const FLYING_OBJECTS: FlyingObject[] = [
+  {
+    id: 'rocket',
+    tx: '-148px',
+    ty: '-150px',
+    rot: '-22deg',
+    delay: '620ms',
+    mobileHide: false,
+    render: (rm) => <RocketSvg reducedMotion={rm} />,
+  },
+  {
+    id: 'controller',
+    tx: '150px',
+    ty: '-142px',
+    rot: '14deg',
+    delay: '690ms',
+    mobileHide: false,
+    render: () => <ControllerSvg />,
+  },
+  {
+    id: 'palette',
+    tx: '-110px',
+    ty: '-225px',
+    rot: '-10deg',
+    delay: '760ms',
+    mobileHide: true,
+    render: () => <PaintPaletteSvg />,
+  },
+  {
+    id: 'crown',
+    tx: '112px',
+    ty: '-220px',
+    rot: '12deg',
+    delay: '820ms',
+    mobileHide: true,
+    render: () => <CrownSvg />,
+  },
+  {
+    id: 'dice',
+    tx: '-215px',
+    ty: '-55px',
+    rot: '-18deg',
+    delay: '880ms',
+    mobileHide: true,
+    render: () => <DiceSvg />,
+  },
+  {
+    id: 'star',
+    tx: '215px',
+    ty: '-58px',
+    rot: '20deg',
+    delay: '930ms',
+    mobileHide: true,
+    render: () => <StarGemSvg />,
+  },
+];
+
+export function SplashScreen({ onFinish }: SplashScreenProps) {
   const [progress, setProgress] = useState(0);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -168,361 +352,160 @@ export function SplashScreen({ onFinish, variantOverride }: SplashScreenProps) {
   const isReadyState = progress >= 88;
   const statusText =
     progress < 36
-      ? 'SPIELBOX STARTET...'
+      ? 'HYPERSPACE-WARP AKTIV...'
       : progress < 86
-        ? `${variantMeta.title.toUpperCase()}...`
+        ? 'SPIELBOX WIRD GEÖFFNET...'
         : 'BEREIT ZUM SPIELEN!';
-
-  const hasCanvasMode =
-    activeVariant === 'particle-forge' ||
-    activeVariant === 'cyber-warp' ||
-    activeVariant === 'pixel-wave' ||
-    activeVariant === 'party-confetti';
 
   return (
     <div
       onClick={triggerFadeOut}
       aria-label="ProjektBox wird gestartet"
-      className={`fixed inset-0 z-90 flex flex-col justify-between overflow-hidden bg-[#131F30] text-white select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#101928] text-white select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
-      {/* 1. Hintergrund-Ebene */}
-      <div className="pointer-events-none fixed inset-0 overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            background:
-              'radial-gradient(circle at 50% 48%, rgba(30, 49, 77, 0.95) 0%, rgba(19, 31, 48, 1) 72%)',
-          }}
-        />
-        <div className="absolute top-1/2 left-1/2 h-[52vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E0B]/[0.09] blur-[110px]" />
-      </div>
+      {/* 1. Vollbild Canvas-2D Hyperspace-Warp Tunnel */}
+      <HyperspaceWarpCanvas reducedMotion={prefersReducedMotion} />
 
-      {/* Canvas-Engine für die 4 Physik-/Projektions-Varianten */}
-      {hasCanvasMode && (
-        <SplashCanvasEffect mode={activeVariant} reducedMotion={prefersReducedMotion} />
-      )}
+      {/* Subtiler Studio-Radialschein hinter der Spielbox */}
+      <div className="pointer-events-none fixed inset-0 z-0">
+        <div className="absolute top-1/2 left-1/2 h-[54vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E0B]/[0.09] blur-[110px]" />
+      </div>
 
       {/* 2. Obere Zeile */}
       <div className="relative z-20 mx-auto flex w-full max-w-[1440px] items-center justify-between text-[10px] sm:text-xs font-arcade tracking-[0.2em] text-white/55 uppercase">
         <span className="inline-flex items-center gap-2">
-          <span
-            style={{ backgroundColor: variantMeta.accentHex }}
-            className="h-2 w-2 rounded-full animate-pulse"
-          />
-          <span>{variantMeta.techTag}</span>
+          <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_10px_#34D399] animate-pulse" />
+          <span>PROJEKTBOX ARENA</span>
         </span>
         <span className="text-white/45">TIPPEN ZUM ÜBERSPRINGEN</span>
       </div>
 
-      {/* 3. ZENTRALE BÜHNE JE NACH AUSGEWÄHLTER VARIANTE */}
+      {/* 3. ZENTRUM: SPIELBOX UNBOXING + HERAUSFLIEGENDE OBJEKTE */}
       <div className="relative z-20 my-auto flex flex-col items-center justify-center px-2">
-        {/* VARIANTE 1: SPIELBOX UNBOXING */}
-        {activeVariant === 'box-unboxing' && (
-          <div className="relative flex flex-col items-center justify-center">
+        {/* Aufsteigender Lichtkegel aus der Box */}
+        <div
+          className={`pointer-events-none absolute bottom-[36%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 bg-gradient-to-t from-[#F59E0B]/35 via-[#38BDF8]/15 to-transparent blur-xl ${
+            prefersReducedMotion ? '' : 'spielbox-beam'
+          }`}
+          style={{ clipPath: 'polygon(30% 100%, 70% 100%, 100% 0%, 0% 0%)' }}
+        />
+
+        {/* Echte Objekte (Rakete, Controller, Palette, Krone, Würfel, Stern), die aus der Box fliegen */}
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+          {FLYING_OBJECTS.map((obj) => (
             <div
-              className={`pointer-events-none absolute bottom-[38%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 bg-gradient-to-t from-[#F59E0B]/35 via-[#38BDF8]/15 to-transparent blur-xl ${
-                prefersReducedMotion ? '' : 'spielbox-beam'
+              key={obj.id}
+              style={
+                {
+                  '--tx': obj.tx,
+                  '--ty': obj.ty,
+                  '--rot': obj.rot,
+                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 1450ms`,
+                } as CSSProperties
+              }
+              className={`absolute -top-7 -left-7 ${obj.mobileHide ? 'hidden sm:block' : 'block'} ${
+                prefersReducedMotion ? 'opacity-100' : 'spielbox-burst'
               }`}
-              style={{ clipPath: 'polygon(30% 100%, 70% 100%, 100% 0%, 0% 0%)' }}
-            />
-
-            <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
-              {BURST_TOKENS.map((token) => {
-                const Icon = token.icon;
-                return (
-                  <div
-                    key={token.id}
-                    style={
-                      {
-                        '--tx': token.tx,
-                        '--ty': token.ty,
-                        '--rot': token.rot,
-                        animationDelay: prefersReducedMotion ? undefined : `${token.delay}, 1400ms`,
-                      } as CSSProperties
-                    }
-                    className={`absolute -top-6 -left-6 flex h-11 w-11 sm:h-13 sm:w-13 items-center justify-center rounded-2xl border backdrop-blur-md ${
-                      token.boxClass
-                    } ${token.mobileHide ? 'hidden sm:flex' : 'flex'} ${
-                      prefersReducedMotion ? 'opacity-100' : 'spielbox-burst'
-                    }`}
-                  >
-                    <Icon className="h-5 w-5 sm:h-6 sm:w-6 stroke-[2.2]" />
-                  </div>
-                );
-              })}
-            </div>
-
-            <StandardTitle
-              className={`mb-3 sm:mb-4 ${prefersReducedMotion ? '' : 'spielbox-title'}`}
-            />
-
-            <div className={`relative z-10 ${prefersReducedMotion ? '' : 'spielbox-drop'}`}>
-              <div
-                className={`pointer-events-none absolute -bottom-3 left-1/2 h-6 w-36 sm:w-44 -translate-x-1/2 rounded-full bg-[#F59E0B]/30 blur-md ${
-                  prefersReducedMotion ? '' : 'spielbox-floor'
-                }`}
-              />
-              <svg
-                viewBox="0 0 220 200"
-                className="h-32 w-36 sm:h-44 sm:w-48 landscape:h-24 landscape:w-28 drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)]"
-                fill="none"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient id="boxCoreGlow" x1="0" y1="1" x2="0" y2="0">
-                    <stop offset="0%" stopColor="#F59E0B" />
-                    <stop offset="60%" stopColor="#FBBF24" />
-                    <stop offset="100%" stopColor="#38BDF8" />
-                  </linearGradient>
-                </defs>
-                <polygon
-                  points="110,58 176,90 110,122 44,90"
-                  fill="url(#boxCoreGlow)"
-                  opacity="0.92"
-                />
-                <polygon
-                  points="40,92 110,126 110,184 40,150"
-                  fill="#0F172A"
-                  stroke="#F59E0B"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                <polygon points="56,114 94,132 94,142 56,124" fill="#F59E0B" opacity="0.85" />
-                <polygon
-                  points="180,92 110,126 110,184 180,150"
-                  fill="#1E293B"
-                  stroke="#F59E0B"
-                  strokeWidth="2.5"
-                  strokeLinejoin="round"
-                />
-                <circle cx="146" cy="138" r="9" fill="#10B981" opacity="0.9" />
-                <rect
-                  x="104"
-                  y="119"
-                  width="12"
-                  height="16"
-                  rx="3"
-                  fill="#FBBF24"
-                  stroke="#0F172A"
-                  strokeWidth="2"
-                />
-                <g className={prefersReducedMotion ? '' : 'spielbox-lid'}>
-                  <polygon
-                    points="110,48 184,84 110,120 36,84"
-                    fill="#334155"
-                    stroke="#F59E0B"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                  />
-                  <polygon
-                    points="36,84 110,120 110,130 36,94"
-                    fill="#0F172A"
-                    stroke="#F59E0B"
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                  />
-                  <polygon
-                    points="184,84 110,120 110,130 184,94"
-                    fill="#1E293B"
-                    stroke="#F59E0B"
-                    strokeWidth="2"
-                    strokeLinejoin="round"
-                  />
-                </g>
-              </svg>
-            </div>
-          </div>
-        )}
-
-        {/* VARIANTE 2: ECHTER CSS 3D WÜRFEL */}
-        {activeVariant === 'cube-3d' && (
-          <div className="flex flex-col items-center gap-6 sm:gap-8 landscape:gap-3">
-            <div style={{ perspective: '1000px' }} className="relative flex items-center justify-center">
-              <div
-                className={`relative h-28 w-28 sm:h-36 sm:w-36 landscape:h-22 landscape:w-22 ${
-                  prefersReducedMotion ? '' : 'splash-cube-3d'
-                }`}
-              >
-                {[
-                  { tr: 'translateZ(56px)', smTr: 'sm:translate-z', bg: 'bg-[#0F172A]/95 border-[#F59E0B]' },
-                  { tr: 'rotateY(180deg) translateZ(56px)', bg: 'bg-[#1E293B]/95 border-[#38BDF8]' },
-                  { tr: 'rotateY(90deg) translateZ(56px)', bg: 'bg-[#162235]/95 border-[#10B981]' },
-                  { tr: 'rotateY(-90deg) translateZ(56px)', bg: 'bg-[#162235]/95 border-[#F59E0B]' },
-                  { tr: 'rotateX(90deg) translateZ(56px)', bg: 'bg-[#334155]/95 border-[#FDE68A]' },
-                  { tr: 'rotateX(-90deg) translateZ(56px)', bg: 'bg-[#0F172A]/95 border-[#38BDF8]' },
-                ].map((face, idx) => (
-                  <div
-                    key={idx}
-                    style={{ transform: face.tr }}
-                    className={`absolute inset-0 flex items-center justify-center rounded-2xl border-2 backdrop-blur-md shadow-[inset_0_0_24px_rgba(245,158,11,0.2)] ${face.bg}`}
-                  >
-                    {idx === 0 && (
-                      <span className="font-arcade text-2xl sm:text-3xl text-[#FBBF24]">PB</span>
-                    )}
-                    {idx === 2 && <Palette className="h-8 w-8 text-[#34D399]" />}
-                    {idx === 3 && <Tv className="h-8 w-8 text-[#F59E0B]" />}
-                  </div>
-                ))}
-              </div>
-            </div>
-            <StandardTitle eyebrow="3D SPATIAL ENGINE" />
-          </div>
-        )}
-
-        {/* VARIANTE 3: PARTIKEL-SCHWARM */}
-        {activeVariant === 'particle-forge' && (
-          <div className="rounded-3xl border border-[#F59E0B]/30 bg-[#0F172A]/55 px-8 py-6 sm:px-14 sm:py-9 backdrop-blur-md shadow-[0_0_50px_rgba(245,158,11,0.18)]">
-            <StandardTitle eyebrow="240+ PARTIKEL-PHYSIK" />
-          </div>
-        )}
-
-        {/* VARIANTE 4: LASER-VEKTOR-GRAVUR */}
-        {activeVariant === 'vector-blueprint' && (
-          <div className="relative flex flex-col items-center justify-center gap-4">
-            <svg
-              viewBox="0 0 380 150"
-              className="w-72 sm:w-96 landscape:w-64 overflow-visible"
-              fill="none"
             >
-              <rect
-                x="10"
-                y="10"
-                width="360"
-                height="130"
-                rx="22"
-                stroke="#38BDF8"
-                strokeWidth="2.5"
-                className={prefersReducedMotion ? '' : 'splash-svg-draw'}
-              />
-              <rect
-                x="22"
-                y="22"
-                width="336"
-                height="106"
-                rx="14"
+              {obj.render(prefersReducedMotion)}
+            </div>
+          ))}
+        </div>
+
+        {/* Titel über der offenen Spielbox */}
+        <div
+          className={`relative z-20 mb-3 sm:mb-4 flex flex-col items-center text-center ${
+            prefersReducedMotion ? '' : 'spielbox-title'
+          }`}
+        >
+          <span className="font-arcade mb-1 text-[10px] sm:text-xs tracking-[0.26em] text-[#FDE68A]/85 uppercase">
+            PARTY &amp; MULTIPLAYER
+          </span>
+          <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
+            PROJEKT <span className="text-[#FBBF24]">BOX</span>
+          </h1>
+          <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
+        </div>
+
+        {/* Isometrische 3D-Spielbox */}
+        <div className={`relative z-10 ${prefersReducedMotion ? '' : 'spielbox-drop'}`}>
+          <div
+            className={`pointer-events-none absolute -bottom-3 left-1/2 h-6 w-36 sm:w-44 -translate-x-1/2 rounded-full bg-[#F59E0B]/30 blur-md ${
+              prefersReducedMotion ? '' : 'spielbox-floor'
+            }`}
+          />
+
+          <svg
+            viewBox="0 0 220 200"
+            className="h-32 w-36 sm:h-44 sm:w-48 landscape:h-24 landscape:w-28 drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)]"
+            fill="none"
+            aria-hidden="true"
+          >
+            <defs>
+              <linearGradient id="boxCoreGlow" x1="0" y1="1" x2="0" y2="0">
+                <stop offset="0%" stopColor="#F59E0B" />
+                <stop offset="60%" stopColor="#FBBF24" />
+                <stop offset="100%" stopColor="#38BDF8" />
+              </linearGradient>
+            </defs>
+            <polygon
+              points="110,58 176,90 110,122 44,90"
+              fill="url(#boxCoreGlow)"
+              opacity="0.92"
+            />
+            <polygon
+              points="40,92 110,126 110,184 40,150"
+              fill="#0F172A"
+              stroke="#F59E0B"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+            <polygon points="56,114 94,132 94,142 56,124" fill="#F59E0B" opacity="0.85" />
+            <polygon
+              points="180,92 110,126 110,184 180,150"
+              fill="#1E293B"
+              stroke="#F59E0B"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+            <circle cx="146" cy="138" r="9" fill="#10B981" opacity="0.9" />
+            <rect
+              x="104"
+              y="119"
+              width="12"
+              height="16"
+              rx="3"
+              fill="#FBBF24"
+              stroke="#0F172A"
+              strokeWidth="2"
+            />
+            <g className={prefersReducedMotion ? '' : 'spielbox-lid'}>
+              <polygon
+                points="110,48 184,84 110,120 36,84"
+                fill="#334155"
                 stroke="#F59E0B"
-                strokeWidth="1.5"
-                strokeOpacity="0.7"
-                className={prefersReducedMotion ? '' : 'splash-svg-draw'}
-                style={{ animationDelay: '220ms' }}
+                strokeWidth="2.5"
+                strokeLinejoin="round"
               />
-            </svg>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <StandardTitle eyebrow="SVG LASER-BLUEPRINT" />
-            </div>
-          </div>
-        )}
-
-        {/* VARIANTE 5: KINO-BLENDE (CLIP-PATH SHUTTER) */}
-        {activeVariant === 'cinema-shutter' && (
-          <>
-            {!prefersReducedMotion && (
-              <>
-                <div className="pointer-events-none fixed inset-0 z-30 bg-[#090F1A] splash-shutter-left" />
-                <div className="pointer-events-none fixed inset-0 z-30 bg-[#0F172A] splash-shutter-right" />
-              </>
-            )}
-            <StandardTitle
-              eyebrow="WIDESCREEN CINEMA WIPE"
-              className="scale-105 sm:scale-110"
-            />
-          </>
-        )}
-
-        {/* VARIANTE 6: HYPERSPACE WARP */}
-        {activeVariant === 'cyber-warp' && (
-          <div className="relative flex flex-col items-center">
-            <div className="pointer-events-none absolute -inset-10 rounded-full border border-[#10B981]/30 animate-ping" />
-            <StandardTitle eyebrow="3D Z-DEPTH TUNNEL" />
-          </div>
-        )}
-
-        {/* VARIANTE 7: LIQUID AURORA (SVG GOOEY SHADER) */}
-        {activeVariant === 'liquid-aurora' && (
-          <div className="relative flex items-center justify-center">
-            <svg className="pointer-events-none absolute h-0 w-0" aria-hidden="true">
-              <defs>
-                <filter id="aurora-goo">
-                  <feGaussianBlur in="SourceGraphic" stdDeviation="16" result="blur" />
-                  <feColorMatrix
-                    in="blur"
-                    mode="matrix"
-                    values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 22 -9"
-                    result="goo"
-                  />
-                </filter>
-              </defs>
-            </svg>
-            <div
-              style={{ filter: 'url(#aurora-goo)' }}
-              className="pointer-events-none absolute inset-0 flex items-center justify-center opacity-75"
-            >
-              <div className="splash-liquid-blob h-36 w-36 rounded-full bg-[#F59E0B]/60" />
-              <div
-                style={{ animationDelay: '-1.4s' }}
-                className="splash-liquid-blob -ml-14 h-40 w-40 rounded-full bg-[#EC4899]/55"
+              <polygon
+                points="36,84 110,120 110,130 36,94"
+                fill="#0F172A"
+                stroke="#F59E0B"
+                strokeWidth="2"
+                strokeLinejoin="round"
               />
-              <div
-                style={{ animationDelay: '-2.6s' }}
-                className="splash-liquid-blob -ml-16 h-32 w-32 rounded-full bg-[#38BDF8]/55"
+              <polygon
+                points="184,84 110,120 110,130 184,94"
+                fill="#1E293B"
+                stroke="#F59E0B"
+                strokeWidth="2"
+                strokeLinejoin="round"
               />
-            </div>
-            <div className="relative z-10 px-6 py-4">
-              <StandardTitle eyebrow="SVG METABALL SHADER" />
-            </div>
-          </div>
-        )}
-
-        {/* VARIANTE 8: KINETISCHE TYPOGRAFIE-KASKADE */}
-        {activeVariant === 'kinetic-type' && (
-          <div className="flex flex-col items-center text-center" style={{ perspective: '900px' }}>
-            <span className="font-arcade mb-2 text-[10px] sm:text-xs tracking-[0.28em] text-[#FDE68A]/85 uppercase">
-              3D KINETIC TYPOGRAPHY
-            </span>
-            <h1 className="font-arcade text-4xl xs:text-5xl sm:text-7xl md:text-8xl leading-none tracking-[0.06em] uppercase">
-              {'PROJEKT'.split('').map((ch, idx) => (
-                <span
-                  key={`p-${idx}`}
-                  style={prefersReducedMotion ? undefined : { animationDelay: `${idx * 65}ms` }}
-                  className={prefersReducedMotion ? 'text-white' : 'splash-letter text-white'}
-                >
-                  {ch}
-                </span>
-              ))}
-              <span className="inline-block w-3 sm:w-5" />
-              {'BOX'.split('').map((ch, idx) => (
-                <span
-                  key={`b-${idx}`}
-                  style={
-                    prefersReducedMotion ? undefined : { animationDelay: `${(idx + 8) * 65}ms` }
-                  }
-                  className={
-                    prefersReducedMotion ? 'text-[#FBBF24]' : 'splash-letter text-[#FBBF24]'
-                  }
-                >
-                  {ch}
-                </span>
-              ))}
-            </h1>
-            <div className="mt-3 h-[3px] w-48 sm:w-72 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
-          </div>
-        )}
-
-        {/* VARIANTE 9: MATRIX-WELLE */}
-        {activeVariant === 'pixel-wave' && (
-          <div className="rounded-2xl border border-[#34D399]/30 bg-[#0F172A]/60 px-7 py-5 sm:px-12 sm:py-8 backdrop-blur-md">
-            <StandardTitle eyebrow="RADIALE SINUS-MATRIX" />
-          </div>
-        )}
-
-        {/* VARIANTE 10: KONFETTI-SALVE */}
-        {activeVariant === 'party-confetti' && (
-          <div className={prefersReducedMotion ? '' : 'spielbox-drop'}>
-            <StandardTitle eyebrow="BALLISTISCHE PARTY-KANONEN" />
-          </div>
-        )}
+            </g>
+          </svg>
+        </div>
       </div>
 
       {/* 4. Unterer Ladehorizont */}
