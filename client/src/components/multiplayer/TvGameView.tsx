@@ -86,7 +86,7 @@ export function TvGameView({
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
-    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col justify-between overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in">
+    <div className="fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in">
       <BackgroundCometCanvas opacity={0.85} />
 
       <div

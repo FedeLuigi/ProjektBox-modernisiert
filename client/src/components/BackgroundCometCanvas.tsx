@@ -134,7 +134,7 @@ export function BackgroundCometCanvas({
   return (
     <canvas
       ref={canvasRef}
-      className={`fixed inset-0 h-full min-h-dvh w-full pointer-events-none z-0 ${className}`}
+      className={`fixed inset-0 h-full w-full pointer-events-none z-0 ${className}`}
       style={{ zIndex: 0 }}
       aria-hidden="true"
     />

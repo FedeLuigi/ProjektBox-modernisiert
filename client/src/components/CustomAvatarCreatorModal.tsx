@@ -218,7 +218,7 @@ export function CustomAvatarCreatorModal({
       role="dialog"
       aria-modal="true"
       aria-label="Eigenen Avatar erstellen"
-      className="fixed inset-0 h-dvh w-screen z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden p-2 sm:p-4 bg-[#0F172A]/85 backdrop-blur-sm animate-fade-in select-none"
+      className="fixed inset-0 z-70 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain pt-[max(12px,env(safe-area-inset-top,0px))] pb-[max(12px,env(safe-area-inset-bottom,0px))] pl-[max(8px,env(safe-area-inset-left,0px))] pr-[max(8px,env(safe-area-inset-right,0px))] sm:p-4 bg-[#0F172A]/85 backdrop-blur-sm animate-fade-in select-none"
       onClick={onCancel}
     >
       <div className="tablet-modal-box my-auto w-full max-w-md md:max-w-3xl landscape:max-w-3xl flex flex-col">

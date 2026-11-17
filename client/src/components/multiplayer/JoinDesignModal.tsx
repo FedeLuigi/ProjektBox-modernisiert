@@ -157,7 +157,7 @@ export function JoinDesignModal({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className="fixed inset-0 z-80 flex flex-col overflow-hidden bg-[#0F172A]/85 backdrop-blur-md animate-fade-in select-none"
+      className="fixed inset-0 z-80 flex flex-col overflow-hidden bg-[#0F172A]/85 pt-[env(safe-area-inset-top,0px)] pb-[env(safe-area-inset-bottom,0px)] pl-[env(safe-area-inset-left,0px)] pr-[env(safe-area-inset-right,0px)] backdrop-blur-md animate-fade-in select-none"
     >
       <div className="mx-auto flex w-full max-w-[1440px] shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 lg:px-8 py-3">
         <button

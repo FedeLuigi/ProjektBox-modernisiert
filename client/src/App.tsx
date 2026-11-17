@@ -345,7 +345,7 @@ export function App() {
   }, [hasActiveOverlay]);
 
   return (
-    <div className="relative flex h-dvh min-h-dvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
+    <div className="relative flex h-full min-h-lvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
       {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
 

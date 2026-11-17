@@ -153,7 +153,7 @@ export function TvJoinModal({
         inert={showDesignModal}
         aria-hidden={showDesignModal}
         onClick={handleClose}
-        className={`fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in ${
+        className={`fixed inset-0 z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0F172A]/85 pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(14px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))] sm:pt-[calc(28px+env(safe-area-inset-top,0px))] sm:pb-[calc(28px+env(safe-area-inset-bottom,0px))] sm:px-8 backdrop-blur-md select-none animate-fade-in ${
           showDesignModal ? 'pointer-events-none' : ''
         }`}
       >

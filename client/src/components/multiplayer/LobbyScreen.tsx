@@ -484,14 +484,14 @@ export function LobbyScreen({
       role="dialog"
       aria-modal="true"
       aria-label={`${game.title} Lobby`}
-      className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in"
+      className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in"
     >
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
         inert={isAvatarModalOpen}
         aria-hidden={isAvatarModalOpen}
-        className={`lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between px-4 sm:px-6 lg:px-10 py-3 sm:py-5 ${
+        className={`lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(12px+env(safe-area-inset-top,0px))] pb-[calc(12px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))] sm:pt-[calc(20px+env(safe-area-inset-top,0px))] sm:pb-[calc(20px+env(safe-area-inset-bottom,0px))] sm:px-6 lg:px-10 ${
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >

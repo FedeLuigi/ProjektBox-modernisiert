@@ -567,8 +567,8 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-shell {
-    padding-top: 8px !important;
-    padding-bottom: 8px !important;
+    padding-top: max(8px, env(safe-area-inset-top, 0px)) !important;
+    padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important;
   }
 
   .lobby-landscape-main {

@@ -152,7 +152,7 @@ export function AvatarCustomizerModal({
       role="dialog"
       aria-modal="true"
       aria-label="Profil & Avatar anpassen"
-      className="fixed inset-0 min-h-dvh z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain p-2.5 sm:p-4 bg-[#0F172A]/80 backdrop-blur-sm animate-fade-in select-none"
+      className="fixed inset-0 z-60 flex items-center justify-center overflow-y-auto overflow-x-hidden overscroll-contain pt-[max(12px,env(safe-area-inset-top,0px))] pb-[max(12px,env(safe-area-inset-bottom,0px))] pl-[max(10px,env(safe-area-inset-left,0px))] pr-[max(10px,env(safe-area-inset-right,0px))] sm:p-4 bg-[#0F172A]/80 backdrop-blur-sm animate-fade-in select-none"
       onClick={onClose}
     >
       <div
