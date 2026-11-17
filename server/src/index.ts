@@ -84,12 +84,13 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
   server = http.createServer(app);
 }
 
-// Socket.io Server initialisieren (CORS für beliebige Domains/Render aktiv)
+// Socket.io Server initialisieren (CORS für beliebige Domains/Render aktiv, Buffer auf 96 KB begrenzt)
 const io = new SocketIOServer(server, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST'],
   },
+  maxHttpBufferSize: 96 * 1024,
   pingTimeout: 20000,
   pingInterval: 10000,
   transports: ['websocket', 'polling'],

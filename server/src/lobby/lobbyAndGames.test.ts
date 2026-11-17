@@ -2,7 +2,14 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LobbyManager } from './lobbyManager.js';
 import { drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
-import { checkRateLimit, cleanupSocketRateLimit } from '../utils/rateLimiter.js';
+import { checkRateLimit, cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
+import {
+  DrawStrokesSchema,
+  EVENT_MAX_PAYLOAD_BYTES,
+  GameMoveSchema,
+  isPayloadWithinLimit,
+  LobbyUpdateProfileSchema,
+} from './socketSchemas.js';
 import type { Player } from '../types/multiplayer.js';
 
 const mockPlayers: Player[] = [
@@ -125,13 +132,60 @@ test('LobbyManager: Kompletter Lobby-Lifecycle, TV-Modus und Reconnect-Bereinigu
   assert.equal(manager.findLobbyByCode(code), undefined);
 });
 
-test('RateLimiter: erlaubt normale Last und blockiert Spam-Bursts', () => {
+test('RateLimiter: Token-Bucket erlaubt Bursts, füllt kontinuierlich nach und begrenzt je Event', async () => {
   const testSocket = 'rate_test_socket';
-  for (let i = 0; i < 12; i++) {
-    assert.equal(checkRateLimit(testSocket), true);
+  const t0 = 1_000_000;
+
+  // lobby:update-profile: capacity 4, refill 0.5/s
+  for (let i = 0; i < 4; i++) {
+    assert.equal(checkRateLimit(testSocket, 'lobby:update-profile', t0), true);
   }
-  assert.equal(checkRateLimit(testSocket), false);
+  assert.equal(checkRateLimit(testSocket, 'lobby:update-profile', t0), false);
+
+  // Nach 2 Sekunden ist genau 1 Token nachgefüllt (2 * 0.5 = 1)
+  assert.equal(checkRateLimit(testSocket, 'lobby:update-profile', t0 + 2000), true);
+  assert.equal(checkRateLimit(testSocket, 'lobby:update-profile', t0 + 2000), false);
+
+  // Anderes Event (draw:strokes) besitzt eigenen Bucket (capacity 45)
+  for (let i = 0; i < 45; i++) {
+    assert.equal(await consumeRateLimit(testSocket, 'draw:strokes', t0), true);
+  }
+  assert.equal(await consumeRateLimit(testSocket, 'draw:strokes', t0), false);
+
   cleanupSocketRateLimit(testSocket);
-  assert.equal(checkRateLimit(testSocket), true);
+  assert.equal(checkRateLimit(testSocket, 'lobby:update-profile', t0), true);
   cleanupSocketRateLimit(testSocket);
+});
+
+test('SocketSchemas: Zod-Validierung und Payload-Größenlimits greifen zuverlässig', () => {
+  assert.equal(
+    DrawStrokesSchema.safeParse({
+      strokes: [{ x0: 0.1, y0: 0.2, x1: 0.3, y1: 0.4, color: '#000000', size: 5 }],
+    }).success,
+    true
+  );
+
+  // Ungültige Koordinaten (> 1) oder > 120 Strokes ablehnen
+  assert.equal(
+    DrawStrokesSchema.safeParse({
+      strokes: [{ x0: 2.5, y0: 0.2, x1: 0.3, y1: 0.4, color: '#000000', size: 5 }],
+    }).success,
+    false
+  );
+
+  // Ungültiges Custom-Avatar-Format ablehnen
+  assert.equal(
+    LobbyUpdateProfileSchema.safeParse({
+      userProfile: { id: 'u1', name: 'Player', avatar: { customImage: 'https://evil.test/x.png' } },
+    }).success,
+    false
+  );
+
+  // GameMove discriminatedUnion
+  assert.equal(GameMoveSchema.safeParse({ type: 'guess', text: 'APFEL' }).success, true);
+  assert.equal(GameMoveSchema.safeParse({ type: 'guess', text: '' }).success, false);
+
+  // Größenlimit prüfen
+  const oversized = { text: 'X'.repeat(EVENT_MAX_PAYLOAD_BYTES['game:move'] + 100) };
+  assert.equal(isPayloadWithinLimit(oversized, EVENT_MAX_PAYLOAD_BYTES['game:move']), false);
 });

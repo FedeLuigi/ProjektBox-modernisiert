@@ -1,21 +1,41 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { lobbyManager } from './lobbyManager.js';
-import { checkRateLimit, cleanupSocketRateLimit } from '../utils/rateLimiter.js';
+import { cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
+import {
+  DrawStrokesSchema,
+  EVENT_MAX_PAYLOAD_BYTES,
+  GameMoveSchema,
+  isPayloadWithinLimit,
+  LobbyCreateSchema,
+  LobbyGetByCodeSchema,
+  LobbyJoinSchema,
+  LobbyListSchema,
+  LobbyReconnectSchema,
+  LobbyUpdateProfileSchema,
+  LobbyUpdateSettingsSchema,
+} from './socketSchemas.js';
 
 export function registerSocketHandlers(io: SocketIOServer) {
   io.on('connection', (socket: Socket) => {
     // 1. Liste offener Lobbys für ein beliebiges Spiel abrufen
     socket.on(
       'lobby:list',
-      (
-        data: { gameId: string },
+      async (
+        data: unknown,
         callback?: (res: { success: boolean; lobbies?: any[]; error?: string }) => void
       ) => {
-        if (!checkRateLimit(socket.id)) {
+        if (!(await consumeRateLimit(socket.id, 'lobby:list'))) {
           return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
         }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:list'])) {
+          return callback?.({ success: false, error: 'Anfrage zu groß.' });
+        }
+        const parsed = LobbyListSchema.safeParse(data ?? {});
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Filterdaten.' });
+        }
         try {
-          const list = lobbyManager.getPublicLobbies(data?.gameId || '');
+          const list = lobbyManager.getPublicLobbies(parsed.data.gameId);
           callback?.({ success: true, lobbies: list });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -26,40 +46,39 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 2. Lobby erstellen (generisch für alle Spiele, inkl. TV-Modus)
     socket.on(
       'lobby:create',
-      (
-        data: {
-          name: string;
-          isPrivate: boolean;
-          gameId: string;
-          userProfile: { id: string; name: string; avatar: any };
-          isTvMode?: boolean;
-        },
+      async (
+        data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
-        if (!checkRateLimit(socket.id)) {
-          return callback?.({ success: false, error: 'Zu viele Anfragen.' });
+        if (!(await consumeRateLimit(socket.id, 'lobby:create'))) {
+          return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:create'])) {
+          return callback?.({ success: false, error: 'Lobby-Daten überschreiten das Größenlimit.' });
+        }
+        const parsed = LobbyCreateSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Lobby-Daten.' });
         }
         try {
-          if (!data || typeof data.gameId !== 'string' || !data.userProfile?.id) {
-            return callback?.({ success: false, error: 'Ungültige Lobby-Daten.' });
-          }
-
           const { lobby, error } = lobbyManager.createLobby({
-            name: String(data.name || ''),
-            isPrivate: Boolean(data.isPrivate),
-            gameId: data.gameId,
-            userProfile: data.userProfile,
+            name: parsed.data.name,
+            isPrivate: parsed.data.isPrivate,
+            gameId: parsed.data.gameId,
+            userProfile: parsed.data.userProfile as any,
             socketId: socket.id,
-            isTvMode: data.isTvMode,
+            isTvMode: parsed.data.isTvMode,
           });
 
           if (error || !lobby) {
-            return callback?.({ success: false, error: error || 'Lobby konnte nicht erstellt werden.' });
+            return callback?.({
+              success: false,
+              error: error || 'Lobby konnte nicht erstellt werden.',
+            });
           }
 
           socket.join(`lobby:${lobby.id}`);
           callback?.({ success: true, lobby });
-
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -70,17 +89,27 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 2b. Lobby per Code prüfen
     socket.on(
       'lobby:getByCode',
-      (
-        data: { code: string },
+      async (
+        data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
+        if (!(await consumeRateLimit(socket.id, 'lobby:getByCode'))) {
+          return callback?.({ success: false, error: 'Zu viele Code-Abfragen. Bitte kurz warten.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:getByCode'])) {
+          return callback?.({ success: false, error: 'Anfrage zu groß.' });
+        }
+        const parsed = LobbyGetByCodeSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Kein gültiger Lobby-Code angegeben.' });
+        }
         try {
-          if (!data || typeof data.code !== 'string') {
-            return callback?.({ success: false, error: 'Kein gültiger Lobby-Code angegeben.' });
-          }
-          const lobby = lobbyManager.findLobbyByCode(data.code);
+          const lobby = lobbyManager.findLobbyByCode(parsed.data.code);
           if (!lobby) {
-            return callback?.({ success: false, error: 'Lobby wurde nicht gefunden oder ist abgelaufen.' });
+            return callback?.({
+              success: false,
+              error: 'Lobby wurde nicht gefunden oder ist abgelaufen.',
+            });
           }
           callback?.({ success: true, lobby });
         } catch (err: any) {
@@ -92,24 +121,24 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 3. Lobby beitreten per ID oder Code
     socket.on(
       'lobby:join',
-      (
-        data: {
-          lobbyIdOrCode: string;
-          userProfile: { id: string; name: string; avatar: any };
-        },
+      async (
+        data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
-        if (!checkRateLimit(socket.id)) {
+        if (!(await consumeRateLimit(socket.id, 'lobby:join'))) {
           return callback?.({ success: false, error: 'Zu viele Anfragen.' });
         }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:join'])) {
+          return callback?.({ success: false, error: 'Beitrittsdaten zu groß.' });
+        }
+        const parsed = LobbyJoinSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Beitrittsdaten.' });
+        }
         try {
-          if (!data || typeof data.lobbyIdOrCode !== 'string' || !data.userProfile?.id) {
-            return callback?.({ success: false, error: 'Ungültige Beitrittsdaten.' });
-          }
-
           const { lobby, error } = lobbyManager.joinLobby({
-            lobbyIdOrCode: data.lobbyIdOrCode,
-            userProfile: data.userProfile,
+            lobbyIdOrCode: parsed.data.lobbyIdOrCode,
+            userProfile: parsed.data.userProfile as any,
             socketId: socket.id,
           });
 
@@ -129,38 +158,48 @@ export function registerSocketHandlers(io: SocketIOServer) {
     );
 
     // 4. Bereit-Status umschalten
-    socket.on('lobby:ready', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
-      if (!checkRateLimit(socket.id)) {
-        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
-      }
-      try {
-        const { lobby, error } = lobbyManager.toggleReady(socket.id);
-        if (error || !lobby) {
-          return callback?.({ success: false, error: error || 'Fehler beim Ändern des Bereit-Status.' });
+    socket.on(
+      'lobby:ready',
+      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+        if (!(await consumeRateLimit(socket.id, 'lobby:ready'))) {
+          return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        try {
+          const { lobby, error } = lobbyManager.toggleReady(socket.id);
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Fehler beim Ändern des Bereit-Status.',
+            });
+          }
 
-        io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
-        callback?.({ success: true, lobby });
-      } catch (err: any) {
-        callback?.({ success: false, error: err.message });
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          callback?.({ success: true, lobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
       }
-    });
+    );
 
     // 4b. Lobby-Spieleinstellungen aktualisieren (Host)
     socket.on(
       'lobby:update-settings',
-      (
-        data: { settings: Record<string, any> },
+      async (
+        data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
-        if (!checkRateLimit(socket.id)) {
+        if (!(await consumeRateLimit(socket.id, 'lobby:update-settings'))) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:update-settings'])) {
+          return callback?.({ success: false, error: 'Einstellungsdaten zu groß.' });
+        }
+        const parsed = LobbyUpdateSettingsSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Einstellungen.' });
+        }
         try {
-          if (!data || typeof data.settings !== 'object' || data.settings === null) {
-            return callback?.({ success: false, error: 'Ungültige Einstellungen.' });
-          }
-          const { lobby, error } = lobbyManager.updateSettings(socket.id, data.settings);
+          const { lobby, error } = lobbyManager.updateSettings(socket.id, parsed.data.settings);
           if (error || !lobby) {
             return callback?.({
               success: false,
@@ -179,15 +218,25 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 4c. Spielerprofil (Name & Avatar) live in aktiver Lobby aktualisieren
     socket.on(
       'lobby:update-profile',
-      (
-        data: { userProfile: { id: string; name: string; avatar: any } },
-        callback?: (res: { success: boolean; lobby?: any }) => void
+      async (
+        data: unknown,
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
+        if (!(await consumeRateLimit(socket.id, 'lobby:update-profile'))) {
+          return callback?.({ success: false, error: 'Profiländerungen zu schnell.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:update-profile'])) {
+          return callback?.({ success: false, error: 'Profilbild oder Name zu groß.' });
+        }
+        const parsed = LobbyUpdateProfileSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Profildaten.' });
+        }
         try {
-          if (!data?.userProfile) {
-            return callback?.({ success: false });
-          }
-          const { lobby } = lobbyManager.updatePlayerProfile(socket.id, data.userProfile);
+          const { lobby } = lobbyManager.updatePlayerProfile(
+            socket.id,
+            parsed.data.userProfile as any
+          );
           if (!lobby) {
             return callback?.({ success: false });
           }
@@ -200,33 +249,49 @@ export function registerSocketHandlers(io: SocketIOServer) {
     );
 
     // 5. Spiel durch Host starten
-    socket.on('lobby:start', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
-      if (!checkRateLimit(socket.id)) {
-        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
-      }
-      try {
-        const { lobby, error } = lobbyManager.startGame(socket.id);
-        if (error || !lobby) {
-          return callback?.({ success: false, error: error || 'Spiel konnte nicht gestartet werden.' });
+    socket.on(
+      'lobby:start',
+      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+        if (!(await consumeRateLimit(socket.id, 'lobby:start'))) {
+          return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        try {
+          const { lobby, error } = lobbyManager.startGame(socket.id);
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Spiel konnte nicht gestartet werden.',
+            });
+          }
 
-        io.to(`lobby:${lobby.id}`).emit('game:started', { lobby });
-        io.emit('lobby:list-updated', { gameId: lobby.gameId });
-        callback?.({ success: true, lobby });
-      } catch (err: any) {
-        callback?.({ success: false, error: err.message });
+          io.to(`lobby:${lobby.id}`).emit('game:started', { lobby });
+          io.emit('lobby:list-updated', { gameId: lobby.gameId });
+          callback?.({ success: true, lobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
       }
-    });
+    );
 
     // 6. Spielzug ausführen (generisch)
     socket.on(
       'game:move',
-      (moveData: any, callback?: (res: { success: boolean; error?: string; gameState?: any }) => void) => {
-        if (!checkRateLimit(socket.id)) {
+      async (
+        moveData: unknown,
+        callback?: (res: { success: boolean; error?: string; gameState?: any }) => void
+      ) => {
+        if (!(await consumeRateLimit(socket.id, 'game:move'))) {
           return callback?.({ success: false, error: 'Zu schnell! Bitte einen Moment warten.' });
         }
+        if (!isPayloadWithinLimit(moveData, EVENT_MAX_PAYLOAD_BYTES['game:move'])) {
+          return callback?.({ success: false, error: 'Spielzug-Payload zu groß.' });
+        }
+        const parsed = GameMoveSchema.safeParse(moveData);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültiges Zug-Format.' });
+        }
         try {
-          const { lobby, error } = lobbyManager.makeMove(socket.id, moveData);
+          const { lobby, error } = lobbyManager.makeMove(socket.id, parsed.data);
           if (error || !lobby) {
             return callback?.({ success: false, error: error || 'Ungültiger Zug.' });
           }
@@ -245,8 +310,14 @@ export function registerSocketHandlers(io: SocketIOServer) {
     );
 
     // 6b. Live-Drawing für Zeichnen & Raten (Echtzeit-Synchronisation zum Fernseher)
-    socket.on('draw:strokes', (data: { strokes: any[] }) => {
+    socket.on('draw:strokes', async (data: unknown) => {
       try {
+        if (!(await consumeRateLimit(socket.id, 'draw:strokes'))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['draw:strokes'])) return;
+
+        const parsed = DrawStrokesSchema.safeParse(data);
+        if (!parsed.success) return;
+
         const lobby = lobbyManager.getLobbyBySocketId(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
         if (lobby.gameId !== 'draw-and-guess') return;
@@ -254,28 +325,10 @@ export function registerSocketHandlers(io: SocketIOServer) {
         const player = lobby.players.find((p) => p.socketId === socket.id);
         if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
 
-        if (!Array.isArray(data?.strokes) || data.strokes.length === 0) return;
-
-        const clamp01 = (n: unknown) =>
-          typeof n === 'number' && Number.isFinite(n) ? Math.max(0, Math.min(1, n)) : 0;
-
-        const sanitized = data.strokes.slice(0, 120).map((s: any) => ({
-          x0: clamp01(s?.x0),
-          y0: clamp01(s?.y0),
-          x1: clamp01(s?.x1),
-          y1: clamp01(s?.y1),
-          color: typeof s?.color === 'string' && s.color.length <= 16 ? s.color : '#000000',
-          size:
-            typeof s?.size === 'number' && Number.isFinite(s.size)
-              ? Math.max(1, Math.min(24, s.size))
-              : 5,
-          strokeId: typeof s?.strokeId === 'number' ? s.strokeId : undefined,
-        }));
-
+        const sanitized = parsed.data.strokes;
         const currentStrokes = (lobby.gameState as any).strokes || [];
         (lobby.gameState as any).strokes = [...currentStrokes, ...sanitized].slice(-3000);
 
-        // Sofort live an den Fernseher und alle anderen Spieler streamen
         socket.to(`lobby:${lobby.id}`).emit('draw:live-strokes', {
           strokes: sanitized,
         });
@@ -284,8 +337,10 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     });
 
-    socket.on('draw:clear', () => {
+    socket.on('draw:clear', async () => {
       try {
+        if (!(await consumeRateLimit(socket.id, 'draw:clear'))) return;
+
         const lobby = lobbyManager.getLobbyBySocketId(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
         if (lobby.gameId !== 'draw-and-guess') return;
@@ -300,8 +355,10 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     });
 
-    socket.on('draw:undo', () => {
+    socket.on('draw:undo', async () => {
       try {
+        if (!(await consumeRateLimit(socket.id, 'draw:undo'))) return;
+
         const lobby = lobbyManager.getLobbyBySocketId(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
         if (lobby.gameId !== 'draw-and-guess') return;
@@ -331,30 +388,36 @@ export function registerSocketHandlers(io: SocketIOServer) {
     });
 
     // 7. Revanche / Nochmal spielen
-    socket.on('game:rematch', (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
-      if (!checkRateLimit(socket.id)) {
-        return callback?.({ success: false, error: 'Zu viele Aktionen.' });
-      }
-      try {
-        const { lobby, restarted, error } = lobbyManager.requestRematch(socket.id);
-        if (error || !lobby) {
-          return callback?.({ success: false, error: error || 'Revanche nicht möglich.' });
+    socket.on(
+      'game:rematch',
+      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+        if (!(await consumeRateLimit(socket.id, 'game:rematch'))) {
+          return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        try {
+          const { lobby, restarted, error } = lobbyManager.requestRematch(socket.id);
+          if (error || !lobby) {
+            return callback?.({ success: false, error: error || 'Revanche nicht möglich.' });
+          }
 
-        if (restarted) {
-          io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby });
-        } else {
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          if (restarted) {
+            io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby });
+          } else {
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          }
+
+          callback?.({ success: true, lobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
         }
-
-        callback?.({ success: true, lobby });
-      } catch (err: any) {
-        callback?.({ success: false, error: err.message });
       }
-    });
+    );
 
     // 8. Lobby verlassen
-    socket.on('lobby:leave', (callback?: (res: { success: boolean }) => void) => {
+    socket.on('lobby:leave', async (callback?: (res: { success: boolean }) => void) => {
+      if (!(await consumeRateLimit(socket.id, 'lobby:leave'))) {
+        return callback?.({ success: false });
+      }
       try {
         const { lobbyId, lobby, wasHost, deleted } = lobbyManager.leaveCurrentLobby(socket.id);
         if (lobbyId) {
@@ -364,7 +427,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
           } else if (lobby) {
             io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
               lobby,
-              message: wasHost ? 'Neuer Host gewählt.' : 'Ein Spieler hat die Lobby verlassen.',
+              message: wasHost
+                ? 'Neuer Host gewählt.'
+                : 'Ein Spieler hat die Lobby verlassen.',
             });
             io.emit('lobby:list-updated', { gameId: lobby.gameId });
           }
@@ -378,19 +443,32 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 9. Wiederverbinden nach Disconnect
     socket.on(
       'lobby:reconnect',
-      (data: { userId: string }, callback?: (res: { success: boolean; lobby?: any }) => void) => {
+      async (
+        data: unknown,
+        callback?: (res: { success: boolean; lobby?: any }) => void
+      ) => {
+        if (!(await consumeRateLimit(socket.id, 'lobby:reconnect'))) {
+          return callback?.({ success: false });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:reconnect'])) {
+          return callback?.({ success: false });
+        }
+        const parsed = LobbyReconnectSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false });
+        }
         try {
-          if (!data || typeof data.userId !== 'string') {
-            return callback?.({ success: false });
-          }
           const { lobby } = lobbyManager.reconnectPlayer({
-            userId: data.userId,
+            userId: parsed.data.userId,
             socketId: socket.id,
           });
 
           if (lobby) {
             socket.join(`lobby:${lobby.id}`);
-            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby, message: 'Spieler ist wieder verbunden!' });
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
+              lobby,
+              message: 'Spieler ist wieder verbunden!',
+            });
             return callback?.({ success: true, lobby });
           }
           callback?.({ success: false });
