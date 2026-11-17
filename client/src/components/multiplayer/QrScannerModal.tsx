@@ -1,9 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { CameraOff } from 'lucide-react';
+import { ArrowLeft, CameraOff } from 'lucide-react';
 import jsQR from 'jsqr';
 import { parseLobbyCode } from '../../utils/qrCodeHelper';
-import { OpenButton, OpenSubpageHeader } from '../OpenSubpageUI';
-import { IslandBackground } from '../IslandBackground';
+import { OpenButton } from '../OpenSubpageUI';
 
 interface QrScannerModalProps {
   isOpen: boolean;
@@ -199,68 +198,92 @@ export function QrScannerModal({
     <div
       role="dialog"
       aria-modal="true"
-      className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-hidden bg-[#1B2B40] text-white select-none animate-fade-in pb-4 landscape:pb-2"
+      aria-label="QR-Code scannen"
+      onClick={onClose}
+      className="fixed inset-0 min-h-dvh z-60 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md text-white select-none animate-fade-in"
     >
-      <IslandBackground />
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-1 min-h-0 w-full max-w-xl flex-col justify-between"
+      >
+        <div className="flex items-center justify-start">
+          <button
+            type="button"
+            onClick={onClose}
+            className="font-arcade inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs tracking-wider text-white uppercase hover:bg-white/12 cursor-pointer active:scale-95"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>ZURÜCK</span>
+          </button>
+        </div>
 
-      <OpenSubpageHeader
-        backLabel="ABBRECHEN"
-        onBack={onClose}
-        title="QR-CODE"
-        accentWord="SCANNER"
-      />
-
-      <main className="relative z-20 flex-1 min-h-0 w-full flex flex-col items-center justify-center overflow-y-auto p-4 landscape:p-2">
-        {errorType !== 'none' ? (
-          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-md rounded-2xl border border-white/15 bg-[#0F172A]/85 p-6 text-center backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)] flex flex-col items-center gap-4">
-            <CameraOff className="h-10 w-10 landscape:h-7 landscape:w-7 text-[#FDA4AF]" />
-            <p className="text-sm landscape:text-xs text-[#CBD5E1]">{errorMessage}</p>
-            <OpenButton fullWidth size="md" variant="primary" onClick={onSwitchToCodeEntry} className="landscape:h-9 landscape:text-xs">
-              CODE EINGEBEN
-            </OpenButton>
+        <div className="my-auto flex w-full flex-col items-center gap-6 py-4 text-center">
+          <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+            <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+              QR-CODE <span className="text-[#FBBF24]">SCANNEN</span>
+            </span>
           </div>
-        ) : (
-          <div className="tablet-modal-box my-auto w-full max-w-sm landscape:max-w-lg rounded-2xl border border-white/15 bg-[#0F172A]/85 p-5 landscape:p-4 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)] flex flex-col landscape:flex-row landscape:items-center gap-4">
-            <div className="relative w-full aspect-square max-h-[46dvh] landscape:max-h-none landscape:w-40 landscape:h-40 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] flex items-center justify-center">
-              <video
-                ref={videoRef}
-                className="absolute inset-0 h-full w-full object-cover"
-                muted
-                playsInline
-              />
 
-              <div className="relative z-10 w-48 h-48 landscape:w-28 landscape:h-28 rounded-xl border-2 border-[#F59E0B] pointer-events-none flex items-center justify-center">
-                {hasScanned && (
-                  <span className="font-arcade rounded-lg border border-[#34D399]/60 bg-[#10B981] px-4 py-1.5 text-sm landscape:text-xs text-white uppercase">
-                    GEFUNDEN!
-                  </span>
+          {errorType !== 'none' ? (
+            <div className="flex w-full max-w-sm flex-col items-center gap-4">
+              <CameraOff className="h-12 w-12 text-[#FDA4AF]" />
+              <p className="text-sm text-[#CBD5E1]">{errorMessage}</p>
+              <div className="w-full max-w-xs">
+                <OpenButton
+                  fullWidth
+                  size="lg"
+                  variant="primary"
+                  onClick={onSwitchToCodeEntry}
+                >
+                  CODE EINGEBEN
+                </OpenButton>
+              </div>
+            </div>
+          ) : (
+            <div className="flex w-full flex-col items-center gap-5">
+              <div className="relative w-full max-w-[280px] sm:max-w-[320px] landscape:max-w-[200px] aspect-square overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center">
+                <video
+                  ref={videoRef}
+                  className="absolute inset-0 h-full w-full object-cover"
+                  muted
+                  playsInline
+                />
+
+                <div className="relative z-10 w-44 h-44 sm:w-52 sm:h-52 landscape:w-32 landscape:h-32 rounded-xl border-2 border-[#F59E0B] pointer-events-none flex items-center justify-center">
+                  {hasScanned && (
+                    <span className="font-arcade rounded-lg border border-[#34D399]/60 bg-[#10B981] px-4 py-1.5 text-sm text-white uppercase">
+                      GEFUNDEN!
+                    </span>
+                  )}
+                </div>
+
+                {isInitializing && (
+                  <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm text-white uppercase">
+                    KAMERA STARTET...
+                  </div>
                 )}
               </div>
 
-              {isInitializing && (
-                <div className="font-arcade absolute inset-0 bg-[#0F172A]/85 flex items-center justify-center text-sm landscape:text-xs text-white uppercase">
-                  KAMERA STARTET...
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col items-center justify-center gap-3 w-full landscape:flex-1">
-              <p className="text-center text-xs text-[#CBD5E1]">
-                Richte die Kamera auf den QR-Code am TV oder gib den Code manuell ein.
+              <p className="max-w-xs text-xs sm:text-sm text-[#CBD5E1]">
+                Richte die Kamera auf den QR-Code oder gib den Code manuell ein.
               </p>
-              <OpenButton
-                fullWidth
-                size="sm"
-                variant="outline-amber"
-                onClick={onSwitchToCodeEntry}
-                className="landscape:h-9 landscape:text-xs"
-              >
-                CODE EINGEBEN
-              </OpenButton>
+
+              <div className="w-full max-w-xs">
+                <OpenButton
+                  fullWidth
+                  size="md"
+                  variant="outline-amber"
+                  onClick={onSwitchToCodeEntry}
+                >
+                  CODE EINGEBEN
+                </OpenButton>
+              </div>
             </div>
-          </div>
-        )}
-      </main>
+          )}
+        </div>
+
+        <div aria-hidden="true" className="h-4" />
+      </div>
     </div>
   );
 }
