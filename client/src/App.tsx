@@ -63,6 +63,7 @@ export function App() {
   const [multiplayerGame, setMultiplayerGame] = useState<Game | null>(null);
   const [launchInTvMode, setLaunchInTvMode] = useState(false);
   const [deepLinkLobby, setDeepLinkLobby] = useState<Lobby | null>(null);
+  const [activeLobby, setActiveLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
   const [showAvatarModal, setShowAvatarModal] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
@@ -192,11 +193,33 @@ export function App() {
       triggerHaptic();
       const updatedRecent = recordGamePlayed(game.id);
       setRecentEntries(updatedRecent);
+
+      if (activeLobby && activeLobby.gameId === game.id && Boolean(activeLobby.isTvMode) === tvMode) {
+        setDeepLinkLobby(activeLobby);
+        setLaunchInTvMode(tvMode);
+        setMultiplayerGame(game);
+        return;
+      }
+
+      if (activeLobby) {
+        void socketService.leaveLobby();
+        setActiveLobby(null);
+      }
+      setDeepLinkLobby(null);
       setLaunchInTvMode(tvMode);
       setMultiplayerGame(game);
     },
-    [triggerHaptic]
+    [triggerHaptic, activeLobby]
   );
+
+  const handleOpenActiveLobby = useCallback(() => {
+    if (!activeLobby) return;
+    triggerHaptic();
+    const matchedGame = GAMES.find((g) => g.id === activeLobby.gameId) || GAMES[0];
+    setDeepLinkLobby(activeLobby);
+    setLaunchInTvMode(Boolean(activeLobby.isTvMode));
+    setMultiplayerGame(matchedGame);
+  }, [activeLobby, triggerHaptic]);
 
   const handleSelectSection = useCallback(
     (sec: NavSection) => {
@@ -235,6 +258,7 @@ export function App() {
       const updatedRecent = recordGamePlayed(matchedGame.id);
       setRecentEntries(updatedRecent);
       setDeepLinkLobby(lobby);
+      setActiveLobby(lobby);
       setLaunchInTvMode(false);
       setMultiplayerGame(matchedGame);
       setShowTvJoinModal(false);
@@ -250,6 +274,27 @@ export function App() {
       setIsJoiningLobby(false);
     }
   }, []);
+
+  useEffect(() => {
+    if (!activeLobby || multiplayerGame) return;
+
+    const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updated }) => {
+      setActiveLobby((prev) => (prev && prev.id === updated.id ? { ...prev, ...updated } : updated));
+    });
+
+    const unsubStarted = socketService.onGameStarted(({ lobby: updated }) => {
+      setActiveLobby(updated);
+      const matchedGame = GAMES.find((g) => g.id === updated.gameId) || GAMES[0];
+      setDeepLinkLobby(updated);
+      setLaunchInTvMode(Boolean(updated.isTvMode));
+      setMultiplayerGame(matchedGame);
+    });
+
+    return () => {
+      unsubUpdated();
+      unsubStarted();
+    };
+  }, [activeLobby, multiplayerGame]);
 
   useEffect(() => {
     const checkDeepLink = () => {
@@ -295,8 +340,12 @@ export function App() {
       }
       if (multiplayerGame) {
         if (e.key === 'Escape') {
+          if (activeLobby) {
+            setDeepLinkLobby(activeLobby);
+          } else {
+            setDeepLinkLobby(null);
+          }
           setMultiplayerGame(null);
-          setDeepLinkLobby(null);
         }
         return;
       }
@@ -335,6 +384,7 @@ export function App() {
     showSettings,
     showAvatarModal,
     multiplayerGame,
+    activeLobby,
     showTvJoinModal,
     handleSplashFinish,
   ]);
@@ -385,6 +435,7 @@ export function App() {
       >
         <MainMenuHeader
           avatar={userProfile.avatar}
+          hasActiveLobby={Boolean(activeLobby)}
           onOpenProfile={() => {
             triggerHaptic();
             setShowAvatarModal(true);
@@ -394,6 +445,7 @@ export function App() {
             setTvJoinError(null);
             setShowTvJoinModal(true);
           }}
+          onOpenActiveLobby={handleOpenActiveLobby}
           onOpenSettings={() => {
             triggerHaptic();
             setShowSettings(true);
@@ -427,9 +479,18 @@ export function App() {
           game={multiplayerGame}
           initialLobby={deepLinkLobby}
           initialTvMode={launchInTvMode}
+          onLobbyChange={setActiveLobby}
+          onMinimize={(lobby) => {
+            if (lobby) {
+              setActiveLobby(lobby);
+              setDeepLinkLobby(lobby);
+            }
+            setMultiplayerGame(null);
+          }}
           onClose={() => {
             setMultiplayerGame(null);
             setDeepLinkLobby(null);
+            setActiveLobby(null);
             setLaunchInTvMode(false);
           }}
         />

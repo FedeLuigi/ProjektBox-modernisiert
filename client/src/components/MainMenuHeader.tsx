@@ -4,19 +4,23 @@ import { PlayerAvatarButton } from './ArcadeHudElements';
 
 export interface MainMenuHeaderProps {
   avatar?: AvatarConfig;
+  hasActiveLobby?: boolean;
   onOpenProfile: () => void;
   onOpenTvJoin: () => void;
+  onOpenActiveLobby?: () => void;
   onOpenSettings: () => void;
 }
 
 /**
  * Verschmolzene Kopfleiste im Open-Gallery-Stil:
- * Avatar + PROJEKT BOX links • LOBBY BEITRETEN & Einstellungen rechts auf einer einzigen Linie.
+ * Avatar + PROJEKT BOX links • LOBBY BEITRETEN (bzw. LOBBY ANSEHEN) & Einstellungen rechts.
  */
 export function MainMenuHeader({
   avatar,
+  hasActiveLobby = false,
   onOpenProfile,
   onOpenTvJoin,
+  onOpenActiveLobby,
   onOpenSettings,
 }: MainMenuHeaderProps) {
   return (
@@ -35,16 +39,30 @@ export function MainMenuHeader({
           </div>
         </div>
 
-        {/* Rechts: TV CODE & Einstellungen */}
+        {/* Rechts: LOBBY BEITRETEN / LOBBY ANSEHEN & Einstellungen */}
         <div className="shrink-0 flex items-center gap-1.5 sm:gap-2">
           <button
             type="button"
-            onClick={onOpenTvJoin}
-            title="Mit einem bestehenden 6-stelligen TV- oder Raum-Code beitreten"
-            className="font-arcade inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border border-[#F59E0B]/60 bg-transparent px-2.5 sm:px-3.5 text-[11px] sm:text-xs tracking-wider text-[#FDE68A] uppercase transition-all hover:bg-[#F59E0B]/15 cursor-pointer active:scale-95"
+            onClick={hasActiveLobby && onOpenActiveLobby ? onOpenActiveLobby : onOpenTvJoin}
+            title={
+              hasActiveLobby
+                ? 'Zur laufenden Lobby zurückkehren'
+                : 'Mit einem bestehenden Lobby-Code oder QR-Code beitreten'
+            }
+            className={`font-arcade inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border px-2.5 sm:px-3.5 text-[11px] sm:text-xs tracking-wider uppercase transition-all cursor-pointer active:scale-95 ${
+              hasActiveLobby
+                ? 'border-[#34D399]/60 bg-[#10B981]/15 text-[#6EE7B7] hover:bg-[#10B981]/25'
+                : 'border-[#F59E0B]/60 bg-transparent text-[#FDE68A] hover:bg-[#F59E0B]/15'
+            }`}
           >
-            <Tv className="h-3.5 w-3.5 shrink-0" />
-            <span className="whitespace-nowrap">LOBBY BEITRETEN</span>
+            {hasActiveLobby ? (
+              <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_8px_#34D399] animate-pulse shrink-0" />
+            ) : (
+              <Tv className="h-3.5 w-3.5 shrink-0" />
+            )}
+            <span className="whitespace-nowrap">
+              {hasActiveLobby ? 'LOBBY ANSEHEN' : 'LOBBY BEITRETEN'}
+            </span>
           </button>
 
           <button
