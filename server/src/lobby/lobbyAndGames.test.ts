@@ -792,3 +792,44 @@ test('Szenario 11 & 12: Idempotenz bei doppelten Spielzügen und Verbot fremder 
 
   manager.clearAllTimers();
 });
+
+test('Moduswechsel Standard <-> TV Screen funktioniert wiederholt ohne Lobby-Neuerstellung oder Rate-Limit', () => {
+  const manager = new LobbyManager();
+  const s1 = manager.sessionManager.createSession('u_switch').session;
+
+  const created = manager.createLobby({
+    name: 'SwitchLobby',
+    isPrivate: true,
+    gameId: 'draw-and-guess',
+    userProfile: { id: 'u_switch', name: 'Switcher', avatar: {} },
+    socketId: 's_switch',
+    isTvMode: false,
+    sessionId: s1.sessionId,
+  });
+  assert.equal(created.success, true);
+  const originalLobbyId = created.lobby!.id;
+  const originalCode = created.lobby!.code;
+
+  for (let i = 0; i < 6; i++) {
+    const nextTv = i % 2 === 0;
+    const res = manager.switchLobbyMode({
+      lobbyId: originalLobbyId,
+      playerId: 'u_switch',
+      isTvMode: nextTv,
+      actionId: `act_switch_${i}`,
+    });
+    assert.equal(res.success, true);
+    assert.equal(res.lobby?.id, originalLobbyId);
+    assert.equal(res.lobby?.code, originalCode);
+    assert.equal(res.lobby?.isTvMode, nextTv);
+    assert.equal(res.lobby?.players[0]?.isTvScreen, nextTv);
+  }
+
+  for (let i = 0; i < 8; i++) {
+    assert.equal(checkRateLimit('switch_rate_sock', 'lobby:switch-mode', 10_000 + i), true);
+    assert.equal(checkRateLimit('switch_rate_sock', 'lobby:create', 10_000 + i), true);
+  }
+  cleanupSocketRateLimit('switch_rate_sock');
+
+  manager.clearAllTimers();
+});

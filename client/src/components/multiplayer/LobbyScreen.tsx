@@ -121,6 +121,7 @@ export function LobbyScreen({
 
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
       setCurrentLobby((prev) => (prev ? { ...prev, ...updatedLobby } : updatedLobby));
+      setIsTvMode(Boolean(updatedLobby.isTvMode));
       if (updatedLobby.status === 'in_progress' || updatedLobby.status === 'paused') {
         setIsInGame(true);
       }
@@ -203,14 +204,30 @@ export function LobbyScreen({
     onClose();
   };
 
+  const [isSwitchingMode, setIsSwitchingMode] = useState(false);
+
   const handleSwitchMode = async (nextTv: boolean) => {
-    if (nextTv === isTvMode || isCreating) return;
-    setIsTvMode(nextTv);
-    if (currentLobby) {
-      await socketService.leaveLobby();
-      setCurrentLobby(null);
+    if (nextTv === isTvMode || isCreating || isSwitchingMode) return;
+    if (!currentLobby) {
+      setIsTvMode(nextTv);
+      await createFreshLobby(nextTv);
+      return;
     }
-    await createFreshLobby(nextTv);
+
+    const previousTv = isTvMode;
+    setIsSwitchingMode(true);
+    setIsTvMode(nextTv);
+    setErrorMsg(null);
+    try {
+      const updated = await socketService.switchLobbyMode(nextTv);
+      setCurrentLobby(updated);
+      setIsTvMode(Boolean(updated.isTvMode));
+    } catch (err: any) {
+      setIsTvMode(previousTv);
+      setErrorMsg(err.message || 'Modus konnte nicht gewechselt werden.');
+    } finally {
+      setIsSwitchingMode(false);
+    }
   };
 
   const handleCopyCode = async () => {
@@ -380,7 +397,7 @@ export function LobbyScreen({
           <button
             key={label}
             type="button"
-            disabled={!canSwitchMode || isCreating}
+            disabled={!canSwitchMode || isCreating || isSwitchingMode || isConnectionBlocked}
             onClick={() => void handleSwitchMode(tv)}
             title={
               !canSwitchMode

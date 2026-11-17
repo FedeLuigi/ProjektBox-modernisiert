@@ -19,6 +19,7 @@ export type RateLimitedEvent =
   | 'lobby:start'
   | 'lobby:leave'
   | 'lobby:reconnect'
+  | 'lobby:switch-mode'
   | 'game:move'
   | 'game:rematch'
   | 'draw:strokes'
@@ -28,16 +29,17 @@ export type RateLimitedEvent =
   | 'default';
 
 export const EVENT_RATE_LIMITS: Record<RateLimitedEvent, RateLimitRule> = {
-  'lobby:list': { capacity: 6, refillRatePerSec: 2 },
-  'lobby:create': { capacity: 3, refillRatePerSec: 0.25 },
-  'lobby:getByCode': { capacity: 6, refillRatePerSec: 2 },
-  'lobby:join': { capacity: 5, refillRatePerSec: 1 },
-  'lobby:ready': { capacity: 6, refillRatePerSec: 2 },
-  'lobby:update-settings': { capacity: 8, refillRatePerSec: 3 },
+  'lobby:list': { capacity: 10, refillRatePerSec: 3 },
+  'lobby:create': { capacity: 10, refillRatePerSec: 1 },
+  'lobby:getByCode': { capacity: 10, refillRatePerSec: 3 },
+  'lobby:join': { capacity: 8, refillRatePerSec: 2 },
+  'lobby:ready': { capacity: 10, refillRatePerSec: 3 },
+  'lobby:update-settings': { capacity: 12, refillRatePerSec: 4 },
   'lobby:update-profile': { capacity: 4, refillRatePerSec: 0.5 },
-  'lobby:start': { capacity: 3, refillRatePerSec: 0.5 },
-  'lobby:leave': { capacity: 4, refillRatePerSec: 1 },
-  'lobby:reconnect': { capacity: 5, refillRatePerSec: 1 },
+  'lobby:start': { capacity: 5, refillRatePerSec: 1 },
+  'lobby:leave': { capacity: 10, refillRatePerSec: 2 },
+  'lobby:reconnect': { capacity: 8, refillRatePerSec: 2 },
+  'lobby:switch-mode': { capacity: 15, refillRatePerSec: 3 },
   'game:move': { capacity: 12, refillRatePerSec: 8 },
   'game:rematch': { capacity: 4, refillRatePerSec: 1 },
   'draw:strokes': { capacity: 45, refillRatePerSec: 30 },

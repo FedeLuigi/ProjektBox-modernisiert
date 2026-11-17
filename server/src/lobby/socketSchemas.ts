@@ -10,6 +10,7 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   'lobby:update-profile': 64 * 1024,
   'lobby:update-settings': 4096,
   'lobby:reconnect': 2048,
+  'lobby:switch-mode': 512,
   'game:move': 4096,
   'game:rematch': 512,
   'draw:strokes': 24 * 1024,
@@ -83,6 +84,11 @@ export const LobbyStartSchema = z.object({
 });
 
 export const GameRematchSchema = z.object({
+  ...ActionMetaFields,
+});
+
+export const LobbySwitchModeSchema = z.object({
+  isTvMode: z.boolean(),
   ...ActionMetaFields,
 });
 

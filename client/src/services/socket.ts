@@ -761,6 +761,28 @@ class SocketService {
     });
   }
 
+  public async switchLobbyMode(isTvMode: boolean): Promise<Lobby> {
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unsicher – bitte warte auf die Wiederverbindung.');
+    }
+    const sock = this.connect();
+    const actionId = generateActionId();
+    return new Promise((resolve, reject) => {
+      sock.emit(
+        'lobby:switch-mode',
+        { isTvMode, actionId, expectedVersion: this.latestStateVersion },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res?.error || 'Lobby-Modus konnte nicht gewechselt werden.'));
+          }
+        }
+      );
+    });
+  }
+
   public async toggleReady(): Promise<Lobby> {
     if (this.isActionBlocked()) {
       throw new Error('Verbindung unsicher – Aktion blockiert bis Verbindung steht.');

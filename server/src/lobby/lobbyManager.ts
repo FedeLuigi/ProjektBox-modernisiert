@@ -727,6 +727,54 @@ export class LobbyManager {
     return { success: true, lobby };
   }
 
+  public switchLobbyMode(params: {
+    lobbyId: string;
+    playerId: string;
+    isTvMode: boolean;
+    actionId?: string;
+    expectedVersion?: number;
+  }): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const lobby = this.lobbies.get(params.lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.hostId !== params.playerId) {
+      return { success: false, error: 'Nur der aktuelle Host darf den Modus wechseln.' };
+    }
+    if (lobby.status !== 'waiting') {
+      return { success: false, error: 'Moduswechsel ist nur vor Spielstart möglich.' };
+    }
+
+    if (params.actionId && this.isDuplicateAction(lobby, params.actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+    if (params.expectedVersion !== undefined && params.expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Aktion: Lobby-Zustand hat sich geändert.' };
+    }
+
+    const otherGuests = lobby.players.filter(
+      (p) => !p.isTvScreen && p.id !== params.playerId && p.connectionState !== 'offline'
+    );
+    if (otherGuests.length > 0) {
+      return {
+        success: false,
+        error: 'Moduswechsel nur möglich, solange keine weiteren Mitspieler beigetreten sind.',
+      };
+    }
+
+    const hostPlayer = lobby.players.find((p) => p.id === params.playerId);
+    if (!hostPlayer) return { success: false, error: 'Host-Spieler nicht in Lobby.' };
+
+    lobby.isTvMode = params.isTvMode;
+    hostPlayer.isTvScreen = params.isTvMode;
+    hostPlayer.isReady = params.isTvMode;
+
+    this.recordActionId(lobby, params.actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    return { success: true, lobby };
+  }
+
   public startGame(
     socketIdOrParams:
       | string

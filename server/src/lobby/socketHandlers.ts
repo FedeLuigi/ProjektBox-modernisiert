@@ -18,6 +18,7 @@ import {
   LobbyReadySchema,
   LobbyReconnectSchema,
   LobbyStartSchema,
+  LobbySwitchModeSchema,
   LobbyUpdateProfileSchema,
   LobbyUpdateSettingsSchema,
   SessionPingSchema,
@@ -441,6 +442,59 @@ export function registerSocketHandlers(
           const safeLobby = sanitizeLobbyForClient(lobby);
           if (!duplicate) {
             io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+          }
+          callback?.({ success: true, lobby: safeLobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 4d. Zwischen Standard-Lobby und TV-Lobby wechseln (ohne Lobby-Neuerstellung)
+    socket.on(
+      'lobby:switch-mode',
+      async (
+        data: unknown,
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
+        if (!(await consumeRateLimit(socket.id, 'lobby:switch-mode'))) {
+          return callback?.({ success: false, error: 'Zu viele Moduswechsel. Bitte kurz warten.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:switch-mode'])) {
+          return callback?.({ success: false, error: 'Anfrage zu groß.' });
+        }
+        const parsed = LobbySwitchModeSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Modus-Angabe.' });
+        }
+        try {
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, duplicate, error } = manager.switchLobbyMode({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            isTvMode: parsed.data.isTvMode,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Modus konnte nicht gewechselt werden.',
+            });
+          }
+
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+            io.emit('lobby:list-updated', { gameId: lobby.gameId });
           }
           callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
