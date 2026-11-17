@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { ArrowLeft, Plus, QrCode, RefreshCw } from 'lucide-react';
-import { QrScannerModal } from './QrScannerModal';
+import { InlineQrScanner } from './InlineQrScanner';
 import {
   JOIN_DESIGN_OPTIONS,
   JoinDesignModal,
@@ -23,7 +23,7 @@ export function TvJoinModal({
   isJoining = false,
   errorMessage = null,
 }: TvJoinModalProps) {
-  const [showScanner, setShowScanner] = useState(false);
+  const [entryMode, setEntryMode] = useState<'code' | 'qr'>('code');
   const [showDesignModal, setShowDesignModal] = useState(false);
   const [code, setCode] = useState('');
   const [design, setDesign] = useState<JoinDesignId>(() => {
@@ -51,9 +51,22 @@ export function TvJoinModal({
   };
 
   const handleScanSuccess = (scannedCode: string) => {
-    setShowScanner(false);
+    setEntryMode('code');
     setCode(scannedCode);
     onJoin(scannedCode);
+  };
+
+  const handleClose = () => {
+    setEntryMode('code');
+    onClose();
+  };
+
+  const handleBackClick = () => {
+    if (entryMode === 'qr') {
+      setEntryMode('code');
+      return;
+    }
+    handleClose();
   };
 
   const handleSelectDesign = (next: JoinDesignId) => {
@@ -114,7 +127,7 @@ export function TvJoinModal({
     <button
       type="button"
       disabled={isJoining}
-      onClick={() => setShowScanner(true)}
+      onClick={() => setEntryMode('qr')}
       aria-label="QR-Code scannen"
       className={`group flex flex-col items-center justify-center gap-2.5 rounded-2xl border border-[#F59E0B]/45 bg-[#F59E0B]/[0.08] text-[#FDE68A] transition-all hover:border-[#F59E0B] hover:bg-[#F59E0B]/15 hover:scale-[1.03] active:scale-95 disabled:opacity-45 cursor-pointer ${
         large ? 'px-10 py-7' : 'px-8 py-4'
@@ -136,8 +149,8 @@ export function TvJoinModal({
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Lobby beitreten"
-        onClick={onClose}
+        aria-label={entryMode === 'qr' ? 'QR-Code scannen' : 'Lobby beitreten'}
+        onClick={handleClose}
         className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden bg-[#0F172A]/85 p-4 sm:p-8 backdrop-blur-md select-none animate-fade-in"
       >
         <div
@@ -148,23 +161,43 @@ export function TvJoinModal({
           <div className="flex items-center justify-between gap-3">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleBackClick}
               className="font-arcade inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs tracking-wider text-white uppercase hover:bg-white/12 cursor-pointer active:scale-95"
             >
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>ZURÜCK</span>
             </button>
 
-            <button
-              type="button"
-              onClick={() => setShowDesignModal(true)}
-              title="Designarten für Lobby beitreten öffnen"
-              aria-label="Designarten für Lobby beitreten öffnen"
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/[0.06] text-[#FDE68A] hover:border-[#F59E0B] hover:bg-[#F59E0B]/20 hover:text-white transition-all cursor-pointer active:scale-95"
-            >
-              <Plus className="h-4 w-4" />
-            </button>
+            {entryMode === 'code' ? (
+              <button
+                type="button"
+                onClick={() => setShowDesignModal(true)}
+                title="Designarten für Lobby beitreten öffnen"
+                aria-label="Designarten für Lobby beitreten öffnen"
+                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/25 bg-white/[0.06] text-[#FDE68A] hover:border-[#F59E0B] hover:bg-[#F59E0B]/20 hover:text-white transition-all cursor-pointer active:scale-95"
+              >
+                <Plus className="h-4 w-4" />
+              </button>
+            ) : (
+              <div aria-hidden="true" className="w-8" />
+            )}
           </div>
+
+          {entryMode === 'qr' ? (
+            <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 py-4 text-center">
+              <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+                <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+                  QR-CODE <span className="text-[#FBBF24]">SCANNEN</span>
+                </span>
+              </div>
+
+              <InlineQrScanner
+                onScanSuccess={handleScanSuccess}
+                onSwitchToCodeEntry={() => setEntryMode('code')}
+              />
+            </div>
+          ) : (
+            <>
 
           {/* 1. OFFENE BÜHNE (KLASSIK) */}
           {design === 'join-open-stage' && (
@@ -293,7 +326,7 @@ export function TvJoinModal({
                   size="md"
                   variant="outline-amber"
                   disabled={isJoining}
-                  onClick={() => setShowScanner(true)}
+                  onClick={() => setEntryMode('qr')}
                 >
                   <QrCode className="h-5 w-5" />
                   <span>QR-CODE SCANNEN</span>
@@ -319,7 +352,7 @@ export function TvJoinModal({
               <button
                 type="button"
                 disabled={isJoining}
-                onClick={() => setShowScanner(true)}
+                onClick={() => setEntryMode('qr')}
                 aria-label="QR-Code scannen"
                 className="group relative flex flex-col items-center gap-3 rounded-3xl border-2 border-dashed border-[#F59E0B]/60 bg-[#F59E0B]/[0.07] px-12 py-8 text-[#FDE68A] transition-all hover:border-[#F59E0B] hover:bg-[#F59E0B]/15 hover:scale-[1.02] active:scale-95 cursor-pointer"
               >
@@ -359,7 +392,7 @@ export function TvJoinModal({
                 <button
                   type="button"
                   disabled={isJoining}
-                  onClick={() => setShowScanner(true)}
+                  onClick={() => setEntryMode('qr')}
                   title="QR-Code scannen"
                   aria-label="QR-Code scannen"
                   className="flex h-12 sm:w-14 items-center justify-center gap-2 rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/12 text-[#FDE68A] hover:bg-[#F59E0B]/22 transition-colors cursor-pointer active:scale-95"
@@ -404,7 +437,7 @@ export function TvJoinModal({
                   <button
                     type="button"
                     disabled={isJoining}
-                    onClick={() => setShowScanner(true)}
+                    onClick={() => setEntryMode('qr')}
                     title="QR-Code scannen"
                     aria-label="QR-Code scannen"
                     className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 text-[#FBBF24] hover:bg-[#F59E0B]/25 transition-colors cursor-pointer active:scale-95"
@@ -415,17 +448,12 @@ export function TvJoinModal({
               </div>
             </form>
           )}
+            </>
+          )}
 
           <div aria-hidden="true" className="h-4" />
         </div>
       </div>
-
-      <QrScannerModal
-        isOpen={showScanner}
-        onClose={() => setShowScanner(false)}
-        onScanSuccess={handleScanSuccess}
-        onSwitchToCodeEntry={() => setShowScanner(false)}
-      />
 
       <JoinDesignModal
         isOpen={showDesignModal}
