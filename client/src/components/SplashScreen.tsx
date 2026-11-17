@@ -15,10 +15,17 @@ const WARP_COLORS = ['#F59E0B', '#FBBF24', '#38BDF8', '#10B981', '#F472B6', '#FD
  * 1) Hyperspace-Warp-Sternenfeld (0 - 0.9s)
  * 2) Synchronisierte Partikel-Explosion beim Raketen-Einschlag (ab 0.9s)
  */
-function HyperspaceExplosionCanvas({ reducedMotion }: { reducedMotion: boolean }) {
+function HyperspaceExplosionCanvas({
+  reducedMotion,
+  isReady,
+}: {
+  reducedMotion: boolean;
+  isReady: boolean;
+}) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
+    if (!isReady) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -143,7 +150,7 @@ function HyperspaceExplosionCanvas({ reducedMotion }: { reducedMotion: boolean }
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
     };
-  }, [reducedMotion]);
+  }, [reducedMotion, isReady]);
 
   return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" />;
 }
@@ -371,6 +378,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
 ];
 
 export function SplashScreen({ onFinish }: SplashScreenProps) {
+  const [isStageReady, setIsStageReady] = useState(false);
   const [progress, setProgress] = useState(0);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDone, setIsDone] = useState(false);
@@ -381,6 +389,64 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   const finishedRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Warten bis Seite geladen, Tab sichtbar, Fonts bereit und erster Frame gerendert ist
+  useEffect(() => {
+    let cancelled = false;
+    let raf1 = 0;
+    let raf2 = 0;
+    let fontFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+
+    const armWhenVisible = () => {
+      if (cancelled) return;
+      if (document.visibilityState !== 'visible') return;
+
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (!cancelled) setIsStageReady(true);
+        });
+      });
+    };
+
+    const waitForLoadAndFonts = async () => {
+      if (document.readyState !== 'complete') {
+        await new Promise<void>((resolve) => {
+          const onLoad = () => {
+            window.removeEventListener('load', onLoad);
+            resolve();
+          };
+          window.addEventListener('load', onLoad);
+        });
+      }
+
+      if (document.fonts?.ready) {
+        await Promise.race([
+          document.fonts.ready.then(() => undefined),
+          new Promise<void>((resolve) => {
+            fontFallbackTimer = setTimeout(resolve, 900);
+          }),
+        ]);
+      }
+
+      if (!cancelled) {
+        if (document.visibilityState === 'visible') {
+          armWhenVisible();
+        } else {
+          document.addEventListener('visibilitychange', armWhenVisible, { once: true });
+        }
+      }
+    };
+
+    void waitForLoadAndFonts();
+
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      cancelAnimationFrame(raf2);
+      if (fontFallbackTimer) clearTimeout(fontFallbackTimer);
+      document.removeEventListener('visibilitychange', armWhenVisible);
+    };
+  }, []);
 
   const triggerFadeOut = useCallback(() => {
     if (finishedRef.current) return;
@@ -396,6 +462,18 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   }, [onFinish]);
 
   useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+        triggerFadeOut();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [triggerFadeOut]);
+
+  useEffect(() => {
+    if (!isStageReady) return;
+
     const totalDuration = prefersReducedMotion ? SPLASH_REDUCED_MS : SPLASH_DURATION_MS;
     const fillDuration = Math.max(400, totalDuration - 260);
     const startTime = performance.now();
@@ -416,20 +494,12 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     rafId = requestAnimationFrame(updateProgress);
     const doneTimer = setTimeout(triggerFadeOut, totalDuration);
 
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
-        triggerFadeOut();
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       clearTimeout(doneTimer);
       if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-      window.removeEventListener('keydown', onKeyDown);
     };
-  }, [prefersReducedMotion, triggerFadeOut]);
+  }, [isStageReady, prefersReducedMotion, triggerFadeOut]);
 
   if (isDone) return null;
 
@@ -452,7 +522,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       }`}
     >
       {/* 1. Vollbild Canvas-2D Hyperspace-Warp + Partikel-Explosion */}
-      <HyperspaceExplosionCanvas reducedMotion={prefersReducedMotion} />
+      <HyperspaceExplosionCanvas reducedMotion={prefersReducedMotion} isReady={isStageReady} />
 
       {/* Subtiler Studio-Radialschein */}
       <div className="pointer-events-none fixed inset-0 z-0">
@@ -469,6 +539,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       </div>
 
       {/* 3. ZENTRUM: AKT 1 RAKETE -> AKT 2 EXPLOSION -> AKT 3 SPIELBOX -> AKT 4 SPIELE & TITEL */}
+      {isStageReady && (
       <div
         className={`relative z-20 my-auto flex flex-col items-center justify-center px-2 ${
           prefersReducedMotion ? '' : 'spielbox-stage-shake'
@@ -614,6 +685,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
           </svg>
         </div>
       </div>
+      )}
 
       {/* 4. Unterer Ladehorizont */}
       <div className="relative z-20 mx-auto flex w-full max-w-[1440px] flex-col gap-2">
