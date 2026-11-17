@@ -650,7 +650,7 @@ export function DrawAndGuessBoard({
   // A) FERNSEHER-ANSICHT
   if (isTv) {
     return (
-      <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] mx-auto flex items-center justify-center select-none">
+      <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white mx-auto flex items-center justify-center select-none">
         <canvas
           ref={canvasRef}
           width={640}
@@ -801,7 +801,7 @@ export function DrawAndGuessBoard({
                   ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
                   : undefined
               }
-              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] touch-none ${
+              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white touch-none ${
                 canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
               }`}
             >
@@ -984,7 +984,7 @@ export function DrawAndGuessBoard({
                   ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
                   : undefined
               }
-              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] ${
+              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white ${
                 canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
               }`}
             >
