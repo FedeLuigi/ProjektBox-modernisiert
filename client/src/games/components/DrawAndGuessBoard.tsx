@@ -12,7 +12,6 @@ import {
 import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
 import { BTN_PRIMARY_DISABLED, getGameTheme } from '../../styles/uiTokens';
-import { CrystalPanel } from '../../components/CrystalUI';
 import {
   playErrorSound,
   playMoveSound,
@@ -701,42 +700,46 @@ export function DrawAndGuessBoard({
     );
   }
 
-  // B) SMARTPHONE-ANSICHT: RUNDENENDE-SCREEN IM CRYSTAL-PANEL
+  // B) SMARTPHONE-ANSICHT: RUNDENENDE-SCREEN IM OFFENE-BÜHNE-STIL
   if (isRoundOver && !isTv) {
     return (
       <div className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center p-3 sm:p-4 animate-fade-in select-none">
-        <div className="w-full max-w-sm sm:max-w-md">
-          <CrystalPanel title="ROUND OVER" accent="rose" contentClassName="p-6 text-center flex flex-col items-center gap-4">
-            <span className="text-2xl sm:text-3xl font-arcade uppercase tracking-[0.14em] text-[#F8FAFC] bg-[#1E293B] border-[3px] border-[#0F172A] px-5 py-2 shadow-[inset_0_0_0_2px_#475569,0_4px_0_rgba(15,23,42,0.28)]">
-              {gameState?.secretWord}
+        <div className="w-full max-w-sm sm:max-w-md rounded-2xl border border-white/15 bg-[#0F172A]/85 p-6 text-center backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)] flex flex-col items-center gap-4">
+          <div className="border-b-2 border-[#F59E0B] px-3 pb-0.5">
+            <span className="font-arcade text-lg tracking-wider text-white uppercase">
+              RUNDE <span className="text-[#FBBF24]">BEENDET</span>
             </span>
+          </div>
 
-            <div className="w-full">
-              {gameState?.roundWinnerName ? (
-                <div className="inline-flex items-center gap-2 bg-[#059669] border-2 border-[#064E3B] px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-white">
-                  <span>{gameState.roundWinnerName} GUESSED IT!</span>
-                </div>
-              ) : (
-                <div className="inline-flex items-center gap-2 bg-[#E2E8F0] border-2 border-[#475569] px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-[#334155]">
-                  <span>NO ONE GUESSED IT</span>
-                </div>
-              )}
-            </div>
+          <span className="text-2xl sm:text-3xl font-arcade uppercase tracking-[0.14em] text-[#FDE68A] rounded-xl bg-white/[0.06] border border-white/15 px-5 py-2">
+            {gameState?.secretWord}
+          </span>
 
-            {transitionCountdown > 0 && (
-              <div className="w-full max-w-xs flex flex-col items-center gap-1.5 pt-1">
-                <div className="w-full h-2.5 bg-[#CBD5E1] border-2 border-[#334155] overflow-hidden">
-                  <div
-                    className="h-full bg-[#DB2777] transition-all duration-1000 ease-linear"
-                    style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
-                  />
-                </div>
-                <span className="text-xs font-arcade uppercase text-[#334155]">
-                  NEXT ROUND IN {transitionCountdown}S...
-                </span>
+          <div className="w-full">
+            {gameState?.roundWinnerName ? (
+              <div className="inline-flex items-center gap-2 rounded-lg bg-[#10B981]/20 border border-[#34D399]/50 px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-[#6EE7B7]">
+                <span>{gameState.roundWinnerName} HAT ES ERRATEN!</span>
+              </div>
+            ) : (
+              <div className="inline-flex items-center gap-2 rounded-lg bg-white/[0.06] border border-white/15 px-4 py-1.5 text-xs sm:text-sm font-arcade uppercase text-[#CBD5E1]">
+                <span>NIEMAND HAT ES ERRATEN</span>
               </div>
             )}
-          </CrystalPanel>
+          </div>
+
+          {transitionCountdown > 0 && (
+            <div className="w-full max-w-xs flex flex-col items-center gap-1.5 pt-1">
+              <div className="w-full h-2 rounded-full bg-white/15 overflow-hidden">
+                <div
+                  className="h-full bg-[#F59E0B] transition-all duration-1000 ease-linear"
+                  style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
+                />
+              </div>
+              <span className="text-xs font-arcade uppercase text-[#94A3B8]">
+                NÄCHSTE RUNDE IN {transitionCountdown}S...
+              </span>
+            </div>
+          )}
         </div>
       </div>
     );

@@ -62,14 +62,14 @@ export function ConnectFourBoard({
 
   return (
     <div className="flex h-full w-full max-w-5xl landscape:max-w-6xl flex-1 min-h-0 flex-col landscape:flex-row items-center justify-center gap-2 sm:gap-3 landscape:gap-5 px-1 sm:px-3 select-none">
-      {/* INTEGRIERTE GRAVITY-DUELL-LEISTE (Portrait: über dem Spielständer, Querformat: kompakt links neben dem Spielständer) */}
-      <div className="grid w-full max-w-[min(95vw,calc((100dvh-8.5rem)*1.16),44rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-1.5 sm:py-2 landscape:p-3 bg-[#0F1D3A]/95 border-[3px] border-[#3B82F6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
+      {/* INTEGRIERTE GRAVITY-DUELL-LEISTE IM OPEN-GALLERY-STIL */}
+      <div className="grid w-full max-w-[min(95vw,calc((100dvh-8.5rem)*1.16),44rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-1.5 sm:py-2 landscape:p-3 rounded-2xl bg-[#0F172A]/75 border border-white/15 backdrop-blur-md shadow-[0_14px_30px_rgba(0,0,0,0.4)] shrink-0">
         {/* Roter Spieler */}
         <div
-          className={`flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
+          className={`flex items-center landscape:justify-center gap-2 rounded-xl px-2.5 py-1.5 border transition-all ${
             !isGameOver && activeColor === 'red'
-              ? 'bg-[#881337] border-[#FB7185] shadow-[0_0_14px_rgba(244,63,94,0.5)] scale-[1.02]'
-              : 'bg-[#091224]/70 border-[#1E3A8A] opacity-65'
+              ? 'bg-[#881337]/90 border-[#FB7185] shadow-[0_0_14px_rgba(244,63,94,0.4)] scale-[1.02]'
+              : 'bg-white/[0.04] border-white/12 opacity-65'
           }`}
         >
           <span className="h-4 w-4 sm:h-5 sm:w-5 rounded-full bg-gradient-to-br from-[#FDA4AF] via-[#E11D48] to-[#9F1239] border-2 border-white shrink-0" />
@@ -96,10 +96,10 @@ export function ConnectFourBoard({
 
         {/* Gelber/Goldener Spieler */}
         <div
-          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
+          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 rounded-xl px-2.5 py-1.5 border transition-all ${
             !isGameOver && activeColor === 'yellow'
-              ? 'bg-[#78350F] border-[#FCD34D] shadow-[0_0_14px_rgba(251,191,36,0.5)] scale-[1.02]'
-              : 'bg-[#091224]/70 border-[#1E3A8A] opacity-65'
+              ? 'bg-[#78350F]/90 border-[#FCD34D] shadow-[0_0_14px_rgba(251,191,36,0.4)] scale-[1.02]'
+              : 'bg-white/[0.04] border-white/12 opacity-65'
           }`}
         >
           <span className="font-arcade text-xs sm:text-sm text-[#FEF3C7] uppercase truncate">
@@ -149,7 +149,7 @@ export function ConnectFourBoard({
           </div>
 
           {/* 3D Royal-Blue Spielständer */}
-          <div className="relative p-2.5 sm:p-4 landscape:p-1.5 bg-gradient-to-b from-[#1D4ED8] via-[#1E3A8A] to-[#172554] border-[4px] border-[#60A5FA] shadow-[inset_0_3px_0_rgba(255,255,255,0.28),0_16px_36px_rgba(0,0,0,0.65)] w-full">
+          <div className="relative p-2.5 sm:p-4 landscape:p-1.5 rounded-2xl bg-gradient-to-b from-[#1D4ED8]/90 via-[#1E3A8A]/95 to-[#172554]/95 border border-white/20 shadow-[0_24px_60px_rgba(0,0,0,0.55)] w-full">
             <div className="grid grid-cols-7 gap-1.5 sm:gap-2.5 landscape:gap-1">
               {Array.from({ length: 7 }).map((_, colIdx) => {
                 const landingRow = getLandingRow(colIdx);

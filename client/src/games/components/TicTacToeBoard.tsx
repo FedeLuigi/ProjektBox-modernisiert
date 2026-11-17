@@ -47,14 +47,14 @@ export function TicTacToeBoard({
 
   return (
     <div className="flex h-full w-full max-w-4xl landscape:max-w-5xl flex-1 min-h-0 flex-col landscape:flex-row items-center justify-center gap-2.5 sm:gap-4 landscape:gap-5 px-2 select-none">
-      {/* INTEGRIERTE CYBER-DUELL-LEISTE (Portrait: über dem Spielfeld, Querformat: kompakt links neben dem Spielfeld) */}
-      <div className="grid w-full max-w-[min(92vw,calc(100dvh-8.5rem),34rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-2 landscape:p-3 bg-[#0B192C]/90 border-[3px] border-[#1E3A5F] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0">
+      {/* INTEGRIERTE DUELL-LEISTE IM OPEN-GALLERY-STIL */}
+      <div className="grid w-full max-w-[min(92vw,calc(100dvh-8.5rem),34rem)] grid-cols-[1fr_auto_1fr] landscape:flex landscape:flex-col landscape:w-48 landscape:max-w-[13rem] items-center landscape:items-stretch gap-2 landscape:gap-2.5 px-3 py-2 landscape:p-3 rounded-2xl bg-[#0F172A]/75 border border-white/15 backdrop-blur-md shadow-[0_14px_30px_rgba(0,0,0,0.4)] shrink-0">
         {/* Spieler X (Cyan) */}
         <div
-          className={`flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
+          className={`flex items-center landscape:justify-center gap-2 rounded-xl px-2.5 py-1.5 border transition-all ${
             !isGameOver && activeSymbol === 'X'
-              ? 'bg-[#083344] border-[#22D3EE] shadow-[0_0_14px_rgba(34,211,238,0.45)] scale-[1.03]'
-              : 'bg-[#0F172A]/70 border-[#334155] opacity-65'
+              ? 'bg-[#083344]/90 border-[#22D3EE] shadow-[0_0_14px_rgba(34,211,238,0.35)] scale-[1.02]'
+              : 'bg-white/[0.04] border-white/12 opacity-65'
           }`}
         >
           <X className="h-4 w-4 sm:h-5 sm:w-5 stroke-[3.5] text-[#22D3EE] shrink-0" />
@@ -96,10 +96,10 @@ export function TicTacToeBoard({
 
         {/* Spieler O (Gold) */}
         <div
-          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 px-2.5 py-1 landscape:py-1.5 border-2 transition-all ${
+          className={`justify-self-end landscape:justify-self-auto flex items-center landscape:justify-center gap-2 rounded-xl px-2.5 py-1.5 border transition-all ${
             !isGameOver && activeSymbol === 'O'
-              ? 'bg-[#451A03] border-[#FBBF24] shadow-[0_0_14px_rgba(251,191,36,0.45)] scale-[1.03]'
-              : 'bg-[#0F172A]/70 border-[#334155] opacity-65'
+              ? 'bg-[#451A03]/90 border-[#FBBF24] shadow-[0_0_14px_rgba(251,191,36,0.35)] scale-[1.02]'
+              : 'bg-white/[0.04] border-white/12 opacity-65'
           }`}
         >
           <span className="font-arcade text-xs sm:text-sm text-[#FEF3C7] uppercase truncate">
@@ -109,9 +109,9 @@ export function TicTacToeBoard({
         </div>
       </div>
 
-      {/* GROSSFLÄCHIGE CYBER-ARENA (3×3 NEON-MATRIX) */}
+      {/* GROSSFLÄCHIGE OPEN-GALLERY ARENA (3×3) */}
       <div className="flex-1 landscape:flex-none min-h-0 w-full landscape:w-auto flex items-center justify-center">
-        <div className="relative grid grid-cols-3 gap-2.5 sm:gap-4 landscape:gap-2 p-3 sm:p-5 landscape:p-2.5 bg-gradient-to-br from-[#0F243C] via-[#0B192C] to-[#07111E] border-[4px] border-[#06B6D4] shadow-[inset_0_0_24px_rgba(6,182,212,0.22),0_16px_36px_rgba(0,0,0,0.6)] w-[min(92vw,calc(100dvh-9rem),34rem)] landscape:w-[min(52vw,calc(100dvh-4.4rem),21rem)] aspect-square">
+        <div className="relative grid grid-cols-3 gap-2.5 sm:gap-4 landscape:gap-2 p-3 sm:p-5 landscape:p-2.5 rounded-2xl bg-[#0F172A]/75 border border-white/15 backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.5)] w-[min(92vw,calc(100dvh-9rem),34rem)] landscape:w-[min(52vw,calc(100dvh-4.4rem),21rem)] aspect-square">
           {board.map((cell, idx) => {
             const isWinningCell = winningLine?.includes(idx);
             const canClick = isMyTurn && !isGameOver && !disabled && cell === null;
@@ -125,7 +125,7 @@ export function TicTacToeBoard({
                 onClick={() => handleCellClick(idx)}
                 onMouseEnter={() => setHoveredIdx(idx)}
                 onMouseLeave={() => setHoveredIdx(null)}
-                className={`group relative flex items-center justify-center transition-all duration-150 border-[3px] overflow-hidden ${
+                className={`group relative flex items-center justify-center rounded-xl transition-all duration-150 border overflow-hidden ${
                   cell === null
                     ? canClick
                       ? 'bg-[#132A46]/85 hover:bg-[#19385C] border-[#1E4976] hover:border-[#38BDF8] active:scale-95 cursor-pointer shadow-[inset_0_2px_0_rgba(255,255,255,0.08)]'

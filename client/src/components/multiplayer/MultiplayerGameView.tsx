@@ -1,19 +1,12 @@
 import { useEffect, useState } from 'react';
-import { WifiOff } from 'lucide-react';
-import { GAMES } from '../../data/games';
+import { ArrowLeft, Loader2, RotateCcw, WifiOff } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { useUserProfile } from '../../utils/userProfile';
 import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
-import {
-  CrystalButton,
-  CrystalPanel,
-  CrystalReadout,
-  CrystalStatBar,
-} from '../CrystalUI';
-import { getGameWorldStage } from '../../styles/uiTokens';
+import { OpenButton } from '../OpenSubpageUI';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -32,7 +25,6 @@ export function MultiplayerGameView({
   const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
 
   const currentUser = useUserProfile();
-  const gameAccent = GAMES.find((g) => g.id === lobby.gameId)?.accent ?? 'emerald';
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const myPlayer =
     activePlayers.find((p) => p.id === currentUser.id) ||
@@ -123,113 +115,121 @@ export function MultiplayerGameView({
   const isDraw = gameState?.status === 'draw';
 
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
-  const worldStage = getGameWorldStage(lobby.gameId);
 
   return (
-    <div
-      className={`fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-gradient-to-br ${worldStage.bgGradient} text-[#1E293B] select-none animate-fade-in`}
-    >
-      <div
-        className={`pointer-events-none absolute -top-24 -left-24 h-80 w-80 rounded-full blur-3xl ${worldStage.glowPrimary}`}
-      />
-      <div
-        className={`pointer-events-none absolute -bottom-24 -right-24 h-80 w-80 rounded-full blur-3xl ${worldStage.glowSecondary}`}
-      />
-      <BackgroundCometCanvas opacity={0.45} />
+    <div className="fixed inset-0 h-full min-h-dvh z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in">
+      <BackgroundCometCanvas opacity={0.85} />
 
       <div
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between pt-[calc(6px+env(safe-area-inset-top,0px))] pb-[calc(6px+env(safe-area-inset-bottom,0px))] pl-[max(0.5rem,env(safe-area-inset-left,0px))] pr-[max(0.5rem,env(safe-area-inset-right,0px))] sm:px-4 lg:px-6"
+        className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(8px+env(safe-area-inset-top,0px))] pb-[calc(8px+env(safe-area-inset-bottom,0px))] px-4 sm:px-6 lg:px-8"
       >
-        {/* 1. CRYSTAL TOP-BAR: EXIT links, Spielstatus Mitte, Code rechts */}
-        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-1.5">
+        {/* 1. OPEN-GALLERY TOP-BAR */}
+        <header className="grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 border-b border-white/15 pb-2">
           <div className="justify-self-start">
-            <CrystalButton size="sm" variant="secondary" tilt="left" onClick={onLeave}>
-              EXIT
-            </CrystalButton>
+            <OpenButton size="sm" variant="secondary" onClick={onLeave}>
+              <ArrowLeft className="h-3.5 w-3.5" />
+              <span>EXIT</span>
+            </OpenButton>
           </div>
 
           {isDrawAndGuess ? (
-            <div className="justify-self-center flex items-center gap-2 border-[3px] border-[#334155] bg-[#F8FAFC] px-3 py-1 shadow-[inset_0_2px_0_#FFFFFF,0_3px_0_rgba(15,23,42,0.2)]">
+            <div className="justify-self-center flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-1 backdrop-blur-md">
               <Avatar config={currentUser.avatar} size={22} />
-              <span className="font-arcade text-sm text-[#1E293B]">
+              <span className="font-arcade text-sm text-white">
                 {gameState?.scores?.[currentUser.id] || 0} : {gameState?.scores?.[opponent?.id || ''] || 0}
               </span>
               <Avatar config={opponent?.avatar || ({} as any)} size={22} />
             </div>
           ) : (
-            <div className="justify-self-center">
-              <CrystalReadout
-                variant={isMyTurn ? 'emerald' : 'neutral'}
-                value={isMyTurn ? 'DEIN ZUG' : `${opponent?.name || 'MITSPIELER'}`}
-              />
+            <div
+              className={`justify-self-center rounded-lg border px-3 py-1 font-arcade text-xs tracking-wider uppercase ${
+                isMyTurn
+                  ? 'border-[#34D399]/50 bg-[#10B981]/20 text-[#6EE7B7]'
+                  : 'border-white/15 bg-white/[0.05] text-[#CBD5E1]'
+              }`}
+            >
+              {isMyTurn ? 'DEIN ZUG' : `${opponent?.name || 'MITSPIELER'}`}
             </div>
           )}
 
-          <div className="justify-self-end">
-            <CrystalStatBar type="coin" value={lobby.code} />
+          <div className="justify-self-end rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
+            {lobby.code}
           </div>
         </header>
 
         {errorMsg && (
-          <div className="font-arcade mx-auto my-1 max-w-sm border-2 border-[#7F1D1D] bg-[#EF4444] px-3 py-1.5 text-center text-xs text-white uppercase">
+          <div className="font-arcade mx-auto my-1 max-w-sm rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-1.5 text-center text-xs text-[#FECDD3] uppercase">
             {errorMsg}
           </div>
         )}
 
         {disconnectedOpponent && (
-          <div className="font-arcade mx-auto my-1 flex items-center gap-2 border-2 border-[#92400E] bg-[#FEF3C7] px-3.5 py-2 text-center text-xs text-[#78350F] uppercase animate-pulse">
+          <div className="font-arcade mx-auto my-1 flex items-center gap-2 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3.5 py-2 text-center text-xs text-[#FDE68A] uppercase animate-pulse">
             <WifiOff className="h-4 w-4 shrink-0" />
             <span>WARTE AUF {disconnectedOpponent}...</span>
           </div>
         )}
 
-        {/* 2. MITTE: ERGEBNIS-PANEL ODER SPIELFELD */}
+        {/* 2. MITTE: OFFENE ERGEBNIS-BÜHNE ODER SPIELFELD */}
         {isGameOver ? (
-          <main className="my-auto mx-auto flex w-full flex-1 min-h-0 items-center justify-center overflow-y-auto px-2 pt-7 pb-4 landscape:py-1">
-            <div className="my-auto w-full max-w-md landscape:max-w-lg animate-fade-in">
-              <CrystalPanel
-                title={isWinner ? 'SIEG!' : isDraw ? 'UNENTSCHIEDEN!' : 'SPIEL BEENDET'}
-                accent={isWinner ? 'emerald' : gameAccent}
-                contentClassName="gap-3.5 landscape:gap-2 py-6 landscape:py-3"
-              >
-                <div className="grid grid-cols-1 landscape:grid-cols-2 gap-3 landscape:gap-2.5 w-full px-2">
-                  <CrystalReadout
-                    label="PUNKTE"
-                    value={String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
-                  />
-                  <CrystalReadout
-                    label={isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
-                    value={
-                      isDrawAndGuess && gameState?.secretWord
-                        ? gameState.secretWord
-                        : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`
-                    }
-                  />
+          <main className="my-auto mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-2 py-4">
+            <div className="my-auto flex w-full flex-col items-center gap-6 text-center animate-fade-in">
+              <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+                <h2 className="font-arcade text-2xl sm:text-4xl tracking-wider text-white uppercase">
+                  {isWinner ? (
+                    <>
+                      SIEG<span className="text-[#34D399]">!</span>
+                    </>
+                  ) : isDraw ? (
+                    'UNENTSCHIEDEN!'
+                  ) : (
+                    'SPIEL BEENDET'
+                  )}
+                </h2>
+              </div>
+
+              <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
+                  <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+                    PUNKTE
+                  </span>
+                  <span className="font-arcade mt-1 text-2xl text-[#FDE68A]">
+                    {String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
+                  </span>
                 </div>
 
-                <div className="mt-2 landscape:mt-1 flex w-full flex-col landscape:flex-row items-center gap-2.5 landscape:gap-2 px-2">
-                  <CrystalButton
-                    fullWidth
-                    size="md"
-                    variant={gameAccent}
-                    tilt="left"
-                    disabled={hasVotedRematch}
-                    onClick={handleRematch}
-                    className="landscape:h-9 landscape:text-xs"
-                  >
-                    {hasVotedRematch ? 'WARTE AUF MITSPIELER...' : 'REVANCHE'}
-                  </CrystalButton>
-                  <CrystalButton
-                    size="md"
-                    variant="secondary"
-                    tilt="right"
-                    onClick={onLeave}
-                    className="min-w-[130px] landscape:h-9 landscape:text-xs"
-                  >
-                    ZURÜCK
-                  </CrystalButton>
+                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
+                  <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+                    {isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
+                  </span>
+                  <span className="font-arcade mt-1 text-lg sm:text-xl text-white truncate max-w-full">
+                    {isDrawAndGuess && gameState?.secretWord
+                      ? gameState.secretWord
+                      : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`}
+                  </span>
                 </div>
-              </CrystalPanel>
+              </div>
+
+              <div className="flex w-full max-w-sm flex-col sm:flex-row items-center gap-3">
+                <OpenButton
+                  fullWidth
+                  size="lg"
+                  variant="primary"
+                  disabled={hasVotedRematch}
+                  onClick={handleRematch}
+                >
+                  <RotateCcw className="h-4 w-4" />
+                  <span>{hasVotedRematch ? 'WARTE...' : 'REVANCHE'}</span>
+                </OpenButton>
+                <OpenButton
+                  size="lg"
+                  variant="secondary"
+                  onClick={onLeave}
+                  className="w-full sm:w-auto sm:min-w-[130px]"
+                >
+                  ZURÜCK
+                </OpenButton>
+              </div>
             </div>
           </main>
         ) : (
@@ -248,11 +248,12 @@ export function MultiplayerGameView({
                 isTvMode={lobby.isTvMode}
               />
             ) : (
-              <CrystalPanel title="LOADING..." accent={gameAccent} contentClassName="py-8">
-                <span className="font-arcade text-sm text-[#334155] uppercase">
-                  PREPARING BOARD...
+              <div className="flex flex-col items-center gap-3 py-8">
+                <Loader2 className="h-7 w-7 animate-spin text-[#FBBF24]" />
+                <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
+                  SPIELFELD WIRD GELADEN...
                 </span>
-              </CrystalPanel>
+              </div>
             )}
           </main>
         )}
