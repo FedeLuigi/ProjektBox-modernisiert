@@ -1,55 +1,51 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Palette, Tv, type LucideIcon } from 'lucide-react';
-import { IslandBackground } from './IslandBackground';
+import { Palette, Sparkles, Tv, Users } from 'lucide-react';
+import { BackgroundCometCanvas } from './BackgroundCometCanvas';
 
 interface SplashScreenProps {
   onFinish?: () => void;
 }
 
-const SPLASH_DURATION_MS = 2200;
-const SPLASH_REDUCED_MS = 950;
-const FADE_OUT_MS = 320;
+const SPLASH_DURATION_MS = 2400;
+const SPLASH_REDUCED_MS = 900;
+const FADE_OUT_MS = 360;
 
-interface PartyIntroBadge {
-  id: string;
-  label: string;
-  icon: LucideIcon;
-  outerBg: string;
-  innerBg: string;
-  facetBg: string;
-  borderColor: string;
-  positionClass: string;
-  tiltClass: string;
-  clipPath: string;
-  delayMs: number;
-}
-
-const PARTY_INTRO_ICONS: PartyIntroBadge[] = [
+const STAGE_PILLS = [
   {
     id: 'draw',
-    label: 'Zeichnen & Raten',
+    label: 'ZEICHNEN & RATEN',
     icon: Palette,
-    outerBg: '#831843',
-    innerBg: '#DB2777',
-    facetBg: '#EC4899',
-    borderColor: '#FBCFE8',
-    positionClass: '-bottom-5 -left-3 sm:-bottom-7 sm:-left-8',
-    tiltClass: 'rotate-8',
-    clipPath: 'polygon(0% 6%, 95% 0%, 100% 94%, 6% 100%)',
-    delayMs: 340,
+    accent: 'border-[#F59E0B]/40 bg-[#F59E0B]/10 text-[#FDE68A]',
+    iconColor: 'text-[#FBBF24]',
+    cornerClass: 'sm:top-[18%] sm:left-[8%] lg:left-[13%]',
+    delayMs: 320,
   },
   {
     id: 'tv',
-    label: 'TV & Controller',
+    label: 'TV & CONTROLLER',
     icon: Tv,
-    outerBg: '#064E3B',
-    innerBg: '#059669',
-    facetBg: '#10B981',
-    borderColor: '#A7F3D0',
-    positionClass: '-bottom-5 -right-3 sm:-bottom-7 sm:-right-8',
-    tiltClass: '-rotate-8',
-    clipPath: 'polygon(6% 0%, 100% 6%, 94% 100%, 0% 94%)',
-    delayMs: 470,
+    accent: 'border-[#38BDF8]/40 bg-[#38BDF8]/10 text-[#BAE6FD]',
+    iconColor: 'text-[#38BDF8]',
+    cornerClass: 'sm:top-[20%] sm:right-[8%] lg:right-[13%]',
+    delayMs: 460,
+  },
+  {
+    id: 'multi',
+    label: 'ECHTZEIT-LOBBY',
+    icon: Users,
+    accent: 'border-[#34D399]/40 bg-[#10B981]/10 text-[#A7F3D0]',
+    iconColor: 'text-[#34D399]',
+    cornerClass: 'sm:bottom-[22%] sm:right-[10%] lg:right-[16%]',
+    delayMs: 600,
+  },
+  {
+    id: 'spark',
+    label: 'OPEN GALLERY',
+    icon: Sparkles,
+    accent: 'border-white/20 bg-white/[0.06] text-white/90',
+    iconColor: 'text-[#FDE68A]',
+    cornerClass: 'sm:bottom-[24%] sm:left-[10%] lg:left-[16%]',
+    delayMs: 720,
   },
 ];
 
@@ -80,15 +76,14 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   useEffect(() => {
     const totalDuration = prefersReducedMotion ? SPLASH_REDUCED_MS : SPLASH_DURATION_MS;
-    const fillDuration = Math.max(400, totalDuration - 240);
+    const fillDuration = Math.max(400, totalDuration - 260);
     const startTime = performance.now();
     let rafId: number | null = null;
 
     const updateProgress = (now: number) => {
       const elapsed = now - startTime;
       const ratio = Math.min(1, elapsed / fillDuration);
-      // Leichtes Ease-Out für ein organisches Arcade-Ladegefühl
-      const eased = 1 - Math.pow(1 - ratio, 2.1);
+      const eased = 1 - Math.pow(1 - ratio, 2.3);
       const nextPct = Math.min(100, Math.round(eased * 100));
       setProgress(nextPct);
 
@@ -117,149 +112,157 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   if (isDone) return null;
 
-  const statusText =
-    progress < 48
-      ? 'SPIELE WERDEN GELADEN...'
-      : progress < 88
-        ? 'MULTIPLAYER-ARENA STARTET...'
-        : 'LOBBY-SYSTEM BEREIT!';
-
   const isReadyState = progress >= 88;
+  const statusText =
+    progress < 42
+      ? 'BÜHNE WIRD VORBEREITET...'
+      : progress < 88
+        ? 'SPIELWELT & LOBBY STARTEN...'
+        : 'BEREIT ZUM SPIELEN';
 
   return (
     <div
       onClick={triggerFadeOut}
-      className={`fixed inset-0 min-h-dvh z-50 flex items-center justify-center overflow-hidden bg-[#1B2B40] select-none cursor-pointer transition-[opacity,transform] duration-300 ease-out ${
-        isFadingOut ? 'opacity-0 scale-105 pointer-events-none' : 'opacity-100 scale-100'
-      }`}
       aria-label="ProjektBox wird gestartet"
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#1B2B40] text-white select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out pt-[calc(16px+env(safe-area-inset-top,0px))] pb-[calc(18px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
+        isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
+      }`}
     >
-      <IslandBackground />
+      {/* 1. Animierter Geometrie- & Kometen-Hintergrund über den gesamten Bildschirm */}
+      <BackgroundCometCanvas opacity={0.95} />
 
-      <div className="relative z-10 flex w-full max-w-lg flex-col items-center justify-center gap-10 sm:gap-12 px-6 py-8">
-        {/* 1. ZENTRALES "PROJEKT BOX" LOGO UMGEBEN VON DEN 4 SPIEL-ICONS */}
-        <div className="relative flex flex-col items-center justify-center px-7 py-6 sm:px-10 sm:py-7">
-          {/* Charakteristische Spiel-Icons mit gestaffelter, federnder Pop-in-Animation */}
-          {PARTY_INTRO_ICONS.map((badge) => {
-            const Icon = badge.icon;
+      {/* 2. Vollbild-Lichtatmosphäre & Konzentrische Orbit-Ringe */}
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -top-[20vh] left-1/2 h-[65vh] w-[95vw] -translate-x-1/2 rounded-full bg-[#F59E0B]/[0.11] blur-[120px]" />
+        <div className="absolute -bottom-[22vh] left-1/2 h-[60vh] w-[90vw] -translate-x-1/2 rounded-full bg-[#10B981]/[0.10] blur-[120px]" />
+
+        {/* Konzentrische Vollbild-Ringe */}
+        <div
+          className={`absolute top-1/2 left-1/2 h-[56vmin] w-[56vmin] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#F59E0B]/20 ${
+            prefersReducedMotion ? '' : 'splash-ring'
+          }`}
+        />
+        <div
+          style={prefersReducedMotion ? undefined : { animationDelay: '140ms' }}
+          className={`absolute top-1/2 left-1/2 h-[96vmin] w-[96vmin] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/[0.08] ${
+            prefersReducedMotion ? '' : 'splash-ring'
+          }`}
+        />
+        <div
+          style={prefersReducedMotion ? undefined : { animationDelay: '280ms' }}
+          className={`absolute top-1/2 left-1/2 h-[138vmin] w-[138vmin] -translate-x-1/2 -translate-y-1/2 rounded-full border border-[#38BDF8]/[0.09] ${
+            prefersReducedMotion ? '' : 'splash-ring'
+          }`}
+        />
+
+        {/* Vollbild-Lichtlinien (Horizont-Sweep) */}
+        <div
+          className={`absolute top-1/2 inset-x-0 h-px -translate-y-16 bg-gradient-to-r from-transparent via-[#F59E0B]/55 to-transparent ${
+            prefersReducedMotion ? '' : 'splash-beam'
+          }`}
+        />
+        <div
+          style={prefersReducedMotion ? undefined : { animationDelay: '180ms' }}
+          className={`absolute top-1/2 inset-x-0 h-px translate-y-16 bg-gradient-to-r from-transparent via-[#38BDF8]/40 to-transparent ${
+            prefersReducedMotion ? '' : 'splash-beam'
+          }`}
+        />
+      </div>
+
+      {/* 3. Schwebende Feature-Konstellation im Vollbild (Desktop/Tablet) */}
+      <div className="pointer-events-none fixed inset-0 hidden sm:block z-10">
+        {STAGE_PILLS.map((pill) => {
+          const Icon = pill.icon;
+          return (
+            <div
+              key={pill.id}
+              style={prefersReducedMotion ? undefined : { animationDelay: `${pill.delayMs}ms` }}
+              className={`absolute ${pill.cornerClass} flex items-center gap-2 rounded-full border px-3.5 py-1.5 backdrop-blur-md shadow-[0_12px_30px_rgba(0,0,0,0.3)] ${pill.accent} ${
+                prefersReducedMotion ? '' : 'splash-pill'
+              }`}
+            >
+              <Icon className={`h-3.5 w-3.5 shrink-0 ${pill.iconColor}`} />
+              <span className="font-arcade text-[11px] tracking-wider uppercase">{pill.label}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* 4. Obere Dezente Statuszeile */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[1440px] items-center justify-between text-[10px] sm:text-xs font-arcade tracking-[0.2em] text-white/55 uppercase">
+        <span className="inline-flex items-center gap-2">
+          <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_10px_#34D399] animate-pulse" />
+          <span>LIVE ARENA</span>
+        </span>
+        <span className="text-white/45">TIPPEN ZUM ÜBERSPRINGEN</span>
+      </div>
+
+      {/* 5. Zentrale Kinetische Wortmarke im Open-Gallery-Stil */}
+      <div className="relative z-10 my-auto flex flex-col items-center justify-center text-center px-2">
+        <span className="font-arcade mb-2 sm:mb-3 text-[10px] sm:text-xs tracking-[0.28em] text-[#FDE68A]/85 uppercase">
+          PARTY &amp; MULTIPLAYER SUITE
+        </span>
+
+        <h1
+          className={`font-arcade text-5xl xs:text-6xl sm:text-7xl md:text-8xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_12px_32px_rgba(0,0,0,0.55)] ${
+            prefersReducedMotion ? '' : 'splash-word'
+          }`}
+        >
+          PROJEKT <span className="text-[#FBBF24]">BOX</span>
+        </h1>
+
+        <div
+          className={`mt-3 sm:mt-4 h-[3px] w-48 sm:w-80 md:w-96 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_18px_#F59E0B] ${
+            prefersReducedMotion ? '' : 'splash-underline'
+          }`}
+        />
+
+        {/* Kompakte Feature-Pills auf Smartphones */}
+        <div className="mt-5 flex sm:hidden flex-wrap items-center justify-center gap-2">
+          {STAGE_PILLS.slice(0, 2).map((pill) => {
+            const Icon = pill.icon;
             return (
               <div
-                key={badge.id}
-                aria-hidden="true"
-                className={`pointer-events-none absolute z-20 ${badge.positionClass} ${
-                  prefersReducedMotion ? '' : 'pb-icon-pop'
+                key={pill.id}
+                style={prefersReducedMotion ? undefined : { animationDelay: `${pill.delayMs}ms` }}
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1 backdrop-blur-md ${pill.accent} ${
+                  prefersReducedMotion ? '' : 'splash-pill'
                 }`}
-                style={
-                  prefersReducedMotion
-                    ? undefined
-                    : { animationDelay: `${badge.delayMs}ms` }
-                }
               >
-                <div
-                  style={{
-                    clipPath: badge.clipPath,
-                    backgroundColor: badge.outerBg,
-                  }}
-                  className={`p-[3px] shadow-[0_6px_0_rgba(15,23,42,0.55)] ${badge.tiltClass}`}
-                >
-                  <div
-                    style={{
-                      clipPath: badge.clipPath,
-                      backgroundColor: badge.innerBg,
-                      borderColor: badge.borderColor,
-                    }}
-                    className="relative flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center overflow-hidden border-t-2 border-l-2 text-white"
-                  >
-                    <div
-                      style={{
-                        backgroundColor: badge.facetBg,
-                        clipPath: 'polygon(0 0, 58% 0, 36% 100%, 0 100%)',
-                      }}
-                      className="pointer-events-none absolute inset-0"
-                    />
-                    <Icon className="relative z-10 h-6 w-6 sm:h-7 sm:w-7 stroke-[2.5] drop-shadow-[0_2px_0_rgba(15,23,42,0.55)]" />
-                  </div>
-                </div>
+                <Icon className={`h-3 w-3 shrink-0 ${pill.iconColor}`} />
+                <span className="font-arcade text-[10px] tracking-wider uppercase">
+                  {pill.label}
+                </span>
               </div>
             );
           })}
+        </div>
+      </div>
 
-          {/* Großes, leicht angeschrägtes "PROJEKT BOX" Hauptlogo im Header-Tab-Stil */}
-          <div className="relative z-10 -rotate-2 transform transition-transform">
-            <div
-              style={{ clipPath: 'polygon(0% 0%, 100% 5%, 95% 100%, 5% 100%)' }}
-              className="bg-[#0F172A] p-[4px] sm:p-[5px] shadow-[0_12px_28px_rgba(0,0,0,0.5),0_7px_0_rgba(15,23,42,0.7)]"
-            >
-              <div
-                style={{ clipPath: 'polygon(0% 0%, 100% 5%, 95% 100%, 5% 100%)' }}
-                className="relative flex flex-col items-center justify-center overflow-hidden border-[3px] border-[#F59E0B] bg-[#1E293B] px-8 py-4 sm:px-12 sm:py-5"
-              >
-                {/* Schräge Kristall-Facette im Hintergrund */}
-                <div
-                  className="pointer-events-none absolute inset-0 bg-[#334155]/75"
-                  style={{ clipPath: 'polygon(0 0, 54% 0, 68% 100%, 0 100%)' }}
-                />
-
-                {/* Obere Glanzkante */}
-                <div className="pointer-events-none absolute inset-x-3 top-1.5 h-1 bg-[#FDE68A]/35" />
-
-                <h1 className="font-arcade relative z-10 text-4xl sm:text-6xl tracking-wider text-[#F8FAFC] uppercase drop-shadow-[0_4px_0_rgba(15,23,42,0.9)]">
-                  PROJEKT <span className="text-[#FBBF24]">BOX</span>
-                </h1>
-
-                <span
-                  style={{ clipPath: 'polygon(2% 0%, 100% 6%, 98% 100%, 0% 94%)' }}
-                  className="font-arcade relative z-10 mt-1.5 border border-[#F59E0B]/60 bg-[#0F172A]/90 px-3 py-0.5 text-[10px] sm:text-xs tracking-[0.2em] text-[#FDE68A] uppercase"
-                >
-                  PARTY &amp; MULTIPLAYER ARENA
-                </span>
-              </div>
-            </div>
-          </div>
+      {/* 6. Unterer Vollbild-Ladehorizont */}
+      <div className="relative z-10 mx-auto flex w-full max-w-[1440px] flex-col gap-2.5">
+        <div className="flex items-center justify-between gap-3">
+          <span
+            className={`font-arcade text-[11px] sm:text-xs tracking-[0.16em] uppercase transition-colors duration-200 ${
+              isReadyState ? 'text-[#6EE7B7]' : 'text-[#CBD5E1]'
+            }`}
+          >
+            {statusText}
+          </span>
+          <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A]">
+            {progress}%
+          </span>
         </div>
 
-        {/* 2. SCHRÄG ANGESCHNITTENER COMIC-ARCADE LADEBALKEN & DEUTSCHE STATUSTEXTE */}
-        <div className="flex w-full max-w-[310px] sm:max-w-[360px] flex-col items-center gap-3">
-          {/* Schräger Ladebalken mit Lila -> Orange -> Grün Verlauf */}
+        <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
           <div
-            style={{ clipPath: 'polygon(1.5% 0%, 100% 8%, 98.5% 100%, 0% 92%)' }}
-            className="w-full bg-[#0F172A] p-[4px] shadow-[0_6px_0_rgba(15,23,42,0.55)]"
+            style={{
+              width: `${progress}%`,
+              background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 55%, #10B981 100%)',
+            }}
+            className="relative h-full rounded-full transition-[width] duration-75 ease-out shadow-[0_0_16px_rgba(245,158,11,0.75)]"
           >
-            <div
-              style={{ clipPath: 'polygon(1.5% 0%, 100% 8%, 98.5% 100%, 0% 92%)' }}
-              className="relative h-6 sm:h-7 w-full overflow-hidden border-2 border-[#334155] bg-[#1E293B]"
-            >
-              {/* Farbiger Fortschrittsbalken (Lila -> Orange -> Grün) */}
-              <div
-                style={{
-                  width: `${progress}%`,
-                  background:
-                    'linear-gradient(90deg, #7C3AED 0%, #EC4899 34%, #F59E0B 68%, #10B981 100%)',
-                }}
-                className="relative h-full transition-[width] duration-75 ease-out"
-              >
-                {/* Obere Kristall-Glanzfacette im Balken */}
-                <div className="pointer-events-none absolute inset-x-0 top-0 h-1/2 bg-white/30" />
-              </div>
-
-              {/* Prozentanzeige mittig im Ladebalken */}
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
-                <span className="font-arcade text-xs sm:text-sm tracking-widest text-white drop-shadow-[0_1.5px_0_rgba(15,23,42,0.95)]">
-                  {progress}%
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Wechselnder deutscher Multiplayer-Statustext ohne Überlappung */}
-          <div className="min-h-[1.5rem] flex items-center justify-center text-center">
-            <span
-              className={`font-arcade text-xs sm:text-sm tracking-[0.14em] uppercase drop-shadow-[0_2px_0_rgba(15,23,42,0.9)] transition-colors duration-200 ${
-                isReadyState ? 'text-[#6EE7B7]' : 'text-[#F8FAFC]'
-              }`}
-            >
-              {statusText}
-            </span>
+            <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_#FFFFFF]" />
           </div>
         </div>
       </div>
