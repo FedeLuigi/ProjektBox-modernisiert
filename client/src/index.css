@@ -489,6 +489,114 @@ body::-webkit-scrollbar,
   animation: boxFloorGlow 0.7s ease-out 0.15s both;
 }
 
+/* ─── Zusätzliche Startanimations-Techniken (3D Cube, SVG Stroke, Shutter, Kinetic, Liquid) ─── */
+@keyframes cubeSpinUnfold {
+  0% {
+    opacity: 0;
+    transform: rotateX(-38deg) rotateY(-150deg) scale(0.5);
+  }
+  55% {
+    opacity: 1;
+    transform: rotateX(-16deg) rotateY(12deg) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: rotateX(-18deg) rotateY(-24deg) scale(1);
+  }
+}
+
+@keyframes svgLaserDraw {
+  0% {
+    stroke-dashoffset: 620;
+    opacity: 0.3;
+  }
+  65% {
+    opacity: 1;
+  }
+  100% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
+@keyframes shutterSliceLeft {
+  0% {
+    clip-path: polygon(0 0, 55% 0, 45% 100%, 0 100%);
+    transform: translateX(0);
+  }
+  100% {
+    clip-path: polygon(0 0, 55% 0, 45% 100%, 0 100%);
+    transform: translateX(-105%);
+  }
+}
+
+@keyframes shutterSliceRight {
+  0% {
+    clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%);
+    transform: translateX(0);
+  }
+  100% {
+    clip-path: polygon(55% 0, 100% 0, 100% 100%, 45% 100%);
+    transform: translateX(105%);
+  }
+}
+
+@keyframes kineticLetterIn {
+  0% {
+    opacity: 0;
+    transform: translateY(36px) rotateX(-85deg) scale(0.75);
+  }
+  65% {
+    opacity: 1;
+    transform: translateY(-5px) rotateX(10deg) scale(1.06);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) rotateX(0deg) scale(1);
+  }
+}
+
+@keyframes liquidBlobOrbit {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(28px, -22px) scale(1.12);
+  }
+  66% {
+    transform: translate(-24px, 18px) scale(0.92);
+  }
+}
+
+.splash-cube-3d {
+  transform-style: preserve-3d;
+  animation: cubeSpinUnfold 1.15s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-svg-draw {
+  stroke-dasharray: 620;
+  animation: svgLaserDraw 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-shutter-left {
+  animation: shutterSliceLeft 0.85s cubic-bezier(0.77, 0, 0.175, 1) 0.18s both;
+}
+
+.splash-shutter-right {
+  animation: shutterSliceRight 0.85s cubic-bezier(0.77, 0, 0.175, 1) 0.18s both;
+}
+
+.splash-letter {
+  display: inline-block;
+  transform-origin: bottom center;
+  animation: kineticLetterIn 0.72s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.splash-liquid-blob {
+  animation: liquidBlobOrbit 4.2s ease-in-out infinite;
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    SMARTPHONE QUERFORMAT / MOBILE LANDSCAPE (max-height: 540px und orientation: landscape)
    PWA Safe-Area & volle Viewport-Breite (100%), 2 volle Horizontal-Cards nebeneinander,

@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { GAMES, type Game } from './data/games';
 import { SplashScreen } from './components/SplashScreen';
+import { SplashDesignModal } from './components/splash/SplashDesignModal';
+import {
+  getSavedSplashVariant,
+  type SplashVariantId,
+} from './components/splash/splashVariants';
 import { SettingsSheet } from './components/SettingsSheet';
 import { AvatarCustomizerModal } from './components/AvatarCustomizerModal';
 import { IslandBackground } from './components/IslandBackground';
@@ -44,6 +49,8 @@ export function App() {
     }
     return true;
   });
+  const [showSplashDesigns, setShowSplashDesigns] = useState(false);
+  const [splashVariant, setSplashVariant] = useState<SplashVariantId>(() => getSavedSplashVariant());
 
   const [isJoiningDeepLink, setIsJoiningDeepLink] = useState(Boolean(initialDeepLinkCode));
   const [showTvJoinModal, setShowTvJoinModal] = useState(false);
@@ -301,6 +308,10 @@ export function App() {
       }
       if (showTvJoinModal) {
         if (e.key === 'Escape') setShowTvJoinModal(false);
+        return;
+      }
+      if (showSplashDesigns) {
+        if (e.key === 'Escape') setShowSplashDesigns(false);
       }
     };
 
@@ -327,6 +338,7 @@ export function App() {
     showAvatarModal,
     multiplayerGame,
     showTvJoinModal,
+    showSplashDesigns,
     handleSplashFinish,
   ]);
 
@@ -335,6 +347,7 @@ export function App() {
     isJoiningDeepLink ||
     Boolean(multiplayerGame) ||
     showTvJoinModal ||
+    showSplashDesigns ||
     showSettings ||
     showAvatarModal;
 
@@ -385,6 +398,10 @@ export function App() {
             setTvJoinError(null);
             setShowTvJoinModal(true);
           }}
+          onOpenSplashDesigns={() => {
+            triggerHaptic();
+            setShowSplashDesigns(true);
+          }}
           onOpenSettings={() => {
             triggerHaptic();
             setShowSettings(true);
@@ -433,6 +450,14 @@ export function App() {
         onJoin={joinByCode}
         isJoining={isJoiningLobby}
         errorMessage={tvJoinError}
+      />
+
+      {/* ─── 4b. Auswahlseite für 10 Startanimationen („+“-Button) ─── */}
+      <SplashDesignModal
+        isOpen={showSplashDesigns}
+        activeVariant={splashVariant}
+        onSelectVariant={setSplashVariant}
+        onClose={() => setShowSplashDesigns(false)}
       />
 
       {/* ─── 5. Einstellungen ("OPTIONS" Panel) ─── */}

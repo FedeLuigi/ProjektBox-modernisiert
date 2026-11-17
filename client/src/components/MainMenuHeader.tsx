@@ -1,4 +1,4 @@
-import { Settings, Tv } from 'lucide-react';
+import { Plus, Settings, Tv } from 'lucide-react';
 import { type AvatarConfig } from './Avatar';
 import { PlayerAvatarButton } from './ArcadeHudElements';
 
@@ -6,17 +6,19 @@ export interface MainMenuHeaderProps {
   avatar?: AvatarConfig;
   onOpenProfile: () => void;
   onOpenTvJoin: () => void;
+  onOpenSplashDesigns: () => void;
   onOpenSettings: () => void;
 }
 
 /**
  * Verschmolzene Kopfleiste im Open-Gallery-Stil:
- * Avatar + PROJEKT BOX links • TV CODE & Einstellungen rechts auf einer einzigen Linie.
+ * Avatar + PROJEKT BOX links • LOBBY BEITRETEN, „+“ (Startanimationen) & Einstellungen rechts.
  */
 export function MainMenuHeader({
   avatar,
   onOpenProfile,
   onOpenTvJoin,
+  onOpenSplashDesigns,
   onOpenSettings,
 }: MainMenuHeaderProps) {
   return (
@@ -45,6 +47,16 @@ export function MainMenuHeader({
           >
             <Tv className="h-3.5 w-3.5 shrink-0" />
             <span className="whitespace-nowrap">LOBBY BEITRETEN</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={onOpenSplashDesigns}
+            title="Startanimationen (10 Varianten) auswählen"
+            aria-label="Startanimationen (10 Varianten) auswählen"
+            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-white/25 bg-white/[0.06] text-[#FDE68A] transition-all hover:border-[#F59E0B] hover:bg-[#F59E0B]/20 hover:text-white cursor-pointer active:scale-95"
+          >
+            <Plus className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
           </button>
 
           <button
