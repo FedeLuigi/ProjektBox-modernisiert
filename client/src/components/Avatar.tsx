@@ -219,7 +219,6 @@ export function Avatar({ config = DEFAULT_AVATAR, className = '', size = 64 }: A
 
       {/* 1. HINTERGRUND-KREIS (Key erzwingt sauberes Repaint bei Farbwechsel) */}
       <circle key={bgMeta.id} cx="50" cy="50" r="49" fill={`url(#${bgGradientId})`} />
-      <circle cx="50" cy="50" r="36" fill="#FFFFFF" opacity="0.06" />
 
       {/* 2. KÖRPER / SCHULTERN */}
       <path
