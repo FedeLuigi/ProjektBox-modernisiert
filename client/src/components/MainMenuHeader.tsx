@@ -44,7 +44,7 @@ export function MainMenuHeader({
             className="font-arcade inline-flex h-8 sm:h-9 items-center gap-1.5 rounded-lg border border-[#F59E0B]/60 bg-transparent px-2.5 sm:px-3.5 text-[11px] sm:text-xs tracking-wider text-[#FDE68A] uppercase transition-all hover:bg-[#F59E0B]/15 cursor-pointer active:scale-95"
           >
             <Tv className="h-3.5 w-3.5 shrink-0" />
-            <span>TV CODE</span>
+            <span className="whitespace-nowrap">LOBBY BEITRETEN</span>
           </button>
 
           <button
