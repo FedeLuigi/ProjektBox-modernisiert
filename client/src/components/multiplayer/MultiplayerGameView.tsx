@@ -233,7 +233,7 @@ export function MultiplayerGameView({
             </div>
           </main>
         ) : (
-          <main className="mx-auto flex w-full max-w-[1400px] flex-1 min-h-0 flex-col items-center justify-center overflow-hidden p-1 sm:p-2">
+          <main className="mx-auto flex w-full flex-1 min-h-0 flex-col items-center justify-center overflow-hidden py-2 sm:py-3">
             {BoardComponent && myPlayer ? (
               <BoardComponent
                 gameId={lobby.gameId}

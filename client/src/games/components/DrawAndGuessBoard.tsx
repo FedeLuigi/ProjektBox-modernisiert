@@ -11,7 +11,7 @@ import {
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { socketService } from '../../services/socket';
-import { BTN_PRIMARY_DISABLED, getGameTheme } from '../../styles/uiTokens';
+import { OpenButton } from '../../components/OpenSubpageUI';
 import {
   playErrorSound,
   playMoveSound,
@@ -118,7 +118,7 @@ const KEYBOARD_ROWS = [
 ];
 
 export function DrawAndGuessBoard({
-  gameId = 'draw-and-guess',
+  gameId: _gameId = 'draw-and-guess',
   gameState,
   myPlayer,
   opponent,
@@ -128,7 +128,6 @@ export function DrawAndGuessBoard({
   disabled: _disabled,
   isTvMode,
 }: GameRendererProps<DrawAndGuessState>) {
-  const theme = getGameTheme(gameId);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const prevCanvasElRef = useRef<HTMLCanvasElement | null>(null);
   const canvasStageRef = useRef<HTMLDivElement | null>(null);
@@ -346,7 +345,7 @@ export function DrawAndGuessBoard({
       const target = canvasStageRef.current;
       if (!target) return;
       const rect = target.getBoundingClientRect();
-      const usableW = Math.max(120, Math.min(880, Math.floor(rect.width) - 8));
+      const usableW = Math.max(120, Math.min(1040, Math.floor(rect.width) - 8));
       const usableH = Math.max(90, Math.floor(rect.height) - 8);
 
       let width = Math.min(usableW, Math.floor(usableH * (4 / 3)));
@@ -390,7 +389,7 @@ export function DrawAndGuessBoard({
       if (rafId !== null) cancelAnimationFrame(rafId);
       if (rotateTimer !== null) window.clearTimeout(rotateTimer);
     };
-  }, [needsCanvas, isRoundOver]);
+  }, [needsCanvas, isRoundOver, isDrawer]);
 
   const getCanvasCoords = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
@@ -651,7 +650,7 @@ export function DrawAndGuessBoard({
   // A) FERNSEHER-ANSICHT
   if (isTv) {
     return (
-      <div className={`relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden ${theme.tvCanvasRing} bg-white mx-auto flex items-center justify-center select-none`}>
+      <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] mx-auto flex items-center justify-center select-none">
         <canvas
           ref={canvasRef}
           width={640}
@@ -660,37 +659,39 @@ export function DrawAndGuessBoard({
         />
 
         {isRoundOver && (
-          <div className="absolute inset-0 bg-[#0F172A]/92 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
-            <span className="text-xs font-arcade uppercase tracking-widest text-[#FBBF24]">
-              SECRET WORD
-            </span>
+          <div className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
+            <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+              <span className="text-xs font-arcade uppercase tracking-widest text-[#FDE68A]">
+                GESUCHTES WORT
+              </span>
+            </div>
 
-            <div className="text-4xl sm:text-5xl lg:text-6xl font-arcade uppercase tracking-[0.16em] text-[#F8FAFC] drop-shadow-[0_4px_0_rgba(15,23,42,0.85)] my-2">
+            <div className="text-4xl sm:text-5xl lg:text-6xl font-arcade uppercase tracking-[0.16em] text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)] my-3">
               {gameState.secretWord}
             </div>
 
             <p className="mt-1 text-xs sm:text-sm font-arcade uppercase text-[#CBD5E1] max-w-md leading-relaxed">
               {gameState.roundWinnerName ? (
                 <span>
-                  {gameState.roundWinnerName} GUESSED IT • DRAWN BY {drawerPlayer?.name || 'PLAYER'}
+                  {gameState.roundWinnerName} HAT ES ERRATEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
                 </span>
               ) : (
                 <span>
-                  TIME UP • DRAWN BY {drawerPlayer?.name || 'PLAYER'}
+                  ZEIT ABGELAUFEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
                 </span>
               )}
             </p>
 
             {transitionCountdown > 0 && (
               <div className="mt-5 flex flex-col items-center gap-1.5 w-full max-w-xs">
-                <div className="w-full h-3 bg-[#1E293B] border-2 border-[#475569] overflow-hidden">
+                <div className="w-full h-2 rounded-full bg-white/15 overflow-hidden">
                   <div
-                    className="h-full bg-[#DB2777] transition-all duration-1000 ease-linear"
+                    className="h-full bg-[#F59E0B] transition-all duration-1000 ease-linear"
                     style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
                   />
                 </div>
-                <span className="text-[11px] font-arcade uppercase text-[#F8FAFC]">
-                  NEXT ROUND IN {transitionCountdown}S...
+                <span className="text-[11px] font-arcade uppercase text-[#94A3B8]">
+                  NÄCHSTE RUNDE IN {transitionCountdown}S...
                 </span>
               </div>
             )}
@@ -745,82 +746,83 @@ export function DrawAndGuessBoard({
     );
   }
 
-  // C) SMARTPHONE-ANSICHT: DER ZEICHNER
+  // C) SPIELER-ANSICHT: DER ZEICHNER (Offenes Design, 2-spaltig auf Tablet/Desktop & Landscape)
   if (isDrawer) {
     return (
-      <div
-        className="flex flex-col items-center w-full max-w-4xl landscape:max-w-6xl mx-auto select-none h-full min-h-0 justify-between landscape:grid landscape:grid-cols-[minmax(0,1fr)_17rem] sm:landscape:grid-cols-[minmax(0,1fr)_19rem] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-2"
-      >
-        {/* Wortanzeige & Timer im Atelier-Studio-Banner mit Rose-Akzent */}
-        <div className="w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 landscape:col-start-1 landscape:row-start-1">
-          <div className="flex items-center gap-1.5 text-[#F472B6] w-14 sm:w-16 shrink-0">
-            <Paintbrush className="h-4 w-4 shrink-0" />
-            <span className="text-[10px] sm:text-[11px] font-arcade uppercase hidden xs:inline">
-              ATELIER
-            </span>
-          </div>
+      <div className="flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_18rem] lg:grid-cols-[minmax(0,1fr)_20rem] landscape:grid landscape:grid-cols-[minmax(0,1fr)_16.5rem] md:items-center landscape:items-center md:gap-6 lg:gap-8 landscape:gap-3.5 select-none">
+        {/* Linke Spalte: Offene Wortanzeige + 4:3 Zeichenfläche */}
+        <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
+          <div className="w-full flex items-center justify-between gap-3 shrink-0 px-1">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="hidden xs:flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5 shrink-0">
+                <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
+                <span className="text-[11px] font-arcade uppercase tracking-wider text-[#FDE68A]">
+                  ZEICHNE
+                </span>
+              </div>
+              <span className="text-base sm:text-xl lg:text-2xl font-arcade uppercase tracking-wider text-white truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
+                {gameState?.secretWord}
+              </span>
+            </div>
 
-          <div className="flex-1 flex flex-col items-center justify-center text-center px-1 min-w-0">
-            <span className="text-[9px] font-arcade uppercase tracking-wider text-[#FBCFE8] leading-none mb-0.5">
-              ZEICHNE DIESES WORT
-            </span>
-            <span className="text-base sm:text-xl font-arcade uppercase tracking-wider text-white break-words max-w-full leading-tight">
-              {gameState?.secretWord}
-            </span>
-          </div>
-
-          <div className="w-14 sm:w-16 flex justify-end shrink-0">
             <div
-              className={`flex items-center gap-1 px-2 py-0.5 font-arcade text-xs border-2 shrink-0 ${
+              className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs sm:text-sm shrink-0 transition-colors ${
                 timeLeft <= 10
-                  ? 'bg-[#E11D48] text-white border-[#FDA4AF] animate-pulse'
-                  : 'bg-[#14071A] text-[#FBCFE8] border-[#F472B6]'
+                  ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
+                  : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
               }`}
             >
               <Clock className="h-3.5 w-3.5 shrink-0" />
               <span>{timeLeft}S</span>
             </div>
           </div>
-        </div>
 
-        {/* 4:3 Zeichenfläche */}
-        <div
-          ref={canvasStageRef}
-          className="relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 landscape:col-start-1 landscape:row-start-2 landscape:h-full"
-        >
           <div
-            style={
-              canvasSize
-                ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
-                : undefined
-            }
-            className={`relative overflow-hidden ${theme.canvasRing} bg-white touch-none ${
-              canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
-            }`}
+            ref={canvasStageRef}
+            className="relative flex-1 min-h-0 min-w-0 w-full flex items-center justify-center"
           >
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={300}
-              onPointerDown={handlePointerDown}
-              onPointerMove={handlePointerMove}
-              onPointerUp={handlePointerUp}
-              onPointerCancel={handlePointerUp}
-              className="w-full h-full block touch-none cursor-crosshair"
-            />
+            <div
+              style={
+                canvasSize
+                  ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
+                  : undefined
+              }
+              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] touch-none ${
+                canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
+              }`}
+            >
+              <canvas
+                ref={canvasRef}
+                width={400}
+                height={300}
+                onPointerDown={handlePointerDown}
+                onPointerMove={handlePointerMove}
+                onPointerUp={handlePointerUp}
+                onPointerCancel={handlePointerUp}
+                className="w-full h-full block touch-none cursor-crosshair"
+              />
 
-            {latestGuess && (
-              <div className="pointer-events-none absolute top-2 right-2 max-w-[220px] truncate px-2.5 py-1 bg-[#1E293B] border-2 border-[#0F172A] text-white text-[11px] font-arcade uppercase animate-fade-in">
-                {latestGuess.playerName}: &quot;{latestGuess.text}&quot; {latestGuess.isCorrect ? '✓' : '✕'}
-              </div>
-            )}
+              {latestGuess && (
+                <div className="pointer-events-none absolute top-2.5 right-2.5 max-w-[230px] truncate rounded-xl border border-white/20 bg-[#0F172A]/85 px-3 py-1 text-white text-[11px] font-arcade uppercase backdrop-blur-md animate-fade-in">
+                  {latestGuess.playerName}: &quot;{latestGuess.text}&quot; {latestGuess.isCorrect ? '✓' : '✕'}
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Mal-Werkzeuge im edlen Atelier-Dock */}
-        <div className="w-full mt-1.5 landscape:mt-0 p-2 sm:p-2.5 landscape:p-3 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 overflow-visible landscape:col-start-2 landscape:row-start-1 landscape:row-span-2 landscape:self-center">
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 landscape:flex-col landscape:items-stretch landscape:gap-3.5">
-            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto overscroll-x-contain scrollbar-none px-1 py-1 shrink-0 landscape:grid landscape:grid-cols-7 landscape:gap-2 landscape:justify-items-center landscape:overflow-visible">
+        {/* Rechte Spalte / Unteres Dock: Mal-Werkzeuge im offenen Glas-Design */}
+        <div className="w-full shrink-0 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-4 landscape:p-3 backdrop-blur-md">
+          <div className="hidden md:flex landscape:flex items-center justify-between mb-3 landscape:mb-2">
+            <div className="border-b-2 border-[#F59E0B] pb-0.5">
+              <span className="font-arcade text-xs tracking-wider text-white uppercase">
+                WERKZEUGE
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2.5 sm:gap-3 landscape:gap-2.5">
+            <div className="flex items-center gap-2 overflow-x-auto overscroll-x-contain scrollbar-none px-0.5 py-1 md:grid md:grid-cols-5 md:gap-2.5 md:justify-items-center md:overflow-visible landscape:grid landscape:grid-cols-7 landscape:gap-1.5 landscape:justify-items-center landscape:overflow-visible">
               {COLORS.map((col) => {
                 const isSelected = currentColor === col;
                 return (
@@ -829,10 +831,10 @@ export function DrawAndGuessBoard({
                     type="button"
                     onClick={() => setCurrentColor(col)}
                     aria-label={col === '#FFFFFF' ? 'Radierer / Weiß' : `Farbe ${col}`}
-                    className={`h-7 w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center border-2 ${
+                    className={`h-7 w-7 sm:h-8 sm:w-8 landscape:h-7 landscape:w-7 shrink-0 rounded-full transition-transform active:scale-90 cursor-pointer flex items-center justify-center border-2 ${
                       isSelected
-                        ? 'border-[#1E293B] ring-2 ring-[#DB2777] scale-110 shadow-md z-10'
-                        : 'border-[#64748B] hover:scale-105'
+                        ? 'border-white ring-2 ring-[#F59E0B] scale-110 shadow-[0_0_12px_rgba(245,158,11,0.55)] z-10'
+                        : 'border-white/25 hover:scale-105'
                     }`}
                     style={{ backgroundColor: col }}
                   >
@@ -842,17 +844,17 @@ export function DrawAndGuessBoard({
               })}
             </div>
 
-            <div className="flex items-center justify-between sm:justify-start gap-2 shrink-0 pt-1.5 sm:pt-0 sm:pl-2 border-t-2 sm:border-t-0 sm:border-l-2 border-[#CBD5E1] landscape:pl-0 landscape:border-l-0 landscape:pt-2.5 landscape:border-t-2 landscape:border-[#CBD5E1] landscape:justify-between">
-              <div className="flex items-center gap-1.5">
+            <div className="flex items-center justify-between gap-2 border-t border-white/15 pt-2.5 md:flex-col md:items-stretch md:gap-3 landscape:flex-col landscape:items-stretch landscape:gap-2">
+              <div className="grid grid-cols-3 gap-1.5 flex-1 md:flex-none">
                 {BRUSH_SIZES.map((b) => (
                   <button
                     key={b.size}
                     type="button"
                     onClick={() => setCurrentSize(b.size)}
-                    className={`px-2 py-1 text-[10px] font-arcade uppercase border-2 transition-all cursor-pointer ${
+                    className={`rounded-xl border px-2 py-1.5 text-[10px] sm:text-[11px] font-arcade uppercase transition-all cursor-pointer active:scale-95 ${
                       currentSize === b.size
-                        ? 'bg-[#DB2777] text-white border-[#831843]'
-                        : 'bg-[#E2E8F0] text-[#1E293B] border-[#475569]'
+                        ? 'border-[#F59E0B]/70 bg-[#F59E0B]/20 text-[#FDE68A]'
+                        : 'border-white/15 bg-white/[0.04] text-white/80 hover:bg-white/10 hover:text-white'
                     }`}
                   >
                     {b.label}
@@ -860,26 +862,30 @@ export function DrawAndGuessBoard({
                 ))}
               </div>
 
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
+              <div className="flex items-center gap-1.5 md:grid md:grid-cols-2 landscape:grid landscape:grid-cols-2">
+                <OpenButton
+                  size="sm"
+                  variant="secondary"
                   onClick={handleUndo}
                   title="Rückgängig"
                   aria-label="Rückgängig"
-                  className="p-1.5 bg-[#E2E8F0] hover:bg-[#CBD5E1] text-[#1E293B] border-2 border-[#475569] transition-colors active:scale-90 cursor-pointer"
+                  className="md:w-full landscape:w-full"
                 >
-                  <Undo2 className="h-4 w-4" />
-                </button>
+                  <Undo2 className="h-4 w-4 shrink-0" />
+                  <span className="hidden md:inline">ZURÜCK</span>
+                </OpenButton>
 
-                <button
-                  type="button"
+                <OpenButton
+                  size="sm"
+                  variant="rose"
                   onClick={handleClear}
                   title="Leinwand leeren"
                   aria-label="Leinwand löschen"
-                  className="p-1.5 bg-[#E11D48] text-white border-2 border-[#881337] transition-colors active:scale-90 cursor-pointer"
+                  className="md:w-full landscape:w-full"
                 >
-                  <Trash2 className="h-4 w-4" />
-                </button>
+                  <Trash2 className="h-4 w-4 shrink-0" />
+                  <span className="hidden md:inline">LEEREN</span>
+                </OpenButton>
               </div>
             </div>
           </div>
@@ -888,119 +894,124 @@ export function DrawAndGuessBoard({
     );
   }
 
-  // D) SMARTPHONE-ANSICHT: DER RATER
+  // D) SPIELER-ANSICHT: DER RATER (Offenes Design, 2-spaltig auf Tablet/Desktop & Landscape)
   const totalSlots = Math.max(targetLength, guessInput.length);
   const slotIndices = Array.from({ length: totalSlots }, (_, i) => i);
 
   const slotSizeClass = !isTvMode
     ? totalSlots <= 5
-      ? 'w-10 h-10 sm:w-11 sm:h-12 landscape:w-9 landscape:h-10 text-lg sm:text-2xl landscape:text-base'
+      ? 'w-10 h-11 sm:w-12 sm:h-13 landscape:w-9 landscape:h-10 text-lg sm:text-2xl landscape:text-base'
       : totalSlots <= 8
-      ? 'w-8 h-9 sm:w-10 sm:h-11 landscape:w-8 landscape:h-9 text-base sm:text-xl landscape:text-sm'
-      : 'w-[26px] h-8 sm:w-8 sm:h-10 landscape:w-7 landscape:h-8 text-sm sm:text-base landscape:text-xs'
+      ? 'w-8 h-10 sm:w-10 sm:h-11 landscape:w-8 landscape:h-9 text-base sm:text-xl landscape:text-sm'
+      : 'w-7 h-9 sm:w-8 sm:h-10 landscape:w-7 landscape:h-8 text-sm sm:text-base landscape:text-xs'
     : totalSlots <= 5
     ? 'w-11 h-12 sm:w-13 sm:h-14 landscape:w-10 landscape:h-11 text-xl sm:text-3xl landscape:text-lg'
     : totalSlots <= 8
     ? 'w-9 h-10 sm:w-11 sm:h-12 landscape:w-9 landscape:h-10 text-lg sm:text-2xl landscape:text-base'
-    : 'w-[26px] h-9 sm:w-9 sm:h-11 landscape:w-7 landscape:h-9 text-sm sm:text-lg landscape:text-sm';
+    : 'w-7 h-9 sm:w-9 sm:h-11 landscape:w-7 landscape:h-9 text-sm sm:text-lg landscape:text-sm';
 
   const recentGuesses = gameState?.guesses?.slice(0, 3) || [];
-  const isRaterTwoColLandscape = !isTvMode && !isRoundOver;
+  const isRaterTwoCol = !isTvMode && !isRoundOver;
+
+  const statusBar = !isRoundOver ? (
+    <div className="w-full flex items-center justify-between gap-2 shrink-0 px-1">
+      <div className="flex items-center gap-2 min-w-0">
+        <div className="border-b-2 border-[#F59E0B] pb-0.5 min-w-0">
+          <span className="block truncate text-xs sm:text-sm font-arcade uppercase tracking-wider text-white">
+            {drawerPlayer?.name || 'SPIELER'}{' '}
+            <span className="text-[#FBBF24]">ZEICHNET</span>
+          </span>
+        </div>
+      </div>
+
+      <div
+        className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs sm:text-sm shrink-0 transition-colors ${
+          timeLeft <= 10
+            ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
+            : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
+        }`}
+      >
+        <Clock className="h-3.5 w-3.5 shrink-0" />
+        <span>{timeLeft}S</span>
+      </div>
+    </div>
+  ) : null;
 
   return (
     <div
-      className={`flex flex-col items-center w-full max-w-4xl ${
-        isRaterTwoColLandscape
-          ? 'landscape:max-w-6xl landscape:grid landscape:grid-cols-[minmax(0,1fr)_minmax(19rem,1.05fr)] landscape:grid-rows-[auto_1fr] landscape:items-stretch landscape:gap-x-3.5 landscape:gap-y-1.5'
-          : 'landscape:max-w-4xl'
-      } mx-auto select-none h-full min-h-0 justify-between`}
+      className={`flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 select-none ${
+        isRaterTwoCol
+          ? 'md:grid md:grid-cols-[minmax(0,1.2fr)_minmax(20rem,0.9fr)] lg:grid-cols-[minmax(0,1.25fr)_minmax(24rem,0.9fr)] landscape:grid landscape:grid-cols-[minmax(0,1fr)_minmax(18.5rem,1fr)] md:items-center landscape:items-center md:gap-6 lg:gap-10 landscape:gap-3.5'
+          : 'max-w-xl mx-auto items-center'
+      }`}
     >
-      {!isRoundOver && (
-        <div
-          className={`w-full flex items-center justify-between gap-2 px-3 py-1.5 bg-[#2A1133]/95 border-[3px] border-[#F472B6] shadow-[0_8px_20px_rgba(0,0,0,0.45)] shrink-0 ${
-            isRaterTwoColLandscape ? 'landscape:col-start-2 landscape:row-start-1' : ''
-          }`}
-        >
-          <span className="text-xs font-arcade uppercase text-[#FBCFE8] truncate">
-            {drawerPlayer?.name || 'SPIELER'} ZEICHNET
-          </span>
-
-          {wrongText && (
-            <span className="truncate bg-[#E11D48] border border-[#FDA4AF] px-2 py-0.5 text-[10px] font-arcade uppercase text-white animate-fade-in">
-              {wrongText}
-            </span>
-          )}
+      {/* Linke Spalte (oder oben bei Mobile Portrait / TV-Controller) */}
+      {!isTvMode ? (
+        <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
+          {statusBar}
 
           <div
-            className={`flex items-center gap-1 px-2 py-0.5 font-arcade text-xs border-2 shrink-0 ${
-              timeLeft <= 10
-                ? 'bg-[#E11D48] text-white border-[#FDA4AF] animate-pulse'
-                : 'bg-[#14071A] text-[#FBCFE8] border-[#F472B6]'
-            }`}
+            ref={canvasStageRef}
+            className="relative flex-1 min-h-0 min-w-0 w-full flex items-center justify-center"
           >
-            <Clock className="h-3.5 w-3.5" />
-            <span>{timeLeft}S</span>
+            <div
+              style={
+                canvasSize
+                  ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
+                  : undefined
+              }
+              className={`relative overflow-hidden rounded-2xl border border-white/20 bg-white shadow-[0_20px_50px_rgba(0,0,0,0.45)] ${
+                canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
+              }`}
+            >
+              <canvas
+                ref={canvasRef}
+                width={400}
+                height={300}
+                className="w-full h-full block"
+              />
+            </div>
           </div>
         </div>
+      ) : (
+        statusBar
       )}
 
-      {!isTvMode && (
-        <div
-          ref={canvasStageRef}
-          className={`relative flex-1 min-h-0 w-full flex items-center justify-center py-0.5 ${
-            isRaterTwoColLandscape
-              ? 'landscape:col-start-1 landscape:row-start-1 landscape:row-span-2 landscape:h-full'
-              : ''
-          }`}
-        >
-          <div
-            style={
-              canvasSize
-                ? { width: `${canvasSize.width}px`, height: `${canvasSize.height}px` }
-                : undefined
-            }
-            className={`relative overflow-hidden ${theme.canvasRing} bg-white ${
-              canvasSize ? '' : 'w-full max-w-md aspect-[4/3] max-h-full'
-            }`}
-          >
-            <canvas
-              ref={canvasRef}
-              width={400}
-              height={300}
-              className="w-full h-full block"
-            />
-          </div>
-        </div>
-      )}
-
+      {/* Rechte Spalte (bzw. unterer Ratebereich): Buchstabenfelder & Tastatur */}
       {!(isRoundOver && !isTvMode) && (
         <div
-          className={`w-full max-w-lg flex flex-col items-center text-center shrink-0 ${
-            isRaterTwoColLandscape
-              ? 'landscape:col-start-2 landscape:row-start-2 landscape:self-center landscape:max-w-none landscape:pt-0'
+          className={`w-full flex flex-col items-center text-center shrink-0 min-w-0 ${
+            isRaterTwoCol
+              ? 'md:justify-center landscape:justify-center'
               : isTvMode
-              ? 'my-auto py-1'
-              : 'pt-1.5 landscape:pt-1'
+              ? 'my-auto py-2'
+              : ''
           } ${isWrongGuess ? 'screen-shake' : ''}`}
         >
+          {wrongText && (
+            <div className="mb-2 rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/25 px-3 py-1 text-[11px] font-arcade uppercase text-[#FECDD3] animate-fade-in">
+              {wrongText}
+            </div>
+          )}
+
           {hasGuessedCorrectly && (
-            <div className="mb-1.5 flex items-center gap-1.5 px-3.5 py-1 bg-[#059669] border-2 border-[#064E3B] text-white font-arcade uppercase text-xs">
+            <div className="mb-2 flex items-center gap-1.5 rounded-xl border border-[#34D399]/50 bg-[#10B981]/20 px-4 py-1.5 text-[#6EE7B7] font-arcade uppercase text-xs">
               <Check className="h-3.5 w-3.5 stroke-[3]" />
-              <span>CORRECT! (+100)</span>
+              <span>ERRATEN! (+100)</span>
             </div>
           )}
 
           {isTvMode && isRoundOver && !hasGuessedCorrectly && transitionCountdown > 0 && (
-            <div className="mb-1.5 px-3.5 py-1 bg-[#1E293B] border-2 border-[#0F172A] text-white font-arcade uppercase text-xs">
-              NEXT IN {transitionCountdown}S
+            <div className="mb-2 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-1 text-white font-arcade uppercase text-xs">
+              NÄCHSTE RUNDE IN {transitionCountdown}S
             </div>
           )}
 
-          {/* Buchstaben-Platzhalter im Studio-Pearl-Design */}
+          {/* Buchstaben-Platzhalter im offenen Glas-Design */}
           <div
             className={`flex flex-wrap items-center justify-center w-full ${
               totalSlots > 8 ? 'gap-1' : 'gap-1.5 sm:gap-2'
-            } py-1 landscape:py-0.5`}
+            } py-1`}
           >
             {slotIndices.map((idx) => {
               if (isRoundOver && gameState?.secretWord) {
@@ -1008,7 +1019,7 @@ export function DrawAndGuessBoard({
                 return (
                   <div
                     key={idx}
-                    className={`relative flex items-center justify-center font-arcade bg-[#059669] text-white border-2 border-[#064E3B] ${slotSizeClass}`}
+                    className={`relative flex items-center justify-center rounded-xl font-arcade bg-[#10B981]/25 text-[#6EE7B7] border border-[#34D399]/60 ${slotSizeClass}`}
                   >
                     {char}
                   </div>
@@ -1025,19 +1036,19 @@ export function DrawAndGuessBoard({
               return (
                 <div
                   key={idx}
-                  className={`relative flex items-center justify-center font-arcade transition-all border-2 ${slotSizeClass} ${
+                  className={`relative flex items-center justify-center rounded-xl font-arcade transition-all border ${slotSizeClass} ${
                     hasGuessedCorrectly
-                      ? 'bg-[#059669] text-white border-[#064E3B]'
+                      ? 'bg-[#10B981]/25 text-[#6EE7B7] border-[#34D399]/60'
                       : isActive
-                      ? 'bg-[#FFFFFF] text-[#1E293B] border-[#DB2777] shadow-[inset_0_0_0_2px_#FCE7F3]'
+                      ? 'bg-white/[0.14] text-white border-[#F59E0B] shadow-[0_0_16px_rgba(245,158,11,0.28)]'
                       : isTyped
-                      ? 'bg-[#F8FAFC] text-[#1E293B] border-[#334155]'
-                      : 'bg-[#334155] text-white/40 border-[#0F172A]'
+                      ? 'bg-white text-[#0F172A] border-white/80 shadow-[0_4px_14px_rgba(0,0,0,0.25)]'
+                      : 'bg-white/[0.05] text-white/40 border-white/15'
                   }`}
                 >
                   {typedChar}
                   {isActive && (
-                    <span className="absolute bottom-1 inset-x-1.5 h-0.5 bg-[#DB2777] animate-pulse" />
+                    <span className="absolute bottom-1.5 inset-x-2 h-0.5 rounded-full bg-[#F59E0B] animate-pulse" />
                   )}
                 </div>
               );
@@ -1045,14 +1056,14 @@ export function DrawAndGuessBoard({
           </div>
 
           {recentGuesses.length > 0 && !isRoundOver && (
-            <div className="mt-1 flex flex-wrap items-center justify-center gap-1.5 w-full landscape:hidden">
+            <div className="mt-1.5 flex flex-wrap items-center justify-center gap-1.5 w-full landscape:hidden">
               {recentGuesses.map((g) => (
                 <span
                   key={g.id}
-                  className={`text-[10px] font-arcade uppercase px-2 py-0.5 border ${
+                  className={`rounded-lg border px-2 py-0.5 text-[10px] font-arcade uppercase ${
                     g.isCorrect
-                      ? 'bg-[#059669] text-white border-[#064E3B]'
-                      : 'bg-[#F8FAFC] text-[#334155] border-[#475569]'
+                      ? 'bg-[#10B981]/20 text-[#6EE7B7] border-[#34D399]/50'
+                      : 'bg-white/[0.05] text-[#CBD5E1] border-white/15'
                   }`}
                 >
                   {g.text}
@@ -1061,21 +1072,21 @@ export function DrawAndGuessBoard({
             </div>
           )}
 
-          {/* In-App QWERTZ-Tastatur im kontrastreichen Studio-Pearl-Design */}
+          {/* In-App QWERTZ-Tastatur im offenen Glas-Design */}
           {!isRoundOver && !hasGuessedCorrectly && (
             <div
               role="group"
               aria-label="In-App Tastatur"
-              className="mt-1.5 landscape:mt-1 flex w-full flex-col gap-1.5 landscape:gap-1 px-1 pb-1 landscape:pb-0"
+              className="mt-2 sm:mt-3 landscape:mt-1.5 flex w-full flex-col gap-1.5 landscape:gap-1"
             >
               {KEYBOARD_ROWS.map((row, rowIdx) => (
-                <div key={rowIdx} className="flex w-full items-center gap-1">
+                <div key={rowIdx} className="flex w-full items-center gap-1 sm:gap-1.5">
                   {row.map((letter) => (
                     <button
                       key={letter}
                       type="button"
                       onClick={() => handleKeyboardChar(letter)}
-                      className="flex-1 min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 bg-[#F8FAFC] hover:bg-[#FFFFFF] active:bg-[#DB2777] active:text-white active:scale-95 text-[#1E293B] text-sm sm:text-base landscape:text-xs font-arcade border-2 border-[#334155] shadow-[inset_0_0_0_1px_#FFFFFF,0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                      className="flex-1 min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.08] hover:bg-white/[0.16] active:bg-[#F59E0B] active:text-[#0F172A] active:scale-95 text-white text-sm sm:text-base landscape:text-xs font-arcade transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                     >
                       {letter}
                     </button>
@@ -1087,7 +1098,7 @@ export function DrawAndGuessBoard({
                         type="button"
                         onClick={handleKeyboardBackspace}
                         aria-label="Buchstabe löschen"
-                        className="flex-[1.6] min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 bg-[#334155] hover:bg-[#475569] active:scale-95 text-white border-2 border-[#0F172A] shadow-[0_2px_0_rgba(15,23,42,0.25)] transition-all cursor-pointer touch-manipulation flex items-center justify-center"
+                        className="flex-[1.6] min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.12] active:scale-95 text-white/90 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                       >
                         <Delete className="h-4 w-4 landscape:h-3.5 landscape:w-3.5" />
                       </button>
@@ -1097,8 +1108,10 @@ export function DrawAndGuessBoard({
                         onClick={handleGuessSubmit}
                         disabled={!guessInput.trim()}
                         aria-label="Tipp absenden"
-                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 landscape:h-8 sm:landscape:h-8 font-arcade uppercase text-xs sm:text-sm landscape:text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
-                          guessInput.trim() ? theme.primaryBtn : BTN_PRIMARY_DISABLED
+                        className={`flex-[2.4] min-w-0 h-10 sm:h-11 md:h-12 landscape:h-8 rounded-lg sm:rounded-xl font-arcade uppercase text-xs sm:text-sm landscape:text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
+                          guessInput.trim()
+                            ? 'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-[0_6px_20px_rgba(16,185,129,0.28)] cursor-pointer'
+                            : 'border border-white/10 bg-white/[0.04] text-white/35 cursor-not-allowed'
                         }`}
                       >
                         <Send className="h-3.5 w-3.5 landscape:h-3 landscape:w-3" />
