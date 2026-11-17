@@ -20,6 +20,10 @@ import {
   useUserProfile,
 } from './utils/userProfile';
 import { socketService } from './services/socket';
+import {
+  installGlobalAudioHandlers,
+  syncBackgroundMusic,
+} from './utils/soundEffects';
 import { parseLobbyCode } from './utils/qrCodeHelper';
 import type { Lobby } from './types/multiplayer';
 
@@ -143,7 +147,12 @@ export function App() {
     } catch {
       // ignore
     }
+    syncBackgroundMusic(enabled);
   };
+
+  useEffect(() => {
+    return installGlobalAudioHandlers();
+  }, []);
 
   const handleToggleVibration = (enabled: boolean) => {
     if (enabled) {

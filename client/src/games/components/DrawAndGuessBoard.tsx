@@ -1085,6 +1085,7 @@ export function DrawAndGuessBoard({
                     <button
                       key={letter}
                       type="button"
+                      data-no-click-sound="true"
                       onClick={() => handleKeyboardChar(letter)}
                       className="game-key-btn flex-1 min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.08] hover:bg-white/[0.16] active:bg-[#F59E0B] active:text-[#0F172A] active:scale-95 text-white text-sm sm:text-base font-arcade transition-all cursor-pointer touch-manipulation flex items-center justify-center"
                     >
@@ -1096,6 +1097,7 @@ export function DrawAndGuessBoard({
                     <>
                       <button
                         type="button"
+                        data-no-click-sound="true"
                         onClick={handleKeyboardBackspace}
                         aria-label="Buchstabe löschen"
                         className="game-key-btn flex-[1.6] min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl border border-white/15 bg-white/[0.04] hover:bg-white/[0.12] active:scale-95 text-white/90 transition-all cursor-pointer touch-manipulation flex items-center justify-center"
