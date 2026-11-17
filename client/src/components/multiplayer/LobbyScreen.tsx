@@ -362,8 +362,8 @@ export function LobbyScreen({
             ref={qrCanvasRef}
             className={`lobby-landscape-qr-canvas ${
               extraLargeQr
-                ? 'h-52 w-52 sm:h-60 sm:w-60 lg:h-64 lg:w-64'
-                : 'h-44 w-44 sm:h-52 sm:w-52 lg:h-56 lg:w-56'
+                ? 'h-60 w-60 sm:h-64 sm:w-64 lg:h-64 lg:w-64'
+                : 'h-52 w-52 sm:h-56 sm:w-56 lg:h-56 lg:w-56'
             } block`}
           />
         </div>
@@ -495,7 +495,7 @@ export function LobbyScreen({
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts bleiben unverändert; „+“ mittig */}
+        {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts */}
         <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <button
             type="button"
@@ -505,10 +505,6 @@ export function LobbyScreen({
             <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
             <span>ZURÜCK</span>
           </button>
-
-          <span className="font-arcade hidden sm:inline text-sm md:text-base tracking-wider text-white/85 uppercase select-none">
-            {currentLobby?.name || game.title}
-          </span>
 
           <ConnectionStatusBadge />
         </header>

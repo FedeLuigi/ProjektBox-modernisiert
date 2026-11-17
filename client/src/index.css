@@ -602,8 +602,8 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-qr-canvas {
-    width: 112px !important;
-    height: 112px !important;
+    width: 140px !important;
+    height: 140px !important;
   }
 
   .lobby-landscape-code-btn {
