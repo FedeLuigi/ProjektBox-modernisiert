@@ -324,55 +324,49 @@ interface FlyingObject {
   ty: string;
   rot: string;
   delay: string;
-  mobileHide: boolean;
   render: () => ReactNode;
 }
 
-// Koordinaten bewusst weit außen um den Titel („PROJEKT BOX“) herum platziert, damit nichts überlappt
+// Koordinaten skaliert für alle Bildschirmgrößen (alle 5 Symbole überall sichtbar)
 const FLYING_OBJECTS: FlyingObject[] = [
   {
     id: 'palette',
-    tx: '-128px',
-    ty: '-185px',
+    tx: 'max(-128px, -27vw)',
+    ty: 'max(-185px, -25vh)',
     rot: '-14deg',
     delay: '2220ms',
-    mobileHide: false,
     render: () => <PaintPaletteSvg />,
   },
   {
     id: 'controller',
-    tx: '128px',
-    ty: '-180px',
+    tx: 'min(128px, 27vw)',
+    ty: 'max(-180px, -24vh)',
     rot: '14deg',
     delay: '2310ms',
-    mobileHide: false,
     render: () => <ControllerSvg />,
   },
   {
     id: 'crown',
     tx: '0px',
-    ty: '-218px',
+    ty: 'max(-218px, -30vh)',
     rot: '-4deg',
     delay: '2400ms',
-    mobileHide: true,
     render: () => <CrownSvg />,
   },
   {
     id: 'dice',
-    tx: '-255px',
-    ty: '-85px',
+    tx: 'max(-255px, -39vw)',
+    ty: 'max(-118px, -16vh)',
     rot: '-18deg',
     delay: '2480ms',
-    mobileHide: true,
     render: () => <DiceSvg />,
   },
   {
     id: 'star',
-    tx: '255px',
-    ty: '-85px',
+    tx: 'min(255px, 39vw)',
+    ty: 'max(-118px, -16vh)',
     rot: '20deg',
     delay: '2560ms',
-    mobileHide: true,
     render: () => <StarGemSvg />,
   },
 ];
@@ -515,9 +509,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
 
   return (
     <div
-      onClick={triggerFadeOut}
       aria-label="ProjektBox wird gestartet"
-      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#101928] text-white select-none cursor-pointer transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#101928] text-white select-none transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
@@ -529,14 +522,8 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
         <div className="absolute top-1/2 left-1/2 h-[54vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E0B]/[0.09] blur-[110px]" />
       </div>
 
-      {/* 2. Obere Zeile */}
-      <div className="relative z-20 mx-auto flex w-full max-w-[1440px] items-center justify-between text-[10px] sm:text-xs font-arcade tracking-[0.2em] text-white/55 uppercase">
-        <span className="inline-flex items-center gap-2">
-          <span className="h-2 w-2 rounded-full bg-[#34D399] shadow-[0_0_10px_#34D399] animate-pulse" />
-          <span>PROJEKTBOX ARENA</span>
-        </span>
-        <span className="text-white/45">TIPPEN ZUM ÜBERSPRINGEN</span>
-      </div>
+      {/* Platzhalter oben für vertikale Zentrierung */}
+      <div aria-hidden="true" className="h-4" />
 
       {/* 3. ZENTRUM: AKT 1 RAKETE -> AKT 2 EXPLOSION -> AKT 3 SPIELBOX -> AKT 4 SPIELE & TITEL */}
       {isStageReady && (
@@ -583,7 +570,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
                   animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 3250ms`,
                 } as CSSProperties
               }
-              className={`absolute -top-6 -left-6 ${obj.mobileHide ? 'hidden sm:block' : 'block'} ${
+              className={`absolute -top-6 -left-6 block ${
                 prefersReducedMotion ? 'opacity-100' : 'spielbox-burst'
               }`}
             >
