@@ -1,23 +1,175 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
-import { lobbyManager } from './lobbyManager.js';
+import { LobbyManager, lobbyManager, sanitizeLobbyForClient } from './lobbyManager.js';
+import {
+  parseCookieHeader,
+  SESSION_COOKIE_NAME,
+} from '../session/sessionManager.js';
 import { cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
 import {
   DrawStrokesSchema,
   EVENT_MAX_PAYLOAD_BYTES,
   GameMoveSchema,
+  GameRematchSchema,
   isPayloadWithinLimit,
   LobbyCreateSchema,
   LobbyGetByCodeSchema,
   LobbyJoinSchema,
   LobbyListSchema,
+  LobbyReadySchema,
   LobbyReconnectSchema,
+  LobbyStartSchema,
   LobbyUpdateProfileSchema,
   LobbyUpdateSettingsSchema,
+  SessionPingSchema,
 } from './socketSchemas.js';
 
-export function registerSocketHandlers(io: SocketIOServer) {
+function unpackOptionalPayloadAndCallback<TRes>(
+  dataOrCallback: unknown,
+  maybeCallback?: (res: TRes) => void
+): { payload: unknown; callback?: (res: TRes) => void } {
+  if (typeof dataOrCallback === 'function') {
+    return { payload: {}, callback: dataOrCallback as (res: TRes) => void };
+  }
+  return { payload: dataOrCallback ?? {}, callback: maybeCallback };
+}
+
+export function registerSocketHandlers(
+  io: SocketIOServer,
+  manager: LobbyManager = lobbyManager
+) {
+  function disconnectSupersededSocket(socketId?: string) {
+    if (!socketId) return;
+    const oldSocket = io.sockets.sockets.get(socketId);
+    if (!oldSocket) return;
+    oldSocket.data.superseded = true;
+    oldSocket.emit('session:conflict', {
+      message: 'Deine Sitzung wurde in einem neuen Tab oder Fenster fortgesetzt.',
+    });
+    oldSocket.disconnect(true);
+  }
+
+  manager.setCallbacks({
+    onPlayerExpired(lobby, player) {
+      io.to(`lobby:${lobby.id}`).emit('lobby:player-offline', {
+        playerId: player.id,
+        playerName: player.name,
+        lobby,
+      });
+      io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
+        lobby,
+        message: `${player.name} hat die Wiederverbindungsfrist überschritten.`,
+      });
+      if (player.socketId) {
+        const oldSock = io.sockets.sockets.get(player.socketId);
+        oldSock?.emit('session:expired', {
+          reason: 'reconnect_timeout',
+          message: 'Deine Wiederverbindungsfrist (60s) ist abgelaufen.',
+        });
+      }
+      io.emit('lobby:list-updated', { gameId: lobby.gameId });
+    },
+    onHostChanged(lobby, newHost, previousHostId, reason) {
+      io.to(`lobby:${lobby.id}`).emit('lobby:host-changed', {
+        lobby,
+        newHostId: newHost.id,
+        newHostName: newHost.name,
+        previousHostId,
+        reason,
+      });
+      io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
+        lobby,
+        message: `${newHost.name} ist jetzt der neue Host.`,
+      });
+    },
+    onLobbyUpdated(lobby) {
+      io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+    },
+    onLobbyExpired(lobby) {
+      io.to(`lobby:${lobby.id}`).emit('lobby:expired', {
+        lobbyId: lobby.id,
+        code: lobby.code,
+      });
+      io.emit('lobby:list-updated', { gameId: lobby.gameId });
+    },
+  });
+
+  // Authentifizierungs-Middleware über HttpOnly-Session-Cookie
+  io.use((socket, next) => {
+    const cookies = parseCookieHeader(socket.handshake.headers.cookie);
+    const rawCookie = cookies[SESSION_COOKIE_NAME];
+    if (rawCookie) {
+      const check = manager.sessionManager.verifySessionToken(rawCookie);
+      if (check.valid && check.session) {
+        socket.data.sessionId = check.session.sessionId;
+        socket.data.playerId = check.session.playerId;
+        const { previousSocketId } = manager.sessionManager.bindSocket(
+          check.session.sessionId,
+          socket.id
+        );
+        if (previousSocketId) {
+          disconnectSupersededSocket(previousSocketId);
+        }
+      } else if (check.reason === 'revoked' || check.reason === 'expired') {
+        socket.data.sessionExpiredReason = check.reason;
+      }
+    }
+    next();
+  });
+
   io.on('connection', (socket: Socket) => {
-    // 1. Liste offener Lobbys für ein beliebiges Spiel abrufen
+    if (socket.data.sessionExpiredReason) {
+      socket.emit('session:expired', {
+        reason: socket.data.sessionExpiredReason,
+        message: 'Deine Sitzung ist abgelaufen oder wurde beendet.',
+      });
+    }
+
+    // Bei Socket.io Connection State Recovery direkt autoritativen Zustand aus dem Manager synchronisieren
+    if (socket.recovered && socket.data.playerId) {
+      const activeLobby = manager.getLobbyByPlayerId(socket.data.playerId);
+      if (activeLobby) {
+        const recon = manager.reconnectPlayer({
+          socketId: socket.id,
+          userId: socket.data.playerId,
+          sessionId: socket.data.sessionId,
+        });
+        if (recon.success && recon.lobby) {
+          const safeLobby = sanitizeLobbyForClient(recon.lobby);
+          socket.join(`lobby:${recon.lobby.id}`);
+          socket.emit('lobby:state-sync', {
+            lobby: safeLobby,
+            reconnectToken: recon.reconnectToken,
+          });
+          io.to(`lobby:${recon.lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+        }
+      }
+    }
+
+    // 0. Anwendungs-Heartbeat (ergänzend zu Engine.io Ping/Pong)
+    socket.on(
+      'session:ping',
+      async (
+        data: unknown,
+        callback?: (res: { serverTime: number; clientTime?: number; sessionValid: boolean }) => void
+      ) => {
+        if (!(await consumeRateLimit(socket.id, 'session:ping'))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['session:ping'])) return;
+        const parsed = SessionPingSchema.safeParse(data ?? {});
+        const clientTime = parsed.success ? parsed.data.clientTime : undefined;
+        const sessionValid = socket.data.sessionId
+          ? Boolean(manager.sessionManager.getSessionById(socket.data.sessionId))
+          : true;
+        const res = {
+          serverTime: Date.now(),
+          clientTime,
+          sessionValid: sessionValid && !socket.data.superseded,
+        };
+        callback?.(res);
+        socket.emit('session:pong', res);
+      }
+    );
+
+    // 1. Liste offener Lobbys abrufen
     socket.on(
       'lobby:list',
       async (
@@ -35,7 +187,7 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültige Filterdaten.' });
         }
         try {
-          const list = lobbyManager.getPublicLobbies(parsed.data.gameId);
+          const list = manager.getPublicLobbies(parsed.data.gameId);
           callback?.({ success: true, lobbies: list });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -43,13 +195,21 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     );
 
-    // 2. Lobby erstellen (generisch für alle Spiele, inkl. TV-Modus)
+    // 2. Lobby erstellen
     socket.on(
       'lobby:create',
       async (
         data: unknown,
-        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+        callback?: (res: {
+          success: boolean;
+          lobby?: any;
+          reconnectToken?: string;
+          error?: string;
+        }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Sitzung wurde in einem neuen Fenster übernommen.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:create'))) {
           return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
         }
@@ -61,13 +221,18 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültige Lobby-Daten.' });
         }
         try {
-          const { lobby, error } = lobbyManager.createLobby({
+          const effectiveProfile = socket.data.playerId
+            ? { ...parsed.data.userProfile, id: socket.data.playerId }
+            : parsed.data.userProfile;
+
+          const { lobby, error, reconnectToken } = manager.createLobby({
             name: parsed.data.name,
             isPrivate: parsed.data.isPrivate,
             gameId: parsed.data.gameId,
-            userProfile: parsed.data.userProfile as any,
+            userProfile: effectiveProfile as any,
             socketId: socket.id,
             isTvMode: parsed.data.isTvMode,
+            sessionId: socket.data.sessionId,
           });
 
           if (error || !lobby) {
@@ -77,8 +242,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
             });
           }
 
+          const safeLobby = sanitizeLobbyForClient(lobby);
           socket.join(`lobby:${lobby.id}`);
-          callback?.({ success: true, lobby });
+          callback?.({ success: true, lobby: safeLobby, reconnectToken });
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -104,14 +270,14 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Kein gültiger Lobby-Code angegeben.' });
         }
         try {
-          const lobby = lobbyManager.findLobbyByCode(parsed.data.code);
+          const lobby = manager.findLobbyByCode(parsed.data.code);
           if (!lobby) {
             return callback?.({
               success: false,
               error: 'Lobby wurde nicht gefunden oder ist abgelaufen.',
             });
           }
-          callback?.({ success: true, lobby });
+          callback?.({ success: true, lobby: sanitizeLobbyForClient(lobby) });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
@@ -123,8 +289,16 @@ export function registerSocketHandlers(io: SocketIOServer) {
       'lobby:join',
       async (
         data: unknown,
-        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+        callback?: (res: {
+          success: boolean;
+          lobby?: any;
+          reconnectToken?: string;
+          error?: string;
+        }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Sitzung wurde in einem neuen Fenster übernommen.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:join'))) {
           return callback?.({ success: false, error: 'Zu viele Anfragen.' });
         }
@@ -136,20 +310,34 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültige Beitrittsdaten.' });
         }
         try {
-          const { lobby, error } = lobbyManager.joinLobby({
+          // Serverseitige Session verhindert User-ID-Fälschung
+          if (socket.data.playerId && parsed.data.userProfile.id !== socket.data.playerId) {
+            return callback?.({
+              success: false,
+              error: 'Ungültige Benutzer-ID für die aktuelle Sitzung.',
+            });
+          }
+
+          const { lobby, error, reconnectToken, supersededSocketId } = manager.joinLobby({
             lobbyIdOrCode: parsed.data.lobbyIdOrCode,
             userProfile: parsed.data.userProfile as any,
             socketId: socket.id,
+            sessionId: socket.data.sessionId,
           });
 
           if (error || !lobby) {
             return callback?.({ success: false, error: error || 'Beitritt fehlgeschlagen.' });
           }
 
-          socket.join(`lobby:${lobby.id}`);
-          callback?.({ success: true, lobby });
+          if (supersededSocketId) {
+            disconnectSupersededSocket(supersededSocketId);
+          }
 
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          socket.join(`lobby:${lobby.id}`);
+          callback?.({ success: true, lobby: safeLobby, reconnectToken });
+
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -160,12 +348,37 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 4. Bereit-Status umschalten
     socket.on(
       'lobby:ready',
-      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      async (
+        dataOrCb: unknown,
+        maybeCb?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        const { payload, callback } = unpackOptionalPayloadAndCallback(dataOrCb, maybeCb);
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:ready'))) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        if (!isPayloadWithinLimit(payload, EVENT_MAX_PAYLOAD_BYTES['lobby:ready'])) {
+          return callback?.({ success: false, error: 'Payload zu groß.' });
+        }
+        const parsed = LobbyReadySchema.safeParse(payload);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültiges Datenformat.' });
+        }
         try {
-          const { lobby, error } = lobbyManager.toggleReady(socket.id);
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, duplicate, error } = manager.toggleReady({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
           if (error || !lobby) {
             return callback?.({
               success: false,
@@ -173,8 +386,11 @@ export function registerSocketHandlers(io: SocketIOServer) {
             });
           }
 
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
-          callback?.({ success: true, lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+          }
+          callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
@@ -188,6 +404,9 @@ export function registerSocketHandlers(io: SocketIOServer) {
         data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:update-settings'))) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
@@ -199,7 +418,19 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültige Einstellungen.' });
         }
         try {
-          const { lobby, error } = lobbyManager.updateSettings(socket.id, parsed.data.settings);
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, duplicate, error } = manager.updateSettings({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            settings: parsed.data.settings,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
           if (error || !lobby) {
             return callback?.({
               success: false,
@@ -207,21 +438,27 @@ export function registerSocketHandlers(io: SocketIOServer) {
             });
           }
 
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
-          callback?.({ success: true, lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+          }
+          callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
       }
     );
 
-    // 4c. Spielerprofil (Name & Avatar) live in aktiver Lobby aktualisieren
+    // 4c. Spielerprofil live in aktiver Lobby aktualisieren
     socket.on(
       'lobby:update-profile',
       async (
         data: unknown,
         callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:update-profile'))) {
           return callback?.({ success: false, error: 'Profiländerungen zu schnell.' });
         }
@@ -233,15 +470,16 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültige Profildaten.' });
         }
         try {
-          const { lobby } = lobbyManager.updatePlayerProfile(
+          const { lobby, error } = manager.updatePlayerProfile(
             socket.id,
             parsed.data.userProfile as any
           );
           if (!lobby) {
-            return callback?.({ success: false });
+            return callback?.({ success: false, error });
           }
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
-          callback?.({ success: true, lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+          callback?.({ success: true, lobby: safeLobby });
         } catch {
           callback?.({ success: false });
         }
@@ -251,12 +489,37 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 5. Spiel durch Host starten
     socket.on(
       'lobby:start',
-      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      async (
+        dataOrCb: unknown,
+        maybeCb?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        const { payload, callback } = unpackOptionalPayloadAndCallback(dataOrCb, maybeCb);
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:start'))) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        if (!isPayloadWithinLimit(payload, EVENT_MAX_PAYLOAD_BYTES['lobby:start'])) {
+          return callback?.({ success: false, error: 'Payload zu groß.' });
+        }
+        const parsed = LobbyStartSchema.safeParse(payload);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültiges Datenformat.' });
+        }
         try {
-          const { lobby, error } = lobbyManager.startGame(socket.id);
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, duplicate, error } = manager.startGame({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
           if (error || !lobby) {
             return callback?.({
               success: false,
@@ -264,22 +527,33 @@ export function registerSocketHandlers(io: SocketIOServer) {
             });
           }
 
-          io.to(`lobby:${lobby.id}`).emit('game:started', { lobby });
-          io.emit('lobby:list-updated', { gameId: lobby.gameId });
-          callback?.({ success: true, lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            io.to(`lobby:${lobby.id}`).emit('game:started', { lobby: safeLobby });
+            io.emit('lobby:list-updated', { gameId: lobby.gameId });
+          }
+          callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
       }
     );
 
-    // 6. Spielzug ausführen (generisch)
+    // 6. Spielzug ausführen
     socket.on(
       'game:move',
       async (
         moveData: unknown,
-        callback?: (res: { success: boolean; error?: string; gameState?: any }) => void
+        callback?: (res: {
+          success: boolean;
+          error?: string;
+          gameState?: any;
+          lobby?: any;
+        }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Sitzung wurde durch neueres Fenster abgelöst.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'game:move'))) {
           return callback?.({ success: false, error: 'Zu schnell! Bitte einen Moment warten.' });
         }
@@ -291,39 +565,63 @@ export function registerSocketHandlers(io: SocketIOServer) {
           return callback?.({ success: false, error: 'Ungültiges Zug-Format.' });
         }
         try {
-          const { lobby, error } = lobbyManager.makeMove(socket.id, parsed.data);
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Kein aktives Spiel gefunden.' });
+          }
+
+          const { actionId, expectedVersion, ...move } = parsed.data;
+          const { lobby, duplicate, error } = manager.makeMove({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            move,
+            actionId,
+            expectedVersion,
+          });
           if (error || !lobby) {
             return callback?.({ success: false, error: error || 'Ungültiger Zug.' });
           }
 
-          io.to(`lobby:${lobby.id}`).emit('game:state', {
-            gameState: lobby.gameState,
-            status: lobby.status,
-            lobby,
-          });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            io.to(`lobby:${lobby.id}`).emit('game:state', {
+              gameState: safeLobby.gameState,
+              status: safeLobby.status,
+              lobby: safeLobby,
+            });
+          }
 
-          callback?.({ success: true, gameState: lobby.gameState });
+          callback?.({ success: true, gameState: safeLobby.gameState, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
       }
     );
 
-    // 6b. Live-Drawing für Zeichnen & Raten (Echtzeit-Synchronisation zum Fernseher)
+    // 6b. Live-Drawing für Zeichnen & Raten
     socket.on('draw:strokes', async (data: unknown) => {
       try {
+        if (socket.data.superseded) return;
         if (!(await consumeRateLimit(socket.id, 'draw:strokes'))) return;
         if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['draw:strokes'])) return;
 
         const parsed = DrawStrokesSchema.safeParse(data);
         if (!parsed.success) return;
 
-        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
-        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+        if (
+          !player ||
+          !player.connected ||
+          player.connectionState !== 'connected' ||
+          player.id !== (lobby.gameState as any).currentDrawerId
+        ) {
+          return;
+        }
 
         const sanitized = parsed.data.strokes;
         const currentStrokes = (lobby.gameState as any).strokes || [];
@@ -339,14 +637,21 @@ export function registerSocketHandlers(io: SocketIOServer) {
 
     socket.on('draw:clear', async () => {
       try {
+        if (socket.data.superseded) return;
         if (!(await consumeRateLimit(socket.id, 'draw:clear'))) return;
 
-        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
-        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+        if (
+          !player ||
+          !player.connected ||
+          player.id !== (lobby.gameState as any).currentDrawerId
+        ) {
+          return;
+        }
 
         (lobby.gameState as any).strokes = [];
         socket.to(`lobby:${lobby.id}`).emit('draw:live-clear');
@@ -357,14 +662,21 @@ export function registerSocketHandlers(io: SocketIOServer) {
 
     socket.on('draw:undo', async () => {
       try {
+        if (socket.data.superseded) return;
         if (!(await consumeRateLimit(socket.id, 'draw:undo'))) return;
 
-        const lobby = lobbyManager.getLobbyBySocketId(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in-game') return;
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
-        if (!player || player.id !== (lobby.gameState as any).currentDrawerId) return;
+        if (
+          !player ||
+          !player.connected ||
+          player.id !== (lobby.gameState as any).currentDrawerId
+        ) {
+          return;
+        }
 
         const currentStrokes: any[] = (lobby.gameState as any).strokes || [];
         if (currentStrokes.length === 0) return;
@@ -390,43 +702,82 @@ export function registerSocketHandlers(io: SocketIOServer) {
     // 7. Revanche / Nochmal spielen
     socket.on(
       'game:rematch',
-      async (callback?: (res: { success: boolean; lobby?: any; error?: string }) => void) => {
+      async (
+        dataOrCb: unknown,
+        maybeCb?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        const { payload, callback } = unpackOptionalPayloadAndCallback(dataOrCb, maybeCb);
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'game:rematch'))) {
           return callback?.({ success: false, error: 'Zu viele Aktionen.' });
         }
+        if (!isPayloadWithinLimit(payload, EVENT_MAX_PAYLOAD_BYTES['game:rematch'])) {
+          return callback?.({ success: false, error: 'Payload zu groß.' });
+        }
+        const parsed = GameRematchSchema.safeParse(payload);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Anfrage.' });
+        }
         try {
-          const { lobby, restarted, error } = lobbyManager.requestRematch(socket.id);
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, restarted, duplicate, error } = manager.requestRematch({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
           if (error || !lobby) {
             return callback?.({ success: false, error: error || 'Revanche nicht möglich.' });
           }
 
-          if (restarted) {
-            io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby });
-          } else {
-            io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            if (restarted) {
+              io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby: safeLobby });
+            } else {
+              io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+            }
           }
 
-          callback?.({ success: true, lobby });
+          callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
       }
     );
 
-    // 8. Lobby verlassen
+    // 8. Lobby explizit verlassen
     socket.on('lobby:leave', async (callback?: (res: { success: boolean }) => void) => {
       if (!(await consumeRateLimit(socket.id, 'lobby:leave'))) {
         return callback?.({ success: false });
       }
       try {
-        const { lobbyId, lobby, wasHost, deleted } = lobbyManager.leaveCurrentLobby(socket.id);
+        const { lobbyId, lobby, wasHost, deleted, newHost, previousHostId } =
+          manager.leaveCurrentLobby(socket.id, socket.data.playerId);
         if (lobbyId) {
           socket.leave(`lobby:${lobbyId}`);
           if (deleted) {
             io.emit('lobby:list-updated', {});
           } else if (lobby) {
+            const safeLobby = sanitizeLobbyForClient(lobby);
+            if (newHost && previousHostId) {
+              io.to(`lobby:${lobby.id}`).emit('lobby:host-changed', {
+                lobby: safeLobby,
+                newHostId: newHost.id,
+                newHostName: newHost.name,
+                previousHostId,
+                reason: 'host_left',
+              });
+            }
             io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-              lobby,
+              lobby: safeLobby,
               message: wasHost
                 ? 'Neuer Host gewählt.'
                 : 'Ein Spieler hat die Lobby verlassen.',
@@ -440,53 +791,86 @@ export function registerSocketHandlers(io: SocketIOServer) {
       }
     });
 
-    // 9. Wiederverbinden nach Disconnect
+    // 9. Sicheres Wiederverbinden nach Disconnect / Reload / Tab-Wechsel
     socket.on(
       'lobby:reconnect',
       async (
         data: unknown,
-        callback?: (res: { success: boolean; lobby?: any }) => void
+        callback?: (res: {
+          success: boolean;
+          lobby?: any;
+          reconnectToken?: string;
+          error?: string;
+        }) => void
       ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Sitzung wurde abgelöst.' });
+        }
         if (!(await consumeRateLimit(socket.id, 'lobby:reconnect'))) {
-          return callback?.({ success: false });
+          return callback?.({ success: false, error: 'Zu viele Reconnect-Versuche.' });
         }
         if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:reconnect'])) {
-          return callback?.({ success: false });
+          return callback?.({ success: false, error: 'Anfrage zu groß.' });
         }
-        const parsed = LobbyReconnectSchema.safeParse(data);
+        const parsed = LobbyReconnectSchema.safeParse(data ?? {});
         if (!parsed.success) {
-          return callback?.({ success: false });
+          return callback?.({ success: false, error: 'Ungültige Reconnect-Daten.' });
         }
         try {
-          const { lobby } = lobbyManager.reconnectPlayer({
-            userId: parsed.data.userId,
-            socketId: socket.id,
-          });
-
-          if (lobby) {
-            socket.join(`lobby:${lobby.id}`);
-            io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-              lobby,
-              message: 'Spieler ist wieder verbunden!',
+          const { success, lobby, reconnectToken, supersededSocketId, error } =
+            manager.reconnectPlayer({
+              userId: parsed.data.userId || socket.data.playerId,
+              sessionId: socket.data.sessionId,
+              reconnectToken: parsed.data.reconnectToken,
+              lobbyIdOrCode: parsed.data.lobbyIdOrCode,
+              socketId: socket.id,
             });
-            return callback?.({ success: true, lobby });
+
+          if (!success || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Wiederverbindung fehlgeschlagen.',
+            });
           }
-          callback?.({ success: false });
-        } catch {
-          callback?.({ success: false });
+
+          if (supersededSocketId) {
+            disconnectSupersededSocket(supersededSocketId);
+          }
+
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          socket.join(`lobby:${lobby.id}`);
+          io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
+            lobby: safeLobby,
+            message: 'Spieler ist wieder verbunden!',
+          });
+          return callback?.({ success: true, lobby: safeLobby, reconnectToken });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
         }
       }
     );
 
-    // 10. Disconnect
+    // 10. Verbindungsabbruch (Temporäre Trennung mit Reconnect-Frist)
     socket.on('disconnect', () => {
       cleanupSocketRateLimit(socket.id);
-      const { lobbyId, lobby, player } = lobbyManager.handleDisconnect(socket.id);
+      if (socket.data.superseded) {
+        return;
+      }
+      const { lobbyId, lobby, player, ignoredStaleSocket } = manager.handleDisconnect(socket.id);
+      if (ignoredStaleSocket) {
+        return;
+      }
       if (lobbyId && lobby && player) {
+        const safeLobby = sanitizeLobbyForClient(lobby);
         io.to(`lobby:${lobbyId}`).emit('lobby:player-disconnected', {
           playerId: player.id,
           playerName: player.name,
-          lobby,
+          reconnectDeadline: player.reconnectDeadline,
+          lobby: safeLobby,
+        });
+        io.to(`lobby:${lobbyId}`).emit('lobby:updated', {
+          lobby: safeLobby,
+          message: `${player.name} hat die Verbindung verloren.`,
         });
       }
     });

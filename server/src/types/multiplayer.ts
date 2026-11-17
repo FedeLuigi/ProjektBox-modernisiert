@@ -1,3 +1,24 @@
+export type PlayerConnectionState = 'connected' | 'disconnected' | 'offline';
+
+export type LobbyStatus =
+  | 'waiting'
+  | 'starting'
+  | 'in_progress'
+  | 'paused'
+  | 'finished'
+  | 'expired';
+
+export interface GameResultRecord {
+  gameId: string;
+  startedAt: number;
+  finishedAt: number;
+  status: 'won' | 'draw';
+  winnerId: string | null;
+  winnerName: string | null;
+  scores?: Record<string, number>;
+  players: Array<{ id: string; name: string; score?: number; eliminated?: boolean }>;
+}
+
 export interface Player {
   id: string; // Eindeutige persistente Nutzer-ID (z. B. usr_...)
   socketId: string;
@@ -6,6 +27,11 @@ export interface Player {
   isReady: boolean;
   isHost: boolean;
   connected: boolean;
+  connectionState?: PlayerConnectionState;
+  disconnectedAt?: number;
+  reconnectDeadline?: number;
+  eliminated?: boolean;
+  sessionId?: string;
   color?: string;
   symbol?: string;
   isTvScreen?: boolean; // Kennzeichnung für Großbild-Fernseher
@@ -57,13 +83,20 @@ export interface Lobby {
   maxPlayers: number;
   hostId: string;
   players: Player[];
-  status: 'waiting' | 'in-game' | 'finished';
+  status: LobbyStatus;
+  stateVersion: number;
   createdAt: number;
   expiresAt: number; // Ablaufzeitpunkt der Lobby
+  lastActivityAt?: number;
+  pausedAt?: number;
+  pausedReason?: string;
+  hostDisconnectDeadline?: number;
   isTvMode?: boolean; // TV-Modus mit QR-Code
   settings?: Record<string, any>;
   gameState: BaseGameState | null;
   rematchVotes: string[];
+  finishedResults?: GameResultRecord[];
+  processedActionIds?: string[];
 }
 
 export interface LobbySummary {
@@ -76,7 +109,8 @@ export interface LobbySummary {
   maxPlayers: number;
   playerCount: number;
   hostName: string;
-  status: 'waiting' | 'in-game' | 'finished';
+  status: LobbyStatus;
+  stateVersion?: number;
   createdAt: number;
   expiresAt: number;
   isTvMode?: boolean;

@@ -20,7 +20,7 @@ import { Avatar } from '../Avatar';
 import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { OpenButton } from '../OpenSubpageUI';
-import { ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
@@ -43,10 +43,15 @@ export function LobbyScreen({
   initialTvMode = false,
 }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
-  const [isInGame, setIsInGame] = useState(Boolean(initialLobby?.status === 'in-game'));
+  const [isInGame, setIsInGame] = useState(
+    Boolean(initialLobby?.status === 'in_progress' || initialLobby?.status === 'paused')
+  );
   const [isTvMode, setIsTvMode] = useState(initialLobby?.isTvMode ?? initialTvMode);
   const [isCreating, setIsCreating] = useState(!initialLobby);
   const [isStarting, setIsStarting] = useState(false);
+  const [isConnectionBlocked, setIsConnectionBlocked] = useState(() =>
+    socketService.isActionBlocked()
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
   const [copiedCode, setCopiedCode] = useState(false);
@@ -81,13 +86,13 @@ export function LobbyScreen({
     [gameId]
   );
 
-  // Synchronisiere initialLobby, falls über Deep-Link beigetreten
+  // Synchronisiere initialLobby, falls über Deep-Link oder Session-Wiederherstellung geladen
   useEffect(() => {
     if (initialLobby) {
       setCurrentLobby(initialLobby);
       setIsTvMode(Boolean(initialLobby.isTvMode));
       setIsCreating(false);
-      if (initialLobby.status === 'in-game') {
+      if (initialLobby.status === 'in_progress' || initialLobby.status === 'paused') {
         setIsInGame(true);
       }
     }
@@ -105,6 +110,10 @@ export function LobbyScreen({
   }, [currentLobby, onLobbyChange]);
 
   useEffect(() => {
+    const unsubMeta = socketService.onConnectionMetaChange(() => {
+      setIsConnectionBlocked(socketService.isActionBlocked());
+    });
+
     const unsubStarted = socketService.onGameStarted(({ lobby: updatedLobby }) => {
       setCurrentLobby(updatedLobby);
       setIsInGame(true);
@@ -112,17 +121,44 @@ export function LobbyScreen({
 
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
       setCurrentLobby((prev) => (prev ? { ...prev, ...updatedLobby } : updatedLobby));
+      if (updatedLobby.status === 'in_progress' || updatedLobby.status === 'paused') {
+        setIsInGame(true);
+      }
       if (message) setErrorMsg(message);
     });
 
+    const unsubSync = socketService.onStateSync(({ lobby: syncedLobby }) => {
+      setCurrentLobby(syncedLobby);
+      if (syncedLobby.status === 'in_progress' || syncedLobby.status === 'paused') {
+        setIsInGame(true);
+      }
+    });
+
     const unsubDiscon = socketService.onPlayerDisconnected(({ playerName }) => {
-      setErrorMsg(`${playerName} hat die Verbindung verloren.`);
+      setErrorMsg(`${playerName} hat die Verbindung verloren (60s Wiederverbindungsfrist).`);
+    });
+
+    const unsubOffline = socketService.onPlayerOffline(({ playerName }) => {
+      setErrorMsg(`${playerName} ist ausgeschieden (Reconnect-Frist abgelaufen).`);
+    });
+
+    const unsubHost = socketService.onHostChanged(({ newHostName }) => {
+      setErrorMsg(`${newHostName} wurde als neuer Host bestimmt.`);
+    });
+
+    const unsubExpired = socketService.onLobbyExpired(() => {
+      setErrorMsg('Diese Lobby ist abgelaufen.');
     });
 
     return () => {
+      unsubMeta();
       unsubStarted();
       unsubUpdated();
+      unsubSync();
       unsubDiscon();
+      unsubOffline();
+      unsubHost();
+      unsubExpired();
     };
   }, [gameId]);
 
@@ -249,7 +285,7 @@ export function LobbyScreen({
   }
 
   const activePlayers = currentLobby
-    ? currentLobby.players.filter((p) => !p.isTvScreen)
+    ? currentLobby.players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline')
     : [];
 
   const myPlayer =
@@ -284,7 +320,7 @@ export function LobbyScreen({
       fullWidth
       size="lg"
       variant="primary"
-      disabled={!allReady || isStarting}
+      disabled={!allReady || isStarting || isConnectionBlocked}
       onClick={handleStartGame}
       className="landscape:h-9 landscape:text-xs"
     >
@@ -299,6 +335,7 @@ export function LobbyScreen({
       fullWidth
       size="lg"
       variant="primary"
+      disabled={isConnectionBlocked}
       onClick={handleToggleReady}
       className="landscape:h-9 landscape:text-xs"
     >
@@ -309,7 +346,7 @@ export function LobbyScreen({
       fullWidth
       size="lg"
       variant="primary"
-      disabled={!allReady || isStarting}
+      disabled={!allReady || isStarting || isConnectionBlocked}
       onClick={handleStartGame}
       className="landscape:h-9 landscape:text-xs"
     >
@@ -324,6 +361,7 @@ export function LobbyScreen({
       fullWidth
       size="lg"
       variant="secondary"
+      disabled={isConnectionBlocked}
       onClick={handleToggleReady}
       className="landscape:h-9 landscape:text-xs"
     >
@@ -469,6 +507,14 @@ export function LobbyScreen({
                       <Crown className="h-3 w-3 fill-current" />
                     </span>
                   )}
+                  {p.connectionState === 'disconnected' && !p.connected && (
+                    <span
+                      title="Verbindung unterbrochen – Wiederverbindung läuft"
+                      className="inline-flex items-center rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-1.5 py-0.5 font-arcade text-[10px] text-[#FDE68A] uppercase animate-pulse shrink-0"
+                    >
+                      GETRENNT
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -554,6 +600,8 @@ export function LobbyScreen({
         </header>
 
         <main className="tablet-screen-main lobby-landscape-main flex flex-1 min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden py-4">
+          <ConnectionNoticeBanner onExitExpired={() => void handleLeaveLobby()} />
+
           {errorMsg && (
             <div className="font-arcade mx-auto mb-4 w-full max-w-xl rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
               {errorMsg}

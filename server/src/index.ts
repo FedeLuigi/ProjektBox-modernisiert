@@ -9,6 +9,8 @@ import { fileURLToPath } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import { apiRouter } from './routes/api.js';
 import { registerSocketHandlers } from './lobby/socketHandlers.js';
+import { lobbyManager } from './lobby/lobbyManager.js';
+import { configureOptionalRedisAdapter } from './utils/redisAdapter.js';
 
 dotenv.config();
 
@@ -21,7 +23,13 @@ const SSL_CERT = process.env.SSL_CERT_PATH;
 
 const app = express();
 
-app.use(cors());
+app.set('trust proxy', 1);
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+  })
+);
 app.use(express.json());
 
 // Healthcheck für Cloud Provider (z. B. Render.com)
@@ -87,21 +95,58 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
 // Socket.io Server initialisieren (CORS für beliebige Domains/Render aktiv, Buffer auf 96 KB begrenzt)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: '*',
+    origin: true,
     methods: ['GET', 'POST'],
+    credentials: true,
   },
   maxHttpBufferSize: 96 * 1024,
   pingTimeout: 20000,
   pingInterval: 10000,
+  connectTimeout: 20000,
   transports: ['websocket', 'polling'],
+  connectionStateRecovery: {
+    maxDisconnectionDuration: 2 * 60 * 1000,
+    skipMiddlewares: false,
+  },
 });
 
 // Multiplayer Socket-Events registrieren
 registerSocketHandlers(io);
 
-server.listen(PORT, '0.0.0.0', () => {
-  console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT} (0.0.0.0)`);
-  if (process.env.RENDER_EXTERNAL_URL) {
-    console.log(`🌐 Render.com URL: ${process.env.RENDER_EXTERNAL_URL}`);
+async function bootstrap() {
+  const restored = await lobbyManager.init();
+  console.log(
+    `[Startup] Zustand wiederhergestellt: ${restored.restoredLobbies} Lobbys, ${restored.restoredSessions} Sitzungen.`
+  );
+
+  const adapterStatus = await configureOptionalRedisAdapter(io);
+  console.log(`[Socket.io] Adapter: ${adapterStatus.reason}`);
+
+  server.listen(PORT, '0.0.0.0', () => {
+    console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT} (0.0.0.0)`);
+    if (process.env.RENDER_EXTERNAL_URL) {
+      console.log(`🌐 Render.com URL: ${process.env.RENDER_EXTERNAL_URL}`);
+    }
+  });
+}
+
+let isShuttingDown = false;
+async function handleShutdown(signal: string) {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+  console.log(`[Shutdown] Signal ${signal} empfangen, speichere Spielzustände...`);
+  try {
+    await lobbyManager.shutdown();
+  } catch (err) {
+    console.error('[Shutdown] Fehler beim Speichern:', err);
   }
-});
+  io.close(() => {
+    server.close(() => process.exit(0));
+  });
+  setTimeout(() => process.exit(0), 5000).unref();
+}
+
+process.on('SIGTERM', () => void handleShutdown('SIGTERM'));
+process.on('SIGINT', () => void handleShutdown('SIGINT'));
+
+void bootstrap();

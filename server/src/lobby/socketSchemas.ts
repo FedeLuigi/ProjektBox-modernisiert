@@ -5,11 +5,15 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   'lobby:getByCode': 1024,
   'lobby:create': 64 * 1024,
   'lobby:join': 64 * 1024,
+  'lobby:ready': 512,
+  'lobby:start': 512,
   'lobby:update-profile': 64 * 1024,
   'lobby:update-settings': 4096,
-  'lobby:reconnect': 1024,
+  'lobby:reconnect': 2048,
   'game:move': 4096,
+  'game:rematch': 512,
   'draw:strokes': 24 * 1024,
+  'session:ping': 256,
 } as const;
 
 export function isPayloadWithinLimit(payload: unknown, maxBytes: number): boolean {
@@ -65,6 +69,23 @@ export const LobbyJoinSchema = z.object({
   userProfile: UserProfileSchema,
 });
 
+export const ActionMetaFields = {
+  actionId: z.string().trim().min(1).max(80).optional(),
+  expectedVersion: z.number().int().min(0).optional(),
+};
+
+export const LobbyReadySchema = z.object({
+  ...ActionMetaFields,
+});
+
+export const LobbyStartSchema = z.object({
+  ...ActionMetaFields,
+});
+
+export const GameRematchSchema = z.object({
+  ...ActionMetaFields,
+});
+
 export const LobbyUpdateSettingsSchema = z.object({
   settings: z.object({
     rounds: z.number().int().min(1).max(20).optional(),
@@ -73,6 +94,7 @@ export const LobbyUpdateSettingsSchema = z.object({
     category: z.string().trim().min(1).max(32).optional(),
     customWords: z.array(z.string().trim().min(2).max(28)).max(40).optional(),
   }),
+  ...ActionMetaFields,
 });
 
 export const LobbyUpdateProfileSchema = z.object({
@@ -80,18 +102,25 @@ export const LobbyUpdateProfileSchema = z.object({
 });
 
 export const LobbyReconnectSchema = z.object({
-  userId: z.string().trim().min(1).max(80),
+  userId: z.string().trim().min(1).max(80).optional(),
+  lobbyIdOrCode: z.string().trim().max(64).optional(),
+  reconnectToken: z.string().trim().min(8).max(160).optional(),
+});
+
+export const SessionPingSchema = z.object({
+  clientTime: z.number().finite().optional(),
 });
 
 export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('guess'),
     text: z.string().trim().min(1).max(64),
+    ...ActionMetaFields,
   }),
-  z.object({ type: z.literal('undo') }),
-  z.object({ type: z.literal('clear') }),
-  z.object({ type: z.literal('time_up') }),
-  z.object({ type: z.literal('next_round') }),
+  z.object({ type: z.literal('undo'), ...ActionMetaFields }),
+  z.object({ type: z.literal('clear'), ...ActionMetaFields }),
+  z.object({ type: z.literal('time_up'), ...ActionMetaFields }),
+  z.object({ type: z.literal('next_round'), ...ActionMetaFields }),
 ]);
 
 export const StrokeSegmentSchema = z.object({

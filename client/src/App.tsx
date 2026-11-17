@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { GAMES, type Game } from './data/games';
 import { SplashScreen } from './components/SplashScreen';
 import { SettingsSheet } from './components/SettingsSheet';
@@ -275,6 +275,8 @@ export function App() {
     }
   }, []);
 
+  const hasRestoredSessionRef = useRef(false);
+
   useEffect(() => {
     if (!activeLobby || multiplayerGame) return;
 
@@ -290,9 +292,19 @@ export function App() {
       setMultiplayerGame(matchedGame);
     });
 
+    const unsubExpired = socketService.onLobbyExpired(({ lobbyId }) => {
+      setActiveLobby((prev) => (prev?.id === lobbyId ? null : prev));
+    });
+
+    const unsubSessExpired = socketService.onSessionExpired(() => {
+      setActiveLobby(null);
+    });
+
     return () => {
       unsubUpdated();
       unsubStarted();
+      unsubExpired();
+      unsubSessExpired();
     };
   }, [activeLobby, multiplayerGame]);
 
@@ -301,12 +313,32 @@ export function App() {
       const code = parseLobbyCode(window.location.href);
       if (code && !multiplayerGame) {
         joinByCode(code);
+        return true;
       }
+      return false;
     };
 
-    checkDeepLink();
     window.addEventListener('popstate', checkDeepLink);
-    return () => window.removeEventListener('popstate', checkDeepLink);
+
+    const hasDeepLink = checkDeepLink();
+    let cancelled = false;
+
+    if (!hasDeepLink && !hasRestoredSessionRef.current) {
+      hasRestoredSessionRef.current = true;
+      void socketService.restoreSession().then((restoredLobby) => {
+        if (cancelled || !restoredLobby) return;
+        const matchedGame = GAMES.find((g) => g.id === restoredLobby.gameId) || GAMES[0];
+        setActiveLobby(restoredLobby);
+        setDeepLinkLobby(restoredLobby);
+        setLaunchInTvMode(Boolean(restoredLobby.isTvMode));
+        setMultiplayerGame(matchedGame);
+      });
+    }
+
+    return () => {
+      cancelled = true;
+      window.removeEventListener('popstate', checkDeepLink);
+    };
   }, [joinByCode, multiplayerGame]);
 
   useEffect(() => {

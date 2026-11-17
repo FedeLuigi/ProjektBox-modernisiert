@@ -1,20 +1,98 @@
 import { io, Socket } from 'socket.io-client';
-import type {
-  Lobby,
-  LobbySummary,
-} from '../types/multiplayer';
-import { getUserProfile, subscribeUserProfile, STORAGE_KEYS } from '../utils/userProfile';
+import type { Lobby, LobbySummary } from '../types/multiplayer';
+import {
+  getUserProfile,
+  saveUserProfile,
+  STORAGE_KEYS,
+  subscribeUserProfile,
+} from '../utils/userProfile';
 
-export type ConnectionStatus = 'connected' | 'connecting' | 'disconnected' | 'error';
+export type ConnectionStatus =
+  | 'connected'
+  | 'reconnecting'
+  | 'disconnected'
+  | 'reconnected'
+  | 'failed'
+  | 'expired';
+
+export interface ConnectionMeta {
+  status: ConnectionStatus;
+  attempt: number;
+  reconnectDeadline?: number;
+  lastPongAt?: number;
+  latencyMs?: number;
+  errorMessage?: string;
+}
+
+export interface SessionInfoResponse {
+  authenticated: boolean;
+  sessionId?: string;
+  playerId?: string;
+  expiresAt?: number;
+  activeLobby?: Lobby | null;
+}
+
+const DEFAULT_RECONNECT_GRACE_MS = 60_000;
+const HEARTBEAT_INTERVAL_MS = 15_000;
+const HEARTBEAT_TIMEOUT_MS = 8_000;
+const RECONNECTED_BANNER_MS = 3_000;
+
+function generateActionId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return `act_${crypto.randomUUID()}`;
+  }
+  return `act_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+}
 
 class SocketService {
   private socket: Socket | null = null;
   private status: ConnectionStatus = 'disconnected';
+  private meta: ConnectionMeta = { status: 'disconnected', attempt: 0 };
+
   private statusListeners = new Set<(status: ConnectionStatus) => void>();
+  private metaListeners = new Set<(meta: ConnectionMeta) => void>();
+
   private activeLobbyId: string | null = null;
+  private latestStateVersion = 0;
+  private intentionalDisconnect = false;
+  private wasConnectedOnce = false;
+
+  // Ephemeres Reconnect-Token ausschließlich im Arbeitsspeicher (niemals im localStorage)
+  private reconnectToken: string | undefined = undefined;
+  private sessionEnsured = false;
+  private ensureSessionPromise: Promise<SessionInfoResponse | null> | null = null;
+  private reconnectInFlight: Promise<Lobby | null> | null = null;
+
+  private heartbeatTimer: ReturnType<typeof setInterval> | null = null;
+  private heartbeatTimeoutTimer: ReturnType<typeof setTimeout> | null = null;
+  private reconnectedResetTimer: ReturnType<typeof setTimeout> | null = null;
+
+  private customListeners = new Map<string, Set<(...args: any[]) => void>>();
+
+  constructor() {
+    if (typeof window !== 'undefined') {
+      window.addEventListener('online', this.handleNetworkOnline);
+      window.addEventListener('offline', this.handleNetworkOffline);
+      document.addEventListener('visibilitychange', this.handleVisibilityChange);
+    }
+  }
 
   public getStatus(): ConnectionStatus {
     return this.status;
+  }
+
+  public getConnectionMeta(): ConnectionMeta {
+    return { ...this.meta };
+  }
+
+  public isActionBlocked(): boolean {
+    if (!this.socket || !this.socket.connected) return true;
+    return (
+      this.status === 'reconnecting' ||
+      this.status === 'disconnected' ||
+      this.status === 'failed' ||
+      this.status === 'expired'
+    );
   }
 
   public onStatusChange(listener: (status: ConnectionStatus) => void): () => void {
@@ -25,117 +103,555 @@ class SocketService {
     };
   }
 
-  private setStatus(newStatus: ConnectionStatus) {
-    if (this.status !== newStatus) {
-      this.status = newStatus;
-      for (const listener of this.statusListeners) {
-        try {
-          listener(newStatus);
-        } catch {
-          // ignore
-        }
-      }
+  public onConnectionMetaChange(listener: (meta: ConnectionMeta) => void): () => void {
+    this.metaListeners.add(listener);
+    listener({ ...this.meta });
+    return () => {
+      this.metaListeners.delete(listener);
+    };
+  }
+
+  private updateConnectionMeta(partial: Partial<ConnectionMeta> & { status?: ConnectionStatus }) {
+    const nextStatus = partial.status ?? this.status;
+    this.status = nextStatus;
+    this.meta = {
+      ...this.meta,
+      ...partial,
+      status: nextStatus,
+    };
+
+    for (const listener of this.statusListeners) {
+      listener(this.status);
+    }
+    const snapshot = { ...this.meta };
+    for (const listener of this.metaListeners) {
+      listener(snapshot);
     }
   }
 
   public getSocketUrl(): string {
-    try {
+    if (typeof window !== 'undefined') {
       const custom = localStorage.getItem(STORAGE_KEYS.SOCKET_URL);
-      if (custom && custom.trim().length > 0) return custom.trim();
-    } catch {
-      // ignore
+      if (custom && custom.trim()) {
+        return custom.trim();
+      }
     }
     const envUrl = import.meta.env.VITE_SOCKET_URL;
-    if (envUrl && typeof envUrl === 'string') return envUrl.trim();
-    return ''; // Relativ (über Vite-Proxy oder gleicher Host)
+    if (envUrl) return envUrl;
+    return '';
   }
 
   public setSocketUrl(url: string | null) {
-    try {
-      if (!url || url.trim().length === 0) {
+    if (typeof window !== 'undefined') {
+      if (!url || !url.trim()) {
         localStorage.removeItem(STORAGE_KEYS.SOCKET_URL);
       } else {
         localStorage.setItem(STORAGE_KEYS.SOCKET_URL, url.trim());
       }
-    } catch {
-      // ignore
+      this.sessionEnsured = false;
+      this.disconnect();
+      void this.ensureConnectedWithSession().catch(() => {});
     }
-    this.disconnect();
-    this.connect();
   }
 
+  private getApiBaseUrl(): string {
+    const socketUrl = this.getSocketUrl();
+    if (!socketUrl) return '';
+    return socketUrl.replace(/\/+$/, '');
+  }
+
+  /**
+   * Authentifiziert den Browser über ein sicheres HttpOnly-SameSite-Cookie (/api/session).
+   * Keine sensiblen Session-Tokens werden im localStorage abgelegt.
+   */
+  public async ensureSession(forceRefresh = false): Promise<SessionInfoResponse | null> {
+    if (this.sessionEnsured && !forceRefresh && !this.ensureSessionPromise) {
+      return { authenticated: true, playerId: getUserProfile().id };
+    }
+    if (this.ensureSessionPromise && !forceRefresh) {
+      return this.ensureSessionPromise;
+    }
+
+    const profile = getUserProfile();
+    const apiUrl = `${this.getApiBaseUrl()}/api/session`;
+
+    this.ensureSessionPromise = (async () => {
+      try {
+        const res = await fetch(apiUrl, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ playerId: profile.id }),
+        });
+        if (!res.ok) {
+          return null;
+        }
+        const data = (await res.json()) as SessionInfoResponse;
+        this.sessionEnsured = true;
+
+        // Spieler-ID mit serverautoritativer Session synchronisieren
+        if (data.playerId && data.playerId !== profile.id) {
+          saveUserProfile({ id: data.playerId });
+        }
+        if (data.activeLobby) {
+          this.syncLobbyTracking(data.activeLobby);
+        }
+        return data;
+      } catch {
+        return null;
+      } finally {
+        this.ensureSessionPromise = null;
+      }
+    })();
+
+    return this.ensureSessionPromise;
+  }
+
+  /**
+   * Stellt nach Browser-Reload oder Tab-Neustart automatisch eine noch laufende Lobby/Sitzung wieder her.
+   */
+  public async restoreSession(): Promise<Lobby | null> {
+    const info = await this.ensureSession(true);
+    if (!info?.activeLobby) {
+      return null;
+    }
+    if (info.activeLobby.status === 'expired') {
+      return null;
+    }
+
+    try {
+      await this.ensureConnectedWithSession();
+      const restored = await this.reconnectActiveLobby(info.activeLobby.id);
+      return restored ?? info.activeLobby;
+    } catch {
+      return null;
+    }
+  }
+
+  public manualReconnect(): void {
+    this.intentionalDisconnect = false;
+    this.updateConnectionMeta({
+      status: 'reconnecting',
+      attempt: 1,
+      errorMessage: undefined,
+    });
+    if (this.socket) {
+      this.socket.connect();
+    } else {
+      void this.ensureConnectedWithSession().catch(() => {});
+    }
+  }
+
+  private handleNetworkOffline = () => {
+    if (!this.socket && !this.activeLobbyId) return;
+    this.stopHeartbeat();
+    this.updateConnectionMeta({
+      status: 'disconnected',
+      reconnectDeadline:
+        this.meta.reconnectDeadline ?? Date.now() + DEFAULT_RECONNECT_GRACE_MS,
+      errorMessage: 'Keine Internetverbindung.',
+    });
+  };
+
+  private handleNetworkOnline = () => {
+    if (this.intentionalDisconnect) return;
+    if (!this.socket && !this.activeLobbyId) return;
+    this.updateConnectionMeta({
+      status: 'reconnecting',
+      attempt: 1,
+      errorMessage: undefined,
+    });
+    if (this.socket && !this.socket.connected) {
+      this.socket.connect();
+    } else if (this.activeLobbyId) {
+      void this.reconnectActiveLobby(this.activeLobbyId);
+    }
+  };
+
+  private handleVisibilityChange = () => {
+    if (typeof document === 'undefined' || document.visibilityState !== 'visible') return;
+    if (this.intentionalDisconnect || !this.socket) return;
+
+    if (!this.socket.connected) {
+      this.updateConnectionMeta({ status: 'reconnecting', attempt: this.meta.attempt + 1 });
+      this.socket.connect();
+    } else {
+      this.sendHeartbeatPing();
+    }
+  };
+
   public connect(): Socket {
-    if (this.socket && (this.socket.connected || this.status === 'connecting')) {
+    if (this.socket) {
+      if (!this.socket.connected && !this.intentionalDisconnect) {
+        this.updateConnectionMeta({ status: 'reconnecting', attempt: 1 });
+        this.socket.connect();
+      }
       return this.socket;
     }
 
-    this.setStatus('connecting');
-    const targetUrl = this.getSocketUrl();
+    this.intentionalDisconnect = false;
+    this.updateConnectionMeta({
+      status: 'reconnecting',
+      attempt: 1,
+      errorMessage: undefined,
+    });
 
-    this.socket = io(targetUrl || window.location.origin, {
-      path: '/socket.io',
+    const targetUrl = this.getSocketUrl();
+    const sock = io(targetUrl || window.location.origin, {
+      withCredentials: true,
       transports: ['websocket', 'polling'],
       reconnection: true,
-      reconnectionAttempts: Infinity,
-      reconnectionDelay: 1000,
-      reconnectionDelayMax: 5000,
-      timeout: 10000,
+      reconnectionAttempts: 12,
+      reconnectionDelay: 1000, // Exponentieller Backoff-Start (1s -> 2s -> 4s -> ...)
+      reconnectionDelayMax: 15000, // Begrenzte maximale Wartezeit (15s)
+      randomizationFactor: 0.5, // Jitter gegen Thundering Herd
+      timeout: 20000,
     });
 
-    this.socket.on('connect', () => {
-      this.setStatus('connected');
-      const profile = getUserProfile();
-      if (profile && this.activeLobbyId) {
-        this.socket?.emit('lobby:reconnect', { userId: profile.id });
+    this.socket = sock;
+
+    // Registriere gespeicherte App-Event-Listener auf neuer Socket-Instanz
+    for (const [event, handlers] of this.customListeners.entries()) {
+      for (const handler of handlers) {
+        sock.on(event, handler);
+      }
+    }
+
+    sock.on('connect', () => {
+      this.startHeartbeat();
+      const wasReconnect = this.wasConnectedOnce || Boolean(this.activeLobbyId);
+      this.wasConnectedOnce = true;
+
+      if (this.reconnectedResetTimer) {
+        clearTimeout(this.reconnectedResetTimer);
+        this.reconnectedResetTimer = null;
+      }
+
+      if (wasReconnect) {
+        this.updateConnectionMeta({
+          status: 'reconnected',
+          attempt: 0,
+          reconnectDeadline: undefined,
+          errorMessage: undefined,
+        });
+        this.reconnectedResetTimer = setTimeout(() => {
+          this.reconnectedResetTimer = null;
+          if (this.status === 'reconnected' && this.socket?.connected) {
+            this.updateConnectionMeta({ status: 'connected', attempt: 0 });
+          }
+        }, RECONNECTED_BANNER_MS);
+
+        if (this.activeLobbyId) {
+          void this.reconnectActiveLobby(this.activeLobbyId);
+        }
+      } else {
+        this.updateConnectionMeta({
+          status: 'connected',
+          attempt: 0,
+          reconnectDeadline: undefined,
+          errorMessage: undefined,
+        });
       }
     });
 
-    this.socket.on('disconnect', (reason) => {
-      this.setStatus('disconnected');
-      if (reason === 'io server disconnect') {
-        this.socket?.connect();
+    sock.on('disconnect', (reason) => {
+      this.stopHeartbeat();
+      if (this.intentionalDisconnect || reason === 'io client disconnect') {
+        this.updateConnectionMeta({
+          status: 'disconnected',
+          attempt: 0,
+          reconnectDeadline: undefined,
+        });
+        return;
       }
+
+      const offline = typeof navigator !== 'undefined' && navigator.onLine === false;
+      this.updateConnectionMeta({
+        status: offline ? 'disconnected' : 'reconnecting',
+        attempt: 1,
+        reconnectDeadline:
+          this.meta.reconnectDeadline ?? Date.now() + DEFAULT_RECONNECT_GRACE_MS,
+      });
     });
 
-    this.socket.on('connect_error', () => {
-      this.setStatus('error');
+    sock.on('connect_error', (err) => {
+      if (this.status === 'expired') return;
+      this.updateConnectionMeta({
+        status: 'reconnecting',
+        attempt: this.meta.attempt + 1,
+        errorMessage: err.message || 'Verbindung unterbrochen',
+      });
     });
 
-    return this.socket;
+    sock.io.on('reconnect_attempt', (attempt) => {
+      if (this.status === 'expired') return;
+      this.updateConnectionMeta({
+        status: 'reconnecting',
+        attempt,
+        reconnectDeadline:
+          this.meta.reconnectDeadline ?? Date.now() + DEFAULT_RECONNECT_GRACE_MS,
+      });
+    });
+
+    sock.io.on('reconnect_failed', () => {
+      this.updateConnectionMeta({
+        status: 'failed',
+        errorMessage: 'Automatische Wiederverbindung fehlgeschlagen.',
+      });
+    });
+
+    // Live State-Synchronisation vom Server aktualisieren
+    sock.on('lobby:updated', ({ lobby }: { lobby?: Lobby }) => {
+      if (lobby) this.syncLobbyTracking(lobby);
+    });
+    sock.on('game:started', ({ lobby }: { lobby?: Lobby }) => {
+      if (lobby) this.syncLobbyTracking(lobby);
+    });
+    sock.on('game:state', ({ lobby }: { lobby?: Lobby }) => {
+      if (lobby) this.syncLobbyTracking(lobby);
+    });
+    sock.on('game:restarted', ({ lobby }: { lobby?: Lobby }) => {
+      if (lobby) this.syncLobbyTracking(lobby);
+    });
+    sock.on(
+      'lobby:state-sync',
+      ({ lobby, reconnectToken }: { lobby?: Lobby; reconnectToken?: string }) => {
+        if (lobby) this.syncLobbyTracking(lobby);
+        if (reconnectToken) this.reconnectToken = reconnectToken;
+      }
+    );
+
+    sock.on('session:expired', (payload?: { message?: string }) => {
+      this.activeLobbyId = null;
+      this.reconnectToken = undefined;
+      this.stopHeartbeat();
+      this.updateConnectionMeta({
+        status: 'expired',
+        reconnectDeadline: undefined,
+        errorMessage: payload?.message || 'Sitzung abgelaufen.',
+      });
+    });
+
+    sock.on('session:conflict', (payload?: { message?: string }) => {
+      this.activeLobbyId = null;
+      this.reconnectToken = undefined;
+      this.intentionalDisconnect = true;
+      this.stopHeartbeat();
+      this.updateConnectionMeta({
+        status: 'expired',
+        reconnectDeadline: undefined,
+        errorMessage:
+          payload?.message || 'Diese Sitzung wurde in einem neuen Fenster geöffnet.',
+      });
+    });
+
+    sock.on('lobby:expired', () => {
+      this.activeLobbyId = null;
+      this.reconnectToken = undefined;
+    });
+
+    return sock;
+  }
+
+  private async ensureConnectedWithSession(): Promise<Socket> {
+    await this.ensureSession();
+    const sock = this.connect();
+    if (sock.connected) {
+      return sock;
+    }
+
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        sock.off('connect', onConnect);
+        reject(new Error('Zeitüberschreitung: Server nicht erreichbar.'));
+      }, 15_000);
+
+      const onConnect = () => {
+        clearTimeout(timer);
+        resolve(sock);
+      };
+      sock.once('connect', onConnect);
+    });
+  }
+
+  private syncLobbyTracking(lobby: Lobby) {
+    if (lobby.status === 'expired') {
+      if (this.activeLobbyId === lobby.id) {
+        this.activeLobbyId = null;
+      }
+      return;
+    }
+    this.activeLobbyId = lobby.id;
+    if (typeof lobby.stateVersion === 'number') {
+      this.latestStateVersion = lobby.stateVersion;
+    }
+
+    const me = lobby.players.find((p) => p.id === getUserProfile().id);
+    if (me?.connectionState === 'disconnected' && me.reconnectDeadline) {
+      this.updateConnectionMeta({ reconnectDeadline: me.reconnectDeadline });
+    }
+  }
+
+  private async reconnectActiveLobby(lobbyIdOrCode?: string): Promise<Lobby | null> {
+    if (this.reconnectInFlight) {
+      return this.reconnectInFlight;
+    }
+    const targetLobby = lobbyIdOrCode ?? this.activeLobbyId;
+    if (!targetLobby || !this.socket?.connected) {
+      return null;
+    }
+
+    const userId = getUserProfile().id;
+    this.reconnectInFlight = new Promise<Lobby | null>((resolve) => {
+      const timer = setTimeout(() => resolve(null), 8_000);
+      this.socket!.emit(
+        'lobby:reconnect',
+        {
+          userId,
+          lobbyIdOrCode: targetLobby,
+          reconnectToken: this.reconnectToken,
+        },
+        (res: {
+          success: boolean;
+          lobby?: Lobby;
+          reconnectToken?: string;
+          error?: string;
+        }) => {
+          clearTimeout(timer);
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            if (res.reconnectToken) {
+              this.reconnectToken = res.reconnectToken;
+            }
+            resolve(res.lobby);
+          } else {
+            if (res?.error?.toLowerCase().includes('abgelaufen')) {
+              this.activeLobbyId = null;
+              this.reconnectToken = undefined;
+              this.updateConnectionMeta({
+                status: 'expired',
+                errorMessage: res.error,
+              });
+            }
+            resolve(null);
+          }
+        }
+      );
+    }).finally(() => {
+      this.reconnectInFlight = null;
+    });
+
+    return this.reconnectInFlight;
+  }
+
+  private startHeartbeat() {
+    this.stopHeartbeat();
+    this.sendHeartbeatPing();
+    this.heartbeatTimer = setInterval(() => {
+      this.sendHeartbeatPing();
+    }, HEARTBEAT_INTERVAL_MS);
+  }
+
+  private stopHeartbeat() {
+    if (this.heartbeatTimer) {
+      clearInterval(this.heartbeatTimer);
+      this.heartbeatTimer = null;
+    }
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+      this.heartbeatTimeoutTimer = null;
+    }
+  }
+
+  private sendHeartbeatPing() {
+    if (!this.socket || !this.socket.connected) return;
+    const sentAt = Date.now();
+
+    if (this.heartbeatTimeoutTimer) {
+      clearTimeout(this.heartbeatTimeoutTimer);
+    }
+
+    this.heartbeatTimeoutTimer = setTimeout(() => {
+      if (this.socket?.connected && this.status === 'connected') {
+        this.updateConnectionMeta({
+          status: 'reconnecting',
+          attempt: 1,
+          reconnectDeadline:
+            this.meta.reconnectDeadline ?? Date.now() + DEFAULT_RECONNECT_GRACE_MS,
+          errorMessage: 'Verbindung reagiert nicht (Timeout).',
+        });
+      }
+    }, HEARTBEAT_TIMEOUT_MS);
+
+    this.socket.emit(
+      'session:ping',
+      { clientTime: sentAt },
+      (res?: { serverTime: number; sessionValid: boolean }) => {
+        if (this.heartbeatTimeoutTimer) {
+          clearTimeout(this.heartbeatTimeoutTimer);
+          this.heartbeatTimeoutTimer = null;
+        }
+        if (!res) return;
+        if (!res.sessionValid) {
+          this.updateConnectionMeta({
+            status: 'expired',
+            errorMessage: 'Sitzung auf dem Server abgelaufen.',
+          });
+          return;
+        }
+        const latencyMs = Math.max(0, Date.now() - sentAt);
+        this.updateConnectionMeta({
+          lastPongAt: Date.now(),
+          latencyMs,
+        });
+      }
+    );
   }
 
   public disconnect() {
+    this.intentionalDisconnect = true;
+    this.stopHeartbeat();
+    if (this.reconnectedResetTimer) {
+      clearTimeout(this.reconnectedResetTimer);
+      this.reconnectedResetTimer = null;
+    }
     if (this.socket) {
       this.socket.disconnect();
       this.socket = null;
     }
-    this.setStatus('disconnected');
     this.activeLobbyId = null;
+    this.reconnectToken = undefined;
+    this.wasConnectedOnce = false;
+    this.updateConnectionMeta({
+      status: 'disconnected',
+      attempt: 0,
+      reconnectDeadline: undefined,
+    });
   }
 
   public setActiveLobbyId(id: string | null) {
     this.activeLobbyId = id;
-  }
-
-  public updatePlayerProfile(userProfile = getUserProfile()): void {
-    if (this.socket?.connected && this.activeLobbyId) {
-      this.socket.emit('lobby:update-profile', { userProfile });
+    if (!id) {
+      this.reconnectToken = undefined;
     }
   }
 
-  // ─── API METHODEN ───
+  public updatePlayerProfile(userProfile = getUserProfile()): void {
+    if (!this.socket || !this.socket.connected || !this.activeLobbyId) return;
+    this.socket.emit('lobby:update-profile', { userProfile });
+  }
 
-  public async fetchLobbies(gameId: string): Promise<LobbySummary[]> {
-    const s = this.connect();
+  public async getPublicLobbies(gameId?: string): Promise<LobbySummary[]> {
+    const sock = await this.ensureConnectedWithSession();
     return new Promise((resolve, reject) => {
-      s.emit(
+      sock.emit(
         'lobby:list',
         { gameId },
         (res: { success: boolean; lobbies?: LobbySummary[]; error?: string }) => {
-          if (res.success && res.lobbies) {
+          if (res?.success && res.lobbies) {
             resolve(res.lobbies);
           } else {
-            reject(new Error(res.error || 'Lobbys konnten nicht geladen werden.'));
+            reject(new Error(res?.error || 'Lobbys konnten nicht geladen werden.'));
           }
         }
       );
@@ -144,23 +660,30 @@ class SocketService {
 
   public async createLobby(
     name: string,
-    isPrivate = true,
+    isPrivate: boolean,
     gameId: string,
     isTvMode = false
   ): Promise<Lobby> {
-    const s = this.connect();
+    const sock = await this.ensureConnectedWithSession();
     const userProfile = getUserProfile();
-
     return new Promise((resolve, reject) => {
-      s.emit(
+      sock.emit(
         'lobby:create',
         { name, isPrivate, gameId, userProfile, isTvMode },
-        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
-          if (res.success && res.lobby) {
-            this.activeLobbyId = res.lobby.id;
+        (res: {
+          success: boolean;
+          lobby?: Lobby;
+          reconnectToken?: string;
+          error?: string;
+        }) => {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            if (res.reconnectToken) {
+              this.reconnectToken = res.reconnectToken;
+            }
             resolve(res.lobby);
           } else {
-            reject(new Error(res.error || 'Lobby konnte nicht erstellt werden.'));
+            reject(new Error(res?.error || 'Lobby konnte nicht erstellt werden.'));
           }
         }
       );
@@ -168,16 +691,16 @@ class SocketService {
   }
 
   public async getLobbyByCode(code: string): Promise<Lobby> {
-    const s = this.connect();
+    const sock = await this.ensureConnectedWithSession();
     return new Promise((resolve, reject) => {
-      s.emit(
+      sock.emit(
         'lobby:getByCode',
         { code },
         (res: { success: boolean; lobby?: Lobby; error?: string }) => {
-          if (res.success && res.lobby) {
+          if (res?.success && res.lobby) {
             resolve(res.lobby);
           } else {
-            reject(new Error(res.error || 'Lobby nicht gefunden.'));
+            reject(new Error(res?.error || 'Lobby nicht gefunden.'));
           }
         }
       );
@@ -185,24 +708,31 @@ class SocketService {
   }
 
   public async joinLobby(lobbyIdOrCode: string): Promise<Lobby> {
-    const s = this.connect();
+    const sock = await this.ensureConnectedWithSession();
     const userProfile = getUserProfile();
-
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         reject(new Error('Zeitüberschreitung: Lobby konnte nicht erreicht werden.'));
-      }, 8000);
+      }, 10000);
 
-      s.emit(
+      sock.emit(
         'lobby:join',
         { lobbyIdOrCode, userProfile },
-        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+        (res: {
+          success: boolean;
+          lobby?: Lobby;
+          reconnectToken?: string;
+          error?: string;
+        }) => {
           clearTimeout(timer);
-          if (res.success && res.lobby) {
-            this.activeLobbyId = res.lobby.id;
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            if (res.reconnectToken) {
+              this.reconnectToken = res.reconnectToken;
+            }
             resolve(res.lobby);
           } else {
-            reject(new Error(res.error || 'Lobby konnte nicht beigetreten werden.'));
+            reject(new Error(res?.error || 'Lobby konnte nicht beigetreten werden.'));
           }
         }
       );
@@ -210,16 +740,21 @@ class SocketService {
   }
 
   public async updateLobbySettings(settings: Record<string, any>): Promise<Lobby> {
-    const s = this.connect();
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unsicher – bitte warte auf die Wiederverbindung.');
+    }
+    const sock = this.connect();
+    const actionId = generateActionId();
     return new Promise((resolve, reject) => {
-      s.emit(
+      sock.emit(
         'lobby:update-settings',
-        { settings },
+        { settings, actionId, expectedVersion: this.latestStateVersion },
         (res: { success: boolean; lobby?: Lobby; error?: string }) => {
-          if (res.success && res.lobby) {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
             resolve(res.lobby);
           } else {
-            reject(new Error(res.error || 'Einstellungen konnten nicht aktualisiert werden.'));
+            reject(new Error(res?.error || 'Einstellungen konnten nicht aktualisiert werden.'));
           }
         }
       );
@@ -227,136 +762,225 @@ class SocketService {
   }
 
   public async toggleReady(): Promise<Lobby> {
-    const s = this.connect();
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unsicher – Aktion blockiert bis Verbindung steht.');
+    }
+    const sock = this.connect();
+    const actionId = generateActionId();
     return new Promise((resolve, reject) => {
-      s.emit('lobby:ready', (res: { success: boolean; lobby?: Lobby; error?: string }) => {
-        if (res.success && res.lobby) {
-          resolve(res.lobby);
-        } else {
-          reject(new Error(res.error || 'Bereit-Status konnte nicht geändert werden.'));
+      sock.emit(
+        'lobby:ready',
+        { actionId, expectedVersion: this.latestStateVersion },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res?.error || 'Bereit-Status konnte nicht geändert werden.'));
+          }
         }
-      });
+      );
     });
   }
 
   public async startLobby(): Promise<Lobby> {
-    const s = this.connect();
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unsicher – Spielstart pausiert bis zur Wiederverbindung.');
+    }
+    const sock = this.connect();
+    const actionId = generateActionId();
     return new Promise((resolve, reject) => {
-      s.emit('lobby:start', (res: { success: boolean; lobby?: Lobby; error?: string }) => {
-        if (res.success && res.lobby) {
-          resolve(res.lobby);
-        } else {
-          reject(new Error(res.error || 'Spiel konnte nicht gestartet werden.'));
+      sock.emit(
+        'lobby:start',
+        { actionId, expectedVersion: this.latestStateVersion },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res?.error || 'Spiel konnte nicht gestartet werden.'));
+          }
         }
-      });
+      );
     });
   }
 
   public async sendMove(moveData: any): Promise<void> {
-    const s = this.connect();
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unterbrochen – Zug konnte nicht gesendet werden.');
+    }
+    const sock = this.connect();
+    const actionId = moveData?.actionId || generateActionId();
+    const payload = {
+      ...moveData,
+      actionId,
+      expectedVersion:
+        typeof moveData?.expectedVersion === 'number'
+          ? moveData.expectedVersion
+          : this.latestStateVersion,
+    };
+
     return new Promise((resolve, reject) => {
-      s.emit('game:move', moveData, (res: { success: boolean; error?: string }) => {
-        if (res.success) {
-          resolve();
-        } else {
-          reject(new Error(res.error || 'Ungültiger Zug.'));
+      sock.emit(
+        'game:move',
+        payload,
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res?.lobby) {
+            this.syncLobbyTracking(res.lobby);
+          }
+          if (res?.success) {
+            resolve();
+          } else {
+            reject(new Error(res?.error || 'Ungültiger Zug.'));
+          }
         }
-      });
+      );
     });
   }
 
   public emitStrokes(strokes: any[]): void {
-    const s = this.connect();
-    s.emit('draw:strokes', { strokes });
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('draw:strokes', { strokes });
   }
 
   public emitClearCanvas(): void {
-    const s = this.connect();
-    s.emit('draw:clear');
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('draw:clear');
   }
 
   public emitUndo(): void {
-    const s = this.connect();
-    s.emit('draw:undo');
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('draw:undo');
   }
 
   public async requestRematch(): Promise<void> {
-    const s = this.connect();
+    if (this.isActionBlocked()) {
+      throw new Error('Verbindung unsicher – bitte kurz warten.');
+    }
+    const sock = this.connect();
+    const actionId = generateActionId();
     return new Promise((resolve, reject) => {
-      s.emit('game:rematch', (res: { success: boolean; error?: string }) => {
-        if (res.success) {
-          resolve();
-        } else {
-          reject(new Error(res.error || 'Revanche fehlgeschlagen.'));
+      sock.emit(
+        'game:rematch',
+        { actionId, expectedVersion: this.latestStateVersion },
+        (res: { success: boolean; lobby?: Lobby; error?: string }) => {
+          if (res?.lobby) this.syncLobbyTracking(res.lobby);
+          if (res?.success) {
+            resolve();
+          } else {
+            reject(new Error(res?.error || 'Revanche fehlgeschlagen.'));
+          }
         }
-      });
+      );
     });
   }
 
   public async leaveLobby(): Promise<void> {
-    const s = this.connect();
-    this.activeLobbyId = null;
+    if (!this.socket || !this.socket.connected) {
+      this.activeLobbyId = null;
+      this.reconnectToken = undefined;
+      return;
+    }
     return new Promise((resolve) => {
-      s.emit('lobby:leave', () => {
+      this.socket?.emit('lobby:leave', () => {
+        this.activeLobbyId = null;
+        this.reconnectToken = undefined;
         resolve();
       });
     });
   }
 
-  // ─── EVENT LISTENER REGISTRIERUNG ───
+  private addSocketListener(event: string, cb: (...args: any[]) => void): () => void {
+    if (!this.customListeners.has(event)) {
+      this.customListeners.set(event, new Set());
+    }
+    this.customListeners.get(event)!.add(cb);
+
+    if (this.socket) {
+      this.socket.on(event, cb);
+    }
+
+    return () => {
+      this.customListeners.get(event)?.delete(cb);
+      this.socket?.off(event, cb);
+    };
+  }
 
   public onLobbyUpdated(cb: (data: { lobby: Lobby; message?: string }) => void): () => void {
-    const s = this.connect();
-    s.on('lobby:updated', cb);
-    return () => s.off('lobby:updated', cb);
+    return this.addSocketListener('lobby:updated', cb);
   }
 
   public onGameStarted(cb: (data: { lobby: Lobby }) => void): () => void {
-    const s = this.connect();
-    s.on('game:started', cb);
-    return () => s.off('game:started', cb);
+    return this.addSocketListener('game:started', cb);
   }
 
   public onGameState(cb: (data: { gameState: any; status: string; lobby: Lobby }) => void): () => void {
-    const s = this.connect();
-    s.on('game:state', cb);
-    return () => s.off('game:state', cb);
+    return this.addSocketListener('game:state', cb);
   }
 
   public onGameRestarted(cb: (data: { lobby: Lobby }) => void): () => void {
-    const s = this.connect();
-    s.on('game:restarted', cb);
-    return () => s.off('game:restarted', cb);
+    return this.addSocketListener('game:restarted', cb);
   }
 
-  public onPlayerDisconnected(cb: (data: { playerId: string; playerName: string; lobby: Lobby }) => void): () => void {
-    const s = this.connect();
-    s.on('lobby:player-disconnected', cb);
-    return () => s.off('lobby:player-disconnected', cb);
+  public onPlayerDisconnected(
+    cb: (data: {
+      playerId: string;
+      playerName: string;
+      reconnectDeadline?: number;
+      lobby: Lobby;
+    }) => void
+  ): () => void {
+    return this.addSocketListener('lobby:player-disconnected', cb);
+  }
+
+  public onPlayerOffline(
+    cb: (data: { playerId: string; playerName: string; lobby: Lobby }) => void
+  ): () => void {
+    return this.addSocketListener('lobby:player-offline', cb);
+  }
+
+  public onHostChanged(
+    cb: (data: {
+      lobby: Lobby;
+      newHostId: string;
+      newHostName: string;
+      previousHostId: string;
+      reason: string;
+    }) => void
+  ): () => void {
+    return this.addSocketListener('lobby:host-changed', cb);
+  }
+
+  public onLobbyExpired(cb: (data: { lobbyId: string; code: string }) => void): () => void {
+    return this.addSocketListener('lobby:expired', cb);
+  }
+
+  public onSessionExpired(cb: (data: { reason?: string; message?: string }) => void): () => void {
+    return this.addSocketListener('session:expired', cb);
+  }
+
+  public onSessionConflict(cb: (data: { message?: string }) => void): () => void {
+    return this.addSocketListener('session:conflict', cb);
+  }
+
+  public onStateSync(cb: (data: { lobby: Lobby }) => void): () => void {
+    return this.addSocketListener('lobby:state-sync', cb);
   }
 
   public onListUpdated(cb: () => void): () => void {
-    const s = this.connect();
-    s.on('lobby:list-updated', cb);
-    return () => s.off('lobby:list-updated', cb);
+    return this.addSocketListener('lobby:list-updated', cb);
   }
 
   public onLiveStrokes(cb: (data: { strokes: any[] }) => void): () => void {
-    const s = this.connect();
-    s.on('draw:live-strokes', cb);
-    return () => s.off('draw:live-strokes', cb);
+    return this.addSocketListener('draw:live-strokes', cb);
   }
 
   public onLiveClear(cb: () => void): () => void {
-    const s = this.connect();
-    s.on('draw:live-clear', cb);
-    return () => s.off('draw:live-clear', cb);
+    return this.addSocketListener('draw:live-clear', cb);
   }
 
   public onLiveUndo(cb: (data: { strokes: any[] }) => void): () => void {
-    const s = this.connect();
-    s.on('draw:live-undo', cb);
-    return () => s.off('draw:live-undo', cb);
+    return this.addSocketListener('draw:live-undo', cb);
   }
 }
 

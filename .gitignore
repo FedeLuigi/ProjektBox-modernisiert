@@ -6,6 +6,8 @@ dist/
 dist-ssr/
 dev-dist/
 *.local
+server/data/
+*.tmp
 
 # Environment Variables
 .env

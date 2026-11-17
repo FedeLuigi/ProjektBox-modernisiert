@@ -495,31 +495,50 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
   },
 
   onPlayerLeave(state, leavingPlayerId, remainingPlayers) {
-    if (remainingPlayers.length < 2) {
+    const activePlayers = remainingPlayers.filter(
+      (p) => !p.isTvScreen && !p.eliminated && p.connectionState !== 'offline'
+    );
+
+    if (activePlayers.length < 2) {
+      let winnerId = activePlayers[0]?.id || null;
+      if (!winnerId && state.scores) {
+        const sorted = Object.entries(state.scores).sort((a, b) => b[1] - a[1]);
+        winnerId = sorted[0]?.[0] || null;
+      }
       return {
         ...state,
         status: 'won',
-        winnerId: remainingPlayers[0]?.id || null,
+        winnerId,
       };
     }
 
-    // Wenn der Zeichner geht -> Nächster Spieler übernimmt
+    // Wenn der Zeichner geht -> Nächster aktiver Spieler übernimmt, Punktestände bleiben erhalten
     if (leavingPlayerId === state.currentDrawerId) {
-      const nextDrawer = remainingPlayers[0];
+      const nextIndex = state.drawerIndex % activePlayers.length;
+      const nextDrawer = activePlayers[nextIndex];
       const categoryFilter = state.categoryFilter || 'Alle';
-      const hintsEnabled = state.hintsEnabled !== false;
-      const { word, category } = getRandomWord(categoryFilter);
+      const customWords = state.customWords || [];
+      const usedWords = [...(state.usedWords || [])];
+      const hintsEnabled = state.hintsEnabled === true;
+      const { word, category } = getRandomWord(categoryFilter, customWords, usedWords);
+      usedWords.push(word);
+
       return {
         ...state,
+        drawerIndex: nextIndex,
         currentTurn: nextDrawer.id,
         currentDrawerId: nextDrawer.id,
         secretWord: word,
         wordHint: makeWordHint(word, hintsEnabled),
         categoryName: category,
+        usedWords,
         strokes: [],
         guesses: [],
         correctGuesserIds: [],
         roundStatus: 'drawing',
+        roundStartedAt: Date.now(),
+        roundWinnerName: undefined,
+        roundEndReason: undefined,
       };
     }
 

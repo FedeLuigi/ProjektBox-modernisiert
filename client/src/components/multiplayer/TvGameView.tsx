@@ -6,6 +6,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
+import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
 
 interface TvGameViewProps {
   lobby: Lobby;
@@ -75,11 +76,16 @@ export function TvGameView({
       setLobby((prev) => ({ ...prev, ...updatedLobby }));
     });
 
+    const unsubSync = socketService.onStateSync(({ lobby: syncedLobby }) => {
+      setLobby(syncedLobby);
+    });
+
     return () => {
       unsubState();
       unsubStarted();
       unsubRestart();
       unsubUpdated();
+      unsubSync();
     };
   }, []);
 
@@ -127,11 +133,22 @@ export function TvGameView({
                 {timeLeft} S
               </span>
             )}
+            <div className="hidden md:block">
+              <ConnectionStatusBadge />
+            </div>
             <span className="font-arcade rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </span>
           </div>
         </header>
+
+        <ConnectionNoticeBanner onExitExpired={onLeave} />
+
+        {lobby.status === 'paused' && (
+          <div className="font-arcade mx-auto my-1.5 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-4 py-1.5 text-center text-xs text-[#FDE68A] uppercase animate-pulse">
+            {lobby.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...'}
+          </div>
+        )}
 
         {/* 2. MITTE: TV-BÜHNE */}
         {isDrawAndGuess ? (
@@ -159,6 +176,11 @@ export function TvGameView({
                       <div className="flex items-center gap-2 min-w-0">
                         <Avatar config={p.avatar} size={32} />
                         <span className="font-arcade text-xs uppercase truncate">{p.name}</span>
+                        {p.connectionState === 'disconnected' && !p.connected && (
+                          <span className="rounded border border-[#F59E0B]/50 bg-[#F59E0B]/20 px-1 py-0.5 font-arcade text-[9px] text-[#FDE68A] uppercase">
+                            GETRENNT
+                          </span>
+                        )}
                       </div>
                       <span className="font-arcade text-xs text-[#FDE68A] uppercase">{score}</span>
                     </div>

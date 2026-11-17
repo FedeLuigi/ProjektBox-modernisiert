@@ -7,6 +7,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
+import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -21,8 +22,11 @@ export function MultiplayerGameView({
 }: MultiplayerGameViewProps) {
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isConnectionBlocked, setIsConnectionBlocked] = useState(() =>
+    socketService.isActionBlocked()
+  );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [disconnectedOpponent, setDisconnectedOpponent] = useState<string | null>(null);
+  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const currentUser = useUserProfile();
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
@@ -30,6 +34,10 @@ export function MultiplayerGameView({
     activePlayers.find((p) => p.id === currentUser.id) ||
     lobby.players.find((p) => p.id === currentUser.id);
   const opponent = activePlayers.find((p) => p.id !== currentUser.id);
+  const disconnectedPlayers = activePlayers.filter(
+    (p) => p.id !== currentUser.id && p.connectionState === 'disconnected' && !p.connected
+  );
+  const isLobbyPaused = lobby.status === 'paused';
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
@@ -42,6 +50,16 @@ export function MultiplayerGameView({
   }, [initialLobby]);
 
   useEffect(() => {
+    if (disconnectedPlayers.length === 0) return;
+    const timer = setInterval(() => setNowMs(Date.now()), 500);
+    return () => clearInterval(timer);
+  }, [disconnectedPlayers.length]);
+
+  useEffect(() => {
+    const unsubMeta = socketService.onConnectionMetaChange(() => {
+      setIsConnectionBlocked(socketService.isActionBlocked());
+    });
+
     const unsubState = socketService.onGameState(({ gameState: newState, status, lobby: updatedLobby }) => {
       setLobby((prev) => ({
         ...prev,
@@ -67,28 +85,47 @@ export function MultiplayerGameView({
       setLobby((prev) => ({ ...prev, ...updatedLobby }));
     });
 
-    const unsubDiscon = socketService.onPlayerDisconnected(({ playerName }) => {
-      setDisconnectedOpponent(playerName);
+    const unsubSync = socketService.onStateSync(({ lobby: syncedLobby }) => {
+      setLobby(syncedLobby);
+      setIsSubmitting(false);
+    });
+
+    const unsubDiscon = socketService.onPlayerDisconnected(({ lobby: updatedLobby }) => {
+      if (updatedLobby) setLobby((prev) => ({ ...prev, ...updatedLobby }));
+    });
+
+    const unsubOffline = socketService.onPlayerOffline(({ playerName, lobby: updatedLobby }) => {
+      if (updatedLobby) setLobby((prev) => ({ ...prev, ...updatedLobby }));
+      setErrorMsg(`${playerName} ist ausgeschieden (Zeitüberschreitung).`);
+    });
+
+    const unsubHost = socketService.onHostChanged(({ newHostName, lobby: updatedLobby }) => {
+      if (updatedLobby) setLobby((prev) => ({ ...prev, ...updatedLobby }));
+      setErrorMsg(`${newHostName} ist jetzt neuer Host.`);
     });
 
     return () => {
+      unsubMeta();
       unsubState();
       unsubStarted();
       unsubRestart();
       unsubUpdated();
+      unsubSync();
       unsubDiscon();
+      unsubOffline();
+      unsubHost();
     };
   }, []);
 
   useEffect(() => {
     if (errorMsg) {
-      const timer = setTimeout(() => setErrorMsg(null), 3000);
+      const timer = setTimeout(() => setErrorMsg(null), 4000);
       return () => clearTimeout(timer);
     }
   }, [errorMsg]);
 
   const handleSendMove = async (moveData: any) => {
-    if (!isMyTurn || isSubmitting) return;
+    if (!isMyTurn || isSubmitting || isConnectionBlocked || isLobbyPaused) return;
 
     setIsSubmitting(true);
     try {
@@ -152,10 +189,17 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <div className="justify-self-end rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
-            {lobby.code}
+          <div className="justify-self-end flex items-center gap-2">
+            <div className="hidden sm:block">
+              <ConnectionStatusBadge />
+            </div>
+            <div className="rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
+              {lobby.code}
+            </div>
           </div>
         </header>
+
+        <ConnectionNoticeBanner onExitExpired={onLeave} />
 
         {errorMsg && (
           <div className="font-arcade mx-auto my-1 max-w-sm rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-1.5 text-center text-xs text-[#FECDD3] uppercase">
@@ -163,10 +207,20 @@ export function MultiplayerGameView({
           </div>
         )}
 
-        {disconnectedOpponent && (
+        {(disconnectedPlayers.length > 0 || isLobbyPaused) && (
           <div className="font-arcade mx-auto my-1 flex items-center gap-2 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3.5 py-2 text-center text-xs text-[#FDE68A] uppercase animate-pulse">
             <WifiOff className="h-4 w-4 shrink-0" />
-            <span>WARTE AUF {disconnectedOpponent}...</span>
+            <span>
+              {disconnectedPlayers.length > 0
+                ? (() => {
+                    const p = disconnectedPlayers[0];
+                    const rem = p.reconnectDeadline
+                      ? Math.max(0, Math.ceil((p.reconnectDeadline - nowMs) / 1000))
+                      : null;
+                    return `WARTE AUF ${p.name}${rem !== null ? ` (${rem} S)` : ''}...`;
+                  })()
+                : lobby.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...'}
+            </span>
           </div>
         )}
 
@@ -215,7 +269,7 @@ export function MultiplayerGameView({
                   fullWidth
                   size="lg"
                   variant="primary"
-                  disabled={hasVotedRematch}
+                  disabled={hasVotedRematch || isConnectionBlocked}
                   onClick={handleRematch}
                 >
                   <RotateCcw className="h-4 w-4" />
@@ -244,7 +298,7 @@ export function MultiplayerGameView({
                 isMyTurn={isMyTurn}
                 isGameOver={isGameOver}
                 onMove={handleSendMove}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isConnectionBlocked || isLobbyPaused}
                 isTvMode={lobby.isTvMode}
               />
             ) : (

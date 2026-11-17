@@ -1,13 +1,24 @@
+import crypto from 'node:crypto';
+import path from 'node:path';
 import {
+  BaseGameState,
+  GameResultRecord,
   Lobby,
+  LobbyStatus,
   LobbySummary,
   Player,
 } from '../types/multiplayer.js';
 import { gameRegistry } from '../games/registry.js';
+import { SessionManager } from '../session/sessionManager.js';
+import { StatePersistenceStore } from './stateStore.js';
 
-// Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code
+// Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code (ohne verwechselbare Zeichen)
 const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
-const LOBBY_EXPIRE_MS = 2 * 60 * 60 * 1000; // 2 Stunden Gültigkeit
+const DEFAULT_LOBBY_EXPIRE_MS = 2 * 60 * 60 * 1000; // 2 Stunden Gültigkeit
+const DEFAULT_RECONNECT_GRACE_MS = 60_000; // 60 Sekunden Reconnect-Frist
+const DEFAULT_HOST_TRANSFER_GRACE_MS = 20_000; // 20 Sekunden Host-Ausfall-Frist
+const DEFAULT_EMPTY_LOBBY_EXPIRE_MS = 5 * 60_000; // 5 Minuten für verwaiste Lobbys
+const MAX_PROCESSED_ACTIONS = 250;
 
 const SIMPLE_LOBBY_NAMES = [
   'Spielrunde',
@@ -22,6 +33,27 @@ const SIMPLE_LOBBY_NAMES = [
   'Blitzrunde',
 ];
 
+export interface LobbyManagerOptions {
+  sessionManager?: SessionManager;
+  stateStore?: StatePersistenceStore;
+  reconnectGraceMs?: number;
+  hostTransferGraceMs?: number;
+  emptyLobbyExpireMs?: number;
+  lobbyExpireMs?: number;
+}
+
+export interface LobbyManagerCallbacks {
+  onPlayerExpired?: (lobby: Lobby, player: Player) => void;
+  onHostChanged?: (
+    lobby: Lobby,
+    newHost: Player,
+    previousHostId: string,
+    reason: string
+  ) => void;
+  onLobbyUpdated?: (lobby: Lobby) => void;
+  onLobbyExpired?: (lobby: Lobby) => void;
+}
+
 export function getDefaultSettings(gameId: string): Record<string, any> {
   if (gameId === 'draw-and-guess') {
     return {
@@ -35,583 +67,1572 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
   return {};
 }
 
-function generateLobbyCode(existingCodes: Set<string>): string {
-  let code = '';
-  for (let attempt = 0; attempt < 100; attempt++) {
-    code = '';
-    for (let i = 0; i < 5; i++) {
-      code += CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)];
-    }
-    if (!existingCodes.has(code)) break;
+export function sanitizeLobbyForClient(lobby: Lobby): Lobby {
+  return {
+    ...lobby,
+    processedActionIds: undefined,
+    players: lobby.players.map((p) => {
+      const { sessionId: _omitSessionId, ...safePlayer } = p;
+      return safePlayer;
+    }),
+  };
+}
+
+function getDefaultStateFilePath(): string {
+  if (process.env.STATE_STORE_PATH) {
+    return process.env.STATE_STORE_PATH;
   }
-  return code;
+  const cwd = process.cwd();
+  const baseDir = cwd.endsWith('server') ? path.join(cwd, 'data') : path.join(cwd, 'server', 'data');
+  return path.join(baseDir, 'multiplayer-state.json');
 }
 
 export class LobbyManager {
+  public readonly sessionManager: SessionManager;
+  public readonly stateStore: StatePersistenceStore;
+  public readonly reconnectGraceMs: number;
+  public readonly hostTransferGraceMs: number;
+  public readonly emptyLobbyExpireMs: number;
+  public readonly lobbyExpireMs: number;
+
   private lobbies = new Map<string, Lobby>();
-  private socketToLobby = new Map<string, string>(); // socketId -> lobbyId
-  private disconnectTimers = new Map<string, NodeJS.Timeout>(); // userId -> Timer
+  private codeToLobbyId = new Map<string, string>();
+  private playerToLobbyId = new Map<string, string>(); // playerId -> lobbyId
+  private socketToPlayer = new Map<string, { lobbyId: string; playerId: string }>();
+  private supersededSocketIds = new Set<string>();
 
-  constructor() {
-    const cleanupTimer = setInterval(() => {
-      this.cleanupExpiredLobbies();
-    }, 10 * 60 * 1000);
-    cleanupTimer.unref?.();
+  // Aktive Frist-Timer pro Lobby/Spieler
+  private reconnectTimers = new Map<string, NodeJS.Timeout>(); // key: `${lobbyId}:${playerId}`
+  private hostTransferTimers = new Map<string, NodeJS.Timeout>(); // key: lobbyId
+
+  private callbacks: LobbyManagerCallbacks = {};
+
+  constructor(options: LobbyManagerOptions = {}) {
+    this.sessionManager = options.sessionManager ?? new SessionManager();
+    this.stateStore =
+      options.stateStore ??
+      new StatePersistenceStore({
+        disabled: true,
+      });
+
+    this.reconnectGraceMs =
+      options.reconnectGraceMs ??
+      (Number(process.env.RECONNECT_GRACE_MS) || DEFAULT_RECONNECT_GRACE_MS);
+    this.hostTransferGraceMs =
+      options.hostTransferGraceMs ??
+      (Number(process.env.HOST_TRANSFER_GRACE_MS) || DEFAULT_HOST_TRANSFER_GRACE_MS);
+    this.emptyLobbyExpireMs =
+      options.emptyLobbyExpireMs ??
+      (Number(process.env.EMPTY_LOBBY_EXPIRE_MS) || DEFAULT_EMPTY_LOBBY_EXPIRE_MS);
+    this.lobbyExpireMs = options.lobbyExpireMs ?? DEFAULT_LOBBY_EXPIRE_MS;
   }
 
-  private deleteLobby(lobbyId: string): void {
-    const lobby = this.lobbies.get(lobbyId);
-    if (lobby) {
+  public setCallbacks(callbacks: LobbyManagerCallbacks): void {
+    this.callbacks = { ...this.callbacks, ...callbacks };
+  }
+
+  public async init(): Promise<{ restoredLobbies: number; restoredSessions: number }> {
+    await this.stateStore.init();
+    return this.restoreFromStore();
+  }
+
+  /**
+   * Stellt Lobbys und Sitzungen nach einem Server-Neustart / Deployment wieder her.
+   * Verbundene Spieler werden kontrolliert auf 'disconnected' mit frischer Reconnect-Frist gesetzt.
+   */
+  public async restoreFromStore(): Promise<{ restoredLobbies: number; restoredSessions: number }> {
+    const snapshot = await this.stateStore.loadSnapshot();
+    if (!snapshot) {
+      return { restoredLobbies: 0, restoredSessions: 0 };
+    }
+
+    const restoredSessions = this.sessionManager.restoreSessions(snapshot.sessions || []);
+    this.clearAllTimers();
+    this.lobbies.clear();
+    this.codeToLobbyId.clear();
+    this.playerToLobbyId.clear();
+    this.socketToPlayer.clear();
+
+    const now = Date.now();
+    let restoredLobbies = 0;
+
+    for (const savedLobby of snapshot.lobbies || []) {
+      if (!savedLobby?.id || savedLobby.status === 'expired' || now > savedLobby.expiresAt) {
+        continue;
+      }
+
+      const activePlayerCount = savedLobby.players.filter(
+        (p) => !p.isTvScreen && p.connectionState !== 'offline' && !p.eliminated
+      ).length;
+      if (activePlayerCount === 0 && (!savedLobby.finishedResults || savedLobby.finishedResults.length === 0)) {
+        continue;
+      }
+
+      const lobby: Lobby = {
+        ...savedLobby,
+        players: savedLobby.players.map((p) => {
+          // Nach Server-Neustart sind alle TCP-Sockets weg -> bisher verbundene Spieler bekommen Reconnect-Frist
+          const wasOffline = p.connectionState === 'offline' || p.eliminated === true;
+          if (wasOffline) {
+            return {
+              ...p,
+              socketId: '',
+              connected: false,
+              connectionState: 'offline',
+              reconnectDeadline: undefined,
+            };
+          }
+          return {
+            ...p,
+            socketId: '',
+            connected: false,
+            connectionState: 'disconnected',
+            disconnectedAt: p.disconnectedAt ?? now,
+            reconnectDeadline: now + this.reconnectGraceMs,
+          };
+        }),
+      };
+
+      if (lobby.status === 'in_progress' || lobby.status === 'starting') {
+        lobby.status = 'paused';
+        lobby.pausedAt = now;
+        lobby.pausedReason = 'Server-Neustart: Warte auf Wiederverbindung';
+      }
+
+      if (lobby.players.some((p) => p.isHost && p.connectionState === 'disconnected')) {
+        lobby.hostDisconnectDeadline = now + this.hostTransferGraceMs;
+        this.scheduleHostTransferTimer(lobby.id);
+      }
+
+      this.lobbies.set(lobby.id, lobby);
+      this.codeToLobbyId.set(lobby.code.toUpperCase(), lobby.id);
+
       for (const p of lobby.players) {
-        this.socketToLobby.delete(p.socketId);
-        const timer = this.disconnectTimers.get(p.id);
-        if (timer) {
-          clearTimeout(timer);
-          this.disconnectTimers.delete(p.id);
+        if (p.connectionState !== 'offline') {
+          this.playerToLobbyId.set(p.id, lobby.id);
+          this.scheduleReconnectTimer(lobby.id, p.id, this.reconnectGraceMs);
+        }
+      }
+
+      restoredLobbies++;
+    }
+
+    this.sessionManager.cleanupExpiredSessions();
+    this.cleanupExpiredLobbies();
+    this.persistSnapshot();
+
+    return { restoredLobbies, restoredSessions };
+  }
+
+  public isPlayerIdClaimedByAnotherSession(playerId: string, sessionId?: string): boolean {
+    if (!playerId) return false;
+
+    for (const lobby of this.lobbies.values()) {
+      if (lobby.status === 'expired') continue;
+      for (const p of lobby.players) {
+        if (p.id === playerId && p.connectionState !== 'offline') {
+          if (p.sessionId && p.sessionId !== sessionId) {
+            return true;
+          }
         }
       }
     }
-    this.lobbies.delete(lobbyId);
-  }
 
-  private getExistingCodes(): Set<string> {
-    const codes = new Set<string>();
-    for (const lobby of this.lobbies.values()) {
-      codes.add(lobby.code);
+    const existingLobbyId = this.playerToLobbyId.get(playerId);
+    if (existingLobbyId) {
+      const lobby = this.lobbies.get(existingLobbyId);
+      const player = lobby?.players.find((p) => p.id === playerId);
+      if (player?.sessionId && player.sessionId !== sessionId) {
+        return true;
+      }
     }
-    return codes;
+
+    return false;
   }
 
-  // Abgelaufene Lobbys bereinigen
-  public cleanupExpiredLobbies(): void {
+  public cleanupExpiredLobbies(): string[] {
     const now = Date.now();
+    const expiredIds: string[] = [];
+
     for (const [id, lobby] of this.lobbies.entries()) {
-      if (lobby.expiresAt && now > lobby.expiresAt) {
-        this.deleteLobby(id);
+      const pastLifetime = now > lobby.expiresAt || lobby.status === 'expired';
+      const activePlayers = lobby.players.filter((p) => p.connectionState !== 'offline');
+      const connectedPlayers = lobby.players.filter(
+        (p) => p.connected && p.connectionState === 'connected'
+      );
+
+      // Verwaiste/leere Lobby ohne verbundene oder wartende Spieler nach konfigurierbarer Frist schließen
+      const lastActivity = lobby.lastActivityAt ?? lobby.createdAt;
+      const staleEmpty =
+        activePlayers.length === 0 && now - lastActivity >= this.emptyLobbyExpireMs;
+      const staleDisconnectedOnly =
+        connectedPlayers.length === 0 &&
+        lobby.status === 'waiting' &&
+        activePlayers.every(
+          (p) =>
+            p.connectionState === 'disconnected' &&
+            p.reconnectDeadline !== undefined &&
+            now > p.reconnectDeadline
+        );
+
+      if (pastLifetime || staleEmpty || staleDisconnectedOnly) {
+        this.archiveCompletedGameIfNeeded(lobby);
+        lobby.status = 'expired';
+        expiredIds.push(id);
+        this.removeLobbyIndexes(lobby);
+        this.callbacks.onLobbyExpired?.(sanitizeLobbyForClient(lobby));
       }
     }
-  }
 
-  // 1. Offene öffentliche Lobbys abrufen (Lobbys sind immer privat - kein Public Listing)
-  public getPublicLobbies(_gameId: string): LobbySummary[] {
-    return [];
-  }
+    this.sessionManager.cleanupExpiredSessions();
 
-  // 2. Lobby erstellen (inkl. TV-Modus mit QR-Code)
-  public createLobby(params: {
-    name: string;
-    isPrivate: boolean;
-    gameId: string;
-    userProfile: { id: string; name: string; avatar: any };
-    socketId: string;
-    isTvMode?: boolean;
-  }): { lobby: Lobby | null; error?: string } {
-    const { name, gameId, userProfile, socketId, isTvMode } = params;
-
-    const gameDef = gameRegistry.get(gameId);
-    if (!gameDef) {
-      return { lobby: null, error: `Spiel mit ID "${gameId}" ist nicht im System registriert.` };
+    if (expiredIds.length > 0) {
+      this.persistSnapshot();
     }
 
-    // Vorherige Lobby verlassen
-    this.leaveCurrentLobby(socketId);
-
-    const lobbyId = `lob_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const code = generateLobbyCode(this.getExistingCodes());
-    const now = Date.now();
-
-    const hostPlayer: Player = {
-      id: userProfile.id,
-      socketId,
-      name: isTvMode ? '📺 Fernseher' : (userProfile.name.trim() || 'Spieler'),
-      avatar: userProfile.avatar,
-      isReady: isTvMode ? false : true,
-      isHost: true,
-      connected: true,
-      isTvScreen: Boolean(isTvMode),
-    };
-
-    const fallbackName = isTvMode
-      ? 'TV-Runde'
-      : SIMPLE_LOBBY_NAMES[Math.floor(Math.random() * SIMPLE_LOBBY_NAMES.length)];
-
-    const lobby: Lobby = {
-      id: lobbyId,
-      code,
-      name: name.trim().slice(0, 30) || fallbackName,
-      isPrivate: true, // Lobbys sind ausnahmslos privat
-      gameId,
-      minPlayers: gameDef.minPlayers,
-      maxPlayers: gameDef.maxPlayers,
-      hostId: hostPlayer.id,
-      players: [hostPlayer],
-      status: 'waiting',
-      createdAt: now,
-      expiresAt: now + LOBBY_EXPIRE_MS,
-      isTvMode: Boolean(isTvMode),
-      settings: getDefaultSettings(gameId),
-      gameState: null,
-      rematchVotes: [],
-    };
-
-    this.lobbies.set(lobbyId, lobby);
-    this.socketToLobby.set(socketId, lobbyId);
-
-    return { lobby };
+    return expiredIds;
   }
 
-  // Schnelle Code-Prüfung / Suche
-  public findLobbyByCode(code: string): Lobby | undefined {
+  private generateUniqueCode(): string {
+    for (let attempt = 0; attempt < 100; attempt++) {
+      let code = '';
+      for (let i = 0; i < 5; i++) {
+        code += CODE_CHARS[crypto.randomInt(0, CODE_CHARS.length)];
+      }
+      if (!this.codeToLobbyId.has(code)) {
+        return code;
+      }
+    }
+    return crypto.randomBytes(3).toString('hex').toUpperCase().slice(0, 5);
+  }
+
+  public getPublicLobbies(gameId?: string): LobbySummary[] {
     this.cleanupExpiredLobbies();
-    const cleanQuery = code.trim().toUpperCase();
-    for (const l of this.lobbies.values()) {
-      if (l.code.toUpperCase() === cleanQuery || l.id === code) {
-        return l;
-      }
-    }
-    return undefined;
-  }
-
-  // 3. Lobby beitreten per ID oder Code
-  public joinLobby(params: {
-    lobbyIdOrCode: string;
-    userProfile: { id: string; name: string; avatar: any };
-    socketId: string;
-  }): { lobby: Lobby | null; error?: string } {
-    this.cleanupExpiredLobbies();
-    const { lobbyIdOrCode, userProfile, socketId } = params;
-    const cleanQuery = lobbyIdOrCode.trim().toUpperCase();
-
-    let lobby: Lobby | undefined;
-    for (const l of this.lobbies.values()) {
-      if (l.id === lobbyIdOrCode || l.code.toUpperCase() === cleanQuery) {
-        lobby = l;
-        break;
-      }
-    }
-
-    if (!lobby) {
-      return { lobby: null, error: 'Lobby wurde nicht gefunden oder existiert nicht mehr.' };
-    }
-
-    if (lobby.expiresAt && Date.now() > lobby.expiresAt) {
-      this.deleteLobby(lobby.id);
-      return { lobby: null, error: 'Diese Lobby ist abgelaufen.' };
-    }
-
-    // Spieler-Reconnect / Refresh
-    const existingPlayer = lobby.players.find((p) => p.id === userProfile.id);
-    if (existingPlayer) {
-      if (existingPlayer.socketId && existingPlayer.socketId !== socketId) {
-        this.socketToLobby.delete(existingPlayer.socketId);
-      }
-      const timer = this.disconnectTimers.get(existingPlayer.id);
-      if (timer) {
-        clearTimeout(timer);
-        this.disconnectTimers.delete(existingPlayer.id);
-      }
-      existingPlayer.socketId = socketId;
-      existingPlayer.connected = true;
-      existingPlayer.name = userProfile.name;
-      existingPlayer.avatar = userProfile.avatar;
-      this.socketToLobby.set(socketId, lobby.id);
-      return { lobby };
-    }
-
-    if (lobby.status !== 'waiting') {
-      return { lobby: null, error: 'Dieses Spiel läuft bereits.' };
-    }
-
-    const activePlayers = lobby.isTvMode
-      ? lobby.players.filter((p) => !p.isTvScreen)
-      : lobby.players;
-
-    if (activePlayers.length >= lobby.maxPlayers) {
-      return { lobby: null, error: 'Die Lobby ist bereits voll.' };
-    }
-
-    const newPlayer: Player = {
-      id: userProfile.id,
-      socketId,
-      name: userProfile.name.trim() || 'Herausforderer',
-      avatar: userProfile.avatar,
-      isReady: false,
-      isHost: false,
-      connected: true,
-      isTvScreen: false,
-    };
-
-    lobby.players.push(newPlayer);
-    this.socketToLobby.set(socketId, lobby.id);
-
-    return { lobby };
-  }
-
-  // 4. Bereit-Status umschalten
-  public toggleReady(socketId: string): { lobby: Lobby | null; error?: string } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobby: null, error: 'Lobby nicht gefunden.' };
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
-
-    // TV-Bildschirm ist kein Mitspieler und muss nicht bereit klicken
-    if (player.isTvScreen) {
-      return { lobby: null, error: 'Der Fernseher ist kein Mitspieler und muss nicht bereit klicken.' };
-    }
-
-    player.isReady = !player.isReady;
-    return { lobby };
-  }
-
-  // 4b. Spieleinstellungen vor Start anpassen (Host)
-  public updateSettings(
-    socketId: string,
-    newSettings: Record<string, any>
-  ): { lobby: Lobby | null; error?: string } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobby: null, error: 'Lobby nicht gefunden.' };
-
-    if (lobby.status !== 'waiting') {
-      return { lobby: null, error: 'Einstellungen können nur vor Spielstart geändert werden.' };
-    }
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
-
-    const isRoomLeader = lobby.isTvMode
-      ? lobby.players.find((p) => !p.isTvScreen)?.id === player.id || player.isHost
-      : player.isHost;
-
-    if (!isRoomLeader) {
-      return { lobby: null, error: 'Nur der Host kann die Spieleinstellungen ändern.' };
-    }
-
-    lobby.settings = {
-      ...(lobby.settings || getDefaultSettings(lobby.gameId)),
-      ...newSettings,
-    };
-
-    return { lobby };
-  }
-
-  // 5. Spiel starten (generisch über GameRegistry)
-  public startGame(socketId: string): { lobby: Lobby | null; error?: string } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobby: null, error: 'Lobby nicht gefunden.' };
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
-
-    const activePlayers = lobby.isTvMode
-      ? lobby.players.filter((p) => !p.isTvScreen)
-      : lobby.players;
-
-    // Start-Berechtigung:
-    // Im TV-Modus darf der Host (Fernseher) ODER jeder Smartphone-Spieler starten, wenn alle bereit sind
-    // Im normalen Modus nur der Host
-    if (!lobby.isTvMode && !player.isHost) {
-      return { lobby: null, error: 'Nur der Host kann das Spiel starten.' };
-    }
-
-    if (activePlayers.length < lobby.minPlayers) {
-      return { lobby: null, error: `Es werden mindestens ${lobby.minPlayers} Spieler benötigt.` };
-    }
-
-    const notReady = activePlayers.filter((p) => !p.isReady);
-    if (notReady.length > 0) {
-      return { lobby: null, error: 'Noch nicht alle Smartphone-Spieler sind bereit.' };
-    }
-
-    const gameDef = gameRegistry.get(lobby.gameId);
-    if (!gameDef) {
-      return { lobby: null, error: `Spiellogik für "${lobby.gameId}" nicht gefunden.` };
-    }
-
-    // Zentraler generischer Spielstart
-    lobby.gameState = gameDef.initGameState(activePlayers, undefined, lobby.settings);
-    lobby.status = 'in-game';
-    lobby.rematchVotes = [];
-
-    return { lobby };
-  }
-
-  // 6. Spielzug ausführen (generisch über GameRegistry)
-  public makeMove(
-    socketId: string,
-    moveData: any
-  ): { lobby: Lobby | null; error?: string } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null, error: 'Keine aktive Lobby.' };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby || !lobby.gameState || lobby.status !== 'in-game') {
-      return { lobby: null, error: 'Kein aktives Spiel.' };
-    }
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobby: null, error: 'Spieler nicht gefunden.' };
-
-    // TV-Bildschirm darf keine Spielzüge ausführen (nur Anzeige)
-    if (player.isTvScreen) {
-      return { lobby: null, error: 'Der TV-Bildschirm ist nur eine Anzeige.' };
-    }
-
-    const gameDef = gameRegistry.get(lobby.gameId);
-    if (!gameDef) {
-      return { lobby: null, error: `Spiellogik für "${lobby.gameId}" nicht gefunden.` };
-    }
-
-    const activePlayers = lobby.isTvMode
-      ? lobby.players.filter((p) => !p.isTvScreen)
-      : lobby.players;
-
-    // Zentraler autoritativer Spielzug
-    const result = gameDef.validateAndApplyMove({
-      state: lobby.gameState,
-      players: activePlayers,
-      playerId: player.id,
-      move: moveData,
-    });
-
-    if (!result.valid) {
-      return { lobby: null, error: result.error || 'Ungültiger Spielzug.' };
-    }
-
-    lobby.gameState = result.state;
-    if (result.state.status !== 'playing') {
-      lobby.status = 'finished';
-    }
-
-    return { lobby };
-  }
-
-  // 7. Rematch / Revanche anfordern (generisch)
-  public requestRematch(socketId: string): { lobby: Lobby | null; restarted: boolean; error?: string } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null, restarted: false, error: 'Keine aktive Lobby.' };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobby: null, restarted: false, error: 'Lobby nicht gefunden.' };
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobby: null, restarted: false, error: 'Spieler nicht gefunden.' };
-
-    if (!lobby.rematchVotes.includes(player.id)) {
-      lobby.rematchVotes.push(player.id);
-    }
-
-    const activePlayers = lobby.isTvMode
-      ? lobby.players.filter((p) => !p.isTvScreen)
-      : lobby.players;
-
-    // Wenn alle aktiven Spieler zustimmen, Spiel neu starten
-    if (lobby.rematchVotes.length >= activePlayers.length && activePlayers.length >= lobby.minPlayers) {
-      const gameDef = gameRegistry.get(lobby.gameId);
-      if (!gameDef) {
-        return { lobby: null, restarted: false, error: 'Spiellogik nicht gefunden.' };
-      }
-
-      // Starter wechseln
-      const previousStarter = lobby.gameState?.currentTurn;
-      const nextStarter = activePlayers.find((p) => p.id !== previousStarter)?.id;
-
-      lobby.gameState = gameDef.initGameState(activePlayers, nextStarter, lobby.settings);
-      lobby.status = 'in-game';
-      lobby.rematchVotes = [];
-      return { lobby, restarted: true };
-    }
-
-    return { lobby, restarted: false };
-  }
-
-  // 8. Lobby verlassen (generisch)
-  public leaveCurrentLobby(socketId: string): {
-    lobbyId: string | null;
-    lobby: Lobby | null;
-    wasHost: boolean;
-    deleted: boolean;
-  } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) {
-      return { lobbyId: null, lobby: null, wasHost: false, deleted: false };
-    }
-
-    this.socketToLobby.delete(socketId);
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) {
-      return { lobbyId, lobby: null, wasHost: false, deleted: false };
-    }
-
-    const leavingPlayerIndex = lobby.players.findIndex((p) => p.socketId === socketId);
-    if (leavingPlayerIndex === -1) {
-      return { lobbyId, lobby, wasHost: false, deleted: false };
-    }
-
-    const leavingPlayer = lobby.players[leavingPlayerIndex];
-    const wasHost = leavingPlayer.isHost;
-
-    const existingTimer = this.disconnectTimers.get(leavingPlayer.id);
-    if (existingTimer) {
-      clearTimeout(existingTimer);
-      this.disconnectTimers.delete(leavingPlayer.id);
-    }
-
-    // Wenn der Fernseher im TV-Modus die Lobby verlässt, wird die TV-Lobby geschlossen
-    if (leavingPlayer.isTvScreen) {
-      this.deleteLobby(lobbyId);
-      return { lobbyId, lobby: null, wasHost: true, deleted: true };
-    }
-
-    // Spieler entfernen
-    lobby.players.splice(leavingPlayerIndex, 1);
-
-    // Wenn keine Spieler mehr da sind -> Lobby sofort löschen
-    if (lobby.players.length === 0) {
-      this.deleteLobby(lobbyId);
-      return { lobbyId, lobby: null, wasHost, deleted: true };
-    }
-
-    // Wenn der Host geht -> Nächster Spieler wird Host
-    if (wasHost && lobby.players.length > 0) {
-      lobby.players[0].isHost = true;
-      lobby.players[0].isReady = true;
-      lobby.hostId = lobby.players[0].id;
-    }
-
-    // Wenn das Spiel lief, optionalen Game-Hook aufrufen oder Standard-Gewinn setzen
-    if (lobby.status === 'in-game' && lobby.gameState) {
-      const activePlayers = lobby.isTvMode
-        ? lobby.players.filter((p) => !p.isTvScreen)
-        : lobby.players;
-
-      const gameDef = gameRegistry.get(lobby.gameId);
-      if (gameDef?.onPlayerLeave) {
-        lobby.gameState = gameDef.onPlayerLeave(lobby.gameState, leavingPlayer.id, activePlayers);
-      } else if (activePlayers.length > 0) {
-        lobby.gameState.status = 'won';
-        lobby.gameState.winnerId = activePlayers[0].id;
-      }
-    }
-
-    return { lobbyId, lobby, wasHost, deleted: false };
-  }
-
-  // 9. Verbindungsabbruch behandeln (Grace Period für Wiederverbindung)
-  public handleDisconnect(socketId: string): {
-    lobbyId: string | null;
-    lobby: Lobby | null;
-    player: Player | null;
-  } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobbyId: null, lobby: null, player: null };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobbyId, lobby: null, player: null };
-
-    const player = lobby.players.find((p) => p.socketId === socketId);
-    if (!player) return { lobbyId, lobby, player: null };
-
-    player.connected = false;
-
-    const oldTimer = this.disconnectTimers.get(player.id);
-    if (oldTimer) {
-      clearTimeout(oldTimer);
-    }
-
-    // Grace Period: 45 Sekunden zum Wiederverbinden
-    const timer = setTimeout(() => {
-      this.disconnectTimers.delete(player.id);
-      if (!player.connected) {
-        this.leaveCurrentLobby(socketId);
-      }
-    }, 45000);
-    timer.unref?.();
-
-    this.disconnectTimers.set(player.id, timer);
-
-    return { lobbyId, lobby, player };
-  }
-
-  // 10. Wiederverbinden
-  public reconnectPlayer(params: {
-    userId: string;
-    socketId: string;
-  }): { lobby: Lobby | null } {
-    const { userId, socketId } = params;
-
-    const timer = this.disconnectTimers.get(userId);
-    if (timer) {
-      clearTimeout(timer);
-      this.disconnectTimers.delete(userId);
-    }
+    const list: LobbySummary[] = [];
 
     for (const lobby of this.lobbies.values()) {
-      const player = lobby.players.find((p) => p.id === userId);
-      if (player) {
-        if (player.socketId && player.socketId !== socketId) {
-          this.socketToLobby.delete(player.socketId);
-        }
-        player.socketId = socketId;
-        player.connected = true;
-        this.socketToLobby.set(socketId, lobby.id);
-        return { lobby };
-      }
+      if (lobby.isPrivate) continue;
+      if (lobby.status === 'expired' || lobby.status === 'finished') continue;
+      if (gameId && lobby.gameId !== gameId) continue;
+
+      const host = lobby.players.find((p) => p.id === lobby.hostId);
+      const visiblePlayerCount = lobby.players.filter(
+        (p) => !p.isTvScreen && p.connectionState !== 'offline'
+      ).length;
+
+      list.push({
+        id: lobby.id,
+        code: lobby.code,
+        name: lobby.name,
+        isPrivate: lobby.isPrivate,
+        gameId: lobby.gameId,
+        minPlayers: lobby.minPlayers,
+        maxPlayers: lobby.maxPlayers,
+        playerCount: visiblePlayerCount,
+        hostName: host?.name || 'Unbekannt',
+        status: lobby.status,
+        stateVersion: lobby.stateVersion,
+        createdAt: lobby.createdAt,
+        expiresAt: lobby.expiresAt,
+        isTvMode: lobby.isTvMode,
+        settings: lobby.settings,
+      });
     }
 
-    return { lobby: null };
+    return list.sort((a, b) => b.createdAt - a.createdAt);
   }
 
   public getLobbyById(lobbyId: string): Lobby | undefined {
     return this.lobbies.get(lobbyId);
   }
 
-  // 11. Spielerprofil (Name & Avatar) in aktiver Lobby aktualisieren
-  public updatePlayerProfile(
-    socketId: string,
-    userProfile: { id: string; name: string; avatar: any }
-  ): { lobby: Lobby | null } {
-    const lobbyId = this.socketToLobby.get(socketId);
-    if (!lobbyId) return { lobby: null };
-
-    const lobby = this.lobbies.get(lobbyId);
-    if (!lobby) return { lobby: null };
-
-    const player = lobby.players.find(
-      (p) => p.socketId === socketId || p.id === userProfile.id
-    );
-    if (!player || player.isTvScreen) {
-      return { lobby: null };
-    }
-
-    const cleanedName =
-      typeof userProfile.name === 'string'
-        ? userProfile.name.trim().replace(/[\r\n\t]/g, ' ').slice(0, 20)
-        : '';
-    if (cleanedName.length >= 2) {
-      player.name = cleanedName;
-    }
-    if (userProfile.avatar) {
-      player.avatar = userProfile.avatar;
-    }
-
-    return { lobby };
+  public getLobbyBySocket(socketId: string): Lobby | undefined {
+    const info = this.socketToPlayer.get(socketId);
+    if (!info) return undefined;
+    return this.lobbies.get(info.lobbyId);
   }
 
   public getLobbyBySocketId(socketId: string): Lobby | undefined {
-    const lobbyId = this.socketToLobby.get(socketId);
+    return this.getLobbyBySocket(socketId);
+  }
+
+  public getPlayerBySocket(socketId: string): Player | undefined {
+    const info = this.socketToPlayer.get(socketId);
+    if (!info) return undefined;
+    const lobby = this.lobbies.get(info.lobbyId);
+    return lobby?.players.find((p) => p.id === info.playerId);
+  }
+
+  public getLobbyByPlayerId(playerId: string): Lobby | undefined {
+    const lobbyId = this.playerToLobbyId.get(playerId);
     if (!lobbyId) return undefined;
     return this.lobbies.get(lobbyId);
   }
+
+  public createLobby(params: {
+    name?: string;
+    isPrivate: boolean;
+    gameId: string;
+    userProfile: { id: string; name: string; avatar: any };
+    socketId: string;
+    isTvMode?: boolean;
+    sessionId?: string;
+  }): { success: boolean; lobby?: Lobby; error?: string; reconnectToken?: string } {
+    const game = gameRegistry.get(params.gameId);
+    if (!game) {
+      return { success: false, error: `Spiel "${params.gameId}" nicht gefunden.` };
+    }
+
+    if (params.sessionId) {
+      const session = this.sessionManager.getSessionById(params.sessionId);
+      if (!session) {
+        return { success: false, error: 'Ungültige oder abgelaufene Sitzung.' };
+      }
+      if (session.playerId !== params.userProfile.id) {
+        return { success: false, error: 'Benutzer-ID stimmt nicht mit der Sitzung überein.' };
+      }
+    } else if (this.isPlayerIdClaimedByAnotherSession(params.userProfile.id)) {
+      return { success: false, error: 'Benutzer-ID wird bereits von einer anderen Sitzung verwendet.' };
+    }
+
+    // Falls der Spieler bereits in einer anderen Lobby ist, diese sauber verlassen
+    this.leaveCurrentLobby(params.socketId, params.userProfile.id);
+
+    const now = Date.now();
+    const id = `lob_${crypto.randomBytes(6).toString('hex')}`;
+    const code = this.generateUniqueCode();
+    const defaultLobbyName = `${SIMPLE_LOBBY_NAMES[crypto.randomInt(0, SIMPLE_LOBBY_NAMES.length)]} ${code}`;
+    const name = params.name?.trim() || defaultLobbyName;
+
+    const hostPlayer: Player = {
+      id: params.userProfile.id,
+      socketId: params.socketId,
+      name: params.userProfile.name,
+      avatar: params.userProfile.avatar,
+      isReady: Boolean(params.isTvMode),
+      isHost: true,
+      connected: true,
+      connectionState: 'connected',
+      eliminated: false,
+      sessionId: params.sessionId,
+      color: 'red',
+      symbol: 'X',
+      isTvScreen: Boolean(params.isTvMode),
+    };
+
+    const lobby: Lobby = {
+      id,
+      code,
+      name,
+      isPrivate: params.isPrivate,
+      gameId: params.gameId,
+      minPlayers: game.minPlayers,
+      maxPlayers: game.maxPlayers,
+      hostId: hostPlayer.id,
+      players: [hostPlayer],
+      status: 'waiting',
+      stateVersion: 1,
+      createdAt: now,
+      expiresAt: now + this.lobbyExpireMs,
+      lastActivityAt: now,
+      isTvMode: Boolean(params.isTvMode),
+      settings: getDefaultSettings(params.gameId),
+      gameState: null,
+      rematchVotes: [],
+      finishedResults: [],
+      processedActionIds: [],
+    };
+
+    this.lobbies.set(id, lobby);
+    this.codeToLobbyId.set(code, id);
+    this.playerToLobbyId.set(hostPlayer.id, id);
+    this.socketToPlayer.set(params.socketId, { lobbyId: id, playerId: hostPlayer.id });
+
+    let reconnectToken: string | undefined;
+    if (params.sessionId) {
+      this.sessionManager.setLobbyBinding(params.sessionId, id, code);
+      this.sessionManager.bindSocket(params.sessionId, params.socketId);
+      reconnectToken = this.sessionManager.rotateReconnectToken(params.sessionId) ?? undefined;
+    }
+
+    this.persistSnapshot();
+    return { success: true, lobby, reconnectToken };
+  }
+
+  public findLobbyByCode(code: string): Lobby | undefined {
+    this.cleanupExpiredLobbies();
+    const normalized = code.trim().toUpperCase();
+    const lobbyId = this.codeToLobbyId.get(normalized);
+    if (!lobbyId) return undefined;
+    return this.lobbies.get(lobbyId);
+  }
+
+  public joinLobby(params: {
+    lobbyIdOrCode: string;
+    userProfile: { id: string; name: string; avatar: any };
+    socketId: string;
+    sessionId?: string;
+  }): {
+    success: boolean;
+    lobby?: Lobby;
+    error?: string;
+    reconnectToken?: string;
+    supersededSocketId?: string;
+  } {
+    this.cleanupExpiredLobbies();
+
+    if (params.sessionId) {
+      const session = this.sessionManager.getSessionById(params.sessionId);
+      if (!session) {
+        return { success: false, error: 'Sitzung ungültig oder abgelaufen.' };
+      }
+      if (session.playerId !== params.userProfile.id) {
+        return { success: false, error: 'Keine Berechtigung für diese Benutzer-ID.' };
+      }
+    } else if (this.isPlayerIdClaimedByAnotherSession(params.userProfile.id)) {
+      return { success: false, error: 'Benutzer-ID gehört zu einer anderen aktiven Sitzung.' };
+    }
+
+    const input = params.lobbyIdOrCode.trim();
+    let lobby = this.lobbies.get(input);
+    if (!lobby) {
+      lobby = this.findLobbyByCode(input);
+    }
+
+    if (!lobby || lobby.status === 'expired') {
+      return { success: false, error: 'Lobby wurde nicht gefunden oder ist abgelaufen.' };
+    }
+
+    const existingPlayer = lobby.players.find((p) => p.id === params.userProfile.id);
+    if (existingPlayer) {
+      // Abgelaufene / ausgeschlossene Spieler dürfen einer laufenden Lobby nicht wieder beitreten
+      if (existingPlayer.connectionState === 'offline' || existingPlayer.eliminated) {
+        return {
+          success: false,
+          error: 'Deine Reconnect-Frist ist abgelaufen. Ein erneuter Beitritt ist nicht möglich.',
+        };
+      }
+
+      // Fremde Session darf sich nicht als vorhandener Spieler einloggen
+      if (
+        existingPlayer.sessionId &&
+        params.sessionId &&
+        existingPlayer.sessionId !== params.sessionId
+      ) {
+        return {
+          success: false,
+          error: 'Identitätsprüfung fehlgeschlagen: Spieler gehört zu einer anderen Sitzung.',
+        };
+      }
+
+      const supersededSocketId =
+        existingPlayer.socketId && existingPlayer.socketId !== params.socketId
+          ? existingPlayer.socketId
+          : undefined;
+
+      this.clearReconnectTimer(lobby.id, existingPlayer.id);
+      if (existingPlayer.isHost) {
+        this.clearHostTransferTimer(lobby.id);
+        lobby.hostDisconnectDeadline = undefined;
+      }
+
+      if (supersededSocketId) {
+        this.socketToPlayer.delete(supersededSocketId);
+        this.supersededSocketIds.add(supersededSocketId);
+      }
+
+      existingPlayer.socketId = params.socketId;
+      existingPlayer.connected = true;
+      existingPlayer.connectionState = 'connected';
+      existingPlayer.disconnectedAt = undefined;
+      existingPlayer.reconnectDeadline = undefined;
+      existingPlayer.name = params.userProfile.name;
+      existingPlayer.avatar = params.userProfile.avatar;
+      if (params.sessionId) {
+        existingPlayer.sessionId = params.sessionId;
+      }
+
+      this.maybeResumePausedLobby(lobby);
+      lobby.stateVersion += 1;
+      lobby.lastActivityAt = Date.now();
+
+      this.playerToLobbyId.set(existingPlayer.id, lobby.id);
+      this.socketToPlayer.set(params.socketId, {
+        lobbyId: lobby.id,
+        playerId: existingPlayer.id,
+      });
+
+      let reconnectToken: string | undefined;
+      if (params.sessionId) {
+        this.sessionManager.setLobbyBinding(params.sessionId, lobby.id, lobby.code);
+        this.sessionManager.bindSocket(params.sessionId, params.socketId);
+        reconnectToken = this.sessionManager.rotateReconnectToken(params.sessionId) ?? undefined;
+      }
+
+      this.persistSnapshot();
+      return { success: true, lobby, reconnectToken, supersededSocketId };
+    }
+
+    if (lobby.status !== 'waiting') {
+      return { success: false, error: 'Das Spiel läuft bereits oder ist beendet.' };
+    }
+
+    const activePlayers = lobby.players.filter(
+      (p) => !p.isTvScreen && p.connectionState !== 'offline'
+    );
+    if (activePlayers.length >= lobby.maxPlayers) {
+      return { success: false, error: 'Lobby ist bereits voll.' };
+    }
+
+    const currentLobby = this.getLobbyBySocket(params.socketId);
+    if (currentLobby && currentLobby.id !== lobby.id) {
+      this.leaveCurrentLobby(params.socketId, params.userProfile.id);
+    }
+
+    const COLORS = ['blue', 'yellow', 'emerald', 'purple', 'orange', 'pink', 'cyan'];
+    const SYMBOLS = ['O', '△', '□', '☆', '◇', '♣', '♠'];
+    const usedColors = new Set(lobby.players.map((p) => p.color));
+    const usedSymbols = new Set(lobby.players.map((p) => p.symbol));
+    const nextColor = COLORS.find((c) => !usedColors.has(c)) || 'blue';
+    const nextSymbol = SYMBOLS.find((s) => !usedSymbols.has(s)) || 'O';
+
+    const newPlayer: Player = {
+      id: params.userProfile.id,
+      socketId: params.socketId,
+      name: params.userProfile.name,
+      avatar: params.userProfile.avatar,
+      isReady: false,
+      isHost: false,
+      connected: true,
+      connectionState: 'connected',
+      eliminated: false,
+      sessionId: params.sessionId,
+      color: nextColor,
+      symbol: nextSymbol,
+    };
+
+    lobby.players.push(newPlayer);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    lobby.expiresAt = Date.now() + this.lobbyExpireMs;
+
+    this.playerToLobbyId.set(newPlayer.id, lobby.id);
+    this.socketToPlayer.set(params.socketId, { lobbyId: lobby.id, playerId: newPlayer.id });
+
+    let reconnectToken: string | undefined;
+    if (params.sessionId) {
+      this.sessionManager.setLobbyBinding(params.sessionId, lobby.id, lobby.code);
+      this.sessionManager.bindSocket(params.sessionId, params.socketId);
+      reconnectToken = this.sessionManager.rotateReconnectToken(params.sessionId) ?? undefined;
+    }
+
+    this.persistSnapshot();
+    return { success: true, lobby, reconnectToken };
+  }
+
+  private resolveActionTarget(
+    target:
+      | string
+      | { lobbyId: string; playerId: string; actionId?: string; expectedVersion?: number }
+  ): { lobbyId: string; playerId: string; actionId?: string; expectedVersion?: number } | null {
+    if (typeof target === 'string') {
+      const info = this.socketToPlayer.get(target);
+      if (!info) return null;
+      return { lobbyId: info.lobbyId, playerId: info.playerId };
+    }
+    return target;
+  }
+
+  public toggleReady(
+    socketIdOrParams:
+      | string
+      | { lobbyId: string; playerId: string; actionId?: string; expectedVersion?: number }
+  ): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const resolved = this.resolveActionTarget(socketIdOrParams);
+    if (!resolved) return { success: false, error: 'Nicht in einer Lobby.' };
+    const { lobbyId, playerId, actionId, expectedVersion } = resolved;
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.status !== 'waiting' && lobby.status !== 'finished') {
+      return { success: false, error: 'Bereit-Status kann im laufenden Spiel nicht geändert werden.' };
+    }
+
+    if (actionId && this.isDuplicateAction(lobby, actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+    if (expectedVersion !== undefined && expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Aktion: Zustand wurde zwischenzeitlich geändert.' };
+    }
+
+    const player = lobby.players.find((p) => p.id === playerId);
+    if (!player) return { success: false, error: 'Spieler nicht in Lobby.' };
+    if (player.connectionState === 'offline') {
+      return { success: false, error: 'Abgelaufene Spieler können keinen Status ändern.' };
+    }
+
+    player.isReady = !player.isReady;
+    this.recordActionId(lobby, actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+    return { success: true, lobby };
+  }
+
+  public updateSettings(
+    socketIdOrParams:
+      | string
+      | {
+          lobbyId: string;
+          playerId: string;
+          settings: Record<string, any>;
+          actionId?: string;
+          expectedVersion?: number;
+        },
+    explicitSettings?: Record<string, any>
+  ): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const resolved = this.resolveActionTarget(socketIdOrParams);
+    if (!resolved) return { success: false, error: 'Nicht in einer Lobby.' };
+    const settings =
+      typeof socketIdOrParams === 'string'
+        ? explicitSettings ?? {}
+        : socketIdOrParams.settings;
+    const { lobbyId, playerId, actionId, expectedVersion } = resolved;
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.hostId !== playerId) {
+      return { success: false, error: 'Nur der aktuelle Host darf Einstellungen ändern.' };
+    }
+    if (lobby.status !== 'waiting' && lobby.status !== 'finished') {
+      return { success: false, error: 'Einstellungen können während des Spiels nicht geändert werden.' };
+    }
+
+    if (actionId && this.isDuplicateAction(lobby, actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+    if (expectedVersion !== undefined && expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Aktion: Lobby-Zustand ist nicht mehr aktuell.' };
+    }
+
+    lobby.settings = {
+      ...(lobby.settings || getDefaultSettings(lobby.gameId)),
+      ...settings,
+    };
+
+    this.recordActionId(lobby, actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+    return { success: true, lobby };
+  }
+
+  public startGame(
+    socketIdOrParams:
+      | string
+      | { lobbyId: string; playerId: string; actionId?: string; expectedVersion?: number }
+  ): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const resolved = this.resolveActionTarget(socketIdOrParams);
+    if (!resolved) return { success: false, error: 'Nicht in einer Lobby.' };
+    const { lobbyId, playerId, actionId, expectedVersion } = resolved;
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.hostId !== playerId) {
+      return { success: false, error: 'Nur der Host darf das Spiel starten.' };
+    }
+
+    if (actionId && this.isDuplicateAction(lobby, actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+
+    if (lobby.status !== 'waiting' && lobby.status !== 'finished') {
+      return { success: false, error: 'Spiel läuft bereits oder befindet sich in einer Übergangsphase.' };
+    }
+
+    if (expectedVersion !== undefined && expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Start-Aktion: Bitte aktualisiere zuerst die Lobby.' };
+    }
+
+    const activePlayers = lobby.players.filter(
+      (p) => !p.isTvScreen && p.connectionState === 'connected' && p.connected
+    );
+    if (activePlayers.length < lobby.minPlayers) {
+      return {
+        success: false,
+        error: `Mindestens ${lobby.minPlayers} verbundene Spieler erforderlich.`,
+      };
+    }
+
+    const unreadyGuest = activePlayers.find((p) => !p.isHost && !p.isReady);
+    if (unreadyGuest) {
+      return {
+        success: false,
+        error: `${unreadyGuest.name} ist noch nicht bereit.`,
+      };
+    }
+
+    const game = gameRegistry.get(lobby.gameId);
+    if (!game) {
+      return { success: false, error: 'Spielmodul nicht gefunden.' };
+    }
+
+    // Übergang: waiting -> starting -> in_progress
+    lobby.status = 'starting';
+    const starter = activePlayers[0];
+
+    for (const p of lobby.players) {
+      if (p.connectionState === 'connected' && p.connected) {
+        p.eliminated = false;
+      }
+    }
+
+    lobby.gameState = game.initGameState(activePlayers, starter.id, lobby.settings);
+    lobby.status = 'in_progress';
+    lobby.pausedAt = undefined;
+    lobby.pausedReason = undefined;
+    lobby.rematchVotes = [];
+    this.recordActionId(lobby, actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    lobby.expiresAt = Date.now() + this.lobbyExpireMs;
+
+    this.persistSnapshot();
+    return { success: true, lobby };
+  }
+
+  public makeMove(
+    socketIdOrParams:
+      | string
+      | {
+          lobbyId: string;
+          playerId: string;
+          move: any;
+          actionId?: string;
+          expectedVersion?: number;
+        },
+    explicitMove?: any
+  ): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const resolved = this.resolveActionTarget(socketIdOrParams);
+    if (!resolved) return { success: false, error: 'Nicht in einer Lobby.' };
+    const move =
+      typeof socketIdOrParams === 'string' ? explicitMove : socketIdOrParams.move;
+    const { lobbyId, playerId, actionId, expectedVersion } = resolved;
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || !lobby.gameState) {
+      return { success: false, error: 'Kein aktives Spiel gefunden.' };
+    }
+
+    if (actionId && this.isDuplicateAction(lobby, actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+
+    if (lobby.status === 'paused') {
+      return {
+        success: false,
+        error: 'Spiel ist pausiert, während auf eine Wiederverbindung gewartet wird.',
+      };
+    }
+
+    if (lobby.status !== 'in_progress') {
+      return { success: false, error: 'Das Spiel läuft aktuell nicht.' };
+    }
+
+    if (lobby.gameState.status !== 'playing') {
+      return { success: false, error: 'Das Spiel ist bereits beendet.' };
+    }
+
+    const player = lobby.players.find((p) => p.id === playerId);
+    if (!player || player.connectionState === 'offline' || player.eliminated) {
+      return { success: false, error: 'Spieler ist in diesem Spiel nicht aktiv.' };
+    }
+
+    const isStructuralOrTurnAction =
+      lobby.gameId !== 'draw-and-guess' ||
+      move?.type === 'next_round' ||
+      move?.type === 'time_up' ||
+      move?.type === 'clear' ||
+      move?.type === 'undo';
+
+    if (
+      expectedVersion !== undefined &&
+      isStructuralOrTurnAction &&
+      expectedVersion !== lobby.stateVersion
+    ) {
+      return {
+        success: false,
+        error: 'Veraltete Aktion: Der Spielzustand hat sich bereits weiterentwickelt.',
+      };
+    }
+
+    const game = gameRegistry.get(lobby.gameId);
+    if (!game) return { success: false, error: 'Spielmodul nicht gefunden.' };
+
+    const activePlayers = lobby.players.filter(
+      (p) => !p.isTvScreen && !p.eliminated && p.connectionState !== 'offline'
+    );
+
+    const prevGameState = lobby.gameState;
+    const result = game.validateAndApplyMove({
+      state: lobby.gameState,
+      players: activePlayers,
+      playerId,
+      move,
+    });
+
+    if (!result.valid) {
+      return { success: false, error: result.error || 'Ungültiger Spielzug.' };
+    }
+
+    const nextState = result.state;
+    lobby.gameState = nextState;
+    this.recordActionId(lobby, actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+
+    if (nextState.status === 'won' || nextState.status === 'draw') {
+      lobby.status = 'finished';
+      this.archiveCompletedGameIfNeeded(lobby);
+    }
+
+    const shouldPersistMilestone =
+      lobby.gameId !== 'draw-and-guess' ||
+      lobby.status === 'finished' ||
+      nextState.round !== prevGameState.round ||
+      nextState.roundStatus !== prevGameState.roundStatus ||
+      nextState.correctGuesserIds?.length !== prevGameState.correctGuesserIds?.length;
+
+    if (shouldPersistMilestone) {
+      this.persistSnapshot();
+    }
+
+    return { success: true, lobby };
+  }
+
+  public requestRematch(
+    socketIdOrParams:
+      | string
+      | { lobbyId: string; playerId: string; actionId?: string; expectedVersion?: number }
+  ): { success: boolean; lobby?: Lobby; restarted?: boolean; duplicate?: boolean; error?: string } {
+    const resolved = this.resolveActionTarget(socketIdOrParams);
+    if (!resolved) return { success: false, error: 'Nicht in einer Lobby.' };
+    const { lobbyId, playerId, actionId, expectedVersion } = resolved;
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.status !== 'finished') {
+      return { success: false, error: 'Spiel ist noch nicht beendet.' };
+    }
+
+    if (actionId && this.isDuplicateAction(lobby, actionId)) {
+      return { success: true, duplicate: true, restarted: false, lobby };
+    }
+    if (expectedVersion !== undefined && expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Rematch-Anfrage.' };
+    }
+
+    const activePlayers = lobby.players.filter(
+      (p) => !p.isTvScreen && p.connectionState === 'connected' && p.connected
+    );
+    if (!activePlayers.some((p) => p.id === playerId)) {
+      return { success: false, error: 'Nicht berechtigt für Rematch.' };
+    }
+
+    if (!lobby.rematchVotes.includes(playerId)) {
+      lobby.rematchVotes.push(playerId);
+    }
+
+    const requiredVotes = Math.min(2, activePlayers.length);
+    let restarted = false;
+
+    if (lobby.rematchVotes.length >= requiredVotes && activePlayers.length >= lobby.minPlayers) {
+      const game = gameRegistry.get(lobby.gameId);
+      if (game) {
+        lobby.status = 'starting';
+        const starterIndex = Math.floor(Math.random() * activePlayers.length);
+        for (const p of lobby.players) {
+          if (p.connectionState === 'connected' && p.connected) {
+            p.eliminated = false;
+          }
+        }
+        lobby.gameState = game.initGameState(
+          activePlayers,
+          activePlayers[starterIndex].id,
+          lobby.settings
+        );
+        lobby.status = 'in_progress';
+        lobby.pausedAt = undefined;
+        lobby.pausedReason = undefined;
+        lobby.rematchVotes = [];
+        restarted = true;
+      }
+    }
+
+    this.recordActionId(lobby, actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    return { success: true, lobby, restarted };
+  }
+
+  public updatePlayerProfile(
+    socketId: string,
+    userProfile: { id: string; name: string; avatar: any }
+  ): { lobby?: Lobby; player?: Player; error?: string } {
+    const info = this.socketToPlayer.get(socketId);
+    if (!info) return { error: 'Nicht in einer Lobby.' };
+
+    const lobby = this.lobbies.get(info.lobbyId);
+    if (!lobby) return { error: 'Lobby nicht gefunden.' };
+
+    if (userProfile.id !== info.playerId) {
+      return { error: 'Benutzer-ID kann nicht auf einen anderen Spieler geändert werden.' };
+    }
+
+    const player = lobby.players.find((p) => p.id === info.playerId);
+    if (!player) return { error: 'Spieler nicht in Lobby.' };
+
+    player.name = userProfile.name;
+    player.avatar = userProfile.avatar;
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    return { lobby, player };
+  }
+
+  public leaveCurrentLobby(
+    socketId: string,
+    explicitPlayerId?: string
+  ): {
+    lobbyId?: string;
+    lobby?: Lobby;
+    deleted?: boolean;
+    wasHost?: boolean;
+    leftLobby?: Lobby;
+    lobbyDeleted?: boolean;
+    leavingPlayerId?: string;
+    newHost?: Player;
+    previousHostId?: string;
+  } {
+    const info = socketId ? this.socketToPlayer.get(socketId) : undefined;
+    const playerId = info?.playerId ?? explicitPlayerId;
+    const lobbyId = info?.lobbyId ?? (playerId ? this.playerToLobbyId.get(playerId) : undefined);
+
+    if (socketId) {
+      this.socketToPlayer.delete(socketId);
+    }
+
+    if (!lobbyId || !playerId) {
+      return {};
+    }
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) {
+      this.playerToLobbyId.delete(playerId);
+      return {};
+    }
+
+    const leavingPlayer = lobby.players.find((p) => p.id === playerId);
+    this.clearReconnectTimer(lobby.id, playerId);
+
+    if (leavingPlayer?.sessionId) {
+      this.sessionManager.setLobbyBinding(leavingPlayer.sessionId, undefined, undefined);
+      this.sessionManager.clearSocket(leavingPlayer.sessionId, socketId);
+    }
+
+    this.playerToLobbyId.delete(playerId);
+
+    if ((lobby.status === 'in_progress' || lobby.status === 'paused') && lobby.gameState) {
+      if (leavingPlayer) {
+        leavingPlayer.connected = false;
+        leavingPlayer.connectionState = 'offline';
+        leavingPlayer.eliminated = true;
+        leavingPlayer.reconnectDeadline = undefined;
+      }
+      const remainingActive = lobby.players.filter(
+        (p) => !p.isTvScreen && !p.eliminated && p.connectionState !== 'offline'
+      );
+      const game = gameRegistry.get(lobby.gameId);
+      if (game?.onPlayerLeave) {
+        const nextGameState = game.onPlayerLeave(lobby.gameState, playerId, remainingActive);
+        lobby.gameState = nextGameState;
+        if (nextGameState.status === 'won' || nextGameState.status === 'draw') {
+          lobby.status = 'finished';
+          this.archiveCompletedGameIfNeeded(lobby);
+        }
+      }
+    } else {
+      lobby.players = lobby.players.filter((p) => p.id !== playerId);
+    }
+
+    const remainingJoinable = lobby.players.filter((p) => p.connectionState !== 'offline');
+    if (remainingJoinable.length === 0) {
+      this.archiveCompletedGameIfNeeded(lobby);
+      lobby.status = 'expired';
+      this.clearHostTransferTimer(lobby.id);
+      this.removeLobbyIndexes(lobby);
+      this.persistSnapshot();
+      return {
+        lobbyId: lobby.id,
+        lobby,
+        deleted: true,
+        wasHost: lobby.hostId === playerId,
+        leftLobby: lobby,
+        lobbyDeleted: true,
+        leavingPlayerId: playerId,
+      };
+    }
+
+    let newHost: Player | undefined;
+    let previousHostId: string | undefined;
+
+    if (lobby.hostId === playerId) {
+      this.clearHostTransferTimer(lobby.id);
+      previousHostId = playerId;
+      newHost = this.selectNextHost(lobby);
+      if (newHost) {
+        for (const p of lobby.players) {
+          p.isHost = p.id === newHost.id;
+        }
+        lobby.hostId = newHost.id;
+        lobby.hostDisconnectDeadline = undefined;
+      }
+    }
+
+    this.maybeResumePausedLobby(lobby);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    return {
+      lobbyId: lobby.id,
+      lobby,
+      deleted: false,
+      wasHost: Boolean(previousHostId),
+      leftLobby: lobby,
+      lobbyDeleted: false,
+      leavingPlayerId: playerId,
+      newHost,
+      previousHostId,
+    };
+  }
+
+  public handleDisconnect(socketId: string): {
+    lobbyId?: string;
+    lobby?: Lobby;
+    player?: Player;
+    ignoredStaleSocket?: boolean;
+  } {
+    if (this.supersededSocketIds.delete(socketId)) {
+      this.socketToPlayer.delete(socketId);
+      return { ignoredStaleSocket: true };
+    }
+
+    const info = this.socketToPlayer.get(socketId);
+    if (!info) return {};
+
+    this.socketToPlayer.delete(socketId);
+
+    const lobby = this.lobbies.get(info.lobbyId);
+    if (!lobby) return {};
+
+    const player = lobby.players.find((p) => p.id === info.playerId);
+    if (!player) return {};
+
+    // Wichtig: Veraltetes Disconnect-Event ignorieren, wenn sich der Spieler bereits mit neuem Socket verbunden hat
+    if (player.socketId && player.socketId !== socketId) {
+      return { ignoredStaleSocket: true };
+    }
+
+    if (player.sessionId) {
+      this.sessionManager.clearSocket(player.sessionId, socketId);
+    }
+
+    const now = Date.now();
+    player.connected = false;
+    player.connectionState = 'disconnected';
+    player.disconnectedAt = now;
+    player.reconnectDeadline = now + this.reconnectGraceMs;
+
+    // Host nicht sofort löschen, sondern nach Host-Ausfall-Frist geordnet übergeben
+    if (player.isHost) {
+      lobby.hostDisconnectDeadline = now + this.hostTransferGraceMs;
+      this.scheduleHostTransferTimer(lobby.id);
+    }
+
+    // Laufendes Spiel pausieren, wenn temporär zu wenige verbundene Spieler übrig sind
+    if (lobby.status === 'in_progress') {
+      const connectedActivePlayers = lobby.players.filter(
+        (p) => !p.isTvScreen && !p.eliminated && p.connected && p.connectionState === 'connected'
+      );
+      if (connectedActivePlayers.length < lobby.minPlayers) {
+        lobby.status = 'paused';
+        lobby.pausedAt = now;
+        lobby.pausedReason = `Verbindung zu ${player.name} unterbrochen`;
+      }
+    }
+
+    this.scheduleReconnectTimer(lobby.id, player.id, this.reconnectGraceMs);
+
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = now;
+    this.persistSnapshot();
+
+    return { lobbyId: lobby.id, lobby, player };
+  }
+
+  public expireDisconnectedPlayer(lobbyId: string, playerId: string): {
+    expired: boolean;
+    lobby?: Lobby;
+    player?: Player;
+  } {
+    this.clearReconnectTimer(lobbyId, playerId);
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || lobby.status === 'expired') {
+      return { expired: false };
+    }
+
+    const player = lobby.players.find((p) => p.id === playerId);
+    if (!player || player.connected || player.connectionState === 'connected') {
+      return { expired: false };
+    }
+
+    if (player.connectionState === 'offline') {
+      return { expired: false };
+    }
+
+    const now = Date.now();
+    player.connected = false;
+    player.connectionState = 'offline';
+    player.reconnectDeadline = undefined;
+
+    if (player.sessionId) {
+      this.sessionManager.invalidateLobbyAccess(player.sessionId);
+    }
+
+    this.playerToLobbyId.delete(player.id);
+
+    if (lobby.status === 'in_progress' || lobby.status === 'paused') {
+      player.eliminated = true;
+      const remainingActive = lobby.players.filter(
+        (p) => !p.isTvScreen && !p.eliminated && p.connectionState !== 'offline'
+      );
+      const game = gameRegistry.get(lobby.gameId);
+      if (lobby.gameState && game?.onPlayerLeave) {
+        const nextGameState = game.onPlayerLeave(lobby.gameState, player.id, remainingActive);
+        lobby.gameState = nextGameState;
+        if (nextGameState.status === 'won' || nextGameState.status === 'draw') {
+          lobby.status = 'finished';
+          this.archiveCompletedGameIfNeeded(lobby);
+        }
+      }
+
+      if (lobby.status === 'paused') {
+        const connectedNow = lobby.players.filter(
+          (p) => !p.isTvScreen && !p.eliminated && p.connected && p.connectionState === 'connected'
+        );
+        if (connectedNow.length >= lobby.minPlayers) {
+          lobby.status = 'in_progress';
+          lobby.pausedAt = undefined;
+          lobby.pausedReason = undefined;
+        }
+      }
+    } else if (lobby.status === 'waiting') {
+      lobby.players = lobby.players.filter((p) => p.id !== player.id);
+    }
+
+    // Falls kein aktiver/verbundener Spieler mehr da ist, als inaktiv markieren (für Bereinigung)
+    const remainingNonOffline = lobby.players.filter((p) => p.connectionState !== 'offline');
+    if (remainingNonOffline.length === 0) {
+      this.archiveCompletedGameIfNeeded(lobby);
+      this.clearHostTransferTimer(lobby.id);
+      if (lobby.status === 'waiting') {
+        lobby.status = 'expired';
+        this.removeLobbyIndexes(lobby);
+        this.persistSnapshot();
+        this.callbacks.onPlayerExpired?.(sanitizeLobbyForClient(lobby), { ...player, sessionId: undefined });
+        this.callbacks.onLobbyExpired?.(sanitizeLobbyForClient(lobby));
+        return { expired: true, lobby, player };
+      }
+    } else if (lobby.hostId === player.id) {
+      // Falls Host abgelaufen ist und Host-Wechsel noch nicht stattfand -> sofort übertragen
+      this.transferHostIfNeeded(lobby.id);
+    }
+
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = now;
+    this.persistSnapshot();
+
+    const safeLobby = sanitizeLobbyForClient(lobby);
+    const { sessionId: _omit, ...safePlayer } = player;
+    this.callbacks.onPlayerExpired?.(safeLobby, safePlayer);
+    this.callbacks.onLobbyUpdated?.(safeLobby);
+
+    return { expired: true, lobby, player };
+  }
+
+  public transferHostIfNeeded(lobbyId: string): {
+    transferred: boolean;
+    lobby?: Lobby;
+    newHost?: Player;
+    previousHostId?: string;
+  } {
+    this.clearHostTransferTimer(lobbyId);
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || lobby.status === 'expired') {
+      return { transferred: false };
+    }
+
+    const currentHost = lobby.players.find((p) => p.id === lobby.hostId);
+    if (currentHost && currentHost.connected && currentHost.connectionState === 'connected') {
+      lobby.hostDisconnectDeadline = undefined;
+      return { transferred: false };
+    }
+
+    const candidate = this.selectNextHost(lobby, true);
+    if (!candidate) {
+      return { transferred: false };
+    }
+
+    const previousHostId = lobby.hostId;
+    for (const p of lobby.players) {
+      p.isHost = p.id === candidate.id;
+    }
+    lobby.hostId = candidate.id;
+    lobby.hostDisconnectDeadline = undefined;
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    const safeLobby = sanitizeLobbyForClient(lobby);
+    const { sessionId: _omit, ...safeHost } = candidate;
+    this.callbacks.onHostChanged?.(safeLobby, safeHost, previousHostId, 'host_disconnected');
+    this.callbacks.onLobbyUpdated?.(safeLobby);
+
+    return { transferred: true, lobby, newHost: candidate, previousHostId };
+  }
+
+  public reconnectPlayer(params: {
+    socketId: string;
+    userId?: string;
+    sessionId?: string;
+    reconnectToken?: string;
+    lobbyIdOrCode?: string;
+  }): {
+    success: boolean;
+    lobby?: Lobby;
+    player?: Player;
+    reconnectToken?: string;
+    supersededSocketId?: string;
+    error?: string;
+  } {
+    this.cleanupExpiredLobbies();
+
+    let effectivePlayerId = params.userId;
+    let rotatedReconnectToken: string | undefined;
+
+    if (params.sessionId) {
+      const session = this.sessionManager.getSessionById(params.sessionId);
+      if (!session) {
+        return { success: false, error: 'Sitzung ist abgelaufen oder ungültig.' };
+      }
+
+      if (params.userId && params.userId !== session.playerId) {
+        return { success: false, error: 'Benutzer-ID passt nicht zur aktuellen Sitzung.' };
+      }
+
+      effectivePlayerId = session.playerId;
+
+      if (params.reconnectToken !== undefined) {
+        const tokenCheck = this.sessionManager.verifyAndRotateReconnectToken(
+          params.sessionId,
+          params.reconnectToken
+        );
+        if (!tokenCheck.valid) {
+          return {
+            success: false,
+            error: tokenCheck.error || 'Reconnect-Token ungültig oder abgelaufen.',
+          };
+        }
+        rotatedReconnectToken = tokenCheck.nextReconnectToken;
+      }
+    }
+
+    if (!effectivePlayerId) {
+      return { success: false, error: 'Keine gültige Spieler-ID für Reconnect.' };
+    }
+
+    let lobbyId = this.playerToLobbyId.get(effectivePlayerId);
+    if (!lobbyId && params.sessionId) {
+      const sess = this.sessionManager.getSessionById(params.sessionId);
+      lobbyId = sess?.lobbyId;
+    }
+
+    if (params.lobbyIdOrCode && lobbyId) {
+      const requested = this.lobbies.get(params.lobbyIdOrCode) ?? this.findLobbyByCode(params.lobbyIdOrCode);
+      if (!requested || requested.id !== lobbyId) {
+        return {
+          success: false,
+          error: 'Kein Zugriff auf diese Lobby (Sitzung gehört zu einer anderen Lobby).',
+        };
+      }
+    } else if (params.lobbyIdOrCode && !lobbyId) {
+      return { success: false, error: 'Keine aktive Mitgliedschaft in dieser Lobby gefunden.' };
+    }
+
+    if (!lobbyId) {
+      return { success: false, error: 'Keine aktive Lobby zum Wiederverbinden gefunden.' };
+    }
+
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby || lobby.status === 'expired') {
+      return { success: false, error: 'Die Lobby existiert nicht mehr oder ist abgelaufen.' };
+    }
+
+    const player = lobby.players.find((p) => p.id === effectivePlayerId);
+    if (!player) {
+      return { success: false, error: 'Spieler ist kein Mitglied dieser Lobby.' };
+    }
+
+    if (player.connectionState === 'offline' || player.eliminated) {
+      return { success: false, error: 'Reconnect-Frist abgelaufen. Sitzung in dieser Lobby beendet.' };
+    }
+
+    if (player.sessionId && params.sessionId && player.sessionId !== params.sessionId) {
+      return {
+        success: false,
+        error: 'Sicherheitsverletzung: Sitzung stimmt nicht mit dem Spieler überein.',
+      };
+    }
+
+    // Alte Socket-Verbindung der gleichen Session sauber ablösen (verhindert Doppelsteuerung)
+    const supersededSocketId =
+      player.socketId && player.socketId !== params.socketId ? player.socketId : undefined;
+    if (supersededSocketId) {
+      this.socketToPlayer.delete(supersededSocketId);
+      this.supersededSocketIds.add(supersededSocketId);
+    }
+
+    this.clearReconnectTimer(lobby.id, player.id);
+    if (player.isHost) {
+      this.clearHostTransferTimer(lobby.id);
+      lobby.hostDisconnectDeadline = undefined;
+    }
+
+    player.socketId = params.socketId;
+    player.connected = true;
+    player.connectionState = 'connected';
+    player.disconnectedAt = undefined;
+    player.reconnectDeadline = undefined;
+    if (params.sessionId) {
+      player.sessionId = params.sessionId;
+    }
+
+    this.maybeResumePausedLobby(lobby);
+
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    lobby.expiresAt = Date.now() + this.lobbyExpireMs;
+
+    this.playerToLobbyId.set(player.id, lobby.id);
+    this.socketToPlayer.set(params.socketId, { lobbyId: lobby.id, playerId: player.id });
+
+    if (params.sessionId) {
+      this.sessionManager.setLobbyBinding(params.sessionId, lobby.id, lobby.code);
+      this.sessionManager.bindSocket(params.sessionId, params.socketId);
+      if (!rotatedReconnectToken) {
+        rotatedReconnectToken = this.sessionManager.rotateReconnectToken(params.sessionId) ?? undefined;
+      }
+    }
+
+    this.persistSnapshot();
+
+    return {
+      success: true,
+      lobby,
+      player,
+      reconnectToken: rotatedReconnectToken,
+      supersededSocketId,
+    };
+  }
+
+  public clearAllTimers(): void {
+    for (const timer of this.reconnectTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.reconnectTimers.clear();
+
+    for (const timer of this.hostTransferTimers.values()) {
+      clearTimeout(timer);
+    }
+    this.hostTransferTimers.clear();
+  }
+
+  public async shutdown(): Promise<void> {
+    this.clearAllTimers();
+    await this.stateStore.close();
+  }
+
+  private scheduleReconnectTimer(lobbyId: string, playerId: string, delayMs: number): void {
+    const key = `${lobbyId}:${playerId}`;
+    this.clearReconnectTimer(lobbyId, playerId);
+    const timer = setTimeout(() => {
+      this.reconnectTimers.delete(key);
+      this.expireDisconnectedPlayer(lobbyId, playerId);
+    }, Math.max(10, delayMs));
+    timer.unref?.();
+    this.reconnectTimers.set(key, timer);
+  }
+
+  private clearReconnectTimer(lobbyId: string, playerId: string): void {
+    const key = `${lobbyId}:${playerId}`;
+    const existing = this.reconnectTimers.get(key);
+    if (existing) {
+      clearTimeout(existing);
+      this.reconnectTimers.delete(key);
+    }
+  }
+
+  private scheduleHostTransferTimer(lobbyId: string): void {
+    this.clearHostTransferTimer(lobbyId);
+    const timer = setTimeout(() => {
+      this.hostTransferTimers.delete(lobbyId);
+      this.transferHostIfNeeded(lobbyId);
+    }, Math.max(10, this.hostTransferGraceMs));
+    timer.unref?.();
+    this.hostTransferTimers.set(lobbyId, timer);
+  }
+
+  private clearHostTransferTimer(lobbyId: string): void {
+    const existing = this.hostTransferTimers.get(lobbyId);
+    if (existing) {
+      clearTimeout(existing);
+      this.hostTransferTimers.delete(lobbyId);
+    }
+  }
+
+  private selectNextHost(lobby: Lobby, connectedOnly = false): Player | undefined {
+    const connectedNonTv = lobby.players.find(
+      (p) => !p.isTvScreen && p.connected && p.connectionState === 'connected' && !p.eliminated
+    );
+    if (connectedNonTv) return connectedNonTv;
+
+    const connectedAny = lobby.players.find(
+      (p) => p.connected && p.connectionState === 'connected' && !p.eliminated
+    );
+    if (connectedAny || connectedOnly) return connectedAny;
+
+    return (
+      lobby.players.find((p) => !p.isTvScreen && p.connectionState !== 'offline') ??
+      lobby.players.find((p) => p.connectionState !== 'offline')
+    );
+  }
+
+  private maybeResumePausedLobby(lobby: Lobby): void {
+    if (lobby.status !== 'paused') return;
+    const connectedActive = lobby.players.filter(
+      (p) => !p.isTvScreen && !p.eliminated && p.connected && p.connectionState === 'connected'
+    );
+    if (connectedActive.length >= lobby.minPlayers) {
+      lobby.status = 'in_progress';
+      lobby.pausedAt = undefined;
+      lobby.pausedReason = undefined;
+    }
+  }
+
+  private isDuplicateAction(lobby: Lobby, actionId?: string): boolean {
+    if (!actionId) return false;
+    return Boolean(lobby.processedActionIds?.includes(actionId));
+  }
+
+  private recordActionId(lobby: Lobby, actionId?: string): void {
+    if (!actionId) return;
+    if (!lobby.processedActionIds) {
+      lobby.processedActionIds = [];
+    }
+    if (!lobby.processedActionIds.includes(actionId)) {
+      lobby.processedActionIds.push(actionId);
+      if (lobby.processedActionIds.length > MAX_PROCESSED_ACTIONS) {
+        lobby.processedActionIds.splice(0, lobby.processedActionIds.length - MAX_PROCESSED_ACTIONS);
+      }
+    }
+  }
+
+  private archiveCompletedGameIfNeeded(lobby: Lobby): void {
+    const gs: BaseGameState | null = lobby.gameState;
+    if (!gs || (gs.status !== 'won' && gs.status !== 'draw')) {
+      return;
+    }
+
+    if (!lobby.finishedResults) {
+      lobby.finishedResults = [];
+    }
+
+    // Verhindert mehrfaches Speichern desselben abgeschlossenen Spiels
+    const alreadySaved = lobby.finishedResults.some(
+      (r) => r.gameId === gs.gameId && r.startedAt === gs.startedAt
+    );
+    if (alreadySaved) return;
+
+    const winner = gs.winnerId ? lobby.players.find((p) => p.id === gs.winnerId) : undefined;
+    const scores: Record<string, number> | undefined =
+      gs.scores && typeof gs.scores === 'object' ? { ...gs.scores } : undefined;
+
+    const record: GameResultRecord = {
+      gameId: gs.gameId,
+      startedAt: gs.startedAt,
+      finishedAt: Date.now(),
+      status: gs.status,
+      winnerId: gs.winnerId ?? null,
+      winnerName: winner?.name ?? null,
+      scores,
+      players: lobby.players
+        .filter((p) => !p.isTvScreen)
+        .map((p) => ({
+          id: p.id,
+          name: p.name,
+          score: scores?.[p.id],
+          eliminated: Boolean(p.eliminated),
+        })),
+    };
+
+    lobby.finishedResults.push(record);
+    this.stateStore.recordCompletedResult(record);
+  }
+
+  private removeLobbyIndexes(lobby: Lobby): void {
+    this.clearHostTransferTimer(lobby.id);
+    for (const p of lobby.players) {
+      this.clearReconnectTimer(lobby.id, p.id);
+      if (this.playerToLobbyId.get(p.id) === lobby.id) {
+        this.playerToLobbyId.delete(p.id);
+      }
+      if (p.socketId) {
+        const mapping = this.socketToPlayer.get(p.socketId);
+        if (mapping?.lobbyId === lobby.id) {
+          this.socketToPlayer.delete(p.socketId);
+        }
+      }
+    }
+    this.codeToLobbyId.delete(lobby.code.toUpperCase());
+    this.lobbies.delete(lobby.id);
+  }
+
+  private persistSnapshot(): void {
+    void this.stateStore.queueSave(
+      Array.from(this.lobbies.values()),
+      this.sessionManager.exportSessions()
+    );
+  }
 }
 
-export const lobbyManager = new LobbyManager();
+export const lobbyManager = new LobbyManager({
+  stateStore: new StatePersistenceStore({
+    filePath: getDefaultStateFilePath(),
+    redisUrl: process.env.REDIS_URL,
+  }),
+});
