@@ -588,6 +588,14 @@ body::-webkit-scrollbar,
     align-items: center !important;
   }
 
+  .lobby-landscape-hide-title {
+    display: none !important;
+  }
+
+  .lobby-landscape-header-title {
+    display: block !important;
+  }
+
   .lobby-landscape-left {
     gap: 8px !important;
   }
@@ -602,8 +610,8 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-qr-canvas {
-    width: 140px !important;
-    height: 140px !important;
+    width: 176px !important;
+    height: 176px !important;
   }
 
   .lobby-landscape-code-btn {

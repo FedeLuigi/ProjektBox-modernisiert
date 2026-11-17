@@ -345,7 +345,11 @@ export function LobbyScreen({
   );
 
   const titleBlock = (alignLeft = false) => (
-    <div className={`flex flex-col ${alignLeft ? 'items-start text-left' : 'items-center text-center'}`}>
+    <div
+      className={`lobby-landscape-hide-title flex flex-col ${
+        alignLeft ? 'items-start text-left' : 'items-center text-center'
+      }`}
+    >
       <div className="border-b-2 border-[#F59E0B] px-1 pb-1">
         <h2 className="lobby-landscape-title font-arcade text-2xl sm:text-4xl lg:text-[42px] leading-tight tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
           {game.title}
@@ -495,7 +499,7 @@ export function LobbyScreen({
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Kopfzeile: ZURÜCK links & Internetverbindungsanzeige rechts */}
+        {/* Kopfzeile: ZURÜCK links, Spieltitel mittig im Smartphone-Querformat & Internetverbindungsanzeige rechts */}
         <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <button
             type="button"
@@ -505,6 +509,12 @@ export function LobbyScreen({
             <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
             <span>ZURÜCK</span>
           </button>
+
+          <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
+            <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
+              {game.title}
+            </span>
+          </div>
 
           <ConnectionStatusBadge />
         </header>
