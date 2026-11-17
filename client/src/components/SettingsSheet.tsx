@@ -102,7 +102,7 @@ export function SettingsSheet({
           </button>
         </div>
 
-        <div className="my-auto flex w-full flex-col items-center gap-6 py-4">
+        <div className="my-auto mx-auto flex w-full max-w-lg flex-col items-center gap-6 px-4 sm:px-6 py-4">
           <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
             <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
               EINSTELLUNGEN
