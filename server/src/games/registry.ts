@@ -1,6 +1,4 @@
 import { MultiplayerGameDefinition, Player } from '../types/multiplayer.js';
-import { ticTacToeGame } from './definitions/ticTacToe.js';
-import { connectFourGame } from './definitions/connectFour.js';
 import { drawAndGuessGame } from './definitions/drawAndGuess.js';
 
 function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlayers = 4): MultiplayerGameDefinition {
@@ -54,8 +52,6 @@ export class GameRegistry {
 
   constructor() {
     // Multiplayer- & Party-Spiele
-    this.register(ticTacToeGame);
-    this.register(connectFourGame);
     this.register(drawAndGuessGame);
   }
 

@@ -31,11 +31,6 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
       category: 'Alle',
     };
   }
-  if (gameId === 'connect' || gameId === 'tic-tac-toe') {
-    return {
-      rounds: 3,
-    };
-  }
   return {};
 }
 

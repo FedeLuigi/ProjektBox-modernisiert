@@ -1,7 +1,5 @@
 import type { ComponentType } from 'react';
 import type { GameRendererProps } from './types';
-import { TicTacToeBoard } from './components/TicTacToeBoard';
-import { ConnectFourBoard } from './components/ConnectFourBoard';
 import { DrawAndGuessBoard } from './components/DrawAndGuessBoard';
 import { GenericDuelBoard } from './components/GenericDuelBoard';
 
@@ -9,8 +7,6 @@ export class ClientGameRegistry {
   private renderers = new Map<string, ComponentType<GameRendererProps<any, any>>>();
 
   constructor() {
-    this.register('tic-tac-toe', TicTacToeBoard);
-    this.register('connect', ConnectFourBoard);
     this.register('draw-and-guess', DrawAndGuessBoard);
   }
 

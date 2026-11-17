@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Grid2X2, Palette, Puzzle, Tv, type LucideIcon } from 'lucide-react';
+import { Palette, Tv, type LucideIcon } from 'lucide-react';
 import { IslandBackground } from './IslandBackground';
 
 interface SplashScreenProps {
@@ -25,32 +25,6 @@ interface PartyIntroBadge {
 }
 
 const PARTY_INTRO_ICONS: PartyIntroBadge[] = [
-  {
-    id: 'puzzle',
-    label: 'Tic Tac Toe',
-    icon: Puzzle,
-    outerBg: '#3B0764',
-    innerBg: '#7C3AED',
-    facetBg: '#8B5CF6',
-    borderColor: '#DDD6FE',
-    positionClass: '-top-5 -left-3 sm:-top-7 sm:-left-8',
-    tiltClass: '-rotate-10',
-    clipPath: 'polygon(6% 0%, 100% 8%, 92% 100%, 0% 92%)',
-    delayMs: 80,
-  },
-  {
-    id: 'connect',
-    label: 'Vier gewinnt',
-    icon: Grid2X2,
-    outerBg: '#7F1D1D',
-    innerBg: '#E11D48',
-    facetBg: '#F43F5E',
-    borderColor: '#FECDD3',
-    positionClass: '-top-5 -right-3 sm:-top-7 sm:-right-8',
-    tiltClass: 'rotate-10',
-    clipPath: 'polygon(0% 8%, 94% 0%, 100% 92%, 8% 100%)',
-    delayMs: 210,
-  },
   {
     id: 'draw',
     label: 'Zeichnen & Raten',

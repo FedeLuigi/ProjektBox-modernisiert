@@ -1,8 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { LobbyManager } from './lobbyManager.js';
-import { ticTacToeGame } from '../games/definitions/ticTacToe.js';
-import { connectFourGame } from '../games/definitions/connectFour.js';
 import { drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
 import { checkRateLimit, cleanupSocketRateLimit } from '../utils/rateLimiter.js';
 import type { Player } from '../types/multiplayer.js';
@@ -27,89 +25,6 @@ const mockPlayers: Player[] = [
     connected: true,
   },
 ];
-
-test('Tic-Tac-Toe: erkennt horizontalen Sieg und blockiert unbefugte Züge', () => {
-  let state = ticTacToeGame.initGameState(mockPlayers, 'p1');
-  assert.equal(state.currentTurn, 'p1');
-  assert.equal(state.status, 'playing');
-
-  // Falscher Spieler am Zug
-  const invalidTurn = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p2',
-    move: { cellIndex: 0 },
-  });
-  assert.equal(invalidTurn.valid, false);
-
-  // Zugfolge zum Sieg für p1 (0, 1, 2)
-  state = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p1',
-    move: { cellIndex: 0 },
-  }).state;
-  state = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p2',
-    move: { cellIndex: 3 },
-  }).state;
-  state = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p1',
-    move: { cellIndex: 1 },
-  }).state;
-  state = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p2',
-    move: { cellIndex: 4 },
-  }).state;
-  const winMove = ticTacToeGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p1',
-    move: { cellIndex: 2 },
-  });
-
-  assert.equal(winMove.valid, true);
-  assert.equal(winMove.state.status, 'won');
-  assert.equal(winMove.state.winnerId, 'p1');
-  assert.deepEqual(winMove.state.winningLine, [0, 1, 2]);
-});
-
-test('Connect Four: Schwerkraft-Logik und vertikaler 4-Gewinnt-Sieg', () => {
-  let state = connectFourGame.initGameState(mockPlayers, 'p1');
-
-  for (let i = 0; i < 3; i++) {
-    state = connectFourGame.validateAndApplyMove({
-      state,
-      players: mockPlayers,
-      playerId: 'p1',
-      move: { col: 0 },
-    }).state;
-    state = connectFourGame.validateAndApplyMove({
-      state,
-      players: mockPlayers,
-      playerId: 'p2',
-      move: { col: 1 },
-    }).state;
-  }
-
-  const winningRes = connectFourGame.validateAndApplyMove({
-    state,
-    players: mockPlayers,
-    playerId: 'p1',
-    move: { col: 0 },
-  });
-
-  assert.equal(winningRes.valid, true);
-  assert.equal(winningRes.state.status, 'won');
-  assert.equal(winningRes.state.winnerId, 'p1');
-  assert.equal(winningRes.state.winningCoords?.length, 4);
-});
 
 test('Draw & Guess: Punktevergabe, Rundenwechsel und Idempotenz bei next_round', () => {
   let state = drawAndGuessGame.initGameState(mockPlayers, 'p1', {
@@ -172,7 +87,7 @@ test('LobbyManager: Kompletter Lobby-Lifecycle, TV-Modus und Reconnect-Bereinigu
   const created = manager.createLobby({
     name: 'Test-Lobby',
     isPrivate: true,
-    gameId: 'tic-tac-toe',
+    gameId: 'draw-and-guess',
     userProfile: { id: 'u1', name: 'HostPlayer', avatar: {} },
     socketId: 's1',
   });

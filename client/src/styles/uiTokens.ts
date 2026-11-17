@@ -205,24 +205,6 @@ export interface GameWorldStageTheme {
 }
 
 const GAME_WORLD_STAGES: Record<string, GameWorldStageTheme> = {
-  'tic-tac-toe': {
-    bgGradient: 'from-[#091526] via-[#0F2442] to-[#060E1A]',
-    glowPrimary: 'bg-[#06B6D4]/20',
-    glowSecondary: 'bg-[#F59E0B]/15',
-    hudBadgeBg: 'bg-[#083344]/90',
-    hudBadgeBorder: 'border-[#06B6D4]',
-    hudBadgeText: 'text-[#67E8F9]',
-    worldLabel: 'CYBER DUEL 3×3',
-  },
-  'connect-four': {
-    bgGradient: 'from-[#0A1329] via-[#132347] to-[#070D1C]',
-    glowPrimary: 'bg-[#3B82F6]/20',
-    glowSecondary: 'bg-[#F43F5E]/15',
-    hudBadgeBg: 'bg-[#1E3A8A]/90',
-    hudBadgeBorder: 'border-[#60A5FA]',
-    hudBadgeText: 'text-[#BFDBFE]',
-    worldLabel: 'GRAVITY ARENA 7×6',
-  },
   'draw-and-guess': {
     bgGradient: 'from-[#1F102B] via-[#2E1740] to-[#13091C]',
     glowPrimary: 'bg-[#EC4899]/20',
@@ -238,5 +220,5 @@ export function getGameWorldStage(gameId?: string): GameWorldStageTheme {
   if (gameId && GAME_WORLD_STAGES[gameId]) {
     return GAME_WORLD_STAGES[gameId];
   }
-  return GAME_WORLD_STAGES['tic-tac-toe'];
+  return GAME_WORLD_STAGES['draw-and-guess'];
 }
