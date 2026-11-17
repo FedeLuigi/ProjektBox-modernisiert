@@ -378,23 +378,25 @@ export function LobbyScreen({
             {copiedCode ? 'KOPIERT ✓' : currentLobby.code}
           </button>
 
-          <OpenButton
-            size="sm"
-            variant={copiedLink ? 'primary' : 'secondary'}
-            onClick={handleCopyLink}
-          >
-            {copiedLink ? (
-              <>
-                <Check className="h-3.5 w-3.5 stroke-[3]" />
-                <span>KOPIERT ✓</span>
-              </>
-            ) : (
-              <>
-                <Share2 className="h-3.5 w-3.5" />
-                <span>LINK TEILEN</span>
-              </>
-            )}
-          </OpenButton>
+          {!currentLobby.isTvMode && (
+            <OpenButton
+              size="sm"
+              variant={copiedLink ? 'primary' : 'secondary'}
+              onClick={handleCopyLink}
+            >
+              {copiedLink ? (
+                <>
+                  <Check className="h-3.5 w-3.5 stroke-[3]" />
+                  <span>KOPIERT ✓</span>
+                </>
+              ) : (
+                <>
+                  <Share2 className="h-3.5 w-3.5" />
+                  <span>LINK TEILEN</span>
+                </>
+              )}
+            </OpenButton>
+          )}
         </div>
       </div>
     ) : null;
