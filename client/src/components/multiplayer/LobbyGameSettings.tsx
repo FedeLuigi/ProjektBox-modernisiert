@@ -150,11 +150,7 @@ export function LobbyGameSettings({
                 </div>
               </div>
 
-              {customWordsEnabled ? (
-                <p className="font-arcade text-[11px] leading-relaxed text-[#FDE68A]/90 uppercase pt-1">
-                  DER ZEICHNER GIBT ZU BEGINN JEDER RUNDE SEIN EIGENES WORT EIN.
-                </p>
-              ) : (
+              {!customWordsEnabled && (
                 <div className="flex flex-col gap-1.5">
                   <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIE</span>
                   <div className="flex items-center gap-1.5 flex-wrap">
