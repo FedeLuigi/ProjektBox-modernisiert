@@ -100,6 +100,7 @@ export const LobbyUpdateSettingsSchema = z.object({
     customWordsEnabled: z.boolean().optional(),
     stopButtonEnabled: z.boolean().optional(),
     categoryPreset: z.enum(['klassisch', 'party', 'bunt']).optional(),
+    startingBalance: z.number().int().min(100).max(100000).optional(),
   }),
   ...ActionMetaFields,
 });
@@ -156,6 +157,18 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
     ...ActionMetaFields,
   }),
   z.object({ type: z.literal('review_ready'), ...ActionMetaFields }),
+  z.object({
+    type: z.literal('place_bet'),
+    betKey: z.string().trim().min(3).max(24),
+    amount: z.number().int().min(1).max(1000000),
+    ...ActionMetaFields,
+  }),
+  z.object({ type: z.literal('undo_bet'), ...ActionMetaFields }),
+  z.object({ type: z.literal('clear_bets'), ...ActionMetaFields }),
+  z.object({ type: z.literal('rebet'), ...ActionMetaFields }),
+  z.object({ type: z.literal('double_bets'), ...ActionMetaFields }),
+  z.object({ type: z.literal('lock_bets'), ...ActionMetaFields }),
+  z.object({ type: z.literal('finish_spin'), ...ActionMetaFields }),
 ]);
 
 export const StrokeSegmentSchema = z.object({

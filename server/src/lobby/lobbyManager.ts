@@ -71,6 +71,13 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
       categoryPreset: 'klassisch',
     };
   }
+  if (gameId === 'roulette') {
+    return {
+      rounds: 5,
+      roundDuration: 30,
+      startingBalance: 1000,
+    };
+  }
   return {};
 }
 
@@ -904,7 +911,9 @@ export class LobbyManager {
     }
 
     const isSimultaneousPartyGame =
-      lobby.gameId === 'draw-and-guess' || lobby.gameId === 'stadt-land-fluss';
+      lobby.gameId === 'draw-and-guess' ||
+      lobby.gameId === 'stadt-land-fluss' ||
+      lobby.gameId === 'roulette';
     const isStructuralOrTurnAction =
       !isSimultaneousPartyGame ||
       (lobby.gameId === 'draw-and-guess' &&
@@ -962,7 +971,8 @@ export class LobbyManager {
       nextState.roundStatus !== prevGameState.roundStatus ||
       nextState.phase !== prevGameState.phase ||
       nextState.correctGuesserIds?.length !== prevGameState.correctGuesserIds?.length ||
-      nextState.submittedPlayerIds?.length !== prevGameState.submittedPlayerIds?.length;
+      nextState.submittedPlayerIds?.length !== prevGameState.submittedPlayerIds?.length ||
+      nextState.lockedPlayerIds?.length !== prevGameState.lockedPlayerIds?.length;
 
     if (shouldPersistMilestone) {
       this.persistSnapshot();

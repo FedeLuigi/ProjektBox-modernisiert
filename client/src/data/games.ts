@@ -1,4 +1,5 @@
 import {
+  Coins,
   Compass,
   Palette,
   type LucideIcon,
@@ -97,5 +98,27 @@ export const GAMES: Game[] = [
     icon: Compass,
     tone: 'ocean',
     accent: 'cyan',
+  },
+  {
+    id: 'roulette',
+    title: 'Casino Roulette',
+    subtitle: 'Chips setzen, drehen & gewinnen',
+    description:
+      'Alle starten mit Startguthaben: Setze deine Chips auf Zahlen, Rot/Schwarz oder Dutzende und kassiere bis zu 35:1 ab!',
+    howToPlay:
+      'Jeder startet mit demselben Startguthaben (z. B. 1.000 €). Wähle deine Chip-Höhe und tippe auf Zahlen (35:1), Dutzende/Kolonnen (2:1) oder Rot/Schwarz, Gerade/Ungerade & 1–18/19–36 (1:1). Nach allen Spins gewinnt das höchste Guthaben!',
+    category: 'Strategie',
+    gameType: 'party',
+    gameTypeLabel: 'CASINO',
+    players: '1–8 Spieler',
+    minPlayers: 1,
+    maxPlayers: 8,
+    duration: '5–10 Min.',
+    durationMinutes: 6,
+    supportsTv: true,
+    tags: ['Casino', 'Party', 'Guthaben', 'Strategie', 'TV-Highlight'],
+    icon: Coins,
+    tone: 'emerald',
+    accent: 'emerald',
   },
 ];

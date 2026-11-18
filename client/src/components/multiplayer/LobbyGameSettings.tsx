@@ -16,7 +16,10 @@ const SLF_PRESETS = [
   { id: 'bunt', label: 'BUNT', preview: 'Stadt • Tier • Film • Marke • Gegenstand' },
 ] as const;
 const ROUND_OPTIONS = [3, 5, 8];
+const ROULETTE_ROUND_OPTIONS = [3, 5, 8, 10];
 const DURATION_OPTIONS = [45, 60, 90];
+const ROULETTE_DURATION_OPTIONS = [20, 30, 45];
+const ROULETTE_BALANCE_OPTIONS = [500, 1000, 2500];
 
 export function LobbyGameSettings({
   gameId,
@@ -28,8 +31,12 @@ export function LobbyGameSettings({
 
   const isDrawAndGuess = gameId === 'draw-and-guess';
   const isStadtLandFluss = gameId === 'stadt-land-fluss';
-  const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
-  const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
+  const isRoulette = gameId === 'roulette';
+  const rounds = typeof settings?.rounds === 'number' ? settings.rounds : isRoulette ? 5 : 3;
+  const roundDuration =
+    typeof settings?.roundDuration === 'number' ? settings.roundDuration : isRoulette ? 30 : 60;
+  const startingBalance =
+    typeof settings?.startingBalance === 'number' ? settings.startingBalance : 1000;
   const customWordsEnabled = settings?.customWordsEnabled === true;
   const category = settings?.category || 'Alle';
   const stopButtonEnabled = settings?.stopButtonEnabled !== false;
@@ -65,6 +72,11 @@ export function LobbyGameSettings({
     onUpdate({ ...settings, categoryPreset: presetId });
   };
 
+  const handleSetStartingBalance = (val: number) => {
+    if (!isHost) return;
+    onUpdate({ ...settings, startingBalance: val });
+  };
+
   const activePresetLabel =
     SLF_PRESETS.find((p) => p.id === categoryPreset)?.label || 'KLASSISCH';
 
@@ -74,7 +86,9 @@ export function LobbyGameSettings({
       }`
     : isStadtLandFluss
       ? `${rounds} RUNDEN • ${roundDuration}S • ${stopButtonEnabled ? 'STOPP AN' : 'STOPP AUS'} • ${activePresetLabel}`
-      : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
+      : isRoulette
+        ? `${rounds} RUNDEN • ${roundDuration}S • START ${startingBalance.toLocaleString('de-DE')} €`
+        : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
 
   return (
     <div className="w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden">
@@ -270,6 +284,59 @@ export function LobbyGameSettings({
                 <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5">
                   {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
                 </p>
+              </div>
+            </>
+          ) : isRoulette ? (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">RUNDEN</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {ROULETTE_ROUND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
+                    >
+                      {opt}
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">SETZZEIT</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {ROULETTE_DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STARTGUTHABEN</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {ROULETTE_BALANCE_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={startingBalance === opt ? 'primary' : 'secondary'}
+                      onClick={() => handleSetStartingBalance(opt)}
+                    >
+                      {opt.toLocaleString('de-DE')} €
+                    </OpenButton>
+                  ))}
+                </div>
               </div>
             </>
           ) : (

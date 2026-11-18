@@ -223,6 +223,15 @@ const GAME_WORLD_STAGES: Record<string, GameWorldStageTheme> = {
     hudBadgeText: 'text-[#CFFAFE]',
     worldLabel: 'WORT-ARENA LIVE',
   },
+  roulette: {
+    bgGradient: 'from-[#022C22] via-[#064E3B] to-[#0F172A]',
+    glowPrimary: 'bg-[#10B981]/25',
+    glowSecondary: 'bg-[#F59E0B]/20',
+    hudBadgeBg: 'bg-[#064E3B]/90',
+    hudBadgeBorder: 'border-[#34D399]',
+    hudBadgeText: 'text-[#A7F3D0]',
+    worldLabel: 'GRAND CASINO TISCH',
+  },
 };
 
 export function getGameWorldStage(gameId?: string): GameWorldStageTheme {

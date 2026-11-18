@@ -184,6 +184,132 @@ export function GamePreviewArtwork({
     );
   }
 
+  if (gameId === 'roulette') {
+    const sectors = 12;
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#022C22] via-[#065F46] to-[#0F172A] ${className}`}
+      >
+        <svg
+          viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
+          className="h-full w-full object-cover"
+          aria-hidden="true"
+        >
+          {/* Roulette-Kessel links */}
+          <g transform={isHero ? 'translate(180, 140)' : 'translate(115, 102)'}>
+            <circle r={isHero ? 98 : 74} fill="#451A03" stroke="#F59E0B" strokeWidth="4" />
+            <circle r={isHero ? 82 : 62} fill="#0F172A" stroke="#FBBF24" strokeWidth="2" />
+            {Array.from({ length: sectors }, (_, i) => {
+              const a1 = (i / sectors) * Math.PI * 2 - Math.PI / 2;
+              const a2 = ((i + 1) / sectors) * Math.PI * 2 - Math.PI / 2;
+              const rO = isHero ? 80 : 60;
+              const rI = isHero ? 40 : 30;
+              const x1 = rO * Math.cos(a1);
+              const y1 = rO * Math.sin(a1);
+              const x2 = rO * Math.cos(a2);
+              const y2 = rO * Math.sin(a2);
+              const x3 = rI * Math.cos(a2);
+              const y3 = rI * Math.sin(a2);
+              const x4 = rI * Math.cos(a1);
+              const y4 = rI * Math.sin(a1);
+              const fill = i === 0 ? '#059669' : i % 2 === 1 ? '#DC2626' : '#111827';
+              return (
+                <path
+                  key={i}
+                  d={`M ${x1.toFixed(1)} ${y1.toFixed(1)} A ${rO} ${rO} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)} L ${x3.toFixed(1)} ${y3.toFixed(1)} A ${rI} ${rI} 0 0 0 ${x4.toFixed(1)} ${y4.toFixed(1)} Z`}
+                  fill={fill}
+                  stroke="#D97706"
+                  strokeWidth="1.2"
+                />
+              );
+            })}
+            <circle r={isHero ? 40 : 30} fill="#064E3B" stroke="#F59E0B" strokeWidth="2.5" />
+            <line x1={isHero ? -28 : -20} y1="0" x2={isHero ? 28 : 20} y2="0" stroke="#FBBF24" strokeWidth="4" strokeLinecap="round" />
+            <line x1="0" y1={isHero ? -28 : -20} x2="0" y2={isHero ? 28 : 20} stroke="#FBBF24" strokeWidth="4" strokeLinecap="round" />
+            <circle r={isHero ? 11 : 8} fill="#FDE047" />
+            {/* Kugel */}
+            <circle
+              cx={isHero ? 56 : 42}
+              cy={isHero ? -34 : -26}
+              r={isHero ? 7 : 5.5}
+              fill="#F8FAFC"
+              stroke="#0F172A"
+              strokeWidth="1.5"
+            />
+          </g>
+
+          {/* Wett-Karten & Casino-Chips rechts */}
+          <g transform={isHero ? 'translate(325, 48)' : 'translate(215, 28)'}>
+            <rect
+              x="0"
+              y="0"
+              width={isHero ? 250 : 155}
+              height={isHero ? 170 : 138}
+              rx="14"
+              fill="#064E3B"
+              stroke="#34D399"
+              strokeWidth="3"
+            />
+            {[
+              { n: '17', bg: '#111827', x: 14, y: 14 },
+              { n: '32', bg: '#DC2626', x: isHero ? 88 : 58, y: 14 },
+              { n: '0', bg: '#059669', x: isHero ? 162 : 102, y: 14 },
+            ].map((cell) => (
+              <g key={cell.n} transform={`translate(${cell.x}, ${cell.y})`}>
+                <rect
+                  width={isHero ? 64 : 38}
+                  height={isHero ? 44 : 32}
+                  rx="8"
+                  fill={cell.bg}
+                  stroke="#FBBF24"
+                  strokeWidth="2"
+                />
+                <text
+                  x={isHero ? 32 : 19}
+                  y={isHero ? 28 : 21}
+                  textAnchor="middle"
+                  fill="#FFFFFF"
+                  fontSize={isHero ? 20 : 14}
+                  fontWeight="900"
+                  fontFamily="sans-serif"
+                >
+                  {cell.n}
+                </text>
+              </g>
+            ))}
+
+            {/* Chips */}
+            {[
+              { label: '100€', fill: '#1E293B', stroke: '#FBBF24', text: '#FDE68A', cx: isHero ? 56 : 38 },
+              { label: '25€', fill: '#059669', stroke: '#6EE7B7', text: '#FFFFFF', cx: isHero ? 124 : 78 },
+              { label: '5€', fill: '#DC2626', stroke: '#FCA5A5', text: '#FFFFFF', cx: isHero ? 192 : 118 },
+            ].map((chip) => (
+              <g key={chip.label} transform={`translate(${chip.cx}, ${isHero ? 114 : 90})`}>
+                <circle
+                  r={isHero ? 26 : 18}
+                  fill={chip.fill}
+                  stroke={chip.stroke}
+                  strokeWidth="3"
+                  strokeDasharray="6 4"
+                />
+                <text
+                  y={isHero ? 5 : 4}
+                  textAnchor="middle"
+                  fill={chip.text}
+                  fontSize={isHero ? 13 : 9.5}
+                  fontWeight="900"
+                  fontFamily="sans-serif"
+                >
+                  {chip.label}
+                </text>
+              </g>
+            ))}
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (gameId === 'stadt-land-fluss') {
     return (
       <div

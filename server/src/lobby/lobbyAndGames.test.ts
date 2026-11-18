@@ -12,6 +12,12 @@ import { SESSION_COOKIE_NAME, parseCookieHeader } from '../session/sessionManage
 import { registerSocketHandlers } from './socketHandlers.js';
 import { apiRouter } from '../routes/api.js';
 import { DRAW_AND_GUESS_WORDS, drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
+import {
+  doesBetWin,
+  getBetPayoutMultiplier,
+  rouletteGame,
+  type RouletteState,
+} from '../games/definitions/roulette.js';
 import { stadtLandFlussGame } from '../games/definitions/stadtLandFluss.js';
 import { checkRateLimit, cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
 import {
@@ -1104,6 +1110,211 @@ test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abst
   const afterLeave = stadtLandFlussGame.onPlayerLeave!(s3, 'p3', mockPlayers);
   assert.equal(afterLeave.status, 'playing');
   assert.equal(afterLeave.phase, 'review');
+
+  manager.clearAllTimers();
+});
+
+test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1:1), Rettungsbonus & TV/Solo-Flow', () => {
+  // 1) Auszahlungs- & Casino-Regelwerk prüfen (inkl. 0 verliert Außenwetten)
+  assert.equal(getBetPayoutMultiplier('number:17'), 36);
+  assert.equal(getBetPayoutMultiplier('dozen:2'), 3);
+  assert.equal(getBetPayoutMultiplier('column:1'), 3);
+  assert.equal(getBetPayoutMultiplier('color:red'), 2);
+
+  assert.equal(doesBetWin('number:0', 0), true);
+  assert.equal(doesBetWin('color:red', 0), false);
+  assert.equal(doesBetWin('color:black', 0), false);
+  assert.equal(doesBetWin('parity:even', 0), false);
+  assert.equal(doesBetWin('range:low', 0), false);
+  assert.equal(doesBetWin('dozen:1', 0), false);
+  assert.equal(doesBetWin('column:3', 0), false);
+
+  assert.equal(doesBetWin('color:red', 19), true);
+  assert.equal(doesBetWin('color:black', 17), true);
+  assert.equal(doesBetWin('dozen:2', 17), true);
+  assert.equal(doesBetWin('column:2', 17), true);
+
+  // Zod-Schemas akzeptieren Roulette-Moves und Startguthaben
+  assert.equal(
+    GameMoveSchema.safeParse({ type: 'place_bet', betKey: 'number:17', amount: 100 }).success,
+    true
+  );
+  assert.equal(GameMoveSchema.safeParse({ type: 'lock_bets' }).success, true);
+  assert.equal(GameMoveSchema.safeParse({ type: 'finish_spin' }).success, true);
+
+  // 2) Solo-Spieler + Rettungsbonus + Verdopplung + Undo testen
+  const manager = new LobbyManager();
+  const sSolo = manager.sessionManager.createSession('u_r_solo').session;
+  const soloLobby = manager.createLobby({
+    name: 'Casino Solo',
+    isPrivate: true,
+    gameId: 'roulette',
+    userProfile: { id: 'u_r_solo', name: 'CroupierFan', avatar: {} },
+    socketId: 'r_solo_sock',
+    isTvMode: false,
+    sessionId: sSolo.sessionId,
+  });
+  assert.equal(soloLobby.success, true);
+  assert.equal(soloLobby.lobby?.minPlayers, 1);
+  assert.equal(soloLobby.lobby?.settings?.startingBalance, 1000);
+
+  manager.updateSettings({
+    lobbyId: soloLobby.lobby!.id,
+    playerId: 'u_r_solo',
+    settings: { rounds: 2, roundDuration: 30, startingBalance: 500 },
+  });
+  const startedSolo = manager.startGame('r_solo_sock');
+  assert.equal(startedSolo.success, true);
+  let rState = startedSolo.lobby!.gameState as RouletteState;
+  assert.equal(rState.balances.u_r_solo, 500);
+  assert.equal(rState.scores.u_r_solo, 500);
+
+  // Setzen, 2x verdoppeln & Undo prüfen
+  manager.makeMove({
+    lobbyId: soloLobby.lobby!.id,
+    playerId: 'u_r_solo',
+    move: { type: 'place_bet', betKey: 'color:red', amount: 100 },
+  });
+  const doubled = manager.makeMove({
+    lobbyId: soloLobby.lobby!.id,
+    playerId: 'u_r_solo',
+    move: { type: 'double_bets' },
+  });
+  rState = doubled.lobby!.gameState as RouletteState;
+  assert.equal(rState.bets.u_r_solo['color:red'], 200);
+  assert.equal(rState.balances.u_r_solo, 300);
+  assert.equal(rState.scores.u_r_solo, 500);
+
+  const undone = manager.makeMove({
+    lobbyId: soloLobby.lobby!.id,
+    playerId: 'u_r_solo',
+    move: { type: 'undo_bet' },
+  });
+  rState = undone.lobby!.gameState as RouletteState;
+  assert.equal(rState.bets.u_r_solo['color:red'], 100);
+  assert.equal(rState.balances.u_r_solo, 400);
+
+  // Zu hoher Einsatz wird abgelehnt
+  const overBet = manager.makeMove({
+    lobbyId: soloLobby.lobby!.id,
+    playerId: 'u_r_solo',
+    move: { type: 'place_bet', betKey: 'number:7', amount: 450 },
+  });
+  assert.equal(overBet.success, false);
+
+  // 3) Direkte deterministische Spins mit Auszahlungsprüfung (2 Spieler + Rettungsbonus)
+  let state2p = rouletteGame.initGameState(mockPlayers, 'p1', {
+    rounds: 2,
+    roundDuration: 30,
+    startingBalance: 500,
+  });
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'place_bet', betKey: 'number:17', amount: 100 },
+  }).state;
+  // Bob setzt sein ganzes Guthaben auf Rot (und verliert bei 17 Schwarz)
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'place_bet', betKey: 'color:red', amount: 500 },
+  }).state;
+
+  // Beide bestätigen -> spinning
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'lock_bets' },
+  }).state;
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'lock_bets' },
+  }).state;
+  assert.equal(state2p.phase, 'spinning');
+
+  // Fixiere Gewinnzahl auf 17 (Schwarz) & simuliere abgeschlossene Spin-Zeit
+  state2p = {
+    ...state2p,
+    winningNumber: 17,
+    winningColor: 'black',
+    phaseEndsAt: Date.now() - 10,
+  };
+  // Während spinning bleiben balances noch unverändert vor finish_spin
+  assert.equal(state2p.balances.p1, 400);
+
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'finish_spin' },
+  }).state;
+  assert.equal(state2p.phase, 'result');
+  // 100 * 36 = 3600 Auszahlung -> 400 + 3600 = 4000 (+3500 Reingewinn)
+  assert.equal(state2p.balances.p1, 4000);
+  assert.equal(state2p.lastOutcome?.netProfit.p1, 3500);
+  assert.equal(state2p.balances.p2, 0);
+  assert.equal(state2p.lastOutcome?.netProfit.p2, -500);
+
+  // Zweites finish_spin ist idempotent (zahlt nicht doppelt!)
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'finish_spin' },
+  }).state;
+  assert.equal(state2p.balances.p1, 4000);
+
+  // Weiter in Runde 2 -> Bob (0 €) erhält automatisch 50 € Rettungsbonus!
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'next_round' },
+  }).state;
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'next_round' },
+  }).state;
+  assert.equal(state2p.round, 2);
+  assert.equal(state2p.phase, 'betting');
+  assert.equal(state2p.balances.p2, 50);
+  assert.equal(state2p.rebuyBonuses.p2, 50);
+
+  // Rebet funktioniert für Alice (setzt erneut 100 auf 17)
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'rebet' },
+  }).state;
+  assert.equal(state2p.bets.p1['number:17'], 100);
+  assert.equal(state2p.balances.p1, 3900);
+
+  // Spielrunde 2 zu Ende bringen -> Alice gewinnt mit höchstem Guthaben
+  state2p = {
+    ...state2p,
+    phase: 'result',
+    phaseEndsAt: Date.now() - 10,
+    balances: { p1: 4000, p2: 50 },
+    bets: { p1: {}, p2: {} },
+    scores: { p1: 4000, p2: 50 },
+  };
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'time_up' },
+  }).state;
+  assert.equal(state2p.phase, 'game_over');
+  assert.equal(state2p.status, 'won');
+  assert.equal(state2p.winnerId, 'p1');
 
   manager.clearAllTimers();
 });
