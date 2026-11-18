@@ -11,7 +11,7 @@ import { StatePersistenceStore } from './stateStore.js';
 import { SESSION_COOKIE_NAME, parseCookieHeader } from '../session/sessionManager.js';
 import { registerSocketHandlers } from './socketHandlers.js';
 import { apiRouter } from '../routes/api.js';
-import { drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
+import { DRAW_AND_GUESS_WORDS, drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
 import { stadtLandFlussGame } from '../games/definitions/stadtLandFluss.js';
 import { checkRateLimit, cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
 import {
@@ -300,6 +300,20 @@ test('Draw & Guess: Eigene Wörter Option (An/Aus), Wort-Eingabe vor Zeichenstar
   assert.equal(timedOutChoose.state.roundStatus, 'drawing');
   assert.ok(timedOutChoose.state.secretWord.length >= 2);
   assert.equal(timedOutChoose.state.wordLength, timedOutChoose.state.secretWord.length);
+
+  // Alle Wörter im Wortschatz sind eindeutig und enthalten nur saubere Buchstaben ohne Bindestrich oder Sonderzeichen
+  assert.ok(DRAW_AND_GUESS_WORDS.length >= 200);
+  const seenWords = new Set<string>();
+  for (const entry of DRAW_AND_GUESS_WORDS) {
+    assert.match(
+      entry.word,
+      /^[a-zA-ZäöüÄÖÜ]{2,20}$/,
+      `Ungültige Zeichen im Wort: ${entry.word}`
+    );
+    const key = entry.word.toLowerCase();
+    assert.equal(seenWords.has(key), false, `Doppeltes Wort: ${entry.word}`);
+    seenWords.add(key);
+  }
 });
 
 function waitMs(ms: number): Promise<void> {
