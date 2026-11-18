@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import {
   Check,
   Clock,
@@ -736,6 +737,9 @@ export function RouletteBoard({
     border: string;
     text: string;
   } | null>(null);
+  const [pendingDrops, setPendingDrops] = useState<
+    Array<{ id: number; round: number; targetOrderLen: number; betKey: string; amount: number }>
+  >([]);
   const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(() =>
     phaseEndsAt ? Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000)) : 0
@@ -746,6 +750,7 @@ export function RouletteBoard({
   const ghostChipRef = useRef<HTMLDivElement | null>(null);
   const dragPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragCleanupRef = useRef<(() => void) | null>(null);
+  const dropSeqRef = useRef(0);
 
   // Timer + autoritative Phasenübergänge auslösen (nur aktive Smartphone-Clients, TV bleibt reiner Zuschauer)
   useEffect(() => {
@@ -811,25 +816,61 @@ export function RouletteBoard({
   }, [phase, isTvScreen, gameState?.lastOutcome, myId]);
 
   const myBalance = gameState?.balances?.[myId] ?? startingBalance;
-  const activeTableBets =
-    phase === 'result' && gameState?.lastOutcome?.settledBets
-      ? gameState.lastOutcome.settledBets
-      : gameState?.bets || {};
+  const settledBets = gameState?.lastOutcome?.settledBets;
+  const liveBets = gameState?.bets;
+  const activeTableBets = useMemo(
+    () => (phase === 'result' && settledBets ? settledBets : liveBets || {}),
+    [phase, settledBets, liveBets]
+  );
+
+  const confirmedOrderLen = (gameState?.betOrder?.[myId] || []).length;
+  const activePending = useMemo(
+    () =>
+      phase === 'betting'
+        ? pendingDrops.filter((d) => d.round === round && d.targetOrderLen > confirmedOrderLen)
+        : [],
+    [pendingDrops, phase, round, confirmedOrderLen]
+  );
+  const pendingWager = useMemo(
+    () => activePending.reduce((sum, d) => sum + d.amount, 0),
+    [activePending]
+  );
+  const effectiveBalance = Math.max(0, myBalance - pendingWager);
+  const displayedTableBets = useMemo(() => {
+    if (activePending.length === 0) return activeTableBets;
+    const mergedMyBets = { ...(activeTableBets[myId] || {}) };
+    for (const d of activePending) {
+      mergedMyBets[d.betKey] = (mergedMyBets[d.betKey] || 0) + d.amount;
+    }
+    return { ...activeTableBets, [myId]: mergedMyBets };
+  }, [activeTableBets, activePending, myId]);
 
   const isMultiplayer = allPlayers.length > 1;
   const myWagered = sumBets(gameState?.bets?.[myId]);
+  const displayedWagered = myWagered + pendingWager;
   const myLastRoundBets = gameState?.lastRoundBets?.[myId] || {};
   const canRebet = sumBets(myLastRoundBets) > 0 && sumBets(myLastRoundBets) <= myBalance + myWagered;
-  const canDouble = myWagered > 0 && myWagered <= myBalance;
+  const canDouble = myWagered > 0 && myWagered <= effectiveBalance;
   const isLocked = !isMultiplayer && (gameState?.lockedPlayerIds || []).includes(myId);
   const isNextReady = (gameState?.nextReadyIds || []).includes(myId);
-  const canBet = !isTvScreen && !disabled && phase === 'betting' && !isLocked && myBalance > 0;
+  const canBet = !isTvScreen && !disabled && phase === 'betting' && !isLocked && effectiveBalance > 0;
 
   const handlePlaceBet = (betKey: string, chipOverride?: number | 'all') => {
     if (!canBet) return;
     const chipChoice = chipOverride ?? selectedChip;
-    const amount = chipChoice === 'all' ? myBalance : Math.min(chipChoice, myBalance);
+    const amount = chipChoice === 'all' ? effectiveBalance : Math.min(chipChoice, effectiveBalance);
     if (amount <= 0) return;
+
+    const dropId = ++dropSeqRef.current;
+    const targetOrderLen = confirmedOrderLen + activePending.length + 1;
+    setPendingDrops((prev) => [
+      ...prev.filter((d) => d.round === round && d.targetOrderLen > confirmedOrderLen),
+      { id: dropId, round, targetOrderLen, betKey, amount },
+    ]);
+    setTimeout(() => {
+      setPendingDrops((prev) => prev.filter((d) => d.id !== dropId));
+    }, 1500);
+
     playMoveSound();
     triggerHapticFeedback(8);
     onMove({ type: 'place_bet', betKey, amount });
@@ -847,8 +888,8 @@ export function RouletteBoard({
     chip: (typeof CHIP_DENOMINATIONS)[number]
   ) => {
     if (e.pointerType === 'mouse' && e.button !== 0) return;
-    const chipAmount = chip.value === 'all' ? myBalance : chip.value;
-    if (!canBet || myBalance <= 0 || chipAmount > myBalance) return;
+    const chipAmount = chip.value === 'all' ? effectiveBalance : chip.value;
+    if (!canBet || effectiveBalance <= 0 || chipAmount > effectiveBalance) return;
     if (e.pointerType === 'mouse') {
       e.preventDefault();
     }
@@ -856,17 +897,28 @@ export function RouletteBoard({
     dragCleanupRef.current?.();
 
     const pointerId = e.pointerId;
+    const touchOffsetY = e.pointerType === 'touch' ? -26 : 0;
     const startX = e.clientX;
     const startY = e.clientY;
-    dragPosRef.current = { x: startX, y: startY };
+    const getTipPoint = (clientX: number, clientY: number) => ({
+      x: clientX,
+      y: Math.max(18, clientY + touchOffsetY),
+    });
+
+    dragPosRef.current = getTipPoint(startX, startY);
     let hasMoved = false;
 
     const cleanup = () => {
       window.removeEventListener('pointermove', onPointerMove);
       window.removeEventListener('pointerup', onPointerUp);
       window.removeEventListener('pointercancel', onPointerCancel);
+      window.removeEventListener('touchmove', preventTouchScroll);
       window.removeEventListener('blur', onWindowBlur);
       dragCleanupRef.current = null;
+    };
+
+    const preventTouchScroll = (ev: TouchEvent) => {
+      if (ev.cancelable) ev.preventDefault();
     };
 
     const finishDrag = () => {
@@ -882,16 +934,15 @@ export function RouletteBoard({
         return;
       }
 
-      const x = ev.clientX;
-      const y = ev.clientY;
-      dragPosRef.current = { x, y };
+      const tip = getTipPoint(ev.clientX, ev.clientY);
+      dragPosRef.current = tip;
 
       if (ghostChipRef.current) {
-        ghostChipRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+        ghostChipRef.current.style.transform = `translate3d(${tip.x}px, ${tip.y}px, 0) translate(-50%, -50%)`;
       }
 
       if (!hasMoved) {
-        if (Math.hypot(x - startX, y - startY) < 4) return;
+        if (Math.hypot(ev.clientX - startX, ev.clientY - startY) < 2) return;
         hasMoved = true;
         setSelectedChip(chip.value);
         setDragChip({
@@ -904,13 +955,14 @@ export function RouletteBoard({
         });
       }
 
-      const nextHover = findBetKeyAtPoint(x, y);
+      const nextHover = findBetKeyAtPoint(tip.x, tip.y);
       setHoveredBetKey((prev) => (prev === nextHover ? prev : nextHover));
     };
 
     const onPointerUp = (ev: PointerEvent) => {
       if (ev.pointerId !== pointerId) return;
-      const dropKey = hasMoved && latestCanBetRef.current ? findBetKeyAtPoint(ev.clientX, ev.clientY) : null;
+      const tip = getTipPoint(ev.clientX, ev.clientY);
+      const dropKey = hasMoved && latestCanBetRef.current ? findBetKeyAtPoint(tip.x, tip.y) : null;
       const wasMoved = hasMoved;
       finishDrag();
 
@@ -937,6 +989,7 @@ export function RouletteBoard({
     window.addEventListener('pointermove', onPointerMove, { passive: true });
     window.addEventListener('pointerup', onPointerUp);
     window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('touchmove', preventTouchScroll, { passive: false });
     window.addEventListener('blur', onWindowBlur);
   };
 
@@ -1142,7 +1195,7 @@ export function RouletteBoard({
             {phase === 'betting' && (
               <>
                 <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
-                  EINSATZ: {formatEuro(myWagered)}
+                  EINSATZ: {formatEuro(displayedWagered)}
                 </span>
                 <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
                   {!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN'}
@@ -1209,7 +1262,7 @@ export function RouletteBoard({
         <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
           <div className="flex flex-col gap-1.5 min-w-0 my-auto">
             <BettingTable
-              allBets={activeTableBets}
+              allBets={displayedTableBets}
               players={allPlayers}
               myPlayerId={myId}
               isTvScreen={false}
@@ -1290,19 +1343,20 @@ export function RouletteBoard({
           ) : (
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
               {/* Ziehbarer Spielstein-Vorrat (Touch & Drag-and-Drop) */}
-              <div className="flex items-center gap-1.5 flex-wrap">
+              <div className="flex items-center gap-1.5 flex-wrap touch-none select-none">
                 {CHIP_DENOMINATIONS.map((chip) => {
                   const isSelected = selectedChip === chip.value;
                   const chipDisabled =
                     chip.value === 'all'
-                      ? myBalance <= 0 || !canBet
-                      : myBalance < chip.value || !canBet;
+                      ? effectiveBalance <= 0 || !canBet
+                      : effectiveBalance < chip.value || !canBet;
                   const isBeingDragged = Boolean(canBet && dragChip?.value === chip.value);
 
                   return (
                     <button
                       key={String(chip.value)}
                       type="button"
+                      draggable={false}
                       disabled={chipDisabled}
                       onPointerDown={(e) => handleChipPointerDown(e, chip)}
                       onClick={() => setSelectedChip(chip.value)}
@@ -1312,6 +1366,7 @@ export function RouletteBoard({
                         borderColor: isSelected ? '#FFFFFF' : chip.border,
                         color: chip.text,
                         WebkitTouchCallout: 'none',
+                        WebkitUserSelect: 'none',
                       }}
                       className={`touch-none select-none font-arcade inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 items-center justify-center rounded-full border-2 border-dashed px-1.5 text-[9px] sm:text-[11px] shadow transition-transform cursor-grab active:cursor-grabbing active:scale-95 ${
                         isSelected
@@ -1331,8 +1386,11 @@ export function RouletteBoard({
               <div className="flex items-center gap-1 ml-auto">
                 <button
                   type="button"
-                  disabled={!canBet || myWagered === 0}
-                  onClick={() => onMove({ type: 'undo_bet' })}
+                  disabled={!canBet || displayedWagered === 0}
+                  onClick={() => {
+                    setPendingDrops([]);
+                    onMove({ type: 'undo_bet' });
+                  }}
                   title="Letzten Chip zurücknehmen"
                   className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
                 >
@@ -1342,7 +1400,10 @@ export function RouletteBoard({
                 <button
                   type="button"
                   disabled={!canBet || !canRebet}
-                  onClick={() => onMove({ type: 'rebet' })}
+                  onClick={() => {
+                    setPendingDrops([]);
+                    onMove({ type: 'rebet' });
+                  }}
                   title="Einsätze der letzten Runde wiederholen"
                   className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
                 >
@@ -1352,7 +1413,10 @@ export function RouletteBoard({
                 <button
                   type="button"
                   disabled={!canBet || !canDouble}
-                  onClick={() => onMove({ type: 'double_bets' })}
+                  onClick={() => {
+                    setPendingDrops([]);
+                    onMove({ type: 'double_bets' });
+                  }}
                   title="Einsätze verdoppeln"
                   className="font-arcade inline-flex h-7 items-center rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
                 >
@@ -1361,8 +1425,11 @@ export function RouletteBoard({
 
                 <button
                   type="button"
-                  disabled={!canBet || myWagered === 0}
-                  onClick={() => onMove({ type: 'clear_bets' })}
+                  disabled={!canBet || displayedWagered === 0}
+                  onClick={() => {
+                    setPendingDrops([]);
+                    onMove({ type: 'clear_bets' });
+                  }}
                   title="Alle Einsätze löschen"
                   className="font-arcade inline-flex h-7 items-center rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-1.5 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
                 >
@@ -1374,7 +1441,10 @@ export function RouletteBoard({
                     size="sm"
                     variant="primary"
                     disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
-                    onClick={() => onMove({ type: 'lock_bets' })}
+                    onClick={() => {
+                      setPendingDrops([]);
+                      onMove({ type: 'lock_bets' });
+                    }}
                     className="h-7! px-2.5! text-[10px]! min-w-[82px]"
                   >
                     <Check className="h-3 w-3 stroke-[3]" />
@@ -1393,26 +1463,30 @@ export function RouletteBoard({
         </div>
       </div>
 
-      {/* Schwebender Spielstein während Touch-/Maus-Drag (folgt per translate3d flüssig dem Finger) */}
-      {canBet && dragChip && (
-        <div
-          ref={(el) => {
-            ghostChipRef.current = el;
-            if (el) {
-              const { x, y } = dragPosRef.current;
-              el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
-            }
-          }}
-          style={{
-            backgroundColor: dragChip.bg,
-            borderColor: dragChip.border,
-            color: dragChip.text,
-          }}
-          className="pointer-events-none fixed top-0 left-0 z-[9999] inline-flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-dashed px-2 font-arcade text-xs shadow-[0_14px_30px_rgba(0,0,0,0.75)] ring-2 ring-[#FDE047] will-change-transform"
-        >
-          {dragChip.label}
-        </div>
-      )}
+      {/* Schwebender Spielstein im Portal (frei von CSS-Transforms) während Touch-/Maus-Drag */}
+      {canBet &&
+        dragChip &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            ref={(el) => {
+              ghostChipRef.current = el;
+              if (el) {
+                const { x, y } = dragPosRef.current;
+                el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+              }
+            }}
+            style={{
+              backgroundColor: dragChip.bg,
+              borderColor: dragChip.border,
+              color: dragChip.text,
+            }}
+            className="pointer-events-none fixed top-0 left-0 z-[9999] inline-flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-dashed px-2 font-arcade text-xs shadow-[0_14px_30px_rgba(0,0,0,0.75)] ring-2 ring-[#FDE047] will-change-transform"
+          >
+            {dragChip.label}
+          </div>,
+          document.body
+        )}
     </>
   );
 }
