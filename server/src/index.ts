@@ -52,7 +52,20 @@ const clientDistPath = possibleClientPaths.find((p) => fs.existsSync(p)) || poss
 
 if (fs.existsSync(clientDistPath)) {
   console.log(`📦 Statisches Frontend gefunden unter: ${clientDistPath}`);
-  app.use(express.static(clientDistPath));
+  app.use(
+    express.static(clientDistPath, {
+      setHeaders: (res, filePath) => {
+        const baseName = path.basename(filePath);
+        if (baseName === 'sw.js' || baseName === 'index.html' || baseName === 'manifest.webmanifest') {
+          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+          return;
+        }
+        if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
+      },
+    })
+  );
 
   app.get('*', (req, res, next) => {
     if (
@@ -64,6 +77,7 @@ if (fs.existsSync(clientDistPath)) {
     }
     const indexPath = path.join(clientDistPath, 'index.html');
     if (fs.existsSync(indexPath)) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       return res.sendFile(indexPath);
     }
     next();

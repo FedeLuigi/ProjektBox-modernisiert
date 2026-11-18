@@ -1,4 +1,4 @@
-import { ArrowLeft, Download, Volume2, VolumeX, Vibrate } from 'lucide-react';
+import { ArrowLeft, Download, RefreshCw, Volume2, VolumeX, Vibrate } from 'lucide-react';
 import { OpenButton } from './OpenSubpageUI';
 
 interface SettingsSheetProps {
@@ -9,6 +9,7 @@ interface SettingsSheetProps {
   vibrationEnabled: boolean;
   onToggleVibration: (enabled: boolean) => void;
   onInstall?: () => void;
+  onApplyUpdate?: () => void;
 }
 
 function SettingToggleRow({
@@ -76,6 +77,7 @@ export function SettingsSheet({
   vibrationEnabled,
   onToggleVibration,
   onInstall,
+  onApplyUpdate,
 }: SettingsSheetProps) {
   if (!isOpen) return null;
 
@@ -136,6 +138,19 @@ export function SettingsSheet({
               >
                 <Download className="h-3.5 w-3.5" />
                 <span>APP INSTALLIEREN</span>
+              </OpenButton>
+            )}
+
+            {onApplyUpdate && (
+              <OpenButton
+                size="sm"
+                variant="amber"
+                fullWidth
+                onClick={onApplyUpdate}
+                className="mt-1"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>UPDATE VERFÜGBAR (NEU LADEN)</span>
               </OpenButton>
             )}
           </div>

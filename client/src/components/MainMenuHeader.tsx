@@ -5,6 +5,7 @@ import { PlayerAvatarButton } from './ArcadeHudElements';
 export interface MainMenuHeaderProps {
   avatar?: AvatarConfig;
   hasActiveLobby?: boolean;
+  hasAppUpdate?: boolean;
   onOpenProfile: () => void;
   onOpenTvJoin: () => void;
   onOpenActiveLobby?: () => void;
@@ -18,6 +19,7 @@ export interface MainMenuHeaderProps {
 export function MainMenuHeader({
   avatar,
   hasActiveLobby = false,
+  hasAppUpdate = false,
   onOpenProfile,
   onOpenTvJoin,
   onOpenActiveLobby,
@@ -68,11 +70,25 @@ export function MainMenuHeader({
           <button
             type="button"
             onClick={onOpenSettings}
-            title="Optionen & Einstellungen öffnen"
-            aria-label="Optionen & Einstellungen öffnen"
-            className="flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/80 transition-all hover:bg-white/10 hover:text-white cursor-pointer active:scale-95"
+            title={
+              hasAppUpdate
+                ? 'Optionen & Einstellungen öffnen (App-Update verfügbar)'
+                : 'Optionen & Einstellungen öffnen'
+            }
+            aria-label={
+              hasAppUpdate
+                ? 'Optionen & Einstellungen öffnen (App-Update verfügbar)'
+                : 'Optionen & Einstellungen öffnen'
+            }
+            className="relative flex h-8 w-8 sm:h-9 sm:w-9 items-center justify-center rounded-lg border border-white/20 bg-transparent text-white/80 transition-all hover:bg-white/10 hover:text-white cursor-pointer active:scale-95"
           >
             <Settings className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+            {hasAppUpdate && (
+              <span
+                aria-hidden="true"
+                className="absolute -top-1 -right-1 h-2.5 w-2.5 rounded-full bg-[#F59E0B] ring-2 ring-[#1B2B40]"
+              />
+            )}
           </button>
         </div>
       </header>

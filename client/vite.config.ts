@@ -9,15 +9,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: [
-        'favicon.svg',
-        'apple-touch-icon.png',
-        'pwa-192x192.png',
-        'pwa-512x512.png',
-        'pwa-192x192.svg',
-        'pwa-512x512.svg',
-      ],
+      registerType: 'prompt',
       manifest: {
         name: 'ProjektBox – Dein Spielplatz',
         short_name: 'ProjektBox',
@@ -58,32 +50,34 @@ export default defineConfig({
       },
       workbox: {
         cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        skipWaiting: true,
+        clientsClaim: false,
+        skipWaiting: false,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,webp,json}'],
+        globIgnores: ['pwa-*.png', 'pwa-*.svg'],
+        navigateFallbackDenylist: [/^\/api\//, /^\/socket\.io\//, /^\/healthz$/],
         runtimeCaching: [
           {
-            urlPattern: ({ request }) => request.destination === 'document',
-            handler: 'NetworkFirst',
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'StaleWhileRevalidate',
             options: {
-              cacheName: 'projektbox-doc-cache',
+              cacheName: 'projektbox-google-fonts-css',
               expiration: {
                 maxEntries: 10,
-                maxAgeSeconds: 7 * 24 * 60 * 60,
+                maxAgeSeconds: 30 * 24 * 60 * 60,
               },
             },
           },
           {
-            urlPattern: ({ request }) =>
-              request.destination === 'script' ||
-              request.destination === 'style' ||
-              request.destination === 'image',
-            handler: 'StaleWhileRevalidate',
+            urlPattern: /^https:\/\/fonts\.gstatic\.com\/.*/i,
+            handler: 'CacheFirst',
             options: {
-              cacheName: 'projektbox-static-cache',
+              cacheName: 'projektbox-google-fonts-woff2',
+              cacheableResponse: {
+                statuses: [0, 200],
+              },
               expiration: {
-                maxEntries: 60,
-                maxAgeSeconds: 30 * 24 * 60 * 60,
+                maxEntries: 20,
+                maxAgeSeconds: 365 * 24 * 60 * 60,
               },
             },
           },

@@ -1,21 +1,25 @@
-import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { memo, useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 interface SplashScreenProps {
   onFinish?: () => void;
+  onPrepareExit?: () => void;
 }
 
 const SPLASH_DURATION_MS = 4600;
 const SPLASH_REDUCED_MS = 950;
 const FADE_OUT_MS = 420;
+const FONTS_WAIT_MAX_MS = 350;
+const PREPARE_EXIT_BEFORE_MS = 900;
 
 const WARP_COLORS = ['#F59E0B', '#FBBF24', '#38BDF8', '#10B981', '#F472B6', '#FDE68A'];
 
 /**
  * Vollbild-Canvas-2D:
- * 1) Hyperspace-Warp-Sternenfeld (0 - 0.9s)
- * 2) Synchronisierte Partikel-Explosion beim Raketen-Einschlag (ab 0.9s)
+ * 1) Hyperspace-Warp-Sternenfeld (0 - 1.24s, danach ruhiger Drift)
+ * 2) Synchronisierte Partikel-Explosion beim Raketen-Einschlag (ab 1.22s)
+ * Optimiert mit Farb-Batching & Frame-Delta-Normierung für 60Hz/120Hz-Displays.
  */
-function HyperspaceExplosionCanvas({
+const HyperspaceExplosionCanvas = memo(function HyperspaceExplosionCanvas({
   reducedMotion,
   isReady,
 }: {
@@ -25,7 +29,6 @@ function HyperspaceExplosionCanvas({
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
-    if (!isReady) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d');
@@ -47,52 +50,70 @@ function HyperspaceExplosionCanvas({
     };
 
     resize();
-    window.addEventListener('resize', resize);
+    if (!isReady) {
+      return;
+    }
 
-    const starCount = reducedMotion ? 50 : 190;
+    window.addEventListener('resize', resize);
+    window.addEventListener('orientationchange', resize);
+
+    const isCompactViewport = Math.min(width, height) < 640;
+    const starCount = reducedMotion ? 45 : isCompactViewport ? 120 : 170;
     const stars = Array.from({ length: starCount }, (_, i) => ({
       x: (Math.random() - 0.5) * width * 1.7,
       y: (Math.random() - 0.5) * height * 1.7,
       z: Math.random() * 1200 + 80,
-      color: WARP_COLORS[i % WARP_COLORS.length],
+      colorIndex: i % WARP_COLORS.length,
     }));
 
-    // Explosions-Funken beim Einschlag der Rakete (t = 0.9s)
-    const sparkCount = reducedMotion ? 0 : 120;
+    // Pro Farbe 2 Tiefenstufen (fern / nah) -> maximal 12 stroke()-Aufrufe statt 170
+    const starBuckets: number[][] = Array.from({ length: WARP_COLORS.length * 2 }, () => []);
+
+    const sparkCount = reducedMotion ? 0 : isCompactViewport ? 84 : 110;
     const sparks = Array.from({ length: sparkCount }, (_, i) => {
-      const angle = (i / sparkCount) * Math.PI * 2 + (Math.random() - 0.5) * 0.18;
-      const speed = 5 + Math.random() * 16;
+      const angle = (i / Math.max(1, sparkCount)) * Math.PI * 2 + (Math.random() - 0.5) * 0.18;
+      const speed = 5 + Math.random() * 15;
       return {
         x: 0,
         y: 0,
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
-        size: 2 + Math.random() * 3.5,
-        alpha: 1,
-        color: WARP_COLORS[i % WARP_COLORS.length],
+        size: 2 + Math.random() * 3.2,
+        colorIndex: i % WARP_COLORS.length,
       };
     });
+    let sparkAlpha = 1;
     let explosionTriggered = false;
 
     const startTime = performance.now();
+    let lastTime = startTime;
     let rafId = 0;
 
     const render = (now: number) => {
+      const deltaMs = now - lastTime;
+      lastTime = now;
+      // Normiert auf 60fps-Einheiten, gedeckelt gegen Sprünge nach Tab-Wechsel
+      const stepScale = Math.min(2.5, Math.max(0.25, deltaMs / 16.6667));
       const elapsed = (now - startTime) / 1000;
       const cx = width / 2;
       const cy = height / 2;
 
-      // Warp beschleunigt bis zum Einschlag (1.22s), danach ruhiger Drift
-      const speed = reducedMotion
+      const baseSpeed = reducedMotion
         ? 3
         : elapsed < 1.24
           ? 12 + elapsed * 18
           : Math.max(4.5, 32 - (elapsed - 1.24) * 14);
+      const speed = baseSpeed * stepScale;
 
       ctx.clearRect(0, 0, width, height);
 
-      // 1) Hyperspace-Tunnel
-      for (const s of stars) {
+      for (let b = 0; b < starBuckets.length; b++) {
+        starBuckets[b].length = 0;
+      }
+
+      // 1) Hyperspace-Tunnel (nach Farbe & Tiefe gebatcht)
+      for (let i = 0; i < stars.length; i++) {
+        const s = stars[i];
         s.z -= speed;
         if (s.z <= 20) {
           s.z = 1200;
@@ -102,21 +123,45 @@ function HyperspaceExplosionCanvas({
         const k = 320 / s.z;
         const px = cx + s.x * k;
         const py = cy + s.y * k;
-        const pk = 320 / (s.z + speed * 2.4);
+        const pk = 320 / (s.z + baseSpeed * 2.4);
         const ox = cx + s.x * pk;
         const oy = cy + s.y * pk;
 
-        ctx.beginPath();
-        ctx.strokeStyle = s.color;
-        ctx.lineWidth = Math.max(1, (1 - s.z / 1200) * 3.2);
-        ctx.globalAlpha = Math.min(1, (1 - s.z / 1200) * 1.1);
-        ctx.moveTo(ox, oy);
-        ctx.lineTo(px, py);
-        ctx.stroke();
+        const isNear = s.z < 580 ? 1 : 0;
+        const bucketIdx = s.colorIndex * 2 + isNear;
+        starBuckets[bucketIdx].push(ox, oy, px, py);
       }
 
-      // 2) Partikel-Explosion ab t = 1.22s
-      if (!reducedMotion && elapsed >= 1.22) {
+      for (let c = 0; c < WARP_COLORS.length; c++) {
+        ctx.strokeStyle = WARP_COLORS[c];
+
+        const farCoords = starBuckets[c * 2];
+        if (farCoords.length > 0) {
+          ctx.globalAlpha = 0.45;
+          ctx.lineWidth = 1.35;
+          ctx.beginPath();
+          for (let j = 0; j < farCoords.length; j += 4) {
+            ctx.moveTo(farCoords[j], farCoords[j + 1]);
+            ctx.lineTo(farCoords[j + 2], farCoords[j + 3]);
+          }
+          ctx.stroke();
+        }
+
+        const nearCoords = starBuckets[c * 2 + 1];
+        if (nearCoords.length > 0) {
+          ctx.globalAlpha = 0.92;
+          ctx.lineWidth = 2.6;
+          ctx.beginPath();
+          for (let j = 0; j < nearCoords.length; j += 4) {
+            ctx.moveTo(nearCoords[j], nearCoords[j + 1]);
+            ctx.lineTo(nearCoords[j + 2], nearCoords[j + 3]);
+          }
+          ctx.stroke();
+        }
+      }
+
+      // 2) Partikel-Explosion ab t = 1.22s (nach Farbe gebatcht)
+      if (!reducedMotion && elapsed >= 1.22 && sparkAlpha > 0.02 && sparks.length > 0) {
         if (!explosionTriggered) {
           explosionTriggered = true;
           for (const sp of sparks) {
@@ -125,18 +170,25 @@ function HyperspaceExplosionCanvas({
           }
         }
 
-        for (const sp of sparks) {
-          if (sp.alpha <= 0.02) continue;
-          sp.vx *= 0.945;
-          sp.vy *= 0.945;
-          sp.x += sp.vx;
-          sp.y += sp.vy;
-          sp.alpha *= 0.965;
+        const drag = Math.pow(0.945, stepScale);
+        sparkAlpha *= Math.pow(0.965, stepScale);
 
+        for (const sp of sparks) {
+          sp.vx *= drag;
+          sp.vy *= drag;
+          sp.x += sp.vx * stepScale;
+          sp.y += sp.vy * stepScale;
+        }
+
+        ctx.globalAlpha = Math.max(0, Math.min(1, sparkAlpha));
+        for (let c = 0; c < WARP_COLORS.length; c++) {
+          ctx.fillStyle = WARP_COLORS[c];
           ctx.beginPath();
-          ctx.fillStyle = sp.color;
-          ctx.globalAlpha = sp.alpha;
-          ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          for (let i = c; i < sparks.length; i += WARP_COLORS.length) {
+            const sp = sparks[i];
+            ctx.moveTo(sp.x + sp.size, sp.y);
+            ctx.arc(sp.x, sp.y, sp.size, 0, Math.PI * 2);
+          }
           ctx.fill();
         }
       }
@@ -149,11 +201,12 @@ function HyperspaceExplosionCanvas({
     return () => {
       cancelAnimationFrame(rafId);
       window.removeEventListener('resize', resize);
+      window.removeEventListener('orientationchange', resize);
     };
   }, [reducedMotion, isReady]);
 
   return <canvas ref={canvasRef} className="pointer-events-none fixed inset-0 z-0" />;
-}
+});
 
 /* ─── Hero-Rakete für den Einflug vor der Explosion ─── */
 function HeroRocketSvg({ reducedMotion }: { reducedMotion: boolean }) {
@@ -323,7 +376,7 @@ interface FlyingObject {
   tx: string;
   ty: string;
   rot: string;
-  delay: string;
+  delayMs: number;
   render: () => ReactNode;
 }
 
@@ -334,7 +387,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: 'max(-128px, -27vw)',
     ty: 'max(-185px, -25vh)',
     rot: '-14deg',
-    delay: '2220ms',
+    delayMs: 2220,
     render: () => <PaintPaletteSvg />,
   },
   {
@@ -342,7 +395,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: 'min(128px, 27vw)',
     ty: 'max(-180px, -24vh)',
     rot: '14deg',
-    delay: '2310ms',
+    delayMs: 2310,
     render: () => <ControllerSvg />,
   },
   {
@@ -350,7 +403,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: '0px',
     ty: 'max(-218px, -30vh)',
     rot: '-4deg',
-    delay: '2400ms',
+    delayMs: 2400,
     render: () => <CrownSvg />,
   },
   {
@@ -358,7 +411,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: 'max(-255px, -39vw)',
     ty: 'max(-118px, -16vh)',
     rot: '-18deg',
-    delay: '2480ms',
+    delayMs: 2480,
     render: () => <DiceSvg />,
   },
   {
@@ -366,14 +419,361 @@ const FLYING_OBJECTS: FlyingObject[] = [
     tx: 'min(255px, 39vw)',
     ty: 'max(-118px, -16vh)',
     rot: '20deg',
-    delay: '2560ms',
+    delayMs: 2560,
     render: () => <StarGemSvg />,
   },
 ];
 
-export function SplashScreen({ onFinish }: SplashScreenProps) {
+/**
+ * Memoisierte Animationsbühne: bleibt bereits während der kurzen Initialisierung
+ * leichtgewichtig im DOM und re-rendert während des gesamten Lade-Fortschritts 0-mal.
+ */
+const SplashStage = memo(function SplashStage({
+  isStageReady,
+  prefersReducedMotion,
+}: {
+  isStageReady: boolean;
+  prefersReducedMotion: boolean;
+}) {
+  const animateStage = isStageReady && !prefersReducedMotion;
+
+  return (
+    <div
+      className={`relative z-20 my-auto flex flex-col items-center justify-center px-2 ${
+        !isStageReady ? 'invisible opacity-0 pointer-events-none' : ''
+      } ${animateStage ? 'spielbox-stage-shake' : ''}`}
+    >
+      {/* AKT 1: Hero-Rakete fliegt von links unten ins Zentrum */}
+      {!prefersReducedMotion && (
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
+          <div className={animateStage ? 'spielbox-rocket-in' : 'opacity-0'}>
+            <HeroRocketSvg reducedMotion={!animateStage} />
+          </div>
+        </div>
+      )}
+
+      {/* AKT 2: Explosions-Blitz & Schockwelle beim Einschlag */}
+      {!prefersReducedMotion && (
+        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center">
+          <div
+            className={`h-48 w-48 sm:h-60 sm:w-60 rounded-full bg-[radial-gradient(circle,#FFFFFF_0%,#FBBF24_32%,rgba(245,158,11,0.34)_54%,rgba(245,158,11,0)_72%)] ${
+              animateStage ? 'spielbox-blast-flash' : 'opacity-0'
+            }`}
+          />
+          <div
+            className={`absolute h-36 w-36 sm:h-48 sm:w-48 rounded-full border-[3px] border-[#FDE68A] shadow-[0_0_24px_#F59E0B] ${
+              animateStage ? 'spielbox-shockwave' : 'opacity-0'
+            }`}
+          />
+        </div>
+      )}
+
+      {/* AKT 4a: Aufsteigender Lichtkegel aus der geöffneten Box (reiner GPU-Vektor ohne Live-Blur) */}
+      <svg
+        viewBox="0 0 240 220"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        className={`pointer-events-none absolute bottom-[36%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 ${
+          animateStage ? 'spielbox-beam' : !prefersReducedMotion ? 'opacity-0' : ''
+        }`}
+      >
+        <defs>
+          <linearGradient id="spielboxBeamGrad" x1="0" y1="1" x2="0" y2="0">
+            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.34" />
+            <stop offset="48%" stopColor="#38BDF8" stopOpacity="0.14" />
+            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+          </linearGradient>
+          <linearGradient id="spielboxBeamEdgeMask" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="white" stopOpacity="0" />
+            <stop offset="28%" stopColor="white" stopOpacity="1" />
+            <stop offset="72%" stopColor="white" stopOpacity="1" />
+            <stop offset="100%" stopColor="white" stopOpacity="0" />
+          </linearGradient>
+          <mask id="spielboxBeamMask">
+            <rect width="240" height="220" fill="url(#spielboxBeamEdgeMask)" />
+          </mask>
+        </defs>
+        <polygon
+          points="76,220 164,220 240,0 0,0"
+          fill="url(#spielboxBeamGrad)"
+          mask="url(#spielboxBeamMask)"
+        />
+      </svg>
+
+      {/* AKT 4b: Echte Spiele-Objekte fliegen um den Titel herum aus der Box */}
+      <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
+        {FLYING_OBJECTS.map((obj) => (
+          <div
+            key={obj.id}
+            style={
+              prefersReducedMotion
+                ? ({
+                    transform: `translate3d(${obj.tx}, ${obj.ty}, 0) rotate(${obj.rot})`,
+                  } as CSSProperties)
+                : ({
+                    '--tx': obj.tx,
+                    '--ty': obj.ty,
+                    '--rot': obj.rot,
+                    animationDelay: animateStage ? `${obj.delayMs}ms` : undefined,
+                  } as CSSProperties)
+            }
+            className={`absolute -top-6 -left-6 block ${
+              prefersReducedMotion ? 'opacity-100' : animateStage ? 'spielbox-burst' : 'opacity-0'
+            }`}
+          >
+            <div
+              style={
+                animateStage
+                  ? ({ animationDelay: `${obj.delayMs + 860}ms` } as CSSProperties)
+                  : undefined
+              }
+              className={animateStage ? 'spielbox-float' : undefined}
+            >
+              {obj.render()}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* AKT 4c: Titel über der offenen Spielbox */}
+      <div
+        className={`relative z-20 mb-3 sm:mb-4 flex flex-col items-center text-center ${
+          animateStage ? 'spielbox-title' : !prefersReducedMotion ? 'opacity-0' : ''
+        }`}
+      >
+        <span className="font-arcade mb-1 text-[10px] sm:text-xs tracking-[0.26em] text-[#FDE68A]/85 uppercase">
+          PARTY &amp; MULTIPLAYER
+        </span>
+        <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
+          PROJEKT <span className="text-[#FBBF24]">BOX</span>
+        </h1>
+        <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
+      </div>
+
+      {/* AKT 3: Isometrische 3D-Spielbox erscheint aus der Explosion & öffnet sich */}
+      <div
+        className={`relative z-10 ${
+          animateStage ? 'spielbox-drop' : !prefersReducedMotion ? 'opacity-0' : ''
+        }`}
+      >
+        <div
+          className={`pointer-events-none absolute -bottom-3 left-1/2 h-7 w-40 sm:w-48 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.42)_0%,rgba(245,158,11,0.12)_52%,transparent_75%)] ${
+            animateStage ? 'spielbox-floor' : !prefersReducedMotion ? 'opacity-0' : ''
+          }`}
+        />
+
+        <svg
+          viewBox="0 0 220 200"
+          className="h-32 w-36 sm:h-44 sm:w-48 landscape:h-24 landscape:w-28 drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)]"
+          fill="none"
+          aria-hidden="true"
+        >
+          <defs>
+            <linearGradient id="boxCoreGlow" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#F59E0B" />
+              <stop offset="60%" stopColor="#FBBF24" />
+              <stop offset="100%" stopColor="#38BDF8" />
+            </linearGradient>
+          </defs>
+          <polygon
+            points="110,58 176,90 110,122 44,90"
+            fill="url(#boxCoreGlow)"
+            opacity="0.92"
+          />
+          <polygon
+            points="40,92 110,126 110,184 40,150"
+            fill="#0F172A"
+            stroke="#F59E0B"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+          />
+          <polygon points="56,114 94,132 94,142 56,124" fill="#F59E0B" opacity="0.85" />
+          <polygon
+            points="180,92 110,126 110,184 180,150"
+            fill="#1E293B"
+            stroke="#F59E0B"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+          />
+          <circle cx="146" cy="138" r="9" fill="#10B981" opacity="0.9" />
+          <rect
+            x="104"
+            y="119"
+            width="12"
+            height="16"
+            rx="3"
+            fill="#FBBF24"
+            stroke="#0F172A"
+            strokeWidth="2"
+          />
+          <g className={animateStage ? 'spielbox-lid' : undefined}>
+            <polygon
+              points="110,48 184,84 110,120 36,84"
+              fill="#334155"
+              stroke="#F59E0B"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+            />
+            <polygon
+              points="36,84 110,120 110,130 36,94"
+              fill="#0F172A"
+              stroke="#F59E0B"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+            <polygon
+              points="184,84 110,120 110,130 184,94"
+              fill="#1E293B"
+              stroke="#F59E0B"
+              strokeWidth="2"
+              strokeLinejoin="round"
+            />
+          </g>
+        </svg>
+      </div>
+    </div>
+  );
+});
+
+const ProgressTrack = memo(function ProgressTrack({
+  fillRef,
+  dotTrackRef,
+  isFadingOut,
+}: {
+  fillRef: React.RefObject<HTMLDivElement | null>;
+  dotTrackRef: React.RefObject<HTMLDivElement | null>;
+  isFadingOut: boolean;
+}) {
+  return (
+    <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
+      <div
+        ref={fillRef}
+        style={{
+          transform: isFadingOut ? 'scaleX(1)' : 'scaleX(0)',
+          background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 55%, #10B981 100%)',
+        }}
+        className="h-full w-full origin-left rounded-full will-change-transform shadow-[0_0_16px_rgba(245,158,11,0.75)]"
+      />
+      <div
+        ref={dotTrackRef}
+        style={{
+          transform: isFadingOut ? 'translate3d(0%, 0, 0)' : 'translate3d(-100%, 0, 0)',
+        }}
+        className="pointer-events-none absolute inset-0 will-change-transform"
+      >
+        <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_#FFFFFF]" />
+      </div>
+    </div>
+  );
+});
+
+/**
+ * Isolierte Fortschrittsleiste mit GPU-scaleX ohne Layout-Reflows und ohne Re-Renders der Bühne.
+ */
+const SplashProgressBar = memo(function SplashProgressBar({
+  isStageReady,
+  isFadingOut,
+  prefersReducedMotion,
+  onPrepareExit,
+  onComplete,
+}: {
+  isStageReady: boolean;
+  isFadingOut: boolean;
+  prefersReducedMotion: boolean;
+  onPrepareExit?: () => void;
+  onComplete: () => void;
+}) {
+  const [progressPct, setProgressPct] = useState(0);
+  const fillRef = useRef<HTMLDivElement | null>(null);
+  const dotTrackRef = useRef<HTMLDivElement | null>(null);
+  const lastPctRef = useRef(0);
+  const preparedRef = useRef(false);
+
+  useEffect(() => {
+    if (!isStageReady || isFadingOut) return;
+
+    const totalDuration = prefersReducedMotion ? SPLASH_REDUCED_MS : SPLASH_DURATION_MS;
+    const fillDuration = Math.max(400, totalDuration - 260);
+    const prepareAtMs = Math.max(200, totalDuration - PREPARE_EXIT_BEFORE_MS);
+    const startTime = performance.now();
+    let rafId: number | null = null;
+
+    const tick = (now: number) => {
+      const elapsed = now - startTime;
+      const ratio = Math.min(1, elapsed / fillDuration);
+      const eased = 1 - Math.pow(1 - ratio, 2.2);
+
+      if (fillRef.current) {
+        fillRef.current.style.transform = `scaleX(${eased})`;
+      }
+      if (dotTrackRef.current) {
+        dotTrackRef.current.style.transform = `translate3d(${(eased - 1) * 100}%, 0, 0)`;
+      }
+
+      if (!preparedRef.current && elapsed >= prepareAtMs) {
+        preparedRef.current = true;
+        onPrepareExit?.();
+      }
+
+      const nextPct = Math.min(100, Math.round(eased * 100));
+      if (nextPct !== lastPctRef.current) {
+        lastPctRef.current = nextPct;
+        setProgressPct(nextPct);
+      }
+
+      if (ratio < 1) {
+        rafId = requestAnimationFrame(tick);
+      }
+    };
+
+    rafId = requestAnimationFrame(tick);
+    const doneTimer = setTimeout(() => {
+      if (!preparedRef.current) {
+        preparedRef.current = true;
+        onPrepareExit?.();
+      }
+      onComplete();
+    }, totalDuration);
+
+    return () => {
+      if (rafId !== null) cancelAnimationFrame(rafId);
+      clearTimeout(doneTimer);
+    };
+  }, [isStageReady, isFadingOut, prefersReducedMotion, onPrepareExit, onComplete]);
+
+  const displayPct = isFadingOut ? 100 : progressPct;
+  const isReadyState = displayPct >= 88;
+  const statusText =
+    displayPct < 32
+      ? 'RAKETE IM ANFLUG...'
+      : displayPct < 56
+        ? 'SPIELBOX ERSCHEINT...'
+        : displayPct < 88
+          ? 'SPIELE WERDEN GELADEN...'
+          : 'BEREIT ZUM SPIELEN!';
+
+  return (
+    <div className="relative z-20 mx-auto flex w-full max-w-[1440px] flex-col gap-2">
+      <div className="flex items-center justify-between gap-3">
+        <span
+          className={`font-arcade text-[11px] sm:text-xs tracking-[0.16em] uppercase transition-colors duration-200 ${
+            isReadyState ? 'text-[#6EE7B7]' : 'text-[#CBD5E1]'
+          }`}
+        >
+          {statusText}
+        </span>
+        <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A]">
+          {displayPct}%
+        </span>
+      </div>
+
+      <ProgressTrack fillRef={fillRef} dotTrackRef={dotTrackRef} isFadingOut={isFadingOut} />
+    </div>
+  );
+});
+
+export function SplashScreen({ onFinish, onPrepareExit }: SplashScreenProps) {
   const [isStageReady, setIsStageReady] = useState(false);
-  const [progress, setProgress] = useState(0);
   const [isFadingOut, setIsFadingOut] = useState(false);
   const [isDone, setIsDone] = useState(false);
   const [prefersReducedMotion] = useState(() => {
@@ -384,68 +784,75 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
   const finishedRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Warten bis Seite geladen, Tab sichtbar, Fonts bereit und erster Frame gerendert ist
+  // Startet nach kurzer Font-Prüfung (mit festem Timeout, ohne Endlos-Warten auf window.load)
   useEffect(() => {
     let cancelled = false;
     let raf1 = 0;
     let raf2 = 0;
     let fontFallbackTimer: ReturnType<typeof setTimeout> | null = null;
+    let armed = false;
+
+    const revealStage = () => {
+      if (cancelled || armed) return;
+      armed = true;
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      setIsStageReady(true);
+    };
 
     const armWhenVisible = () => {
-      if (cancelled) return;
-      if (document.visibilityState !== 'visible') return;
-
+      if (cancelled || armed || document.visibilityState !== 'visible') return;
       raf1 = requestAnimationFrame(() => {
-        raf2 = requestAnimationFrame(() => {
-          if (!cancelled) setIsStageReady(true);
-        });
+        raf2 = requestAnimationFrame(revealStage);
       });
     };
 
-    const waitForLoadAndFonts = async () => {
-      if (document.readyState !== 'complete') {
-        await new Promise<void>((resolve) => {
-          const onLoad = () => {
-            window.removeEventListener('load', onLoad);
-            resolve();
-          };
-          window.addEventListener('load', onLoad);
-        });
-      }
-
-      if (document.fonts?.ready) {
-        await Promise.race([
-          document.fonts.ready.then(() => undefined),
-          new Promise<void>((resolve) => {
-            fontFallbackTimer = setTimeout(resolve, 900);
-          }),
-        ]);
-      }
-
-      if (!cancelled) {
-        if (document.visibilityState === 'visible') {
-          armWhenVisible();
-        } else {
-          document.addEventListener('visibilitychange', armWhenVisible, { once: true });
-        }
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        armWhenVisible();
       }
     };
 
-    void waitForLoadAndFonts();
+    const prepare = async () => {
+      if (document.fonts?.ready) {
+        try {
+          await Promise.race([
+            document.fonts.ready.then(() => undefined),
+            new Promise<void>((resolve) => {
+              fontFallbackTimer = setTimeout(resolve, FONTS_WAIT_MAX_MS);
+            }),
+          ]);
+        } finally {
+          if (fontFallbackTimer) {
+            clearTimeout(fontFallbackTimer);
+            fontFallbackTimer = null;
+          }
+        }
+      }
+
+      if (cancelled) return;
+      if (document.visibilityState === 'visible') {
+        armWhenVisible();
+      } else {
+        document.addEventListener('visibilitychange', onVisibilityChange);
+      }
+    };
+
+    void prepare();
 
     return () => {
       cancelled = true;
       cancelAnimationFrame(raf1);
       cancelAnimationFrame(raf2);
       if (fontFallbackTimer) clearTimeout(fontFallbackTimer);
-      document.removeEventListener('visibilitychange', armWhenVisible);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     };
   }, []);
 
   const triggerFadeOut = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    setProgress(100);
+    onPrepareExit?.();
     setIsFadingOut(true);
 
     if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
@@ -453,7 +860,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       setIsDone(true);
       onFinish?.();
     }, FADE_OUT_MS);
-  }, [onFinish]);
+  }, [onFinish, onPrepareExit]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -465,47 +872,7 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
     return () => window.removeEventListener('keydown', onKeyDown);
   }, [triggerFadeOut]);
 
-  useEffect(() => {
-    if (!isStageReady) return;
-
-    const totalDuration = prefersReducedMotion ? SPLASH_REDUCED_MS : SPLASH_DURATION_MS;
-    const fillDuration = Math.max(400, totalDuration - 260);
-    const startTime = performance.now();
-    let rafId: number | null = null;
-
-    const updateProgress = (now: number) => {
-      const elapsed = now - startTime;
-      const ratio = Math.min(1, elapsed / fillDuration);
-      const eased = 1 - Math.pow(1 - ratio, 2.2);
-      const nextPct = Math.min(100, Math.round(eased * 100));
-      setProgress(nextPct);
-
-      if (ratio < 1 && !finishedRef.current) {
-        rafId = requestAnimationFrame(updateProgress);
-      }
-    };
-
-    rafId = requestAnimationFrame(updateProgress);
-    const doneTimer = setTimeout(triggerFadeOut, totalDuration);
-
-    return () => {
-      if (rafId !== null) cancelAnimationFrame(rafId);
-      clearTimeout(doneTimer);
-      if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
-    };
-  }, [isStageReady, prefersReducedMotion, triggerFadeOut]);
-
   if (isDone) return null;
-
-  const isReadyState = progress >= 88;
-  const statusText =
-    progress < 32
-      ? 'RAKETE IM ANFLUG...'
-      : progress < 56
-        ? 'SPIELBOX ERSCHEINT...'
-        : progress < 88
-          ? 'SPIELE WERDEN GELADEN...'
-          : 'BEREIT ZUM SPIELEN!';
 
   return (
     <div
@@ -517,190 +884,25 @@ export function SplashScreen({ onFinish }: SplashScreenProps) {
       {/* 1. Vollbild Canvas-2D Hyperspace-Warp + Partikel-Explosion */}
       <HyperspaceExplosionCanvas reducedMotion={prefersReducedMotion} isReady={isStageReady} />
 
-      {/* Subtiler Studio-Radialschein */}
+      {/* Subtiler Studio-Radialschein (reiner Verlauf ohne GPU-Blur-Filter) */}
       <div className="pointer-events-none fixed inset-0 z-0">
-        <div className="absolute top-1/2 left-1/2 h-[54vh] w-[72vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#F59E0B]/[0.09] blur-[110px]" />
+        <div className="absolute top-1/2 left-1/2 h-[66vh] w-[86vw] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.12)_0%,rgba(245,158,11,0.04)_44%,transparent_72%)]" />
       </div>
 
       {/* Platzhalter oben für vertikale Zentrierung */}
       <div aria-hidden="true" className="h-4" />
 
       {/* 3. ZENTRUM: AKT 1 RAKETE -> AKT 2 EXPLOSION -> AKT 3 SPIELBOX -> AKT 4 SPIELE & TITEL */}
-      {isStageReady && (
-      <div
-        className={`relative z-20 my-auto flex flex-col items-center justify-center px-2 ${
-          prefersReducedMotion ? '' : 'spielbox-stage-shake'
-        }`}
-      >
-        {/* AKT 1: Hero-Rakete fliegt von links unten ins Zentrum */}
-        {!prefersReducedMotion && (
-          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-30">
-            <div className="spielbox-rocket-in">
-              <HeroRocketSvg reducedMotion={prefersReducedMotion} />
-            </div>
-          </div>
-        )}
-
-        {/* AKT 2: Explosions-Blitz & Schockwelle beim Einschlag */}
-        {!prefersReducedMotion && (
-          <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 flex items-center justify-center">
-            <div className="spielbox-blast-flash h-44 w-44 sm:h-56 sm:w-56 rounded-full bg-[radial-gradient(circle,#FFFFFF_0%,#FBBF24_38%,rgba(245,158,11,0)_72%)] blur-md" />
-            <div className="spielbox-shockwave absolute h-36 w-36 sm:h-48 sm:w-48 rounded-full border-[#FDE68A] shadow-[0_0_32px_#F59E0B]" />
-          </div>
-        )}
-
-        {/* AKT 4a: Aufsteigender Lichtkegel aus der geöffneten Box */}
-        <div
-          className={`pointer-events-none absolute bottom-[36%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 bg-gradient-to-t from-[#F59E0B]/35 via-[#38BDF8]/15 to-transparent blur-xl ${
-            prefersReducedMotion ? '' : 'spielbox-beam'
-          }`}
-          style={{ clipPath: 'polygon(30% 100%, 70% 100%, 100% 0%, 0% 0%)' }}
-        />
-
-        {/* AKT 4b: Echte Spiele-Objekte fliegen um den Titel herum aus der Box */}
-        <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
-          {FLYING_OBJECTS.map((obj) => (
-            <div
-              key={obj.id}
-              style={
-                {
-                  '--tx': obj.tx,
-                  '--ty': obj.ty,
-                  '--rot': obj.rot,
-                  animationDelay: prefersReducedMotion ? undefined : `${obj.delay}, 3250ms`,
-                } as CSSProperties
-              }
-              className={`absolute -top-6 -left-6 block ${
-                prefersReducedMotion ? 'opacity-100' : 'spielbox-burst'
-              }`}
-            >
-              {obj.render()}
-            </div>
-          ))}
-        </div>
-
-        {/* AKT 4c: Titel über der offenen Spielbox */}
-        <div
-          className={`relative z-20 mb-3 sm:mb-4 flex flex-col items-center text-center ${
-            prefersReducedMotion ? '' : 'spielbox-title'
-          }`}
-        >
-          <span className="font-arcade mb-1 text-[10px] sm:text-xs tracking-[0.26em] text-[#FDE68A]/85 uppercase">
-            PARTY &amp; MULTIPLAYER
-          </span>
-          <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
-            PROJEKT <span className="text-[#FBBF24]">BOX</span>
-          </h1>
-          <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
-        </div>
-
-        {/* AKT 3: Isometrische 3D-Spielbox erscheint aus der Explosion & öffnet sich */}
-        <div className={`relative z-10 ${prefersReducedMotion ? '' : 'spielbox-drop'}`}>
-          <div
-            className={`pointer-events-none absolute -bottom-3 left-1/2 h-6 w-36 sm:w-44 -translate-x-1/2 rounded-full bg-[#F59E0B]/30 blur-md ${
-              prefersReducedMotion ? '' : 'spielbox-floor'
-            }`}
-          />
-
-          <svg
-            viewBox="0 0 220 200"
-            className="h-32 w-36 sm:h-44 sm:w-48 landscape:h-24 landscape:w-28 drop-shadow-[0_18px_30px_rgba(0,0,0,0.6)]"
-            fill="none"
-            aria-hidden="true"
-          >
-            <defs>
-              <linearGradient id="boxCoreGlow" x1="0" y1="1" x2="0" y2="0">
-                <stop offset="0%" stopColor="#F59E0B" />
-                <stop offset="60%" stopColor="#FBBF24" />
-                <stop offset="100%" stopColor="#38BDF8" />
-              </linearGradient>
-            </defs>
-            <polygon
-              points="110,58 176,90 110,122 44,90"
-              fill="url(#boxCoreGlow)"
-              opacity="0.92"
-            />
-            <polygon
-              points="40,92 110,126 110,184 40,150"
-              fill="#0F172A"
-              stroke="#F59E0B"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-            />
-            <polygon points="56,114 94,132 94,142 56,124" fill="#F59E0B" opacity="0.85" />
-            <polygon
-              points="180,92 110,126 110,184 180,150"
-              fill="#1E293B"
-              stroke="#F59E0B"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-            />
-            <circle cx="146" cy="138" r="9" fill="#10B981" opacity="0.9" />
-            <rect
-              x="104"
-              y="119"
-              width="12"
-              height="16"
-              rx="3"
-              fill="#FBBF24"
-              stroke="#0F172A"
-              strokeWidth="2"
-            />
-            <g className={prefersReducedMotion ? '' : 'spielbox-lid'}>
-              <polygon
-                points="110,48 184,84 110,120 36,84"
-                fill="#334155"
-                stroke="#F59E0B"
-                strokeWidth="2.5"
-                strokeLinejoin="round"
-              />
-              <polygon
-                points="36,84 110,120 110,130 36,94"
-                fill="#0F172A"
-                stroke="#F59E0B"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-              <polygon
-                points="184,84 110,120 110,130 184,94"
-                fill="#1E293B"
-                stroke="#F59E0B"
-                strokeWidth="2"
-                strokeLinejoin="round"
-              />
-            </g>
-          </svg>
-        </div>
-      </div>
-      )}
+      <SplashStage isStageReady={isStageReady} prefersReducedMotion={prefersReducedMotion} />
 
       {/* 4. Unterer Ladehorizont */}
-      <div className="relative z-20 mx-auto flex w-full max-w-[1440px] flex-col gap-2">
-        <div className="flex items-center justify-between gap-3">
-          <span
-            className={`font-arcade text-[11px] sm:text-xs tracking-[0.16em] uppercase transition-colors duration-200 ${
-              isReadyState ? 'text-[#6EE7B7]' : 'text-[#CBD5E1]'
-            }`}
-          >
-            {statusText}
-          </span>
-          <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A]">
-            {progress}%
-          </span>
-        </div>
-
-        <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
-          <div
-            style={{
-              width: `${progress}%`,
-              background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 55%, #10B981 100%)',
-            }}
-            className="relative h-full rounded-full transition-[width] duration-75 ease-out shadow-[0_0_16px_rgba(245,158,11,0.75)]"
-          >
-            <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_12px_#FFFFFF]" />
-          </div>
-        </div>
-      </div>
+      <SplashProgressBar
+        isStageReady={isStageReady}
+        isFadingOut={isFadingOut}
+        prefersReducedMotion={prefersReducedMotion}
+        onPrepareExit={onPrepareExit}
+        onComplete={triggerFadeOut}
+      />
     </div>
   );
 }

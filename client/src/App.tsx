@@ -25,6 +25,7 @@ import {
   syncBackgroundMusic,
 } from './utils/soundEffects';
 import { parseLobbyCode } from './utils/qrCodeHelper';
+import { usePwaUpdate } from './utils/pwa';
 import type { Lobby } from './types/multiplayer';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -48,6 +49,14 @@ export function App() {
     }
     return true;
   });
+  // Hauptmenü erst kurz vor Ende des Splash-Intros mounten, damit Frame 0-3 komplett ruckelfrei laufen
+  const [isMenuPrepared, setIsMenuPrepared] = useState(() => {
+    if (typeof window !== 'undefined' && parseLobbyCode(window.location.href)) {
+      return true;
+    }
+    return false;
+  });
+  const { hasUpdate, applyUpdate } = usePwaUpdate();
 
   const [isJoiningDeepLink, setIsJoiningDeepLink] = useState(Boolean(initialDeepLinkCode));
   const [showTvJoinModal, setShowTvJoinModal] = useState(false);
@@ -234,10 +243,14 @@ export function App() {
     [favoriteIds.length, recentEntries.length]
   );
 
+  const handleSplashPrepareExit = useCallback(() => {
+    setIsMenuPrepared(true);
+  }, []);
+
   const handleSplashFinish = useCallback(() => {
-    triggerHaptic();
+    setIsMenuPrepared(true);
     setShowSplash(false);
-  }, [triggerHaptic]);
+  }, []);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -332,6 +345,8 @@ export function App() {
         setDeepLinkLobby(restoredLobby);
         setLaunchInTvMode(Boolean(restoredLobby.isTvMode));
         setMultiplayerGame(matchedGame);
+        setIsMenuPrepared(true);
+        setShowSplash(false);
       });
     }
 
@@ -438,7 +453,12 @@ export function App() {
   return (
     <div className="relative flex h-full min-h-lvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
       {/* ─── 0. Animierter Crystal-Ladebildschirm beim Start ─── */}
-      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+      {showSplash && (
+        <SplashScreen
+          onPrepareExit={handleSplashPrepareExit}
+          onFinish={handleSplashFinish}
+        />
+      )}
 
       {/* ─── 1. Globaler Crystal-Facetten-Hintergrund ─── */}
       <IslandBackground />
@@ -458,52 +478,55 @@ export function App() {
       )}
 
       {/* ─── 2. Haupt-HUD & Verschmolzene Open-Gallery-Bühne ─── */}
-      <div
-        inert={hasActiveOverlay}
-        aria-hidden={hasActiveOverlay}
-        className={`safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden ${
-          hasActiveOverlay ? 'pointer-events-none' : ''
-        }`}
-      >
-        <MainMenuHeader
-          avatar={userProfile.avatar}
-          hasActiveLobby={Boolean(activeLobby)}
-          onOpenProfile={() => {
-            triggerHaptic();
-            setShowAvatarModal(true);
-          }}
-          onOpenTvJoin={() => {
-            triggerHaptic();
-            setTvJoinError(null);
-            setShowTvJoinModal(true);
-          }}
-          onOpenActiveLobby={handleOpenActiveLobby}
-          onOpenSettings={() => {
-            triggerHaptic();
-            setShowSettings(true);
-          }}
-        />
+      {isMenuPrepared && (
+        <div
+          inert={hasActiveOverlay}
+          aria-hidden={hasActiveOverlay}
+          className={`safe-screen relative z-10 flex h-full w-full flex-col overflow-hidden ${
+            hasActiveOverlay ? 'pointer-events-none' : ''
+          }`}
+        >
+          <MainMenuHeader
+            avatar={userProfile.avatar}
+            hasActiveLobby={Boolean(activeLobby)}
+            hasAppUpdate={hasUpdate}
+            onOpenProfile={() => {
+              triggerHaptic();
+              setShowAvatarModal(true);
+            }}
+            onOpenTvJoin={() => {
+              triggerHaptic();
+              setTvJoinError(null);
+              setShowTvJoinModal(true);
+            }}
+            onOpenActiveLobby={handleOpenActiveLobby}
+            onOpenSettings={() => {
+              triggerHaptic();
+              setShowSettings(true);
+            }}
+          />
 
-        <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col">
-          <section aria-label="Spiele" className="flex flex-1 min-h-0 w-full flex-col">
-            <OpenGalleryLayout
-              games={games}
-              favoriteIds={favoriteIds}
-              activeSection={activeSection}
-              searchQuery={searchQuery}
-              filterCounts={filterCounts}
-              onSelectGame={(gameId) => {
-                const found = games.find((g) => g.id === gameId);
-                if (found) handleLaunchGame(found, false);
-              }}
-              onLaunchGame={handleLaunchGame}
-              onToggleFavorite={handleToggleFavorite}
-              onSelectSection={handleSelectSection}
-              onSearchChange={setSearchQuery}
-            />
-          </section>
-        </main>
-      </div>
+          <main className="tablet-main-area widescreen-main-area relative flex flex-1 min-h-0 w-full flex-col">
+            <section aria-label="Spiele" className="flex flex-1 min-h-0 w-full flex-col">
+              <OpenGalleryLayout
+                games={games}
+                favoriteIds={favoriteIds}
+                activeSection={activeSection}
+                searchQuery={searchQuery}
+                filterCounts={filterCounts}
+                onSelectGame={(gameId) => {
+                  const found = games.find((g) => g.id === gameId);
+                  if (found) handleLaunchGame(found, false);
+                }}
+                onLaunchGame={handleLaunchGame}
+                onToggleFavorite={handleToggleFavorite}
+                onSelectSection={handleSelectSection}
+                onSearchChange={setSearchQuery}
+              />
+            </section>
+          </main>
+        </div>
+      )}
 
       {/* ─── 3. Multiplayer & TV Lobby-Screen beim Start eines Spiels ─── */}
       {multiplayerGame && (
@@ -548,6 +571,7 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={handleToggleVibration}
         onInstall={deferredPrompt ? handleInstall : undefined}
+        onApplyUpdate={hasUpdate ? applyUpdate : undefined}
       />
 
       {/* ─── 6. Spielerprofil: Name & Avatar zentral an einer Stelle ─── */}

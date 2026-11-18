@@ -430,53 +430,51 @@ body::-webkit-scrollbar,
 @keyframes rocketFlyIn {
   0% {
     opacity: 0;
-    transform: translate(-48vw, 32vh) rotate(38deg) scale(1.25);
+    transform: translate3d(-48vw, 32vh, 0) rotate(38deg) scale(1.25);
   }
   12% {
     opacity: 1;
   }
   88% {
     opacity: 1;
-    transform: translate(-10px, 6px) rotate(28deg) scale(0.92);
+    transform: translate3d(-10px, 6px, 0) rotate(28deg) scale(0.92);
   }
   96% {
     opacity: 1;
-    transform: translate(0, 0) rotate(24deg) scale(0.75);
+    transform: translate3d(0, 0, 0) rotate(24deg) scale(0.75);
   }
   100% {
     opacity: 0;
-    transform: translate(0, 0) rotate(24deg) scale(0.4);
+    transform: translate3d(0, 0, 0) rotate(24deg) scale(0.4);
   }
 }
 
 @keyframes blastFlash {
   0% {
     opacity: 0;
-    transform: scale(0.15);
+    transform: scale3d(0.15, 0.15, 1);
   }
   18% {
     opacity: 1;
-    transform: scale(1.15);
+    transform: scale3d(1.15, 1.15, 1);
   }
   100% {
     opacity: 0;
-    transform: scale(2.8);
+    transform: scale3d(2.8, 2.8, 1);
   }
 }
 
 @keyframes blastShockwave {
   0% {
     opacity: 0;
-    transform: scale(0.12);
-    border-width: 6px;
+    transform: scale3d(0.12, 0.12, 1);
   }
   15% {
     opacity: 0.95;
   }
   100% {
     opacity: 0;
-    transform: scale(3.8);
-    border-width: 1px;
+    transform: scale3d(3.8, 3.8, 1);
   }
 }
 
@@ -502,138 +500,149 @@ body::-webkit-scrollbar,
 @keyframes boxEmergeFromBlast {
   0% {
     opacity: 0;
-    transform: scale(0.15) translateY(18px);
+    transform: translate3d(0, 18px, 0) scale(0.15);
   }
   60% {
     opacity: 1;
-    transform: scale(1.09) translateY(-6px);
+    transform: translate3d(0, -6px, 0) scale(1.09);
   }
   82% {
-    transform: scale(0.97) translateY(2px);
+    transform: translate3d(0, 2px, 0) scale(0.97);
   }
   100% {
     opacity: 1;
-    transform: scale(1) translateY(0);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes boxLidOpen {
   0% {
-    transform: translateY(0) rotate(0deg) scale(1);
+    transform: translate3d(0, 0, 0) rotate(0deg) scale(1);
   }
   35% {
-    transform: translateY(-2px) rotate(-3deg) scale(1.02);
+    transform: translate3d(0, -2px, 0) rotate(-3deg) scale(1.02);
   }
   100% {
-    transform: translateY(-26px) rotate(-14deg) scale(1.03);
+    transform: translate3d(0, -26px, 0) rotate(-14deg) scale(1.03);
   }
 }
 
 @keyframes boxCoreBeam {
   0% {
     opacity: 0;
-    transform: scaleY(0.1) scaleX(0.4);
+    transform: scale3d(0.4, 0.1, 1);
   }
   45% {
     opacity: 0.95;
   }
   100% {
     opacity: 0.65;
-    transform: scaleY(1) scaleX(1);
+    transform: scale3d(1, 1, 1);
   }
 }
 
 @keyframes boxBurstItem {
   0% {
     opacity: 0;
-    transform: translate(0, 34px) scale(0.15) rotate(-25deg);
+    transform: translate3d(0, 34px, 0) scale(0.15) rotate(-25deg);
   }
   50% {
     opacity: 1;
-    transform: translate(calc(var(--tx, 0px) * 1.06), calc(var(--ty, -60px) * 1.06)) scale(1.08)
-      rotate(var(--rot, 0deg));
+    transform: translate3d(calc(var(--tx, 0px) * 1.06), calc(var(--ty, -60px) * 1.06), 0)
+      scale(1.08) rotate(var(--rot, 0deg));
   }
   100% {
     opacity: 1;
-    transform: translate(var(--tx, 0px), var(--ty, -60px)) scale(1) rotate(var(--rot, 0deg));
+    transform: translate3d(var(--tx, 0px), var(--ty, -60px), 0) scale(1) rotate(var(--rot, 0deg));
   }
 }
 
 @keyframes boxBurstFloat {
   0%,
   100% {
-    transform: translate(var(--tx, 0px), var(--ty, -60px)) rotate(var(--rot, 0deg));
+    transform: translate3d(0, 0, 0);
   }
   50% {
-    transform: translate(var(--tx, 0px), calc(var(--ty, -60px) - 8px)) rotate(var(--rot, 0deg));
+    transform: translate3d(0, -8px, 0);
   }
 }
 
 @keyframes boxTitleEmerge {
   0% {
     opacity: 0;
-    transform: translateY(28px) scale(0.84);
-    filter: blur(6px);
+    transform: translate3d(0, 28px, 0) scale(0.84);
   }
   100% {
     opacity: 1;
-    transform: translateY(0) scale(1);
-    filter: blur(0px);
+    transform: translate3d(0, 0, 0) scale(1);
   }
 }
 
 @keyframes boxFloorGlow {
   0% {
     opacity: 0;
-    transform: scale(0.4);
+    transform: scale3d(0.4, 0.4, 1);
   }
   100% {
     opacity: 1;
-    transform: scale(1);
+    transform: scale3d(1, 1, 1);
   }
 }
 
 .spielbox-rocket-in {
+  will-change: transform, opacity;
   animation: rocketFlyIn 1.25s cubic-bezier(0.32, 0, 0.72, 0.28) both;
 }
 
 .spielbox-blast-flash {
+  will-change: transform, opacity;
   animation: blastFlash 0.7s cubic-bezier(0.22, 1, 0.36, 1) 1.2s both;
 }
 
 .spielbox-shockwave {
+  will-change: transform, opacity;
   animation: blastShockwave 0.92s cubic-bezier(0.16, 1, 0.3, 1) 1.22s both;
 }
 
 .spielbox-stage-shake {
+  will-change: transform;
   animation: stageImpactShake 0.38s ease-out 1.22s both;
 }
 
 .spielbox-drop {
+  will-change: transform, opacity;
   animation: boxEmergeFromBlast 0.78s cubic-bezier(0.22, 1, 0.36, 1) 1.4s both;
 }
 
 .spielbox-lid {
+  will-change: transform;
   transform-origin: 35% 40%;
   animation: boxLidOpen 0.72s cubic-bezier(0.22, 1, 0.36, 1) 2.08s both;
 }
 
 .spielbox-beam {
+  will-change: transform, opacity;
   transform-origin: bottom center;
   animation: boxCoreBeam 0.9s cubic-bezier(0.22, 1, 0.36, 1) 2.12s both;
 }
 
 .spielbox-burst {
-  animation:
-    boxBurstItem 0.85s cubic-bezier(0.22, 1, 0.36, 1) both,
-    boxBurstFloat 3.4s ease-in-out 3.25s infinite;
+  will-change: transform, opacity;
+  animation: boxBurstItem 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.spielbox-float {
+  will-change: transform;
+  animation: boxBurstFloat 3.4s ease-in-out infinite;
 }
 
 .spielbox-title {
+  will-change: transform, opacity;
   animation: boxTitleEmerge 0.78s cubic-bezier(0.22, 1, 0.36, 1) 2.28s both;
 }
 
 .spielbox-floor {
+  will-change: transform, opacity;
   animation: boxFloorGlow 0.75s ease-out 1.55s both;
 }
 
@@ -650,6 +659,7 @@ body::-webkit-scrollbar,
 }
 
 .spielbox-rocket-flame {
+  will-change: transform, opacity;
   transform-origin: center top;
   animation: rocketFlameFlicker 0.14s ease-in-out infinite;
 }
