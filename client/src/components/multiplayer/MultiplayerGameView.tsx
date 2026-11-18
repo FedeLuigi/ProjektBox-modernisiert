@@ -39,10 +39,15 @@ export function MultiplayerGameView({
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
   const isStadtLandFluss = lobby.gameId === 'stadt-land-fluss';
   const isRoulette = lobby.gameId === 'roulette';
+  const isTexasHoldem = lobby.gameId === 'texas-holdem';
+  const isMoneyGame = isRoulette || isTexasHoldem;
   const isSimultaneousParty = isDrawAndGuess || isStadtLandFluss || isRoulette;
   const isMyTurn = isSimultaneousParty
     ? gameState?.status === 'playing'
-    : gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
+    : isTexasHoldem
+      ? gameState?.status === 'playing' &&
+        (gameState.currentTurn === currentUser.id || gameState.phase === 'showdown')
+      : gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
 
   useEffect(() => {
     setLobby(initialLobby);
@@ -118,7 +123,10 @@ export function MultiplayerGameView({
   }, [errorMsg]);
 
   const handleSendMove = async (moveData: any) => {
-    if (!isMyTurn || isConnectionBlocked || isLobbyPaused) return;
+    const isPokerMetaAction =
+      isTexasHoldem && (moveData?.type === 'next_round' || moveData?.type === 'time_up');
+    if ((!isMyTurn && !isPokerMetaAction) || isConnectionBlocked || isLobbyPaused) return;
+    if (gameState?.status !== 'playing') return;
     const isSilentOrRapid =
       moveData?.type === 'save_draft' ||
       (isRoulette &&
@@ -189,7 +197,7 @@ export function MultiplayerGameView({
             <div className="justify-self-center flex items-center rounded-xl border border-[#22D3EE]/35 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-white uppercase">
               <span>{gameState?.scores?.[currentUser.id] || 0} PKT</span>
             </div>
-          ) : isRoulette ? (
+          ) : isMoneyGame ? (
             <div className="justify-self-center flex items-center gap-1.5 rounded-xl border border-[#34D399]/40 bg-[#064E3B]/75 px-3 py-1 backdrop-blur-md font-arcade text-xs text-[#A7F3D0] uppercase">
               <span>
                 {Math.round(
@@ -246,7 +254,7 @@ export function MultiplayerGameView({
                 </h2>
               </div>
 
-              {(isStadtLandFluss || isRoulette) && (
+              {(isStadtLandFluss || isMoneyGame) && (
                 <div className="flex w-full flex-col gap-2 max-h-[38vh] overflow-y-auto">
                   {[...activePlayers]
                     .sort(
@@ -258,7 +266,7 @@ export function MultiplayerGameView({
                         key={p.id}
                         className={`flex items-center justify-between rounded-xl border px-3.5 py-2 ${
                           p.id === currentUser.id
-                            ? isRoulette
+                            ? isMoneyGame
                               ? 'border-[#34D399]/55 bg-[#064E3B]/45'
                               : 'border-[#22D3EE]/55 bg-[#164E63]/35'
                             : 'border-white/15 bg-white/[0.04]'
@@ -272,7 +280,7 @@ export function MultiplayerGameView({
                           </span>
                         </div>
                         <span className="font-arcade text-sm text-[#FDE68A]">
-                          {isRoulette
+                          {isMoneyGame
                             ? `${Math.round(gameState?.scores?.[p.id] ?? 0).toLocaleString('de-DE')} €`
                             : `${String(gameState?.scores?.[p.id] ?? 0)} PKT`}
                         </span>
@@ -284,10 +292,10 @@ export function MultiplayerGameView({
               <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
                   <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
-                    {isRoulette ? 'ENDGUTHABEN' : 'PUNKTE'}
+                    {isMoneyGame ? 'ENDGUTHABEN' : 'PUNKTE'}
                   </span>
                   <span className="font-arcade mt-1 text-2xl text-[#FDE68A]">
-                    {isRoulette
+                    {isMoneyGame
                       ? `${Math.round(gameState?.scores?.[currentUser.id] ?? 0).toLocaleString('de-DE')} €`
                       : String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
                   </span>

@@ -78,12 +78,42 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
       startingBalance: 1000,
     };
   }
+  if (gameId === 'texas-holdem') {
+    return {
+      rounds: 10,
+      roundDuration: 30,
+      startingBalance: 1000,
+      smallBlind: 10,
+    };
+  }
   return {};
 }
 
-export function sanitizeLobbyForClient(lobby: Lobby): Lobby {
+export function sanitizeLobbyForClient(lobby: Lobby, viewerPlayerId?: string): Lobby {
+  let safeGameState = lobby.gameState;
+
+  // Geheime Pocket-Karten bei Texas Hold'em pro Empfänger schützen (Deck niemals senden)
+  if (safeGameState && lobby.gameId === 'texas-holdem') {
+    const rawHoleCards = (safeGameState.holeCards || {}) as Record<string, unknown>;
+    const revealed = new Set<string>(
+      Array.isArray(safeGameState.revealedPlayerIds) ? safeGameState.revealedPlayerIds : []
+    );
+    const filteredHoleCards: Record<string, unknown> = {};
+    for (const [pid, cards] of Object.entries(rawHoleCards)) {
+      if (pid === viewerPlayerId || revealed.has(pid)) {
+        filteredHoleCards[pid] = cards;
+      }
+    }
+    const { deck: _omitDeck, ...restState } = safeGameState;
+    safeGameState = {
+      ...restState,
+      holeCards: filteredHoleCards,
+    };
+  }
+
   return {
     ...lobby,
+    gameState: safeGameState,
     processedActionIds: undefined,
     players: lobby.players.map((p) => {
       const { sessionId: _omitSessionId, ...safePlayer } = p;
@@ -914,8 +944,11 @@ export class LobbyManager {
       lobby.gameId === 'draw-and-guess' ||
       lobby.gameId === 'stadt-land-fluss' ||
       lobby.gameId === 'roulette';
+    const isPokerSimultaneousAction =
+      lobby.gameId === 'texas-holdem' &&
+      (move?.type === 'next_round' || move?.type === 'time_up');
     const isStructuralOrTurnAction =
-      !isSimultaneousPartyGame ||
+      (!isSimultaneousPartyGame && !isPokerSimultaneousAction) ||
       (lobby.gameId === 'draw-and-guess' &&
         (move?.type === 'set_word' ||
           move?.type === 'next_round' ||
@@ -968,6 +1001,7 @@ export class LobbyManager {
       lobby.status === 'finished' ||
       (!isSimultaneousPartyGame) ||
       nextState.round !== prevGameState.round ||
+      nextState.handNumber !== prevGameState.handNumber ||
       nextState.roundStatus !== prevGameState.roundStatus ||
       nextState.phase !== prevGameState.phase ||
       nextState.correctGuesserIds?.length !== prevGameState.correctGuesserIds?.length ||

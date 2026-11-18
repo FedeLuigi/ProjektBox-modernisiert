@@ -17,9 +17,11 @@ const SLF_PRESETS = [
 ] as const;
 const ROUND_OPTIONS = [3, 5, 8];
 const ROULETTE_ROUND_OPTIONS = [3, 5, 8, 10];
+const POKER_HAND_OPTIONS = [5, 10, 15, 20];
 const DURATION_OPTIONS = [45, 60, 90];
-const ROULETTE_DURATION_OPTIONS = [20, 30, 45];
-const ROULETTE_BALANCE_OPTIONS = [500, 1000, 2500];
+const CASINO_DURATION_OPTIONS = [20, 30, 45];
+const CASINO_BALANCE_OPTIONS = [500, 1000, 2500];
+const POKER_BLIND_OPTIONS = [10, 25, 50];
 
 export function LobbyGameSettings({
   gameId,
@@ -32,11 +34,24 @@ export function LobbyGameSettings({
   const isDrawAndGuess = gameId === 'draw-and-guess';
   const isStadtLandFluss = gameId === 'stadt-land-fluss';
   const isRoulette = gameId === 'roulette';
-  const rounds = typeof settings?.rounds === 'number' ? settings.rounds : isRoulette ? 5 : 3;
+  const isPoker = gameId === 'texas-holdem';
+  const rounds =
+    typeof settings?.rounds === 'number'
+      ? settings.rounds
+      : isPoker
+        ? 10
+        : isRoulette
+          ? 5
+          : 3;
   const roundDuration =
-    typeof settings?.roundDuration === 'number' ? settings.roundDuration : isRoulette ? 30 : 60;
+    typeof settings?.roundDuration === 'number'
+      ? settings.roundDuration
+      : isRoulette || isPoker
+        ? 30
+        : 60;
   const startingBalance =
     typeof settings?.startingBalance === 'number' ? settings.startingBalance : 1000;
+  const smallBlind = typeof settings?.smallBlind === 'number' ? settings.smallBlind : 10;
   const customWordsEnabled = settings?.customWordsEnabled === true;
   const category = settings?.category || 'Alle';
   const stopButtonEnabled = settings?.stopButtonEnabled !== false;
@@ -77,6 +92,11 @@ export function LobbyGameSettings({
     onUpdate({ ...settings, startingBalance: val });
   };
 
+  const handleSetSmallBlind = (val: number) => {
+    if (!isHost) return;
+    onUpdate({ ...settings, smallBlind: val });
+  };
+
   const activePresetLabel =
     SLF_PRESETS.find((p) => p.id === categoryPreset)?.label || 'KLASSISCH';
 
@@ -88,7 +108,9 @@ export function LobbyGameSettings({
       ? `${rounds} RUNDEN • ${roundDuration}S • ${stopButtonEnabled ? 'STOPP AN' : 'STOPP AUS'} • ${activePresetLabel}`
       : isRoulette
         ? `${rounds} RUNDEN • ${roundDuration}S • START ${startingBalance.toLocaleString('de-DE')} €`
-        : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
+        : isPoker
+          ? `${rounds} HÄNDE • ${roundDuration}S • BLINDS ${smallBlind}/${smallBlind * 2} • ${startingBalance.toLocaleString('de-DE')} €`
+          : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
 
   return (
     <div className="w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden">
@@ -308,7 +330,7 @@ export function LobbyGameSettings({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <span className="font-arcade text-xs text-[#94A3B8] uppercase">SETZZEIT</span>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {ROULETTE_DURATION_OPTIONS.map((opt) => (
+                  {CASINO_DURATION_OPTIONS.map((opt) => (
                     <OpenButton
                       key={opt}
                       size="sm"
@@ -325,7 +347,77 @@ export function LobbyGameSettings({
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
                 <span className="font-arcade text-xs text-[#94A3B8] uppercase">STARTGUTHABEN</span>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {ROULETTE_BALANCE_OPTIONS.map((opt) => (
+                  {CASINO_BALANCE_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={startingBalance === opt ? 'primary' : 'secondary'}
+                      onClick={() => handleSetStartingBalance(opt)}
+                    >
+                      {opt.toLocaleString('de-DE')} €
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : isPoker ? (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">MAX HÄNDE</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {POKER_HAND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
+                    >
+                      {opt}
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">ZUGZEIT</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {CASINO_DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">BLINDS</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {POKER_BLIND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={smallBlind === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetSmallBlind(opt)}
+                    >
+                      {opt}/{opt * 2} €
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STARTGUTHABEN</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {CASINO_BALANCE_OPTIONS.map((opt) => (
                     <OpenButton
                       key={opt}
                       size="sm"

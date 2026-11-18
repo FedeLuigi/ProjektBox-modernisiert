@@ -51,7 +51,7 @@ function handleSessionEnsure(req: Request, res: Response, createIfMissing: boole
       playerId: sess.playerId,
       expiresAt: sess.expiresAt,
       activeLobby:
-        canRestoreLobby && activeLobby ? sanitizeLobbyForClient(activeLobby) : null,
+        canRestoreLobby && activeLobby ? sanitizeLobbyForClient(activeLobby, sess.playerId) : null,
     });
   }
 

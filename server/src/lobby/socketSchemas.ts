@@ -94,13 +94,14 @@ export const LobbySwitchModeSchema = z.object({
 
 export const LobbyUpdateSettingsSchema = z.object({
   settings: z.object({
-    rounds: z.number().int().min(1).max(20).optional(),
+    rounds: z.number().int().min(1).max(30).optional(),
     roundDuration: z.number().int().min(15).max(180).optional(),
     category: z.string().trim().min(1).max(32).optional(),
     customWordsEnabled: z.boolean().optional(),
     stopButtonEnabled: z.boolean().optional(),
     categoryPreset: z.enum(['klassisch', 'party', 'bunt']).optional(),
     startingBalance: z.number().int().min(100).max(100000).optional(),
+    smallBlind: z.number().int().min(5).max(500).optional(),
   }),
   ...ActionMetaFields,
 });
@@ -169,6 +170,12 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('double_bets'), ...ActionMetaFields }),
   z.object({ type: z.literal('lock_bets'), ...ActionMetaFields }),
   z.object({ type: z.literal('finish_spin'), ...ActionMetaFields }),
+  z.object({
+    type: z.literal('poker_action'),
+    action: z.enum(['fold', 'check', 'call', 'raise', 'all_in']),
+    targetBet: z.number().int().min(1).max(10000000).optional(),
+    ...ActionMetaFields,
+  }),
 ]);
 
 export const StrokeSegmentSchema = z.object({

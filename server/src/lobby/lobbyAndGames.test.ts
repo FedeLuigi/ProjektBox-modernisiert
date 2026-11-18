@@ -18,6 +18,8 @@ import {
   rouletteGame,
   type RouletteState,
 } from '../games/definitions/roulette.js';
+import { evaluateBestPokerHand, type PokerCard } from '../games/definitions/pokerEvaluator.js';
+import { texasHoldemGame, type TexasHoldemState } from '../games/definitions/texasHoldem.js';
 import { stadtLandFlussGame } from '../games/definitions/stadtLandFluss.js';
 import { checkRateLimit, cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
 import {
@@ -1315,6 +1317,195 @@ test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1
   assert.equal(state2p.phase, 'game_over');
   assert.equal(state2p.status, 'won');
   assert.equal(state2p.winnerId, 'p1');
+
+  manager.clearAllTimers();
+});
+
+test("Poker Texas Hold'em: Hand-Evaluator, Karten-Privatsphäre (TV/Gegner), Blinds, Side-Pots & TV-Flow", () => {
+  // 1) Poker Hand-Evaluator testen (inkl. Wheel-Straße A-2-3-4-5 < 6-hoch)
+  const royal = evaluateBestPokerHand([
+    { suit: 'spades', rank: 14 },
+    { suit: 'spades', rank: 13 },
+    { suit: 'spades', rank: 12 },
+    { suit: 'spades', rank: 11 },
+    { suit: 'spades', rank: 10 },
+    { suit: 'hearts', rank: 2 },
+    { suit: 'clubs', rank: 3 },
+  ])!;
+  const wheel = evaluateBestPokerHand([
+    { suit: 'spades', rank: 14 },
+    { suit: 'hearts', rank: 2 },
+    { suit: 'diamonds', rank: 3 },
+    { suit: 'clubs', rank: 4 },
+    { suit: 'spades', rank: 5 },
+    { suit: 'hearts', rank: 9 },
+    { suit: 'clubs', rank: 11 },
+  ])!;
+  const sixHighStraight = evaluateBestPokerHand([
+    { suit: 'spades', rank: 6 },
+    { suit: 'hearts', rank: 2 },
+    { suit: 'diamonds', rank: 3 },
+    { suit: 'clubs', rank: 4 },
+    { suit: 'spades', rank: 5 },
+    { suit: 'hearts', rank: 13 },
+    { suit: 'clubs', rank: 9 },
+  ])!;
+  assert.equal(royal.name, 'Royal Flush');
+  assert.ok(royal.score > sixHighStraight.score);
+  assert.ok(sixHighStraight.score > wheel.score);
+
+  // Zod-Schema für Poker-Aktionen prüfen
+  assert.equal(
+    GameMoveSchema.safeParse({ type: 'poker_action', action: 'raise', targetBet: 80 }).success,
+    true
+  );
+  assert.equal(GameMoveSchema.safeParse({ type: 'poker_action', action: 'invalid_x' }).success, false);
+
+  // 2) Lobby-Integration & Karten-Privatsphäre pro Empfänger testen (Standard + TV-Modus)
+  const manager = new LobbyManager();
+  const sTv = manager.sessionManager.createSession('u_pk_tv').session;
+  const sA = manager.sessionManager.createSession('u_pk_a').session;
+  const sB = manager.sessionManager.createSession('u_pk_b').session;
+
+  const created = manager.createLobby({
+    name: 'Poker Lounge',
+    isPrivate: true,
+    gameId: 'texas-holdem',
+    userProfile: { id: 'u_pk_tv', name: 'TV', avatar: {} },
+    socketId: 'pk_tv_sock',
+    isTvMode: true,
+    sessionId: sTv.sessionId,
+  });
+  assert.equal(created.success, true);
+  const lobbyId = created.lobby!.id;
+  assert.equal(created.lobby?.minPlayers, 2);
+  assert.equal(created.lobby?.settings?.smallBlind, 10);
+
+  manager.updateSettings({
+    lobbyId,
+    playerId: 'u_pk_tv',
+    settings: { rounds: 5, roundDuration: 30, startingBalance: 500, smallBlind: 10 },
+  });
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_pk_a', name: 'Alice', avatar: {} },
+    socketId: 'pk_a_sock',
+    sessionId: sA.sessionId,
+  });
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_pk_b', name: 'Bob', avatar: {} },
+    socketId: 'pk_b_sock',
+    sessionId: sB.sessionId,
+  });
+  manager.toggleReady('pk_a_sock');
+  manager.toggleReady('pk_b_sock');
+  const started = manager.startGame('pk_tv_sock');
+  assert.equal(started.success, true);
+
+  // Privatsphäre: Alice sieht nur ihre eigenen 2 Karten, Bob sieht nur seine, TV sieht KEINE, Deck fehlt überall!
+  const rawLobby = manager.getLobbyById(lobbyId)!;
+  const viewAlice = sanitizeLobbyForClient(rawLobby, 'u_pk_a').gameState as TexasHoldemState;
+  const viewBob = sanitizeLobbyForClient(rawLobby, 'u_pk_b').gameState as TexasHoldemState;
+  const viewTv = sanitizeLobbyForClient(rawLobby, 'u_pk_tv').gameState as TexasHoldemState;
+
+  assert.equal(viewAlice.deck, undefined);
+  assert.equal(viewAlice.holeCards.u_pk_a?.length, 2);
+  assert.equal(viewAlice.holeCards.u_pk_b, undefined);
+  assert.equal(viewBob.holeCards.u_pk_b?.length, 2);
+  assert.equal(viewBob.holeCards.u_pk_a, undefined);
+  assert.equal(Object.keys(viewTv.holeCards).length, 0);
+
+  // Heads-Up Blinds: Dealer ist SB (10 €), anderer Big Blind (20 €), Dealer agiert Pre-Flop zuerst
+  assert.equal(viewAlice.smallBlindId, viewAlice.dealerId);
+  assert.equal(viewAlice.currentTurn, viewAlice.dealerId);
+  assert.equal(viewAlice.pot, 30);
+
+  // Alice (Dealer/SB) erhöht auf 60 €, Bob foldet -> Pot geht ohne Showdown-Aufdeckung an Alice!
+  const raiseRes = manager.makeMove({
+    lobbyId,
+    playerId: viewAlice.currentTurn,
+    move: { type: 'poker_action', action: 'raise', targetBet: 60 },
+  });
+  assert.equal(raiseRes.success, true);
+  assert.equal((raiseRes.lobby?.gameState as TexasHoldemState).pot, 80);
+
+  const foldRes = manager.makeMove({
+    lobbyId,
+    playerId: 'u_pk_b',
+    move: { type: 'poker_action', action: 'fold' },
+  });
+  assert.equal(foldRes.success, true);
+  const afterFold = sanitizeLobbyForClient(manager.getLobbyById(lobbyId)!, 'u_pk_b')
+    .gameState as TexasHoldemState;
+  assert.equal(afterFold.phase, 'showdown');
+  assert.equal(afterFold.showdown?.wonByFold, true);
+  assert.equal(afterFold.balances.u_pk_a, 520); // +20 € (Bobs BB gewonnen)
+  assert.equal(afterFold.balances.u_pk_b, 480);
+  // Gewinnerkarten bleiben bei Fold-Sieg geheim!
+  assert.equal(afterFold.holeCards.u_pk_a, undefined);
+
+  // 3) Side-Pot-Verteilung bei 3 Spielern (Short Stack All-In + großer Side Pot)
+  const p3Players: Player[] = [
+    ...mockPlayers,
+    { id: 'p3', socketId: 's3', name: 'Clara', avatar: {}, isReady: true, isHost: false, connected: true },
+  ];
+  let spState = texasHoldemGame.initGameState(p3Players, 'p1', {
+    rounds: 4,
+    roundDuration: 30,
+    startingBalance: 500,
+    smallBlind: 10,
+  });
+
+  const board: PokerCard[] = [
+    { suit: 'spades', rank: 2 },
+    { suit: 'hearts', rank: 7 },
+    { suit: 'diamonds', rank: 9 },
+    { suit: 'clubs', rank: 11 },
+    { suit: 'diamonds', rank: 3 },
+  ];
+  // Konstruiere deterministische Side-Pot-Situation: p1=100 (Asse = gewinnt Main Pot 300),
+  // p2=300 (Könige = gewinnt Side Pot 400 gegen p3), p3=300 (Damen)
+  spState = {
+    ...spState,
+    phase: 'river',
+    currentBet: 300,
+    pot: 600,
+    balances: { p1: 0, p2: 200, p3: 300 },
+    streetBets: { p1: 100, p2: 300, p3: 200 },
+    handContributions: { p1: 100, p2: 300, p3: 200 },
+    handStartBalances: { p1: 100, p2: 500, p3: 500 },
+    allInIds: ['p1'],
+    actedIds: ['p1', 'p2'],
+    foldedIds: [],
+    communityCards: board,
+    holeCards: {
+      p1: [{ suit: 'spades', rank: 14 }, { suit: 'hearts', rank: 14 }],
+      p2: [{ suit: 'spades', rank: 13 }, { suit: 'hearts', rank: 13 }],
+      p3: [{ suit: 'spades', rank: 12 }, { suit: 'hearts', rank: 12 }],
+    },
+    currentTurn: 'p3',
+  };
+  const sidePotShowdown = texasHoldemGame.validateAndApplyMove({
+    state: spState,
+    players: p3Players,
+    playerId: 'p3',
+    move: { type: 'poker_action', action: 'call' },
+  }).state;
+
+  assert.equal(sidePotShowdown.phase, 'showdown');
+  assert.equal(sidePotShowdown.showdown?.wonByFold, false);
+  // p1 (Asse) erhält Main Pot: 100 * 3 = 300 €
+  assert.equal(sidePotShowdown.balances.p1, 300);
+  // p2 (Könige) erhält Side Pot: (300 - 100) * 2 = 400 € -> 200 + 400 = 600 €
+  assert.equal(sidePotShowdown.balances.p2, 600);
+  // p3 verliert beide Pots -> bleibt bei 200 €
+  assert.equal(sidePotShowdown.balances.p3, 200);
+  // Chiperhaltungs-Check: 300 + 600 + 200 === 1100 (100 + 500 + 500)!
+  assert.equal(
+    sidePotShowdown.balances.p1 + sidePotShowdown.balances.p2 + sidePotShowdown.balances.p3,
+    1100
+  );
 
   manager.clearAllTimers();
 });

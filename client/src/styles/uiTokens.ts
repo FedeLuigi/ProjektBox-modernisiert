@@ -232,6 +232,15 @@ const GAME_WORLD_STAGES: Record<string, GameWorldStageTheme> = {
     hudBadgeText: 'text-[#A7F3D0]',
     worldLabel: 'GRAND CASINO TISCH',
   },
+  'texas-holdem': {
+    bgGradient: 'from-[#0F172A] via-[#064E3B] to-[#022C22]',
+    glowPrimary: 'bg-[#F59E0B]/20',
+    glowSecondary: 'bg-[#10B981]/20',
+    hudBadgeBg: 'bg-[#78350F]/90',
+    hudBadgeBorder: 'border-[#FBBF24]',
+    hudBadgeText: 'text-[#FDE68A]',
+    worldLabel: "NO-LIMIT TEXAS HOLD'EM",
+  },
 };
 
 export function getGameWorldStage(gameId?: string): GameWorldStageTheme {

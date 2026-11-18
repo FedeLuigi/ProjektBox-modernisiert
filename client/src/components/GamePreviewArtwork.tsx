@@ -184,6 +184,163 @@ export function GamePreviewArtwork({
     );
   }
 
+  if (gameId === 'texas-holdem') {
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#064E3B] to-[#022C22] ${className}`}
+      >
+        <svg
+          viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
+          className="h-full w-full object-cover"
+          aria-hidden="true"
+        >
+          {/* Pokertisch-Oval im Hintergrund */}
+          <rect
+            x={isHero ? 60 : 28}
+            y={isHero ? 34 : 22}
+            width={isHero ? 520 : 344}
+            height={isHero ? 212 : 162}
+            rx={isHero ? 106 : 78}
+            fill="#065F46"
+            stroke="#92400E"
+            strokeWidth={isHero ? 10 : 7}
+          />
+          <rect
+            x={isHero ? 74 : 38}
+            y={isHero ? 48 : 32}
+            width={isHero ? 492 : 324}
+            height={isHero ? 184 : 142}
+            rx={isHero ? 92 : 68}
+            fill="none"
+            stroke="#F59E0B"
+            strokeOpacity="0.45"
+            strokeWidth="2"
+          />
+
+          {/* Zwei gefächerte Pocket-Asse links */}
+          <g transform={isHero ? 'translate(132, 68) rotate(-10)' : 'translate(68, 46) rotate(-10)'}>
+            <rect
+              width={isHero ? 90 : 62}
+              height={isHero ? 128 : 88}
+              rx="10"
+              fill="#F8FAFC"
+              stroke="#FBBF24"
+              strokeWidth="2.5"
+            />
+            <text
+              x={isHero ? 14 : 10}
+              y={isHero ? 30 : 22}
+              fill="#0F172A"
+              fontSize={isHero ? 24 : 16}
+              fontWeight="900"
+              fontFamily="sans-serif"
+            >
+              A
+            </text>
+            <text
+              x={isHero ? 45 : 31}
+              y={isHero ? 78 : 54}
+              textAnchor="middle"
+              fill="#0F172A"
+              fontSize={isHero ? 40 : 28}
+              fontFamily="sans-serif"
+            >
+              ♠
+            </text>
+          </g>
+
+          <g transform={isHero ? 'translate(188, 62) rotate(8)' : 'translate(108, 42) rotate(8)'}>
+            <rect
+              width={isHero ? 90 : 62}
+              height={isHero ? 128 : 88}
+              rx="10"
+              fill="#F8FAFC"
+              stroke="#FDE047"
+              strokeWidth="3"
+            />
+            <text
+              x={isHero ? 14 : 10}
+              y={isHero ? 30 : 22}
+              fill="#DC2626"
+              fontSize={isHero ? 24 : 16}
+              fontWeight="900"
+              fontFamily="sans-serif"
+            >
+              A
+            </text>
+            <text
+              x={isHero ? 45 : 31}
+              y={isHero ? 78 : 54}
+              textAnchor="middle"
+              fill="#DC2626"
+              fontSize={isHero ? 40 : 28}
+              fontFamily="sans-serif"
+            >
+              ♥
+            </text>
+          </g>
+
+          {/* Flop-Karten & Chips rechts */}
+          <g transform={isHero ? 'translate(325, 76)' : 'translate(202, 54)'}>
+            {[
+              { r: 'K', s: '♠', c: '#0F172A', x: 0 },
+              { r: 'D', s: '♠', c: '#0F172A', x: isHero ? 64 : 44 },
+              { r: '10', s: '♠', c: '#0F172A', x: isHero ? 128 : 88 },
+            ].map((card, i) => (
+              <g key={i} transform={`translate(${card.x}, 0)`}>
+                <rect
+                  width={isHero ? 56 : 38}
+                  height={isHero ? 80 : 56}
+                  rx="7"
+                  fill="#F8FAFC"
+                  stroke="#E2E8F0"
+                  strokeWidth="2"
+                />
+                <text
+                  x={isHero ? 10 : 6}
+                  y={isHero ? 22 : 16}
+                  fill={card.c}
+                  fontSize={isHero ? 16 : 11}
+                  fontWeight="900"
+                  fontFamily="sans-serif"
+                >
+                  {card.r}
+                </text>
+                <text
+                  x={isHero ? 28 : 19}
+                  y={isHero ? 56 : 38}
+                  textAnchor="middle"
+                  fill={card.c}
+                  fontSize={isHero ? 24 : 16}
+                  fontFamily="sans-serif"
+                >
+                  {card.s}
+                </text>
+              </g>
+            ))}
+
+            {/* Poker Chips unter den Karten */}
+            <g transform={isHero ? 'translate(95, 118)' : 'translate(62, 82)'}>
+              <circle r={isHero ? 22 : 15} fill="#D97706" stroke="#FEF08A" strokeWidth="3" strokeDasharray="6 4" />
+              <circle cx={isHero ? 36 : 24} r={isHero ? 22 : 15} fill="#DC2626" stroke="#FCA5A5" strokeWidth="3" strokeDasharray="6 4" />
+              <text
+                x={isHero ? 18 : 12}
+                y={isHero ? 5 : 3.5}
+                textAnchor="middle"
+                fill="#FFFFFF"
+                fontSize={isHero ? 11 : 8}
+                fontWeight="900"
+                fontFamily="sans-serif"
+              >
+                ALL-IN
+              </text>
+            </g>
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (gameId === 'roulette') {
     const sectors = 12;
     return (

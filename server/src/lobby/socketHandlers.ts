@@ -1,5 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { LobbyManager, lobbyManager, sanitizeLobbyForClient } from './lobbyManager.js';
+import type { Lobby } from '../types/multiplayer.js';
 import {
   parseCookieHeader,
   SESSION_COOKIE_NAME,
@@ -49,17 +50,41 @@ export function registerSocketHandlers(
     oldSocket.disconnect(true);
   }
 
+  function emitLobbyEventPerViewer(
+    rawOrSafeLobby: Lobby,
+    eventName: string,
+    buildPayload: (scopedLobby: Lobby) => Record<string, any>
+  ) {
+    const sourceLobby = manager.getLobbyById(rawOrSafeLobby.id) || rawOrSafeLobby;
+    if (sourceLobby.gameId !== 'texas-holdem' || !sourceLobby.gameState) {
+      io.to(`lobby:${sourceLobby.id}`).emit(
+        eventName,
+        buildPayload(sanitizeLobbyForClient(sourceLobby))
+      );
+      return;
+    }
+
+    for (const p of sourceLobby.players) {
+      if (p.socketId && p.connected) {
+        io.to(p.socketId).emit(
+          eventName,
+          buildPayload(sanitizeLobbyForClient(sourceLobby, p.id))
+        );
+      }
+    }
+  }
+
   manager.setCallbacks({
     onPlayerExpired(lobby, player) {
-      io.to(`lobby:${lobby.id}`).emit('lobby:player-offline', {
+      emitLobbyEventPerViewer(lobby, 'lobby:player-offline', (scopedLobby) => ({
         playerId: player.id,
         playerName: player.name,
-        lobby,
-      });
-      io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-        lobby,
+        lobby: scopedLobby,
+      }));
+      emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+        lobby: scopedLobby,
         message: `${player.name} hat die Wiederverbindungsfrist überschritten.`,
-      });
+      }));
       if (player.socketId) {
         const oldSock = io.sockets.sockets.get(player.socketId);
         oldSock?.emit('session:expired', {
@@ -70,20 +95,22 @@ export function registerSocketHandlers(
       io.emit('lobby:list-updated', { gameId: lobby.gameId });
     },
     onHostChanged(lobby, newHost, previousHostId, reason) {
-      io.to(`lobby:${lobby.id}`).emit('lobby:host-changed', {
-        lobby,
+      emitLobbyEventPerViewer(lobby, 'lobby:host-changed', (scopedLobby) => ({
+        lobby: scopedLobby,
         newHostId: newHost.id,
         newHostName: newHost.name,
         previousHostId,
         reason,
-      });
-      io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-        lobby,
+      }));
+      emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+        lobby: scopedLobby,
         message: `${newHost.name} ist jetzt der neue Host.`,
-      });
+      }));
     },
     onLobbyUpdated(lobby) {
-      io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby });
+      emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+        lobby: scopedLobby,
+      }));
     },
     onLobbyExpired(lobby) {
       io.to(`lobby:${lobby.id}`).emit('lobby:expired', {
@@ -135,13 +162,15 @@ export function registerSocketHandlers(
           sessionId: socket.data.sessionId,
         });
         if (recon.success && recon.lobby) {
-          const safeLobby = sanitizeLobbyForClient(recon.lobby);
+          const safeLobby = sanitizeLobbyForClient(recon.lobby, socket.data.playerId);
           socket.join(`lobby:${recon.lobby.id}`);
           socket.emit('lobby:state-sync', {
             lobby: safeLobby,
             reconnectToken: recon.reconnectToken,
           });
-          io.to(`lobby:${recon.lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+          emitLobbyEventPerViewer(recon.lobby, 'lobby:updated', (scopedLobby) => ({
+            lobby: scopedLobby,
+          }));
         }
       }
     }
@@ -581,9 +610,11 @@ export function registerSocketHandlers(
             });
           }
 
-          const safeLobby = sanitizeLobbyForClient(lobby);
+          const safeLobby = sanitizeLobbyForClient(lobby, currentPlayer.id);
           if (!duplicate) {
-            io.to(`lobby:${lobby.id}`).emit('game:started', { lobby: safeLobby });
+            emitLobbyEventPerViewer(lobby, 'game:started', (scopedLobby) => ({
+              lobby: scopedLobby,
+            }));
             io.emit('lobby:list-updated', { gameId: lobby.gameId });
           }
           callback?.({ success: true, lobby: safeLobby });
@@ -637,13 +668,13 @@ export function registerSocketHandlers(
             return callback?.({ success: false, error: error || 'Ungültiger Zug.' });
           }
 
-          const safeLobby = sanitizeLobbyForClient(lobby);
+          const safeLobby = sanitizeLobbyForClient(lobby, currentPlayer.id);
           if (!duplicate) {
-            io.to(`lobby:${lobby.id}`).emit('game:state', {
-              gameState: safeLobby.gameState,
-              status: safeLobby.status,
-              lobby: safeLobby,
-            });
+            emitLobbyEventPerViewer(lobby, 'game:state', (scopedLobby) => ({
+              gameState: scopedLobby.gameState,
+              status: scopedLobby.status,
+              lobby: scopedLobby,
+            }));
           }
 
           callback?.({ success: true, gameState: safeLobby.gameState, lobby: safeLobby });
@@ -794,12 +825,16 @@ export function registerSocketHandlers(
             return callback?.({ success: false, error: error || 'Revanche nicht möglich.' });
           }
 
-          const safeLobby = sanitizeLobbyForClient(lobby);
+          const safeLobby = sanitizeLobbyForClient(lobby, currentPlayer.id);
           if (!duplicate) {
             if (restarted) {
-              io.to(`lobby:${lobby.id}`).emit('game:restarted', { lobby: safeLobby });
+              emitLobbyEventPerViewer(lobby, 'game:restarted', (scopedLobby) => ({
+                lobby: scopedLobby,
+              }));
             } else {
-              io.to(`lobby:${lobby.id}`).emit('lobby:updated', { lobby: safeLobby });
+              emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+                lobby: scopedLobby,
+              }));
             }
           }
 
@@ -823,22 +858,21 @@ export function registerSocketHandlers(
           if (deleted) {
             io.emit('lobby:list-updated', {});
           } else if (lobby) {
-            const safeLobby = sanitizeLobbyForClient(lobby);
             if (newHost && previousHostId) {
-              io.to(`lobby:${lobby.id}`).emit('lobby:host-changed', {
-                lobby: safeLobby,
+              emitLobbyEventPerViewer(lobby, 'lobby:host-changed', (scopedLobby) => ({
+                lobby: scopedLobby,
                 newHostId: newHost.id,
                 newHostName: newHost.name,
                 previousHostId,
                 reason: 'host_left',
-              });
+              }));
             }
-            io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-              lobby: safeLobby,
+            emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+              lobby: scopedLobby,
               message: wasHost
                 ? 'Neuer Host gewählt.'
                 : 'Ein Spieler hat die Lobby verlassen.',
-            });
+            }));
             io.emit('lobby:list-updated', { gameId: lobby.gameId });
           }
         }
@@ -894,12 +928,13 @@ export function registerSocketHandlers(
             disconnectSupersededSocket(supersededSocketId);
           }
 
-          const safeLobby = sanitizeLobbyForClient(lobby);
+          const viewerId = parsed.data.userId || socket.data.playerId;
+          const safeLobby = sanitizeLobbyForClient(lobby, viewerId);
           socket.join(`lobby:${lobby.id}`);
-          io.to(`lobby:${lobby.id}`).emit('lobby:updated', {
-            lobby: safeLobby,
+          emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+            lobby: scopedLobby,
             message: 'Spieler ist wieder verbunden!',
-          });
+          }));
           return callback?.({ success: true, lobby: safeLobby, reconnectToken });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
@@ -918,17 +953,16 @@ export function registerSocketHandlers(
         return;
       }
       if (lobbyId && lobby && player) {
-        const safeLobby = sanitizeLobbyForClient(lobby);
-        io.to(`lobby:${lobbyId}`).emit('lobby:player-disconnected', {
+        emitLobbyEventPerViewer(lobby, 'lobby:player-disconnected', (scopedLobby) => ({
           playerId: player.id,
           playerName: player.name,
           reconnectDeadline: player.reconnectDeadline,
-          lobby: safeLobby,
-        });
-        io.to(`lobby:${lobbyId}`).emit('lobby:updated', {
-          lobby: safeLobby,
+          lobby: scopedLobby,
+        }));
+        emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
+          lobby: scopedLobby,
           message: `${player.name} hat die Verbindung verloren.`,
-        });
+        }));
       }
     });
   });

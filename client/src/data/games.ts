@@ -2,6 +2,7 @@ import {
   Coins,
   Compass,
   Palette,
+  Spade,
   type LucideIcon,
 } from 'lucide-react';
 
@@ -120,5 +121,27 @@ export const GAMES: Game[] = [
     icon: Coins,
     tone: 'emerald',
     accent: 'emerald',
+  },
+  {
+    id: 'texas-holdem',
+    title: "Poker Texas Hold'em",
+    subtitle: 'Bluffs, Side-Pots & All-In',
+    description:
+      'Klassisches No-Limit Texas Hold’em mit geheimen Pocket-Karten am Handy, Community Cards am TV und echtem Chip-Management!',
+    howToPlay:
+      'Jeder Spieler erhält 2 verdeckte Karten und dasselbe Startguthaben. Über Pre-Flop, Flop, Turn und River baust du mit Check, Call, Raise oder All-In die stärkste 5-Karten-Hand. Im TV-Modus bleiben alle geheimen Karten diskret auf euren Smartphones bis zum Showdown!',
+    category: 'Strategie',
+    gameType: 'party',
+    gameTypeLabel: 'CASINO',
+    players: '2–8 Spieler',
+    minPlayers: 2,
+    maxPlayers: 8,
+    duration: '10–20 Min.',
+    durationMinutes: 15,
+    supportsTv: true,
+    tags: ['Poker', 'Casino', 'Karten', 'Strategie', 'TV-Highlight'],
+    icon: Spade,
+    tone: 'indigo',
+    accent: 'amber',
   },
 ];

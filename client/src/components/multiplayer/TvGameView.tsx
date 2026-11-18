@@ -25,6 +25,8 @@ export function TvGameView({
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
   const isStadtLandFluss = lobby.gameId === 'stadt-land-fluss';
   const isRoulette = lobby.gameId === 'roulette';
+  const isTexasHoldem = lobby.gameId === 'texas-holdem';
+  const isMoneyGame = isRoulette || isTexasHoldem;
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const player1 = activePlayers[0];
   const player2 = activePlayers[1];
@@ -152,8 +154,19 @@ export function TvGameView({
             </div>
           )}
 
+          {isTexasHoldem && !isGameOver && (
+            <div className="flex items-center gap-2 rounded-xl border border-[#F59E0B]/45 bg-[#064E3B]/60 px-4 py-1.5 backdrop-blur-md">
+              <span className="font-arcade text-[10px] tracking-wider text-[#FBBF24] uppercase">
+                TEXAS HOLD&apos;EM
+              </span>
+              <span className="font-arcade text-sm sm:text-base text-white uppercase">
+                HAND {gameState?.handNumber || 1}/{gameState?.maxHands || 10}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
-            {(isDrawAndGuess || isStadtLandFluss || isRoulette) && !isGameOver && !isRoundOver && (
+            {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) && !isGameOver && !isRoundOver && (
               <span className="font-arcade rounded-lg border border-white/20 bg-white/[0.06] px-3 py-1 text-xs text-white">
                 {timeLeft} S
               </span>
@@ -275,7 +288,7 @@ export function TvGameView({
               </div>
             </div>
           </main>
-        ) : isStadtLandFluss || isRoulette ? (
+        ) : isStadtLandFluss || isMoneyGame ? (
           <main className="my-auto flex flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto py-3 w-full">
             {BoardComponent && (
               <BoardComponent
@@ -374,7 +387,7 @@ export function TvGameView({
                     (a, b) =>
                       (gameState?.scores?.[b.id] ?? 0) - (gameState?.scores?.[a.id] ?? 0)
                   )
-                  .slice(0, isDrawAndGuess || isStadtLandFluss || isRoulette ? 8 : 2)
+                  .slice(0, isDrawAndGuess || isStadtLandFluss || isMoneyGame ? 8 : 2)
                   .map((p) => (
                     <div
                       key={p.id}
@@ -382,7 +395,7 @@ export function TvGameView({
                     >
                       <span className="font-arcade text-xs text-[#CBD5E1] uppercase">{p.name}</span>
                       <span className="font-arcade text-base text-[#FDE68A]">
-                        {isRoulette
+                        {isMoneyGame
                           ? `${Math.round(gameState?.scores?.[p.id] ?? 0).toLocaleString('de-DE')} €`
                           : String(gameState?.scores?.[p.id] ?? 0)}
                       </span>

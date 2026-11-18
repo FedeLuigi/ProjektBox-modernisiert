@@ -3,6 +3,7 @@ import type { GameRendererProps } from './types';
 import { DrawAndGuessBoard } from './components/DrawAndGuessBoard';
 import { RouletteBoard } from './components/RouletteBoard';
 import { StadtLandFlussBoard } from './components/StadtLandFlussBoard';
+import { TexasHoldemBoard } from './components/TexasHoldemBoard';
 import { GenericDuelBoard } from './components/GenericDuelBoard';
 
 export class ClientGameRegistry {
@@ -12,6 +13,7 @@ export class ClientGameRegistry {
     this.register('draw-and-guess', DrawAndGuessBoard);
     this.register('stadt-land-fluss', StadtLandFlussBoard);
     this.register('roulette', RouletteBoard);
+    this.register('texas-holdem', TexasHoldemBoard);
   }
 
   public register(gameId: string, component: ComponentType<GameRendererProps<any, any>>): void {
