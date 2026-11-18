@@ -998,59 +998,35 @@ body::-webkit-scrollbar,
     width: 2.4rem !important;
   }
 
-  /* ─── Casino Roulette im Smartphone-Querformat (2-Spalten, 0 Überlappung) ─── */
+  /* ─── Casino Roulette im Smartphone-Querformat (Drehrad & Spielbrett auf 1 Linie, Info oben, Chips mittig) ─── */
   .roulette-stage-portrait {
     display: none !important;
   }
 
   .roulette-landscape-shell {
-    display: grid !important;
-    grid-template-columns: clamp(9.5rem, 21vw, 13.5rem) minmax(0, 1fr) !important;
-    gap: 10px !important;
-    align-items: stretch !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
     overflow: hidden !important;
   }
 
-  .roulette-landscape-left {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
+  .roulette-landscape-topbar {
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .roulette-landscape-body {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr) !important;
+    column-gap: 10px !important;
+    row-gap: 4px !important;
     align-items: center !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    padding: 2px 4px !important;
-    gap: 4px !important;
-  }
-
-  .roulette-meta {
-    order: 1 !important;
-    width: 100% !important;
-  }
-
-  .roulette-wheel-wrap {
-    order: 2 !important;
-  }
-
-  .roulette-status {
-    order: 3 !important;
-    width: 100% !important;
-    align-items: center !important;
-    text-align: center !important;
   }
 
   .roulette-landscape-wheel {
-    width: clamp(5.25rem, 32vh, 7.75rem) !important;
-    height: clamp(5.25rem, 32vh, 7.75rem) !important;
-  }
-
-  .roulette-landscape-right {
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: space-between !important;
-    min-width: 0 !important;
-    min-height: 0 !important;
-    gap: 6px !important;
+    width: clamp(5.5rem, 34vh, 8.25rem) !important;
+    height: clamp(5.5rem, 34vh, 8.25rem) !important;
   }
 
   .roulette-felt-horizontal {
@@ -1062,19 +1038,19 @@ body::-webkit-scrollbar,
   }
 
   .roulette-landscape-felt {
-    padding: 6px !important;
+    padding: 5px !important;
   }
 
   .roulette-landscape-felt button:not(.roulette-inside-hotspot) {
-    height: clamp(1.3rem, 6vh, 1.65rem) !important;
-    min-height: clamp(1.3rem, 6vh, 1.65rem) !important;
+    height: clamp(1.25rem, 5.8vh, 1.6rem) !important;
+    min-height: clamp(1.25rem, 5.8vh, 1.6rem) !important;
     font-size: 0.68rem !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }
 
   .roulette-landscape-felt button.roulette-zero-cell {
-    min-height: calc(clamp(1.3rem, 6vh, 1.65rem) * 3 + 0.5rem) !important;
+    min-height: calc(clamp(1.25rem, 5.8vh, 1.6rem) * 3 + 0.5rem) !important;
     height: 100% !important;
   }
 }

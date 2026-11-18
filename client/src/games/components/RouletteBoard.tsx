@@ -1606,7 +1606,7 @@ export function RouletteBoard({
   };
 
   const playersStrip = isMultiplayer && (
-    <div className="flex shrink-0 flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-0.5 px-0.5">
+    <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 px-0.5">
       {rankedPlayers.map((p, idx) => {
         const bal = gameState?.scores?.[p.id] ?? startingBalance;
         const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
@@ -1822,42 +1822,41 @@ export function RouletteBoard({
       </div>
 
       {/* ─── QUERFORMAT / DESKTOP / TABLET HORIZONTAL-ANSICHT ─── */}
-      <div className="roulette-landscape-shell hidden sm:flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
-        {/* LINKE SPALTE: KESSEL + RUNDE/TIMER + STATUS */}
-        <div className="roulette-landscape-left grid w-full shrink-0 grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-center gap-x-3 gap-y-0.5 px-1 py-0.5 lg:flex lg:w-auto lg:min-w-[230px] lg:flex-col lg:items-center lg:justify-center lg:gap-2.5 lg:p-1">
-          <div className="roulette-wheel-wrap row-span-2 flex items-center justify-center shrink-0 lg:row-span-1 lg:order-2">
-            {renderWheelControl(
-              phase === 'spinning'
-                ? 'roulette-landscape-wheel w-20 sm:w-28 md:w-32 lg:w-[min(280px,46vh)] xl:w-[min(350px,52vh)] 2xl:w-[min(390px,56vh)] aspect-square'
-                : 'roulette-landscape-wheel w-[72px] sm:w-24 md:w-28 lg:w-[min(268px,44vh)] xl:w-[min(336px,50vh)] 2xl:w-[min(384px,54vh)] aspect-square',
-              isCompactScreen
-            )}
-          </div>
-
-          <div className="roulette-meta col-start-2 row-start-1 flex min-w-0 items-center justify-between gap-2 lg:order-1 lg:w-full">
-            <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase shrink-0">
-              R {round}/{maxRounds}
+      <div className="roulette-landscape-shell hidden sm:flex w-full max-w-6xl flex-1 min-h-0 flex-col justify-between gap-2 lg:gap-4 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
+        {/* 1. OBERE INFO-LEISTE OBERHALB DES SPIELFELDS: GEZOGENE ZAHLEN · EINSATZ · RUNDE & ZEIT */}
+        <div className="roulette-landscape-topbar grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4 px-1">
+          {/* Links: Gezogene Zahlen (Verlauf) */}
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar justify-self-start">
+            <span className="hidden md:inline font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase shrink-0">
+              VERLAUF
             </span>
-            {phase === 'betting' && (
-              <span
-                className={`font-arcade inline-flex items-center gap-1 text-[10px] shrink-0 ${
-                  timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
-                }`}
-              >
-                <Clock className="h-2.5 w-2.5" />
-                {timeLeft}S
+            {history.length === 0 ? (
+              <span className="font-arcade text-[10px] text-white/50 uppercase whitespace-nowrap">
+                NOCH KEINE ZIEHUNG
               </span>
+            ) : (
+              history.slice(0, 10).map((item, idx) => (
+                <span
+                  key={`${item.round}-${idx}`}
+                  className={`inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded border px-1 font-arcade text-[10px] ${getColorClasses(
+                    item.color
+                  )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-80'}`}
+                >
+                  {item.number}
+                </span>
+              ))
             )}
           </div>
 
-          <div className="roulette-status col-start-2 row-start-2 flex min-w-0 flex-col items-end lg:items-center text-right lg:text-center gap-0.5 lg:order-3 lg:w-full">
+          {/* Mitte: Aktueller Einsatz + Live-Vorschau / Spin / Ergebnis */}
+          <div className="flex flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 justify-self-center text-center">
             {phase === 'betting' && (
               <>
-                <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                <span className="font-arcade text-[11px] sm:text-xs text-[#FDE68A] uppercase whitespace-nowrap">
                   EINSATZ: {formatEuro(displayedWagered)}
                 </span>
                 <span
-                  className={`font-arcade text-[10px] uppercase ${
+                  className={`font-arcade text-[10px] sm:text-[11px] uppercase whitespace-nowrap ${
                     activePreviewLabel ? 'text-[#FDE047]' : 'text-[#6EE7B7]'
                   }`}
                 >
@@ -1867,19 +1866,24 @@ export function RouletteBoard({
             )}
 
             {phase === 'spinning' && (
-              <span className="font-arcade text-xs text-[#FDE68A] uppercase animate-pulse">
-                KUGEL LÄUFT...
-              </span>
+              <>
+                <span className="font-arcade text-xs text-[#FDE68A] uppercase animate-pulse whitespace-nowrap">
+                  KUGEL LÄUFT...
+                </span>
+                <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase whitespace-nowrap">
+                  EINSATZ: {formatEuro(displayedWagered)}
+                </span>
+              </>
             )}
 
             {phase === 'result' && winningNumber !== null && (
               <>
-                <span className="font-arcade text-xs text-[#FEF08A] uppercase">
+                <span className="font-arcade text-xs text-[#FEF08A] uppercase whitespace-nowrap">
                   {winningStatusLabel}
                 </span>
                 {myOutcomeWager > 0 ? (
                   <span
-                    className={`font-arcade text-[11px] uppercase ${
+                    className={`font-arcade text-[11px] uppercase whitespace-nowrap ${
                       myOutcomeNet > 0
                         ? 'text-[#34D399]'
                         : myOutcomeNet < 0
@@ -1892,33 +1896,46 @@ export function RouletteBoard({
                       : formatSignedEuro(myOutcomeNet)}
                   </span>
                 ) : (
-                  <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
+                  <span className="font-arcade text-[10px] text-[#94A3B8] uppercase whitespace-nowrap">
                     KEIN EINSATZ
                   </span>
                 )}
               </>
             )}
+          </div>
 
-            {history.length > 0 && (
-              <div className="flex items-center gap-1 pt-0.5 flex-wrap justify-end lg:justify-center">
-                {history.slice(0, 5).map((item, idx) => (
-                  <span
-                    key={`${item.round}-${idx}`}
-                    className={`inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-arcade text-[9px] ${getColorClasses(
-                      item.color
-                    )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-75'}`}
-                  >
-                    {item.number}
-                  </span>
-                ))}
-              </div>
+          {/* Rechts: Runde & Zeit */}
+          <div className="flex shrink-0 items-center gap-2.5 justify-self-end">
+            <span className="font-arcade text-[10px] sm:text-xs text-[#6EE7B7] uppercase whitespace-nowrap">
+              R {round}/{maxRounds}
+            </span>
+            {phase === 'betting' && (
+              <span
+                className={`font-arcade inline-flex items-center gap-1 text-[10px] sm:text-xs whitespace-nowrap ${
+                  timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/95'
+                }`}
+              >
+                <Clock className="h-3 w-3" />
+                {timeLeft}S
+              </span>
             )}
           </div>
         </div>
 
-        {/* RECHTE SPALTE: WETTTISCH + CHIPS & AKTIONEN */}
-        <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
-          <div className="flex flex-col gap-1.5 min-w-0 my-auto">
+        {/* 2. MITTE: DREHRAD (LINKS) & SPIELBRETT (RECHTS) EXAKT AUF EINER LINIE + CHIPS MITTIG DARUNTER */}
+        <div className="roulette-landscape-body my-auto grid w-full min-h-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 md:gap-x-6 lg:gap-x-8 xl:gap-x-10 gap-y-2.5">
+          {/* Reihe 1, Links: Nur das Drehrad — exakt vertikal zentriert mit dem Spielbrett */}
+          <div className="roulette-wheel-wrap flex items-center justify-center shrink-0 self-center">
+            {renderWheelControl(
+              phase === 'spinning'
+                ? 'roulette-landscape-wheel w-28 sm:w-32 md:w-44 lg:w-[min(276px,44vh)] xl:w-[min(340px,50vh)] 2xl:w-[min(380px,54vh)] aspect-square'
+                : 'roulette-landscape-wheel w-24 sm:w-28 md:w-40 lg:w-[min(264px,42vh)] xl:w-[min(328px,48vh)] 2xl:w-[min(372px,52vh)] aspect-square',
+              isCompactScreen
+            )}
+          </div>
+
+          {/* Reihe 1, Rechts: Spielbrett — auf derselben horizontalen Linie wie das Drehrad */}
+          <div className="flex min-w-0 items-center self-center">
             <BettingTable
               allBets={displayedTableBets}
               players={allPlayers}
@@ -1932,25 +1949,32 @@ export function RouletteBoard({
               onHoverBetChange={setTableHoverBetKey}
               onPlaceBet={handlePlaceBet}
             />
+          </div>
+
+          {/* Reihe 2, Rechts: Chips mittig direkt unterhalb des Spielbrettes (+ Aktionen & Spieler) */}
+          <div className="col-start-2 flex w-full min-w-0 flex-col items-center gap-1.5 self-start">
+            {phase === 'result' ? (
+              <div className="flex w-full items-center justify-center">
+                {resultFooter}
+              </div>
+            ) : (
+              <div className="flex w-full flex-col min-[760px]:grid min-[760px]:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-1.5 px-0.5 py-0.5">
+                <div className="hidden min-[760px]:block" aria-hidden="true" />
+
+                {/* Ziehbarer Spielstein-Vorrat (mittig unter dem Spielbrett) */}
+                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 touch-none select-none min-[760px]:justify-self-center">
+                  {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'landscape'))}
+                </div>
+
+                {/* Aktionen: Undo, Rebet, 2x, Clear (+ Drehen nur im Solo-Modus) */}
+                <div className="flex items-center justify-center gap-1 min-[760px]:justify-self-end">
+                  {renderActionButtons('landscape')}
+                </div>
+              </div>
+            )}
 
             {playersStrip}
           </div>
-
-          {phase === 'result' ? (
-            resultFooter
-          ) : (
-            <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
-              {/* Ziehbarer Spielstein-Vorrat (Touch & Drag-and-Drop) */}
-              <div className="flex items-center gap-1.5 flex-wrap touch-none select-none">
-                {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'landscape'))}
-              </div>
-
-              {/* Aktionen: Undo, Rebet, 2x, Clear (+ Drehen nur im Solo-Modus) */}
-              <div className="flex items-center gap-1 ml-auto">
-                {renderActionButtons('landscape')}
-              </div>
-            </div>
-          )}
         </div>
       </div>
 
