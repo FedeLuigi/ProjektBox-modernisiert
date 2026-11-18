@@ -280,7 +280,7 @@ function PlayingCard({
         ? 'h-12 w-8.5 rounded-md text-[11px]'
         : size === 'lg'
           ? 'h-20 w-14 sm:h-24 sm:w-16 rounded-xl text-sm sm:text-base'
-          : 'h-16 w-11 sm:h-20 sm:w-14 rounded-lg text-xs sm:text-sm';
+          : 'poker-landscape-card h-15 w-10.5 sm:h-18 sm:w-12.5 rounded-lg text-xs sm:text-sm';
 
   if (faceDown || !card) {
     return (
@@ -328,7 +328,7 @@ function EmptyCardSlot({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
       ? 'h-12 w-8.5 rounded-md'
       : size === 'lg'
         ? 'h-20 w-14 sm:h-24 sm:w-16 rounded-xl'
-        : 'h-16 w-11 sm:h-20 sm:w-14 rounded-lg';
+        : 'poker-landscape-slot h-15 w-10.5 sm:h-18 sm:w-12.5 rounded-lg';
 
   return (
     <div
@@ -663,194 +663,170 @@ export function TexasHoldemBoard({
   };
 
   return (
-    <div className="flex w-full max-w-4xl flex-1 min-h-0 flex-col justify-between gap-2 overflow-y-auto no-scrollbar py-0.5">
-      {/* 1. Obere Poker-Leiste: Hand, Blinds, Zug-Timer */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-white/12 bg-[#0F172A]/75 px-3 py-1.5 backdrop-blur-md">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-arcade rounded-md border border-[#34D399]/40 bg-[#10B981]/15 px-2 py-0.5 text-[10px] text-[#6EE7B7] uppercase">
-            HAND {handNumber}/{maxHands}
-          </span>
-          <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-            BLINDS {smallBlind}/{bigBlind}€
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <span className="font-arcade rounded-md border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] text-[#FDE68A] uppercase">
-            {PHASE_LABELS[phase]}
-          </span>
-          {phase !== 'game_over' && (
-            <span
-              className={`font-arcade inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs ${
-                isMyTurn && timeLeft <= 6
-                  ? 'border-[#F87171]/60 bg-[#E11D48]/20 text-[#FECDD3] animate-pulse'
-                  : 'border-white/15 bg-white/[0.06] text-white'
-              }`}
-            >
-              <Clock className="h-3 w-3" />
-              {timeLeft}S
-            </span>
-          )}
-        </div>
-      </div>
-
-      {/* 2. Kompakte Mitspieler-Sitze */}
-      <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar pb-0.5">
-        {orderedSeats.map((pid) => {
-          const p = playerMap.get(pid);
-          if (!p) return null;
-          const bal = gameState?.balances?.[pid] ?? 0;
-          const streetBet = gameState?.streetBets?.[pid] ?? 0;
-          const isFolded = foldedSet.has(pid) || !activeHandIds.includes(pid);
-          const isActiveTurn = gameState?.currentTurn === pid && phase !== 'showdown';
-          const isDealer = gameState?.dealerId === pid;
-          const isSb = gameState?.smallBlindId === pid;
-          const isBb = gameState?.bigBlindId === pid;
-          const lastAct = gameState?.lastActions?.[pid];
-          const showdownRes = phase === 'showdown' ? gameState?.showdown?.results[pid] : undefined;
-          const shownCards = pid !== myId ? gameState?.holeCards?.[pid] : undefined;
-
-          return (
-            <div
-              key={pid}
-              className={`flex shrink-0 flex-col gap-1 rounded-xl border px-2.5 py-1.5 min-w-[116px] ${
-                showdownRes?.isWinner
-                  ? 'border-[#FDE047] bg-[#F59E0B]/20'
-                  : isActiveTurn
-                    ? 'border-[#34D399] bg-[#064E3B]/65 ring-1 ring-[#34D399]/70'
-                    : isFolded
-                      ? 'border-white/10 bg-white/[0.02] opacity-50'
-                      : pid === myId
-                        ? 'border-[#38BDF8]/45 bg-[#0F172A]/75'
-                        : 'border-white/12 bg-white/[0.04]'
-              }`}
-            >
-              <div className="flex items-center justify-between gap-1.5">
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <Avatar config={p.avatar} size={20} />
-                  <span className="font-arcade text-[10px] text-white uppercase truncate max-w-[60px]">
-                    {p.name}
-                  </span>
-                </div>
-                <div className="flex items-center gap-0.5 shrink-0">
-                  {isDealer && (
-                    <span className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#FBBF24] font-arcade text-[8px] text-[#0F172A]">
-                      D
-                    </span>
-                  )}
-                  {isSb && (
-                    <span className="font-arcade text-[8px] text-[#7DD3FC]">SB</span>
-                  )}
-                  {isBb && (
-                    <span className="font-arcade text-[8px] text-[#F9A8D4]">BB</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between gap-1 font-arcade text-[10px]">
-                <span className="text-[#FDE68A]">{formatEuro(bal)}</span>
-                {showdownRes?.wonAmount ? (
-                  <span className="text-[#34D399]">+{formatEuro(showdownRes.wonAmount)}</span>
-                ) : streetBet > 0 ? (
-                  <span className="text-[#CBD5E1]">{streetBet}€</span>
-                ) : lastAct ? (
-                  <span className="text-[#94A3B8]">{lastAct}</span>
-                ) : null}
-              </div>
-
-              {shownCards && shownCards.length === 2 && (
-                <div className="flex items-center gap-1 pt-0.5">
-                  {shownCards.map((c, idx) => (
-                    <PlayingCard
-                      key={idx}
-                      card={c}
-                      size="xs"
-                      highlighted={winningCardSet.has(`${c.suit}:${c.rank}`)}
-                    />
-                  ))}
-                  {showdownRes && (
-                    <span className="font-arcade text-[8px] text-[#FDE68A] truncate">
-                      {showdownRes.handName}
-                    </span>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </div>
-
-      {/* 3. Pokertisch-Mitte: Pot + Community Cards + Action Ticker */}
-      <div className="my-auto flex flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-3 sm:p-4 shadow-[0_14px_34px_rgba(0,0,0,0.45)] ring-1 ring-[#F59E0B]/30">
-        <div className="flex flex-wrap items-center justify-center gap-2">
-          <div className="flex items-center gap-1.5 rounded-full border border-[#FBBF24]/50 bg-[#0F172A]/85 px-3.5 py-1">
-            <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
-            <span className="font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase">
-              POT: {formatEuro(pot)}
-            </span>
-          </div>
-          {gameState?.lastActionText && (
-            <span className="font-arcade text-[11px] text-[#A7F3D0] uppercase text-center">
-              {gameState.lastActionText}
-            </span>
-          )}
-        </div>
-
-        <div className="flex items-center justify-center gap-1.5 sm:gap-2.5">
-          {Array.from({ length: 5 }, (_, idx) => {
-            const card = communityCards[idx];
-            if (!card) return <EmptyCardSlot key={idx} size="md" />;
-            return (
-              <PlayingCard
-                key={`${card.suit}-${card.rank}-${idx}`}
-                card={card}
-                size="md"
-                highlighted={winningCardSet.has(`${card.suit}:${card.rank}`)}
-              />
-            );
-          })}
-        </div>
-
-        {/* Showdown-Gewinn-Übersicht */}
-        {phase === 'showdown' && gameState?.showdown && (
-          <div className="w-full max-w-lg rounded-xl border border-[#FDE047]/40 bg-[#0F172A]/85 px-3 py-2 text-center animate-fade-in">
-            <div className="flex flex-wrap items-center justify-center gap-2">
-              <Trophy className="h-4 w-4 text-[#FBBF24]" />
-              <span className="font-arcade text-xs sm:text-sm text-[#FEF08A] uppercase">
-                {gameState.showdown.winnerIds
-                  .map((id) => playerMap.get(id)?.name || 'Spieler')
-                  .join(' & ')}{' '}
-                GEWINNT {formatEuro(gameState.showdown.potTotal)}!
+    <div className="poker-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col justify-between gap-2 overflow-hidden py-0.5">
+      {/* LINKE SPALTE IM QUERFORMAT (OBEN IM HOCHFORMAT): STATUS, SPIELER & TISCH */}
+      <div className="poker-landscape-left flex flex-1 min-h-0 flex-col justify-between gap-1.5">
+        {/* 1. Kompakte Hand/Blind/Timer-Leiste + Spieler-Chips */}
+        <div className="flex shrink-0 flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-2 rounded-lg border border-white/12 bg-[#0F172A]/75 px-2.5 py-1 backdrop-blur-md">
+            <div className="flex items-center gap-2 min-w-0">
+              <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+                HAND {handNumber}/{maxHands}
+              </span>
+              <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
+                {smallBlind}/{bigBlind}€
               </span>
             </div>
-            {gameState.showdown.results[myId] && (
-              <p className="font-arcade mt-0.5 text-[11px] text-[#CBD5E1] uppercase">
-                DEIN ERGEBNIS: {gameState.showdown.results[myId].handName} •{' '}
+
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className="font-arcade rounded border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-1.5 py-0.5 text-[10px] text-[#FDE68A] uppercase">
+                {PHASE_LABELS[phase]}
+              </span>
+              {phase !== 'game_over' && (
                 <span
-                  className={
-                    gameState.showdown.results[myId].netProfit > 0
-                      ? 'text-[#34D399]'
-                      : gameState.showdown.results[myId].netProfit < 0
-                        ? 'text-[#FCA5A5]'
-                        : 'text-white'
-                  }
+                  className={`font-arcade inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] ${
+                    isMyTurn && timeLeft <= 6
+                      ? 'border-[#F87171]/60 bg-[#E11D48]/20 text-[#FECDD3] animate-pulse'
+                      : 'border-white/15 bg-white/[0.06] text-white'
+                  }`}
                 >
-                  {formatSignedEuro(gameState.showdown.results[myId].netProfit)}
+                  <Clock className="h-3 w-3" />
+                  {timeLeft}S
                 </span>
-              </p>
+              )}
+            </div>
+          </div>
+
+          <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+            {orderedSeats.map((pid) => {
+              const p = playerMap.get(pid);
+              if (!p) return null;
+              const bal = gameState?.balances?.[pid] ?? 0;
+              const streetBet = gameState?.streetBets?.[pid] ?? 0;
+              const isFolded = foldedSet.has(pid) || !activeHandIds.includes(pid);
+              const isActiveTurn = gameState?.currentTurn === pid && phase !== 'showdown';
+              const isDealer = gameState?.dealerId === pid;
+              const isSb = gameState?.smallBlindId === pid;
+              const isBb = gameState?.bigBlindId === pid;
+              const lastAct = gameState?.lastActions?.[pid];
+              const showdownRes = phase === 'showdown' ? gameState?.showdown?.results[pid] : undefined;
+              const shownCards = pid !== myId ? gameState?.holeCards?.[pid] : undefined;
+
+              return (
+                <div
+                  key={pid}
+                  className={`flex shrink-0 flex-col gap-0.5 rounded-lg border px-2 py-1 min-w-[98px] ${
+                    showdownRes?.isWinner
+                      ? 'border-[#FDE047] bg-[#F59E0B]/20'
+                      : isActiveTurn
+                        ? 'border-[#34D399] bg-[#064E3B]/65 ring-1 ring-[#34D399]/70'
+                        : isFolded
+                          ? 'border-white/10 bg-white/[0.02] opacity-50'
+                          : pid === myId
+                            ? 'border-[#38BDF8]/45 bg-[#0F172A]/75'
+                            : 'border-white/12 bg-white/[0.04]'
+                  }`}
+                >
+                  <div className="flex items-center justify-between gap-1">
+                    <div className="flex items-center gap-1 min-w-0">
+                      <Avatar config={p.avatar} size={16} />
+                      <span className="font-arcade text-[9px] text-white uppercase truncate max-w-[54px]">
+                        {p.name}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      {isDealer && (
+                        <span className="inline-flex h-3 w-3 items-center justify-center rounded-full bg-[#FBBF24] font-arcade text-[7px] text-[#0F172A]">
+                          D
+                        </span>
+                      )}
+                      {isSb && <span className="font-arcade text-[8px] text-[#7DD3FC]">SB</span>}
+                      {isBb && <span className="font-arcade text-[8px] text-[#F9A8D4]">BB</span>}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-1 font-arcade text-[9px]">
+                    <span className="text-[#FDE68A]">{formatEuro(bal)}</span>
+                    {showdownRes?.wonAmount ? (
+                      <span className="text-[#34D399]">+{formatEuro(showdownRes.wonAmount)}</span>
+                    ) : streetBet > 0 ? (
+                      <span className="text-[#CBD5E1]">{streetBet}€</span>
+                    ) : lastAct ? (
+                      <span className="text-[#94A3B8]">{lastAct}</span>
+                    ) : null}
+                  </div>
+
+                  {shownCards && shownCards.length === 2 && (
+                    <div className="flex items-center gap-1 pt-0.5">
+                      {shownCards.map((c, idx) => (
+                        <PlayingCard
+                          key={idx}
+                          card={c}
+                          size="xs"
+                          highlighted={winningCardSet.has(`${c.suit}:${c.rank}`)}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 2. Pokertisch-Mitte: Pot + 5 Community Cards + kompaktes Ergebnis */}
+        <div className="poker-landscape-table flex flex-1 min-h-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.45)] ring-1 ring-[#F59E0B]/30">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex items-center gap-1.5 rounded-full border border-[#FBBF24]/50 bg-[#0F172A]/85 px-3 py-0.5">
+              <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
+              <span className="font-arcade text-xs text-[#FDE68A] uppercase">
+                POT {formatEuro(pot)}
+              </span>
+            </div>
+            {phase === 'showdown' && gameState?.showdown ? (
+              <span className="font-arcade flex items-center gap-1 text-[11px] text-[#FEF08A] uppercase text-center">
+                <Trophy className="h-3.5 w-3.5 text-[#FBBF24] shrink-0" />
+                <span>
+                  {gameState.showdown.winnerIds
+                    .map((id) => playerMap.get(id)?.name || 'Spieler')
+                    .join(' & ')}{' '}
+                  +{formatEuro(gameState.showdown.potTotal)}
+                </span>
+              </span>
+            ) : (
+              gameState?.lastActionText && (
+                <span className="font-arcade text-[10px] text-[#A7F3D0] uppercase text-center truncate max-w-[230px]">
+                  {gameState.lastActionText}
+                </span>
+              )
             )}
           </div>
-        )}
+
+          <div className="flex items-center justify-center gap-1.5 sm:gap-2">
+            {Array.from({ length: 5 }, (_, idx) => {
+              const card = communityCards[idx];
+              if (!card) return <EmptyCardSlot key={idx} size="md" />;
+              return (
+                <PlayingCard
+                  key={`${card.suit}-${card.rank}-${idx}`}
+                  card={card}
+                  size="md"
+                  highlighted={winningCardSet.has(`${card.suit}:${card.rank}`)}
+                />
+              );
+            })}
+          </div>
+        </div>
       </div>
 
-      {/* 4. Unten: Eigene Pocket-Karten + Poker-Aktionsleiste */}
-      <div className="flex shrink-0 flex-col gap-2 rounded-2xl border border-white/15 bg-[#0F172A]/90 p-2.5 sm:p-3 backdrop-blur-md">
-        <div className="flex items-center justify-between gap-3">
-          {/* Eigene Karten */}
-          <div className="flex items-center gap-2.5">
+      {/* RECHTE SPALTE IM QUERFORMAT (UNTEN IM HOCHFORMAT): EIGENE KARTEN & AKTIONEN */}
+      <div className="poker-landscape-right flex shrink-0 flex-col justify-between gap-2 rounded-2xl border border-white/15 bg-[#0F172A]/90 p-2.5 sm:p-3 backdrop-blur-md">
+        <div className="flex items-center justify-between gap-2">
+          {/* Eigene Pocket-Karten */}
+          <div className="flex items-center gap-2 min-w-0">
             {activeHandIds.includes(myId) ? (
               <>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {[0, 1].map((idx) => (
                     <PlayingCard
                       key={idx}
@@ -870,99 +846,108 @@ export function TexasHoldemBoard({
                 </div>
 
                 <div className="flex flex-col gap-1 min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-arcade text-xs text-[#FDE68A]">
-                      {formatEuro(myBalance)}
-                    </span>
-                    {phase !== 'showdown' && (
-                      <button
-                        type="button"
-                        onClick={() => setIsCardsHidden((prev) => !prev)}
-                        title={isCardsHidden ? 'Karten aufdecken' : 'Karten verdecken (Sichtschutz)'}
-                        className="inline-flex h-6 items-center gap-1 rounded-md border border-white/20 bg-white/[0.06] px-1.5 font-arcade text-[9px] text-white/80 uppercase hover:bg-white/12 cursor-pointer"
-                      >
-                        {isCardsHidden ? (
-                          <>
-                            <Eye className="h-3 w-3" />
-                            <span>ZEIGEN</span>
-                          </>
-                        ) : (
-                          <>
-                            <EyeOff className="h-3 w-3" />
-                            <span>TARNEN</span>
-                          </>
-                        )}
-                      </button>
-                    )}
-                  </div>
-                  <span className="font-arcade text-[11px] text-[#6EE7B7] uppercase truncate max-w-[180px] sm:max-w-xs">
+                  <span className="font-arcade text-[11px] text-[#6EE7B7] uppercase truncate">
                     {foldedSet.has(myId)
-                      ? 'AUSGESTIEGEN (FOLD)'
+                      ? 'FOLD'
                       : isCardsHidden && phase !== 'showdown'
-                        ? 'KARTEN VERDECKT'
-                        : myHandName || 'DEINE HAND'}
+                        ? 'VERDECKT'
+                        : myHandName || 'HAND'}
                   </span>
+                  {phase !== 'showdown' && (
+                    <button
+                      type="button"
+                      onClick={() => setIsCardsHidden((prev) => !prev)}
+                      title={isCardsHidden ? 'Karten zeigen' : 'Karten verdecken'}
+                      className="inline-flex h-6 self-start items-center gap-1 rounded-md border border-white/20 bg-white/[0.06] px-1.5 font-arcade text-[9px] text-white/80 uppercase hover:bg-white/12 cursor-pointer"
+                    >
+                      {isCardsHidden ? (
+                        <>
+                          <Eye className="h-3 w-3" />
+                          <span>ZEIGEN</span>
+                        </>
+                      ) : (
+                        <>
+                          <EyeOff className="h-3 w-3" />
+                          <span>TARNEN</span>
+                        </>
+                      )}
+                    </button>
+                  )}
+                  {phase === 'showdown' && gameState?.showdown?.results[myId] && (
+                    <span
+                      className={`font-arcade text-[11px] uppercase ${
+                        gameState.showdown.results[myId].netProfit > 0
+                          ? 'text-[#34D399]'
+                          : gameState.showdown.results[myId].netProfit < 0
+                            ? 'text-[#FCA5A5]'
+                            : 'text-[#CBD5E1]'
+                      }`}
+                    >
+                      {formatSignedEuro(gameState.showdown.results[myId].netProfit)}
+                    </span>
+                  )}
                 </div>
               </>
             ) : (
-              <span className="font-arcade text-xs text-[#94A3B8] uppercase">
-                KEINE CHIPS MEHR – ZUSCHAUERMODUS
+              <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
+                ZUSCHAUERMODUS
               </span>
             )}
           </div>
 
           {phase === 'showdown' ? (
             <OpenButton
-              size="md"
+              size="sm"
               variant="primary"
               disabled={isNextReady || Boolean(disabled)}
               onClick={() => onMove({ type: 'next_round' })}
+              className="shrink-0"
             >
               {isNextReady
                 ? `WARTE (${nextReadyIds.length})...`
                 : handNumber >= maxHands
-                  ? 'ENDERGEBNIS'
-                  : 'NÄCHSTE HAND'}
+                  ? 'ENDE'
+                  : 'WEITER'}
             </OpenButton>
           ) : (
             <span
-              className={`font-arcade rounded-lg border px-2.5 py-1 text-[10px] sm:text-xs uppercase shrink-0 ${
+              className={`font-arcade rounded-md border px-2 py-1 text-[10px] uppercase shrink-0 ${
                 isMyTurn
                   ? 'border-[#34D399]/60 bg-[#10B981]/20 text-[#6EE7B7]'
                   : 'border-white/15 bg-white/[0.04] text-[#94A3B8]'
               }`}
             >
               {isMyTurn
-                ? 'DU BIST DRAN!'
-                : `${playerMap.get(gameState?.currentTurn || '')?.name || 'MITSPIELER'} AM ZUG`}
+                ? 'DEIN ZUG'
+                : playerMap.get(gameState?.currentTurn || '')?.name || 'WARTET'}
             </span>
           )}
         </div>
 
         {/* Wett-Buttons wenn am Zug */}
         {isMyTurn && (
-          <div className="flex flex-col gap-2 border-t border-white/12 pt-2">
+          <div className="flex flex-col gap-1.5 border-t border-white/12 pt-1.5">
             {canRaise && (
-              <div className="flex flex-wrap items-center gap-2">
-                <div className="flex items-center gap-1 flex-wrap">
+              <div className="flex flex-wrap items-center gap-1.5">
+                <div className="flex items-center gap-1">
                   <button
                     type="button"
                     onClick={() => setCustomRaiseTarget(minRaiseTarget)}
-                    className="font-arcade rounded-md border border-white/20 bg-white/[0.06] px-2 py-1 text-[10px] text-white uppercase hover:bg-white/15 cursor-pointer"
+                    className="font-arcade rounded border border-white/20 bg-white/[0.06] px-1.5 py-0.5 text-[9px] text-white uppercase hover:bg-white/15 cursor-pointer"
                   >
-                    MIN ({minRaiseTarget}€)
+                    MIN
                   </button>
                   <button
                     type="button"
                     onClick={() => setCustomRaiseTarget(showQuickPercentPot(0.5))}
-                    className="font-arcade rounded-md border border-white/20 bg-white/[0.06] px-2 py-1 text-[10px] text-white uppercase hover:bg-white/15 cursor-pointer"
+                    className="font-arcade rounded border border-white/20 bg-white/[0.06] px-1.5 py-0.5 text-[9px] text-white uppercase hover:bg-white/15 cursor-pointer"
                   >
-                    ½ POT
+                    ½
                   </button>
                   <button
                     type="button"
                     onClick={() => setCustomRaiseTarget(showQuickPercentPot(1))}
-                    className="font-arcade rounded-md border border-white/20 bg-white/[0.06] px-2 py-1 text-[10px] text-white uppercase hover:bg-white/15 cursor-pointer"
+                    className="font-arcade rounded border border-white/20 bg-white/[0.06] px-1.5 py-0.5 text-[9px] text-white uppercase hover:bg-white/15 cursor-pointer"
                   >
                     POT
                   </button>
@@ -977,13 +962,13 @@ export function TexasHoldemBoard({
                     value={effectiveRaiseTarget}
                     onChange={(e) => setCustomRaiseTarget(Number(e.target.value))}
                     aria-label="Einsatzhöhe wählen"
-                    className="flex-1 min-w-[110px] accent-[#F59E0B] cursor-pointer"
+                    className="flex-1 min-w-[90px] accent-[#F59E0B] cursor-pointer"
                   />
                 )}
               </div>
             )}
 
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <OpenButton
                 size="sm"
                 variant="rose"

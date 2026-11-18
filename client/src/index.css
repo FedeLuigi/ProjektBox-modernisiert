@@ -954,4 +954,97 @@ body::-webkit-scrollbar,
   .avatar-creator-canvas-landscape {
     width: 168px !important;
   }
+
+  /* ─── Poker Texas Hold'em im Smartphone-Querformat (2-Spalten, 0 Scrollen) ─── */
+  .poker-landscape-shell {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.15fr) minmax(17.5rem, 0.85fr) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+
+  .poker-landscape-left {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 0 !important;
+    gap: 6px !important;
+  }
+
+  .poker-landscape-table {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+  }
+
+  .poker-landscape-right {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-height: 0 !important;
+    padding: 8px 10px !important;
+    gap: 6px !important;
+  }
+
+  .poker-landscape-card {
+    height: 3.4rem !important;
+    width: 2.4rem !important;
+  }
+
+  .poker-landscape-slot {
+    height: 3.4rem !important;
+    width: 2.4rem !important;
+  }
+
+  /* ─── Casino Roulette im Smartphone-Querformat (2-Spalten, 0 Scrollen) ─── */
+  .roulette-landscape-shell {
+    display: grid !important;
+    grid-template-columns: 11.25rem minmax(0, 1fr) !important;
+    gap: 10px !important;
+    align-items: stretch !important;
+    overflow: hidden !important;
+  }
+
+  .roulette-landscape-left {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    padding: 8px !important;
+    gap: 4px !important;
+  }
+
+  .roulette-landscape-wheel {
+    height: 7.75rem !important;
+    width: 7.75rem !important;
+  }
+
+  .roulette-landscape-right {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    gap: 6px !important;
+  }
+
+  .roulette-landscape-felt {
+    padding: 6px !important;
+  }
+
+  .roulette-landscape-felt button {
+    height: 1.55rem !important;
+    min-height: 1.55rem !important;
+    font-size: 0.68rem !important;
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+  }
+
+  .roulette-landscape-felt button.roulette-zero-cell {
+    min-height: 4.95rem !important;
+    height: 100% !important;
+  }
 }

@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Check,
   Clock,
-  Coins,
   Repeat,
   RotateCcw,
   Sparkles,
@@ -604,68 +603,68 @@ function BettingTable({
   };
 
   return (
-    <div className="w-full rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-2 sm:p-3 shadow-[0_16px_38px_rgba(0,0,0,0.45)]">
+    <div className="roulette-landscape-felt w-full rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5 shadow-[0_16px_38px_rgba(0,0,0,0.45)]">
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
-      <div className="hidden sm:flex flex-col gap-1.5">
-        <div className="grid grid-cols-[42px_repeat(12,minmax(0,1fr))_44px] gap-1">
-          {renderNumberCell(0, 'row-span-3 min-h-[110px]')}
+      <div className="hidden sm:flex flex-col gap-1">
+        <div className="grid grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
+          {renderNumberCell(0, 'roulette-zero-cell row-span-3 min-h-[104px]')}
 
-          {HORIZONTAL_ROWS[0].map((n) => renderNumberCell(n, 'h-9'))}
-          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-9')}
+          {HORIZONTAL_ROWS[0].map((n) => renderNumberCell(n, 'h-8.5'))}
+          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
 
-          {HORIZONTAL_ROWS[1].map((n) => renderNumberCell(n, 'h-9'))}
-          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-9')}
+          {HORIZONTAL_ROWS[1].map((n) => renderNumberCell(n, 'h-8.5'))}
+          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
 
-          {HORIZONTAL_ROWS[2].map((n) => renderNumberCell(n, 'h-9'))}
-          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-9')}
+          {HORIZONTAL_ROWS[2].map((n) => renderNumberCell(n, 'h-8.5'))}
+          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
         </div>
 
         {/* Dutzende */}
-        <div className="grid grid-cols-[42px_repeat(3,minmax(0,1fr))_44px] gap-1">
+        <div className="grid grid-cols-[40px_repeat(3,minmax(0,1fr))_42px] gap-1">
           <div aria-hidden="true" />
-          {renderOutsideCell('dozen:1', '1. 12 (1–12)', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
-          {renderOutsideCell('dozen:2', '2. 12 (13–24)', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
-          {renderOutsideCell('dozen:3', '3. 12 (25–36)', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
+          {renderOutsideCell('dozen:1', '1. 12 (1–12)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('dozen:2', '2. 12 (13–24)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('dozen:3', '3. 12 (25–36)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           <div aria-hidden="true" />
         </div>
 
         {/* Einfache Chancen */}
-        <div className="grid grid-cols-[42px_repeat(6,minmax(0,1fr))_44px] gap-1">
+        <div className="grid grid-cols-[40px_repeat(6,minmax(0,1fr))_42px] gap-1">
           <div aria-hidden="true" />
-          {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
-          {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
-          {renderOutsideCell('color:red', 'ROT ◆', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-8')}
-          {renderOutsideCell('color:black', 'SCHWARZ ◆', 'border-white/30 bg-[#0F172A] text-white', 'h-8')}
-          {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
-          {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-8')}
+          {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('color:red', 'ROT ◆', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-7.5')}
+          {renderOutsideCell('color:black', 'SCHWARZ ◆', 'border-white/30 bg-[#0F172A] text-white', 'h-7.5')}
+          {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           <div aria-hidden="true" />
         </div>
       </div>
 
-      {/* PORTRAIT SMARTPHONE CASINO FELT (große Tippflächen) */}
-      <div className="flex sm:hidden flex-col gap-1.5">
-        {renderNumberCell(0, 'h-8 w-full')}
+      {/* PORTRAIT SMARTPHONE CASINO FELT (kompakt ohne Scrollen, daumenfreundlich) */}
+      <div className="flex sm:hidden flex-col gap-[3px]">
+        {renderNumberCell(0, 'h-[26px] w-full')}
 
-        <div className="grid grid-cols-3 gap-1">
-          {PORTRAIT_ROWS.flatMap((row) => row.map((n) => renderNumberCell(n, 'h-7 text-xs')))}
-          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-7')}
-          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-7')}
-          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-7')}
+        <div className="grid grid-cols-3 gap-[3px]">
+          {PORTRAIT_ROWS.flatMap((row) => row.map((n) => renderNumberCell(n, 'h-[23px] text-[11px]')))}
+          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
+          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
+          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
         </div>
 
-        <div className="grid grid-cols-3 gap-1">
-          {renderOutsideCell('dozen:1', '1–12', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
-          {renderOutsideCell('dozen:2', '13–24', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
-          {renderOutsideCell('dozen:3', '25–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
+        <div className="grid grid-cols-3 gap-[3px]">
+          {renderOutsideCell('dozen:1', '1–12', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
+          {renderOutsideCell('dozen:2', '13–24', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
+          {renderOutsideCell('dozen:3', '25–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
         </div>
 
-        <div className="grid grid-cols-3 gap-1">
-          {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
-          {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
-          {renderOutsideCell('color:red', 'ROT', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-7')}
-          {renderOutsideCell('color:black', 'SCHWARZ', 'border-white/30 bg-[#0F172A] text-white', 'h-7')}
-          {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
-          {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7')}
+        <div className="grid grid-cols-3 gap-[3px]">
+          {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
+          {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
+          {renderOutsideCell('color:red', 'ROT', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-[24px] text-[10px]')}
+          {renderOutsideCell('color:black', 'SCHWARZ', 'border-white/30 bg-[#0F172A] text-white', 'h-[24px] text-[10px]')}
+          {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
+          {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
         </div>
       </div>
     </div>
@@ -936,131 +935,109 @@ export function RouletteBoard({
   const nextReadyCount = (gameState?.nextReadyIds || []).length;
 
   return (
-    <div className="flex w-full max-w-5xl flex-1 min-h-0 flex-col justify-between gap-2 overflow-y-auto no-scrollbar py-0.5">
-      {/* 1. Obere Casino-Info-Leiste: Runde, Kessel/Status & Timer */}
-      <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-white/12 bg-[#0F172A]/75 px-3 py-1.5 backdrop-blur-md">
-        <div className="flex items-center gap-2 min-w-0">
-          <span className="font-arcade rounded-md border border-[#34D399]/40 bg-[#10B981]/15 px-2 py-0.5 text-[10px] text-[#6EE7B7] uppercase">
-            RUNDE {round}/{maxRounds}
+    <div className="roulette-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[225px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-4 overflow-hidden py-0.5">
+      {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
+      <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 rounded-2xl border border-white/12 bg-[#0F172A]/70 px-3 py-2 lg:p-3">
+        <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
+          <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+            R {round}/{maxRounds}
           </span>
-          <div className="hidden xs:flex items-center gap-1 overflow-x-auto no-scrollbar">
-            {history.slice(0, 6).map((item, idx) => (
-              <span
-                key={`${item.round}-${idx}`}
-                className={`inline-flex h-5 min-w-5 items-center justify-center rounded border px-1 font-arcade text-[10px] ${getColorClasses(
-                  item.color
-                )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-80'}`}
-              >
-                {item.number}
-              </span>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <div className="flex items-center gap-1 font-arcade text-xs text-[#FDE68A]">
-            <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
-            <span>{formatEuro(myBalance)}</span>
-          </div>
           {phase === 'betting' && (
             <span
-              className={`font-arcade inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-xs ${
+              className={`font-arcade inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] ${
                 timeLeft <= 5
                   ? 'border-[#F87171]/60 bg-[#E11D48]/20 text-[#FECDD3] animate-pulse'
                   : 'border-white/15 bg-white/[0.06] text-white'
               }`}
             >
-              <Clock className="h-3 w-3" />
+              <Clock className="h-2.5 w-2.5" />
               {timeLeft}S
             </span>
           )}
         </div>
+
+        <RouletteWheel
+          phase={phase}
+          round={round}
+          winningNumber={winningNumber}
+          spinStartedAt={gameState?.spinStartedAt}
+          sizeClass={
+            phase === 'spinning'
+              ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 lg:h-48 lg:w-48'
+              : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-24 sm:w-24 lg:h-44 lg:w-44'
+          }
+        />
+
+        <div className="flex flex-1 lg:flex-initial flex-col items-end lg:items-center text-right lg:text-center gap-1 min-w-0">
+          {phase === 'betting' && (
+            <>
+              <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                EINSATZ: {formatEuro(myWagered)}
+              </span>
+              <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+                {isLocked ? `BEREIT (${lockedCount}/${allPlayers.length})` : 'CHIPS PLATZIEREN'}
+              </span>
+            </>
+          )}
+
+          {phase === 'spinning' && (
+            <span className="font-arcade text-xs text-[#FDE68A] uppercase animate-pulse">
+              KUGEL LÄUFT...
+            </span>
+          )}
+
+          {phase === 'result' && winningNumber !== null && (
+            <>
+              <span className="font-arcade text-xs text-[#FEF08A] uppercase">
+                ZAHL {winningNumber}{' '}
+                {winningNumber === 0
+                  ? '(GRÜN)'
+                  : getRouletteColor(winningNumber) === 'red'
+                    ? '(ROT)'
+                    : '(SCHWARZ)'}
+              </span>
+              {myOutcomeWager > 0 ? (
+                <span
+                  className={`font-arcade text-[11px] uppercase ${
+                    myOutcomeNet > 0
+                      ? 'text-[#34D399]'
+                      : myOutcomeNet < 0
+                        ? 'text-[#FCA5A5]'
+                        : 'text-[#CBD5E1]'
+                  }`}
+                >
+                  {myOutcomePayout > 0
+                    ? `+${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
+                    : formatSignedEuro(myOutcomeNet)}
+                </span>
+              ) : (
+                <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
+                  KEIN EINSATZ
+                </span>
+              )}
+            </>
+          )}
+
+          {history.length > 0 && (
+            <div className="flex items-center gap-1 pt-0.5">
+              {history.slice(0, 5).map((item, idx) => (
+                <span
+                  key={`${item.round}-${idx}`}
+                  className={`inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-arcade text-[9px] ${getColorClasses(
+                    item.color
+                  )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-75'}`}
+                >
+                  {item.number}
+                </span>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* 2. Hauptbühne: Kompakter Kessel + Ergebnisbanner + Setztisch */}
-      <div className="flex flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[240px_minmax(0,1fr)] items-center gap-2.5 lg:gap-4 my-auto">
-        {/* Kessel (im Spinning-Zustand hervorgehoben, sonst kompakt) */}
-        <div
-          className={`flex w-full lg:w-auto flex-row lg:flex-col items-center justify-center gap-3 rounded-2xl border border-white/12 bg-[#0F172A]/65 p-2.5 lg:p-3 ${
-            phase === 'spinning' ? 'ring-1 ring-[#FBBF24]/50' : ''
-          }`}
-        >
-          <RouletteWheel
-            phase={phase}
-            round={round}
-            winningNumber={winningNumber}
-            spinStartedAt={gameState?.spinStartedAt}
-            sizeClass={
-              phase === 'spinning'
-                ? 'h-36 w-36 sm:h-48 sm:w-48'
-                : 'h-24 w-24 sm:h-36 sm:w-36 lg:h-48 lg:w-48'
-            }
-          />
-
-          <div className="flex flex-col items-start lg:items-center text-left lg:text-center gap-1 min-w-0">
-            {phase === 'betting' && (
-              <>
-                <span className="font-arcade text-xs text-[#6EE7B7] uppercase">
-                  {isLocked ? 'BEREIT FÜR SPIN ✓' : 'EINSATZ SETZEN'}
-                </span>
-                <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase">
-                  AUF TISCH: {formatEuro(myWagered)}
-                </span>
-                {allPlayers.length > 1 && (
-                  <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-                    {lockedCount}/{allPlayers.length} BEREIT
-                  </span>
-                )}
-              </>
-            )}
-
-            {phase === 'spinning' && (
-              <>
-                <span className="font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase animate-pulse">
-                  NICHTS GEHT MEHR!
-                </span>
-                <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase">
-                  KUGEL LÄUFT...
-                </span>
-              </>
-            )}
-
-            {phase === 'result' && winningNumber !== null && (
-              <>
-                <span className="font-arcade text-xs sm:text-sm text-[#FEF08A] uppercase">
-                  ZAHL {winningNumber}{' '}
-                  {winningNumber === 0
-                    ? '(GRÜN)'
-                    : getRouletteColor(winningNumber) === 'red'
-                      ? '(ROT)'
-                      : '(SCHWARZ)'}
-                </span>
-                {myOutcomeWager > 0 ? (
-                  <span
-                    className={`font-arcade text-xs sm:text-sm uppercase ${
-                      myOutcomeNet > 0
-                        ? 'text-[#34D399]'
-                        : myOutcomeNet < 0
-                          ? 'text-[#FCA5A5]'
-                          : 'text-[#CBD5E1]'
-                    }`}
-                  >
-                    {myOutcomePayout > 0
-                      ? `GEWINN ${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
-                      : `VERLUST (${formatSignedEuro(myOutcomeNet)})`}
-                  </span>
-                ) : (
-                  <span className="font-arcade text-[11px] text-[#94A3B8] uppercase">
-                    KEIN EINSATZ
-                  </span>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Interaktives Casino-Setztablett */}
-        <div className="w-full min-w-0 flex flex-col gap-2">
+      {/* RECHTE SPALTE (UNTEN IM HOCHFORMAT): WETTTISCH + CHIPS & AKTIONEN */}
+      <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
+        <div className="flex flex-col gap-1.5 min-w-0 my-auto">
           <BettingTable
             allBets={activeTableBets}
             players={allPlayers}
@@ -1072,9 +1049,8 @@ export function RouletteBoard({
             onPlaceBet={handlePlaceBet}
           />
 
-          {/* Kompakte Mitspieler-Konten (falls >1 Spieler im Standardmodus) */}
           {allPlayers.length > 1 && (
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               {rankedPlayers.map((p) => {
                 const bal = gameState?.scores?.[p.id] ?? startingBalance;
                 const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
@@ -1082,21 +1058,21 @@ export function RouletteBoard({
                 return (
                   <div
                     key={p.id}
-                    className={`flex shrink-0 items-center gap-1.5 rounded-lg border px-2 py-1 ${
+                    className={`flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 ${
                       p.id === myId
                         ? 'border-[#34D399]/50 bg-[#10B981]/15'
                         : 'border-white/12 bg-white/[0.04]'
                     }`}
                   >
-                    <Avatar config={p.avatar} size={18} />
-                    <span className="font-arcade text-[10px] text-white uppercase max-w-[74px] truncate">
+                    <Avatar config={p.avatar} size={14} />
+                    <span className="font-arcade text-[9px] text-white uppercase max-w-[60px] truncate">
                       {p.name}
                     </span>
-                    <span className="font-arcade text-[10px] text-[#FDE68A]">
+                    <span className="font-arcade text-[9px] text-[#FDE68A]">
                       {formatEuro(bal)}
                     </span>
                     {phase === 'betting' && pLocked && (
-                      <Check className="h-3 w-3 text-[#34D399]" />
+                      <Check className="h-2.5 w-2.5 text-[#34D399]" />
                     )}
                     {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
                       <span
@@ -1113,132 +1089,128 @@ export function RouletteBoard({
             </div>
           )}
         </div>
-      </div>
 
-      {/* 3. Untere Chip-Leiste & Aktions-Buttons */}
-      {phase === 'result' ? (
-        <div className="flex shrink-0 items-center justify-between gap-3 rounded-xl border border-white/15 bg-[#0F172A]/85 px-3 py-2 backdrop-blur-md">
-          <div className="flex items-center gap-2 min-w-0">
-            <Trophy className="h-4 w-4 shrink-0 text-[#FBBF24]" />
-            <span className="font-arcade text-xs text-[#CBD5E1] uppercase truncate">
-              {round >= maxRounds
-                ? `FINALE IN ${timeLeft}S`
-                : `NÄCHSTE RUNDE IN ${timeLeft}S`}
-            </span>
-          </div>
-
-          <OpenButton
-            size="md"
-            variant="primary"
-            disabled={isNextReady || Boolean(disabled)}
-            onClick={() => onMove({ type: 'next_round' })}
-          >
-            {isNextReady
-              ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
-              : round >= maxRounds
-                ? 'ENDERGEBNIS'
-                : 'NÄCHSTE RUNDE'}
-          </OpenButton>
-        </div>
-      ) : (
-        <div className="flex shrink-0 flex-wrap items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#0F172A]/85 px-2.5 py-2 backdrop-blur-md">
-          {/* Casino-Chips */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            {CHIP_DENOMINATIONS.map((chip) => {
-              const isSelected = selectedChip === chip.value;
-              const chipDisabled =
-                chip.value === 'all'
-                  ? myBalance <= 0 || !canBet
-                  : myBalance < chip.value || !canBet;
-
-              return (
-                <button
-                  key={String(chip.value)}
-                  type="button"
-                  disabled={!canBet}
-                  onClick={() => setSelectedChip(chip.value)}
-                  style={{
-                    backgroundColor: chip.bg,
-                    borderColor: isSelected ? '#FFFFFF' : chip.border,
-                    color: chip.text,
-                  }}
-                  className={`font-arcade inline-flex h-8 min-w-8 sm:h-9 sm:min-w-9 items-center justify-center rounded-full border-2 border-dashed px-2 text-[10px] sm:text-xs shadow transition-transform cursor-pointer active:scale-95 ${
-                    isSelected
-                      ? 'scale-110 ring-2 ring-[#FDE047] shadow-[0_0_12px_rgba(253,224,71,0.6)]'
-                      : 'opacity-85 hover:opacity-100'
-                  } ${chipDisabled ? 'opacity-40' : ''}`}
-                >
-                  {chip.value === 'all' ? chip.label : `${chip.label}€`}
-                </button>
-              );
-            })}
-          </div>
-
-          {/* Aktionen: Undo, Rebet, 2x, Clear & Drehen */}
-          <div className="flex items-center gap-1.5 flex-wrap ml-auto">
-            <button
-              type="button"
-              disabled={!canBet || myWagered === 0}
-              onClick={() => onMove({ type: 'undo_bet' })}
-              title="Letzten Chip zurücknehmen"
-              className="font-arcade inline-flex h-8 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-2 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-            >
-              <RotateCcw className="h-3.5 w-3.5" />
-              <span className="hidden md:inline">UNDO</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={!canBet || !canRebet}
-              onClick={() => onMove({ type: 'rebet' })}
-              title="Einsätze der letzten Runde wiederholen"
-              className="font-arcade inline-flex h-8 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-2 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-            >
-              <Repeat className="h-3.5 w-3.5" />
-              <span className="hidden xs:inline">REBET</span>
-            </button>
-
-            <button
-              type="button"
-              disabled={!canBet || !canDouble}
-              onClick={() => onMove({ type: 'double_bets' })}
-              title="Einsätze verdoppeln"
-              className="font-arcade inline-flex h-8 items-center rounded-lg border border-white/20 bg-white/[0.06] px-2 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-            >
-              2×
-            </button>
-
-            <button
-              type="button"
-              disabled={!canBet || myWagered === 0}
-              onClick={() => onMove({ type: 'clear_bets' })}
-              title="Alle Einsätze löschen"
-              className="font-arcade inline-flex h-8 items-center gap-1 rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-2 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-            </button>
+        {/* Untere Chip-Leiste & Aktions-Buttons */}
+        {phase === 'result' ? (
+          <div className="flex shrink-0 items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#0F172A]/85 px-3 py-1.5 backdrop-blur-md">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
+              <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
+                {round >= maxRounds ? `FINALE (${timeLeft}S)` : `WEITER (${timeLeft}S)`}
+              </span>
+            </div>
 
             <OpenButton
               size="sm"
               variant="primary"
-              disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
-              onClick={() => onMove({ type: 'lock_bets' })}
-              className="min-w-[105px]"
+              disabled={isNextReady || Boolean(disabled)}
+              onClick={() => onMove({ type: 'next_round' })}
             >
-              <Check className="h-3.5 w-3.5 stroke-[3]" />
-              <span>
-                {phase === 'spinning'
-                  ? 'DREHT...'
-                  : isLocked
-                    ? `BEREIT (${lockedCount}/${allPlayers.length})`
-                    : allPlayers.length === 1
-                      ? 'DREHEN!'
-                      : 'BEREIT'}
-              </span>
+              {isNextReady
+                ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
+                : round >= maxRounds
+                  ? 'ENDERGEBNIS'
+                  : 'NÄCHSTE RUNDE'}
             </OpenButton>
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 rounded-xl border border-white/15 bg-[#0F172A]/85 px-2 py-1.5 backdrop-blur-md">
+            {/* Casino-Chips */}
+            <div className="flex items-center gap-1 flex-wrap">
+              {CHIP_DENOMINATIONS.map((chip) => {
+                const isSelected = selectedChip === chip.value;
+                const chipDisabled =
+                  chip.value === 'all'
+                    ? myBalance <= 0 || !canBet
+                    : myBalance < chip.value || !canBet;
+
+                return (
+                  <button
+                    key={String(chip.value)}
+                    type="button"
+                    disabled={!canBet}
+                    onClick={() => setSelectedChip(chip.value)}
+                    style={{
+                      backgroundColor: chip.bg,
+                      borderColor: isSelected ? '#FFFFFF' : chip.border,
+                      color: chip.text,
+                    }}
+                    className={`font-arcade inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 items-center justify-center rounded-full border-2 border-dashed px-1.5 text-[9px] sm:text-[11px] shadow transition-transform cursor-pointer active:scale-95 ${
+                      isSelected
+                        ? 'scale-105 ring-2 ring-[#FDE047] shadow-[0_0_10px_rgba(253,224,71,0.6)]'
+                        : 'opacity-85 hover:opacity-100'
+                    } ${chipDisabled ? 'opacity-40' : ''}`}
+                  >
+                    {chip.value === 'all' ? 'MAX' : `${chip.label}€`}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Aktionen: Undo, Rebet, 2x, Clear & Drehen */}
+            <div className="flex items-center gap-1 ml-auto">
+              <button
+                type="button"
+                disabled={!canBet || myWagered === 0}
+                onClick={() => onMove({ type: 'undo_bet' })}
+                title="Letzten Chip zurücknehmen"
+                className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+              >
+                <RotateCcw className="h-3 w-3" />
+              </button>
+
+              <button
+                type="button"
+                disabled={!canBet || !canRebet}
+                onClick={() => onMove({ type: 'rebet' })}
+                title="Einsätze der letzten Runde wiederholen"
+                className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+              >
+                <Repeat className="h-3 w-3" />
+              </button>
+
+              <button
+                type="button"
+                disabled={!canBet || !canDouble}
+                onClick={() => onMove({ type: 'double_bets' })}
+                title="Einsätze verdoppeln"
+                className="font-arcade inline-flex h-7 items-center rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+              >
+                2×
+              </button>
+
+              <button
+                type="button"
+                disabled={!canBet || myWagered === 0}
+                onClick={() => onMove({ type: 'clear_bets' })}
+                title="Alle Einsätze löschen"
+                className="font-arcade inline-flex h-7 items-center rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-1.5 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
+              >
+                <Trash2 className="h-3 w-3" />
+              </button>
+
+              <OpenButton
+                size="sm"
+                variant="primary"
+                disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
+                onClick={() => onMove({ type: 'lock_bets' })}
+                className="h-7! px-2.5! text-[10px]! min-w-[82px]"
+              >
+                <Check className="h-3 w-3 stroke-[3]" />
+                <span>
+                  {phase === 'spinning'
+                    ? 'DREHT...'
+                    : isLocked
+                      ? `BEREIT`
+                      : allPlayers.length === 1
+                        ? 'DREHEN!'
+                        : 'BEREIT'}
+                </span>
+              </OpenButton>
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
