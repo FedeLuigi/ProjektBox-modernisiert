@@ -7,6 +7,7 @@ import http from 'node:http';
 import express from 'express';
 import { Server as SocketIOServer } from 'socket.io';
 import { LobbyManager, sanitizeLobbyForClient } from './lobbyManager.js';
+import { SimulationBotRunner } from './simulationBotRunner.js';
 import { StatePersistenceStore } from './stateStore.js';
 import { SESSION_COOKIE_NAME, parseCookieHeader } from '../session/sessionManager.js';
 import { registerSocketHandlers } from './socketHandlers.js';
@@ -27,6 +28,7 @@ import {
   EVENT_MAX_PAYLOAD_BYTES,
   GameMoveSchema,
   isPayloadWithinLimit,
+  LobbySimulateSchema,
   LobbyUpdateProfileSchema,
 } from './socketSchemas.js';
 import type { Player } from '../types/multiplayer.js';
@@ -1508,4 +1510,96 @@ test("Poker Texas Hold'em: Hand-Evaluator, Karten-Privatsphäre (TV/Gegner), Bli
   );
 
   manager.clearAllTimers();
+});
+
+test('Spiel-Simulation: Sofortstart mit Bots ohne zweite Lobby-Person, TV-Sim & Aufräumen beim Verlassen', async () => {
+  assert.equal(
+    LobbySimulateSchema.safeParse({
+      gameId: 'texas-holdem',
+      userProfile: { id: 'u_sim_1', name: 'Tester', avatar: {} },
+      isTvMode: false,
+      botCount: 2,
+    }).success,
+    true
+  );
+
+  const simManager = new LobbyManager();
+
+  // 1) Poker-Simulation im Handy-Modus startet sofort (obwohl minPlayers = 2 und niemand beigetreten ist)
+  const pokerSim = simManager.createAndStartSimulatedLobby({
+    gameId: 'texas-holdem',
+    userProfile: { id: 'u_sim_host', name: 'SimHost', avatar: {} },
+    socketId: 'sock_sim_host',
+    isTvMode: false,
+    botCount: 2,
+  });
+  assert.equal(pokerSim.success, true);
+  assert.equal(pokerSim.lobby?.status, 'in_progress');
+  assert.equal(pokerSim.lobby?.isSimulated, true);
+  assert.equal(pokerSim.lobby?.players.length, 3);
+  assert.equal(pokerSim.lobby?.players.filter((p) => p.isBot).length, 2);
+
+  // Geschlossene Simulation lehnt fremde Lobby-Beitritte ab und ist nicht öffentlich gelistet
+  assert.equal(simManager.getPublicLobbies().length, 0);
+  const outsider = simManager.joinLobby({
+    lobbyIdOrCode: pokerSim.lobby!.code,
+    userProfile: { id: 'u_other', name: 'Fremder', avatar: {} },
+    socketId: 'sock_other',
+  });
+  assert.equal(outsider.success, false);
+
+  // Rematch in simulierter Lobby startet nach Beenden sofort allein durch Vote des Hosts
+  const lobbyObj = simManager.getLobbyById(pokerSim.lobby!.id)!;
+  lobbyObj.status = 'finished';
+  lobbyObj.gameState = {
+    ...lobbyObj.gameState!,
+    status: 'won',
+    winnerId: 'u_sim_host',
+  };
+  const rematchRes = simManager.requestRematch({
+    lobbyId: lobbyObj.id,
+    playerId: 'u_sim_host',
+  });
+  assert.equal(rematchRes.success, true);
+  assert.equal(rematchRes.restarted, true);
+  assert.equal(rematchRes.lobby?.status, 'in_progress');
+
+  // Verlassen löscht die simulierte Lobby sofort (Bots zählen nicht als offene Menschen)
+  const left = simManager.leaveCurrentLobby('sock_sim_host', 'u_sim_host');
+  assert.equal(left.deleted, true);
+  assert.equal(simManager.getLobbyById(pokerSim.lobby!.id), undefined);
+
+  // 2) Roulette TV-Modus Simulation + Bot-Runner setzt automatisch Bot-Einsätze
+  const rouletteSim = simManager.createAndStartSimulatedLobby({
+    gameId: 'roulette',
+    userProfile: { id: 'u_sim_tv', name: 'TVTester', avatar: {} },
+    socketId: 'sock_sim_tv',
+    isTvMode: true,
+    botCount: 2,
+  });
+  assert.equal(rouletteSim.success, true);
+  assert.equal(rouletteSim.lobby?.isTvMode, true);
+  assert.equal(rouletteSim.lobby?.players.find((p) => p.id === 'u_sim_tv')?.isTvScreen, true);
+  assert.equal(rouletteSim.lobby?.players.filter((p) => p.isBot).length, 2);
+
+  const botRunner = new SimulationBotRunner((lobbyId, playerId, move) => {
+    const res = simManager.makeMove({ lobbyId, playerId, move });
+    if (res.success && res.lobby) {
+      botRunner.syncLobby(res.lobby);
+    }
+  });
+  botRunner.syncLobby(rouletteSim.lobby);
+
+  // Warten bis erster Bot seinen Einsatz gesetzt hat
+  await new Promise((r) => setTimeout(r, 850));
+  const afterBotBet = simManager.getLobbyById(rouletteSim.lobby!.id)?.gameState as RouletteState;
+  const botPlayer = rouletteSim.lobby!.players.find((p) => p.isBot)!;
+  const placedTotal = Object.values(afterBotBet.bets?.[botPlayer.id] || {}).reduce(
+    (sum, val) => sum + val,
+    0
+  );
+  assert.ok(placedTotal > 0);
+
+  botRunner.clearAll();
+  simManager.clearAllTimers();
 });

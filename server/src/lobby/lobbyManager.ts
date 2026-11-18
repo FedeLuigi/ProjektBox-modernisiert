@@ -33,6 +33,34 @@ const SIMPLE_LOBBY_NAMES = [
   'Blitzrunde',
 ];
 
+const SIMULATION_BOT_PRESETS = [
+  {
+    name: 'BOT LUCA',
+    avatar: { base: 'bot', skinColor: '#38BDF8', hat: 'vr', accessory: 'pixel_shades', bg: 'cyan' },
+    color: 'blue',
+  },
+  {
+    name: 'BOT MIA',
+    avatar: { base: 'cat', skinColor: '#FDDCB5', hat: 'crown', accessory: 'blush', bg: 'sunset' },
+    color: 'pink',
+  },
+  {
+    name: 'BOT KAI',
+    avatar: { base: 'ninja', skinColor: '#22C55E', hat: 'headset', accessory: 'sunglasses', bg: 'emerald' },
+    color: 'green',
+  },
+  {
+    name: 'BOT LENA',
+    avatar: { base: 'alien', skinColor: '#A855F7', hat: 'halo', accessory: 'laser_eyes', bg: 'purple' },
+    color: 'purple',
+  },
+  {
+    name: 'BOT TOM',
+    avatar: { base: 'human', skinColor: '#D49B6A', hat: 'cap', accessory: 'none', bg: 'gold' },
+    color: 'amber',
+  },
+] as const;
+
 export interface LobbyManagerOptions {
   sessionManager?: SessionManager;
   stateStore?: StatePersistenceStore;
@@ -52,6 +80,7 @@ export interface LobbyManagerCallbacks {
   ) => void;
   onLobbyUpdated?: (lobby: Lobby) => void;
   onLobbyExpired?: (lobby: Lobby) => void;
+  onLobbyRemoved?: (lobbyId: string) => void;
 }
 
 export function getDefaultSettings(gameId: string): Record<string, any> {
@@ -503,6 +532,132 @@ export class LobbyManager {
     return { success: true, lobby, reconnectToken };
   }
 
+  public createAndStartSimulatedLobby(params: {
+    gameId: string;
+    userProfile: { id: string; name: string; avatar: any };
+    socketId: string;
+    isTvMode?: boolean;
+    botCount?: number;
+    settings?: Record<string, any>;
+    sessionId?: string;
+  }): { success: boolean; lobby?: Lobby; error?: string; reconnectToken?: string } {
+    const game = gameRegistry.get(params.gameId);
+    if (!game) {
+      return { success: false, error: `Unbekanntes Spiel: ${params.gameId}` };
+    }
+
+    if (params.sessionId) {
+      const session = this.sessionManager.getSessionById(params.sessionId);
+      if (!session) {
+        return { success: false, error: 'Ungültige oder abgelaufene Sitzung.' };
+      }
+      if (session.playerId !== params.userProfile.id) {
+        return { success: false, error: 'Benutzer-ID stimmt nicht mit der Sitzung überein.' };
+      }
+    } else if (this.isPlayerIdClaimedByAnotherSession(params.userProfile.id)) {
+      return { success: false, error: 'Benutzer-ID wird bereits von einer anderen Sitzung verwendet.' };
+    }
+
+    // Falls der Spieler bereits in einer anderen Lobby ist, diese sauber verlassen
+    this.leaveCurrentLobby(params.socketId, params.userProfile.id);
+
+    const isTv = Boolean(params.isTvMode);
+    const minBotsNeeded = isTv ? Math.max(2, game.minPlayers) : Math.max(0, game.minPlayers - 1);
+    const maxBotsAllowed = isTv ? game.maxPlayers : Math.max(0, game.maxPlayers - 1);
+    const requestedBots = typeof params.botCount === 'number' ? Math.floor(params.botCount) : 2;
+    const resolvedBots = Math.min(maxBotsAllowed, Math.max(minBotsNeeded, requestedBots));
+
+    const now = Date.now();
+    const id = `lob_${crypto.randomBytes(6).toString('hex')}`;
+    const code = this.generateUniqueCode();
+
+    const hostPlayer: Player = {
+      id: params.userProfile.id,
+      socketId: params.socketId,
+      name: params.userProfile.name,
+      avatar: params.userProfile.avatar,
+      isReady: true,
+      isHost: true,
+      connected: true,
+      connectionState: 'connected',
+      eliminated: false,
+      sessionId: params.sessionId,
+      color: 'red',
+      symbol: 'X',
+      isTvScreen: isTv,
+      isBot: false,
+    };
+
+    const botPlayers: Player[] = Array.from({ length: resolvedBots }, (_, idx) => {
+      const preset = SIMULATION_BOT_PRESETS[idx % SIMULATION_BOT_PRESETS.length];
+      return {
+        id: `bot_${id}_${idx + 1}`,
+        socketId: '',
+        name: preset.name,
+        avatar: { ...preset.avatar },
+        isReady: true,
+        isHost: false,
+        connected: true,
+        connectionState: 'connected',
+        eliminated: false,
+        color: preset.color,
+        symbol: 'O',
+        isTvScreen: false,
+        isBot: true,
+      };
+    });
+
+    const lobby: Lobby = {
+      id,
+      code,
+      name: `Simulation ${code}`,
+      isPrivate: true,
+      isSimulated: true,
+      gameId: params.gameId,
+      minPlayers: game.minPlayers,
+      maxPlayers: game.maxPlayers,
+      hostId: hostPlayer.id,
+      players: [hostPlayer, ...botPlayers],
+      status: 'waiting',
+      stateVersion: 1,
+      createdAt: now,
+      expiresAt: now + this.lobbyExpireMs,
+      lastActivityAt: now,
+      isTvMode: isTv,
+      settings: {
+        ...getDefaultSettings(params.gameId),
+        ...(params.settings || {}),
+      },
+      gameState: null,
+      rematchVotes: [],
+      finishedResults: [],
+      processedActionIds: [],
+    };
+
+    this.lobbies.set(id, lobby);
+    this.codeToLobbyId.set(code, id);
+    this.playerToLobbyId.set(hostPlayer.id, id);
+    this.socketToPlayer.set(params.socketId, { lobbyId: id, playerId: hostPlayer.id });
+
+    let reconnectToken: string | undefined;
+    if (params.sessionId) {
+      this.sessionManager.setLobbyBinding(params.sessionId, id, code);
+      this.sessionManager.bindSocket(params.sessionId, params.socketId);
+      reconnectToken = this.sessionManager.rotateReconnectToken(params.sessionId) ?? undefined;
+    }
+
+    const started = this.startGame({
+      lobbyId: id,
+      playerId: hostPlayer.id,
+    });
+    if (!started.success || !started.lobby) {
+      this.removeLobbyIndexes(lobby);
+      return { success: false, error: started.error || 'Simulation konnte nicht gestartet werden.' };
+    }
+
+    return { success: true, lobby: started.lobby, reconnectToken };
+  }
+
   public findLobbyByCode(code: string): Lobby | undefined {
     this.cleanupExpiredLobbies();
     const normalized = code.trim().toUpperCase();
@@ -548,6 +703,9 @@ export class LobbyManager {
     }
 
     const existingPlayer = lobby.players.find((p) => p.id === params.userProfile.id);
+    if (!existingPlayer && lobby.isSimulated) {
+      return { success: false, error: 'Dies ist eine geschlossene Test-Simulation.' };
+    }
     if (existingPlayer) {
       // Abgelaufene / ausgeschlossene Spieler dürfen einer laufenden Lobby nicht wieder beitreten
       if (existingPlayer.connectionState === 'offline' || existingPlayer.eliminated) {
@@ -1048,7 +1206,15 @@ export class LobbyManager {
       lobby.rematchVotes.push(playerId);
     }
 
-    const requiredVotes = Math.min(2, activePlayers.length);
+    if (lobby.isSimulated) {
+      for (const p of activePlayers) {
+        if (p.isBot && !lobby.rematchVotes.includes(p.id)) {
+          lobby.rematchVotes.push(p.id);
+        }
+      }
+    }
+
+    const requiredVotes = lobby.isSimulated ? activePlayers.length : Math.min(2, activePlayers.length);
     let restarted = false;
 
     if (lobby.rematchVotes.length >= requiredVotes && activePlayers.length >= lobby.minPlayers) {
@@ -1173,7 +1339,9 @@ export class LobbyManager {
       lobby.players = lobby.players.filter((p) => p.id !== playerId);
     }
 
-    const remainingJoinable = lobby.players.filter((p) => p.connectionState !== 'offline');
+    const remainingJoinable = lobby.players.filter(
+      (p) => !p.isBot && p.connectionState !== 'offline'
+    );
     if (remainingJoinable.length === 0) {
       this.archiveCompletedGameIfNeeded(lobby);
       lobby.status = 'expired';
@@ -1622,18 +1790,18 @@ export class LobbyManager {
 
   private selectNextHost(lobby: Lobby, connectedOnly = false): Player | undefined {
     const connectedNonTv = lobby.players.find(
-      (p) => !p.isTvScreen && p.connected && p.connectionState === 'connected' && !p.eliminated
+      (p) => !p.isBot && !p.isTvScreen && p.connected && p.connectionState === 'connected' && !p.eliminated
     );
     if (connectedNonTv) return connectedNonTv;
 
     const connectedAny = lobby.players.find(
-      (p) => p.connected && p.connectionState === 'connected' && !p.eliminated
+      (p) => !p.isBot && p.connected && p.connectionState === 'connected' && !p.eliminated
     );
     if (connectedAny || connectedOnly) return connectedAny;
 
     return (
-      lobby.players.find((p) => !p.isTvScreen && p.connectionState !== 'offline') ??
-      lobby.players.find((p) => p.connectionState !== 'offline')
+      lobby.players.find((p) => !p.isBot && !p.isTvScreen && p.connectionState !== 'offline') ??
+      lobby.players.find((p) => !p.isBot && p.connectionState !== 'offline')
     );
   }
 
@@ -1706,10 +1874,13 @@ export class LobbyManager {
     };
 
     lobby.finishedResults.push(record);
-    this.stateStore.recordCompletedResult(record);
+    if (!lobby.isSimulated) {
+      this.stateStore.recordCompletedResult(record);
+    }
   }
 
   private removeLobbyIndexes(lobby: Lobby): void {
+    this.callbacks.onLobbyRemoved?.(lobby.id);
     this.clearHostTransferTimer(lobby.id);
     for (const p of lobby.players) {
       this.clearReconnectTimer(lobby.id, p.id);

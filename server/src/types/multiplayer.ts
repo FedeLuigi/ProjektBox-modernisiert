@@ -35,6 +35,7 @@ export interface Player {
   color?: string;
   symbol?: string;
   isTvScreen?: boolean; // Kennzeichnung für Großbild-Fernseher
+  isBot?: boolean; // Virtueller Simulations-Teilnehmer
   meta?: Record<string, any>;
 }
 
@@ -92,6 +93,7 @@ export interface Lobby {
   pausedReason?: string;
   hostDisconnectDeadline?: number;
   isTvMode?: boolean; // TV-Modus mit QR-Code
+  isSimulated?: boolean; // Lokale Test-/Bot-Simulation ohne fremde Teilnehmer
   settings?: Record<string, any>;
   gameState: BaseGameState | null;
   rematchVotes: string[];
@@ -114,5 +116,6 @@ export interface LobbySummary {
   createdAt: number;
   expiresAt: number;
   isTvMode?: boolean;
+  isSimulated?: boolean;
   settings?: Record<string, any>;
 }

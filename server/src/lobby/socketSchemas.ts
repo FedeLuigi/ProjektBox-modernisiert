@@ -4,6 +4,7 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   'lobby:list': 1024,
   'lobby:getByCode': 1024,
   'lobby:create': 64 * 1024,
+  'lobby:simulate': 64 * 1024,
   'lobby:join': 64 * 1024,
   'lobby:ready': 512,
   'lobby:start': 512,
@@ -104,6 +105,14 @@ export const LobbyUpdateSettingsSchema = z.object({
     smallBlind: z.number().int().min(5).max(500).optional(),
   }),
   ...ActionMetaFields,
+});
+
+export const LobbySimulateSchema = z.object({
+  gameId: z.string().trim().min(1).max(48),
+  userProfile: UserProfileSchema,
+  isTvMode: z.boolean().optional().default(false),
+  botCount: z.number().int().min(0).max(5).optional().default(2),
+  settings: LobbyUpdateSettingsSchema.shape.settings.optional(),
 });
 
 export const LobbyUpdateProfileSchema = z.object({

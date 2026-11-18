@@ -690,6 +690,38 @@ class SocketService {
     });
   }
 
+  public async simulateGame(
+    gameId: string,
+    isTvMode = false,
+    botCount = 2,
+    settings?: Record<string, any>
+  ): Promise<Lobby> {
+    const sock = await this.ensureConnectedWithSession();
+    const userProfile = getUserProfile();
+    return new Promise((resolve, reject) => {
+      sock.emit(
+        'lobby:simulate',
+        { gameId, userProfile, isTvMode, botCount, settings },
+        (res: {
+          success: boolean;
+          lobby?: Lobby;
+          reconnectToken?: string;
+          error?: string;
+        }) => {
+          if (res?.success && res.lobby) {
+            this.syncLobbyTracking(res.lobby);
+            if (res.reconnectToken) {
+              this.reconnectToken = res.reconnectToken;
+            }
+            resolve(res.lobby);
+          } else {
+            reject(new Error(res?.error || 'Simulation konnte nicht gestartet werden.'));
+          }
+        }
+      );
+    });
+  }
+
   public async getLobbyByCode(code: string): Promise<Lobby> {
     const sock = await this.ensureConnectedWithSession();
     return new Promise((resolve, reject) => {

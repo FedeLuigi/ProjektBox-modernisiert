@@ -1,5 +1,6 @@
 import { Server as SocketIOServer, Socket } from 'socket.io';
 import { LobbyManager, lobbyManager, sanitizeLobbyForClient } from './lobbyManager.js';
+import { SimulationBotRunner } from './simulationBotRunner.js';
 import type { Lobby } from '../types/multiplayer.js';
 import {
   parseCookieHeader,
@@ -18,6 +19,7 @@ import {
   LobbyListSchema,
   LobbyReadySchema,
   LobbyReconnectSchema,
+  LobbySimulateSchema,
   LobbyStartSchema,
   LobbySwitchModeSchema,
   LobbyUpdateProfileSchema,
@@ -74,8 +76,20 @@ export function registerSocketHandlers(
     }
   }
 
+  const botRunner = new SimulationBotRunner((lobbyId, playerId, move) => {
+    const res = manager.makeMove({ lobbyId, playerId, move });
+    if (!res.success || !res.lobby) return;
+    emitLobbyEventPerViewer(res.lobby, 'game:state', (scopedLobby) => ({
+      gameState: scopedLobby.gameState,
+      status: scopedLobby.status,
+      lobby: scopedLobby,
+    }));
+    botRunner.syncLobby(res.lobby);
+  });
+
   manager.setCallbacks({
     onPlayerExpired(lobby, player) {
+      botRunner.clearLobby(lobby.id);
       emitLobbyEventPerViewer(lobby, 'lobby:player-offline', (scopedLobby) => ({
         playerId: player.id,
         playerName: player.name,
@@ -113,11 +127,15 @@ export function registerSocketHandlers(
       }));
     },
     onLobbyExpired(lobby) {
+      botRunner.clearLobby(lobby.id);
       io.to(`lobby:${lobby.id}`).emit('lobby:expired', {
         lobbyId: lobby.id,
         code: lobby.code,
       });
       io.emit('lobby:list-updated', { gameId: lobby.gameId });
+    },
+    onLobbyRemoved(lobbyId) {
+      botRunner.clearLobby(lobbyId);
     },
   });
 
@@ -276,6 +294,63 @@ export function registerSocketHandlers(
           socket.join(`lobby:${lobby.id}`);
           callback?.({ success: true, lobby: safeLobby, reconnectToken });
           io.emit('lobby:list-updated', { gameId: lobby.gameId });
+        } catch (err: any) {
+          callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 2c. Spiel direkt simulieren (ohne echte Mitspieler in der Lobby, mit Bot-Teilnehmern)
+    socket.on(
+      'lobby:simulate',
+      async (
+        data: unknown,
+        callback?: (res: {
+          success: boolean;
+          lobby?: any;
+          reconnectToken?: string;
+          error?: string;
+        }) => void
+      ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Sitzung wurde in einem neuen Fenster übernommen.' });
+        }
+        if (!(await consumeRateLimit(socket.id, 'lobby:simulate'))) {
+          return callback?.({ success: false, error: 'Zu viele Anfragen. Bitte kurz warten.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES['lobby:simulate'])) {
+          return callback?.({ success: false, error: 'Simulationsdaten überschreiten das Größenlimit.' });
+        }
+        const parsed = LobbySimulateSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Simulationsdaten.' });
+        }
+        try {
+          const effectiveProfile = socket.data.playerId
+            ? { ...parsed.data.userProfile, id: socket.data.playerId }
+            : parsed.data.userProfile;
+
+          const { lobby, error, reconnectToken } = manager.createAndStartSimulatedLobby({
+            gameId: parsed.data.gameId,
+            userProfile: effectiveProfile as any,
+            socketId: socket.id,
+            isTvMode: parsed.data.isTvMode,
+            botCount: parsed.data.botCount,
+            settings: parsed.data.settings,
+            sessionId: socket.data.sessionId,
+          });
+
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Simulation konnte nicht gestartet werden.',
+            });
+          }
+
+          const safeLobby = sanitizeLobbyForClient(lobby, effectiveProfile.id);
+          socket.join(`lobby:${lobby.id}`);
+          callback?.({ success: true, lobby: safeLobby, reconnectToken });
+          botRunner.syncLobby(lobby);
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
         }
@@ -675,6 +750,7 @@ export function registerSocketHandlers(
               status: scopedLobby.status,
               lobby: scopedLobby,
             }));
+            botRunner.syncLobby(lobby);
           }
 
           callback?.({ success: true, gameState: safeLobby.gameState, lobby: safeLobby });
@@ -831,6 +907,7 @@ export function registerSocketHandlers(
               emitLobbyEventPerViewer(lobby, 'game:restarted', (scopedLobby) => ({
                 lobby: scopedLobby,
               }));
+              botRunner.syncLobby(lobby);
             } else {
               emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
                 lobby: scopedLobby,
@@ -856,6 +933,7 @@ export function registerSocketHandlers(
         if (lobbyId) {
           socket.leave(`lobby:${lobbyId}`);
           if (deleted) {
+            botRunner.clearLobby(lobbyId);
             io.emit('lobby:list-updated', {});
           } else if (lobby) {
             if (newHost && previousHostId) {
@@ -931,6 +1009,7 @@ export function registerSocketHandlers(
           const viewerId = parsed.data.userId || socket.data.playerId;
           const safeLobby = sanitizeLobbyForClient(lobby, viewerId);
           socket.join(`lobby:${lobby.id}`);
+          botRunner.syncLobby(lobby);
           emitLobbyEventPerViewer(lobby, 'lobby:updated', (scopedLobby) => ({
             lobby: scopedLobby,
             message: 'Spieler ist wieder verbunden!',

@@ -8,6 +8,7 @@ import { CrystalPanel, CrystalReadout } from './components/CrystalUI';
 import { MainMenuHeader } from './components/MainMenuHeader';
 import { OpenGalleryLayout } from './components/MainMenuLayouts';
 import { LobbyScreen } from './components/multiplayer/LobbyScreen';
+import { SimulationModal } from './components/multiplayer/SimulationModal';
 import { TvJoinModal } from './components/multiplayer/TvJoinModal';
 import {
   getFavoriteGameIds,
@@ -59,6 +60,10 @@ export function App() {
   const { hasUpdate, applyUpdate } = usePwaUpdate();
 
   const [isJoiningDeepLink, setIsJoiningDeepLink] = useState(Boolean(initialDeepLinkCode));
+  const [showSimulationModal, setShowSimulationModal] = useState(false);
+  const [isStartingSimulation, setIsStartingSimulation] = useState(false);
+  const [startingSimulationGameId, setStartingSimulationGameId] = useState<string | null>(null);
+  const [simulationError, setSimulationError] = useState<string | null>(null);
   const [showTvJoinModal, setShowTvJoinModal] = useState(false);
   const [tvJoinError, setTvJoinError] = useState<string | null>(null);
   const [isJoiningLobby, setIsJoiningLobby] = useState(false);
@@ -203,7 +208,12 @@ export function App() {
       const updatedRecent = recordGamePlayed(game.id);
       setRecentEntries(updatedRecent);
 
-      if (activeLobby && activeLobby.gameId === game.id && Boolean(activeLobby.isTvMode) === tvMode) {
+      if (
+        activeLobby &&
+        !activeLobby.isSimulated &&
+        activeLobby.gameId === game.id &&
+        Boolean(activeLobby.isTvMode) === tvMode
+      ) {
         setDeepLinkLobby(activeLobby);
         setLaunchInTvMode(tvMode);
         setMultiplayerGame(game);
@@ -287,6 +297,32 @@ export function App() {
       setIsJoiningLobby(false);
     }
   }, []);
+
+  const handleStartSimulation = useCallback(
+    async (game: Game, tvMode: boolean, botCount: number) => {
+      if (isStartingSimulation) return;
+      triggerHaptic();
+      setIsStartingSimulation(true);
+      setStartingSimulationGameId(game.id);
+      setSimulationError(null);
+      try {
+        const simLobby = await socketService.simulateGame(game.id, tvMode, botCount);
+        const updatedRecent = recordGamePlayed(game.id);
+        setRecentEntries(updatedRecent);
+        setActiveLobby(simLobby);
+        setDeepLinkLobby(simLobby);
+        setLaunchInTvMode(Boolean(simLobby.isTvMode));
+        setMultiplayerGame(game);
+        setShowSimulationModal(false);
+      } catch (err: any) {
+        setSimulationError(err.message || 'Simulation konnte nicht gestartet werden.');
+      } finally {
+        setIsStartingSimulation(false);
+        setStartingSimulationGameId(null);
+      }
+    },
+    [isStartingSimulation, triggerHaptic]
+  );
 
   const hasRestoredSessionRef = useRef(false);
 
@@ -404,6 +440,10 @@ export function App() {
         if (e.key === 'Escape') setShowAvatarModal(false);
         return;
       }
+      if (showSimulationModal && !isStartingSimulation) {
+        if (e.key === 'Escape') setShowSimulationModal(false);
+        return;
+      }
       if (showTvJoinModal) {
         if (e.key === 'Escape') setShowTvJoinModal(false);
       }
@@ -432,6 +472,8 @@ export function App() {
     showAvatarModal,
     multiplayerGame,
     activeLobby,
+    showSimulationModal,
+    isStartingSimulation,
     showTvJoinModal,
     handleSplashFinish,
   ]);
@@ -440,6 +482,7 @@ export function App() {
     showSplash ||
     isJoiningDeepLink ||
     Boolean(multiplayerGame) ||
+    showSimulationModal ||
     showTvJoinModal ||
     showSettings ||
     showAvatarModal;
@@ -493,6 +536,11 @@ export function App() {
             onOpenProfile={() => {
               triggerHaptic();
               setShowAvatarModal(true);
+            }}
+            onOpenSimulation={() => {
+              triggerHaptic();
+              setSimulationError(null);
+              setShowSimulationModal(true);
             }}
             onOpenTvJoin={() => {
               triggerHaptic();
@@ -551,7 +599,19 @@ export function App() {
         />
       )}
 
-      {/* ─── 4. Modal für TV-Beitritt (QR-Code Scan & Code-Eingabe) ─── */}
+      {/* ─── 4. Simulation-Starter ohne weitere Lobby-Teilnehmer ─── */}
+      {showSimulationModal && (
+        <SimulationModal
+          isOpen={showSimulationModal}
+          isStarting={isStartingSimulation}
+          startingGameId={startingSimulationGameId}
+          errorMessage={simulationError}
+          onClose={() => setShowSimulationModal(false)}
+          onStartSimulation={handleStartSimulation}
+        />
+      )}
+
+      {/* ─── 5. Modal für TV-Beitritt (QR-Code Scan & Code-Eingabe) ─── */}
       {showTvJoinModal && (
         <TvJoinModal
           isOpen={showTvJoinModal}

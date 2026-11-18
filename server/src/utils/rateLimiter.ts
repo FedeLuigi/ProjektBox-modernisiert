@@ -11,6 +11,7 @@ export interface RateLimitRule {
 export type RateLimitedEvent =
   | 'lobby:list'
   | 'lobby:create'
+  | 'lobby:simulate'
   | 'lobby:getByCode'
   | 'lobby:join'
   | 'lobby:ready'
@@ -31,6 +32,7 @@ export type RateLimitedEvent =
 export const EVENT_RATE_LIMITS: Record<RateLimitedEvent, RateLimitRule> = {
   'lobby:list': { capacity: 10, refillRatePerSec: 3 },
   'lobby:create': { capacity: 10, refillRatePerSec: 1 },
+  'lobby:simulate': { capacity: 10, refillRatePerSec: 2 },
   'lobby:getByCode': { capacity: 10, refillRatePerSec: 3 },
   'lobby:join': { capacity: 8, refillRatePerSec: 2 },
   'lobby:ready': { capacity: 10, refillRatePerSec: 3 },
