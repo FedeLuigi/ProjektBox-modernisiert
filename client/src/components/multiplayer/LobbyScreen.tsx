@@ -20,7 +20,7 @@ import { Avatar } from '../Avatar';
 import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { OpenButton } from '../OpenSubpageUI';
-import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { HeaderStatusOverlay } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
@@ -582,13 +582,13 @@ export function LobbyScreen({
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Kopfzeile: ZURÜCK (Lobby bleibt aktiv) & VERLASSEN links, Spieltitel mittig im Smartphone-Querformat & Internetverbindungsanzeige rechts */}
-        <header className="tablet-header flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
+        {/* Kopfzeile: ZURÜCK & VERLASSEN links, schwebender Verbindungs-/Lobby-Status mittig im Header & Spieltitel rechts im Querformat */}
+        <header className="tablet-header relative flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <button
               type="button"
               onClick={handleBack}
-              className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-[11px] sm:text-xs tracking-wider text-white/90 uppercase transition-all hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
+              className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-2 sm:px-3 text-[11px] sm:text-xs tracking-wider text-white/90 uppercase transition-all hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
             >
               <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
               <span>ZURÜCK</span>
@@ -599,7 +599,7 @@ export function LobbyScreen({
                 type="button"
                 onClick={() => void handleLeaveLobby()}
                 title="Lobby endgültig verlassen"
-                className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-2.5 sm:px-3 text-[11px] sm:text-xs tracking-wider text-[#FECDD3] uppercase transition-all hover:bg-[#E11D48]/30 hover:text-white cursor-pointer active:scale-95"
+                className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-2 sm:px-3 text-[11px] sm:text-xs tracking-wider text-[#FECDD3] uppercase transition-all hover:bg-[#E11D48]/30 hover:text-white cursor-pointer active:scale-95"
               >
                 <LogOut className="h-3.5 w-3.5 shrink-0" />
                 <span className="hidden xs:inline">VERLASSEN</span>
@@ -607,24 +607,24 @@ export function LobbyScreen({
             )}
           </div>
 
-          <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
-            <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
-              {game.title}
-            </span>
-          </div>
+          <HeaderStatusOverlay
+            lobby={currentLobby}
+            currentUserId={currentUser.id}
+            message={errorMsg}
+            showWhenConnected={true}
+            onExitExpired={() => void handleLeaveLobby()}
+          />
 
-          <ConnectionStatusBadge />
+          <div className="flex items-center justify-end min-w-0 shrink-0">
+            <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
+              <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
+                {game.title}
+              </span>
+            </div>
+          </div>
         </header>
 
         <main className="tablet-screen-main lobby-landscape-main flex flex-1 min-h-0 w-full flex-col overflow-y-auto overflow-x-hidden py-4">
-          <ConnectionNoticeBanner onExitExpired={() => void handleLeaveLobby()} />
-
-          {errorMsg && (
-            <div className="font-arcade mx-auto mb-4 w-full max-w-xl rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-2 text-center text-xs text-[#FECDD3] uppercase">
-              {errorMsg}
-            </div>
-          )}
-
           {!currentLobby ? (
             <div className="my-auto flex flex-col items-center justify-center gap-4 text-center">
               {isCreating ? (

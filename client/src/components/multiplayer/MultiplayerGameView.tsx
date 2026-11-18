@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, RotateCcw, WifiOff } from 'lucide-react';
+import { ArrowLeft, Loader2, RotateCcw } from 'lucide-react';
 import type { Lobby } from '../../types/multiplayer';
 import { socketService } from '../../services/socket';
 import { useUserProfile } from '../../utils/userProfile';
@@ -7,7 +7,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
-import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { HeaderStatusOverlay } from './ConnectionStatusBadge';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -26,7 +26,6 @@ export function MultiplayerGameView({
     socketService.isActionBlocked()
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [nowMs, setNowMs] = useState(() => Date.now());
 
   const currentUser = useUserProfile();
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
@@ -34,9 +33,6 @@ export function MultiplayerGameView({
     activePlayers.find((p) => p.id === currentUser.id) ||
     lobby.players.find((p) => p.id === currentUser.id);
   const opponent = activePlayers.find((p) => p.id !== currentUser.id);
-  const disconnectedPlayers = activePlayers.filter(
-    (p) => p.id !== currentUser.id && p.connectionState === 'disconnected' && !p.connected
-  );
   const isLobbyPaused = lobby.status === 'paused';
 
   const gameState = lobby.gameState;
@@ -48,12 +44,6 @@ export function MultiplayerGameView({
   useEffect(() => {
     setLobby(initialLobby);
   }, [initialLobby]);
-
-  useEffect(() => {
-    if (disconnectedPlayers.length === 0) return;
-    const timer = setInterval(() => setNowMs(Date.now()), 500);
-    return () => clearInterval(timer);
-  }, [disconnectedPlayers.length]);
 
   useEffect(() => {
     const unsubMeta = socketService.onConnectionMetaChange(() => {
@@ -161,7 +151,7 @@ export function MultiplayerGameView({
         className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(8px+env(safe-area-inset-top,0px))] pb-[calc(8px+env(safe-area-inset-bottom,0px))] px-4 sm:px-6 lg:px-8"
       >
         {/* 1. OPEN-GALLERY TOP-BAR */}
-        <header className="game-landscape-header grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 pb-2">
+        <header className="game-landscape-header relative grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
           <div className="justify-self-start">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -189,40 +179,20 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <div className="justify-self-end flex items-center gap-2">
-            <div className="hidden sm:block">
-              <ConnectionStatusBadge />
-            </div>
+          <div className="justify-self-end">
             <div className="rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </div>
           </div>
+
+          <HeaderStatusOverlay
+            lobby={lobby}
+            currentUserId={currentUser.id}
+            message={errorMsg}
+            showWhenConnected={false}
+            onExitExpired={onLeave}
+          />
         </header>
-
-        <ConnectionNoticeBanner onExitExpired={onLeave} />
-
-        {errorMsg && (
-          <div className="font-arcade mx-auto my-1 max-w-sm rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-1.5 text-center text-xs text-[#FECDD3] uppercase">
-            {errorMsg}
-          </div>
-        )}
-
-        {(disconnectedPlayers.length > 0 || isLobbyPaused) && (
-          <div className="font-arcade mx-auto my-1 flex items-center gap-2 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3.5 py-2 text-center text-xs text-[#FDE68A] uppercase animate-pulse">
-            <WifiOff className="h-4 w-4 shrink-0" />
-            <span>
-              {disconnectedPlayers.length > 0
-                ? (() => {
-                    const p = disconnectedPlayers[0];
-                    const rem = p.reconnectDeadline
-                      ? Math.max(0, Math.ceil((p.reconnectDeadline - nowMs) / 1000))
-                      : null;
-                    return `WARTE AUF ${p.name}${rem !== null ? ` (${rem} S)` : ''}...`;
-                  })()
-                : lobby.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...'}
-            </span>
-          </div>
-        )}
 
         {/* 2. MITTE: OFFENE ERGEBNIS-BÜHNE ODER SPIELFELD */}
         {isGameOver ? (

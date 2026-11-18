@@ -6,7 +6,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
-import { ConnectionNoticeBanner, ConnectionStatusBadge } from './ConnectionStatusBadge';
+import { HeaderStatusOverlay } from './ConnectionStatusBadge';
 
 interface TvGameViewProps {
   lobby: Lobby;
@@ -103,7 +103,7 @@ export function TvGameView({
         className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-4 sm:px-8 lg:px-12 max-w-[1440px] mx-auto"
       >
         {/* 1. OPEN-GALLERY TV HEADER */}
-        <header className="flex flex-wrap shrink-0 items-center justify-between gap-3 border-b border-white/15 pb-2.5">
+        <header className="relative flex flex-wrap shrink-0 items-center justify-between gap-3 border-b border-white/15 pb-2.5">
           <div className="flex items-center gap-3">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-3.5 w-3.5" />
@@ -137,22 +137,17 @@ export function TvGameView({
                 {timeLeft} S
               </span>
             )}
-            <div className="hidden md:block">
-              <ConnectionStatusBadge />
-            </div>
             <span className="font-arcade rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </span>
           </div>
+
+          <HeaderStatusOverlay
+            lobby={lobby}
+            showWhenConnected={false}
+            onExitExpired={onLeave}
+          />
         </header>
-
-        <ConnectionNoticeBanner onExitExpired={onLeave} />
-
-        {lobby.status === 'paused' && (
-          <div className="font-arcade mx-auto my-1.5 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-4 py-1.5 text-center text-xs text-[#FDE68A] uppercase animate-pulse">
-            {lobby.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...'}
-          </div>
-        )}
 
         {/* 2. MITTE: TV-BÜHNE */}
         {isDrawAndGuess ? (

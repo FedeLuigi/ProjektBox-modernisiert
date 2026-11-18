@@ -7,6 +7,7 @@ import {
   Wifi,
   WifiOff,
 } from 'lucide-react';
+import type { Lobby } from '../../types/multiplayer';
 import { socketService, type ConnectionMeta } from '../../services/socket';
 
 function useCountdownSeconds(deadline?: number): number | null {
@@ -46,10 +47,10 @@ export function ConnectionStatusBadge() {
     return (
       <div
         title={meta.errorMessage || 'Verbindung wird automatisch wiederhergestellt'}
-        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-3 py-1 text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase"
+        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl"
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-        <span className="truncate max-w-[190px] sm:max-w-none">
+        <span className="truncate max-w-[170px] sm:max-w-xs">
           VERBINDUNG WIRD WIEDERHERGESTELLT
           {countdown !== null ? ` (${countdown}S)` : ''}
         </span>
@@ -59,7 +60,7 @@ export function ConnectionStatusBadge() {
 
   if (meta.status === 'reconnected') {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/50 bg-[#10B981]/20 px-3 py-1 text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase">
+      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/55 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
         <span>WIEDERVERBINDUNG ERFOLGREICH</span>
       </div>
@@ -72,7 +73,7 @@ export function ConnectionStatusBadge() {
         type="button"
         onClick={handleRetry}
         title="Verbindung unterbrochen – Klicken zum erneuten Verbinden"
-        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-3 py-1 text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase hover:bg-[#F59E0B]/25 transition-colors cursor-pointer"
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#1E293B] transition-colors cursor-pointer"
       >
         <WifiOff className="h-3.5 w-3.5 shrink-0" />
         <span>
@@ -88,7 +89,7 @@ export function ConnectionStatusBadge() {
         type="button"
         onClick={handleRetry}
         title="Automatische Wiederverbindung fehlgeschlagen – Klicken zum erneuten Versuch"
-        className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/45 bg-[#E11D48]/20 px-3 py-1 text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase hover:bg-[#E11D48]/30 transition-colors cursor-pointer"
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#E11D48]/30 transition-colors cursor-pointer"
       >
         <RefreshCw className="h-3.5 w-3.5 shrink-0" />
         <span>WIEDERVERBINDUNG FEHLGESCHLAGEN</span>
@@ -98,7 +99,7 @@ export function ConnectionStatusBadge() {
 
   if (meta.status === 'expired') {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/45 bg-[#E11D48]/20 px-3 py-1 text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase">
+      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
         <span>SITZUNG ABGELAUFEN</span>
       </div>
@@ -112,7 +113,7 @@ export function ConnectionStatusBadge() {
           ? `Verbunden (${meta.latencyMs} ms)`
           : 'Verbunden mit Multiplayer-Server'
       }
-      className="flex items-center gap-1.5 rounded-full border border-[#34D399]/35 bg-[#10B981]/15 px-3 py-1 text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase"
+      className="flex items-center gap-1.5 rounded-full border border-[#34D399]/40 bg-[#0F172A]/80 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.35)] backdrop-blur-xl"
     >
       <Wifi className="h-3.5 w-3.5 shrink-0" />
       <span>VERBUNDEN</span>
@@ -120,13 +121,27 @@ export function ConnectionStatusBadge() {
   );
 }
 
-export function ConnectionNoticeBanner({ onExitExpired }: { onExitExpired?: () => void }) {
+interface HeaderStatusOverlayProps {
+  lobby?: Lobby | null;
+  currentUserId?: string;
+  message?: string | null;
+  showWhenConnected?: boolean;
+  onExitExpired?: () => void;
+}
+
+/**
+ * Vom Dokumentfluss vollständig losgelöste Status-Anzeige in der Header-Mitte.
+ * Zeigt Verbindungsverlust, Wiederverbindung, Countdown, Pausen- & Lobby-Hinweise
+ * als schwebendes Overlay an, ohne das Layout zu verschieben.
+ */
+export function HeaderStatusOverlay({
+  lobby,
+  currentUserId,
+  message,
+  showWhenConnected = false,
+  onExitExpired,
+}: HeaderStatusOverlayProps) {
   const [meta, setMeta] = useState<ConnectionMeta>(socketService.getConnectionMeta());
-  const countdown = useCountdownSeconds(
-    meta.status === 'reconnecting' || meta.status === 'disconnected'
-      ? meta.reconnectDeadline
-      : undefined
-  );
 
   useEffect(() => {
     return socketService.onConnectionMetaChange((nextMeta) => {
@@ -134,75 +149,111 @@ export function ConnectionNoticeBanner({ onExitExpired }: { onExitExpired?: () =
     });
   }, []);
 
-  if (meta.status === 'connected') {
-    return null;
-  }
+  const disconnectedPlayers =
+    lobby?.players.filter(
+      (p) => !p.isTvScreen && p.id !== currentUserId && p.connectionState === 'disconnected' && !p.connected
+    ) || [];
 
-  if (meta.status === 'reconnected') {
-    return (
-      <div className="font-arcade mx-auto my-1.5 flex w-full max-w-2xl items-center justify-center gap-2 rounded-xl border border-[#34D399]/50 bg-[#10B981]/20 px-4 py-2 text-center text-xs text-[#6EE7B7] uppercase">
-        <CheckCircle2 className="h-4 w-4 shrink-0" />
-        <span>WIEDERVERBINDUNG ERFOLGREICH – SPIELZUSTAND SYNCHRONISIERT</span>
-      </div>
-    );
-  }
+  const isLobbyPaused = lobby?.status === 'paused';
+  const activeDeadline =
+    meta.status === 'reconnecting' || meta.status === 'disconnected'
+      ? meta.reconnectDeadline
+      : disconnectedPlayers[0]?.reconnectDeadline;
+
+  const countdown = useCountdownSeconds(activeDeadline);
+
+  let pillContent: React.ReactNode = null;
 
   if (meta.status === 'expired') {
-    return (
-      <div className="font-arcade mx-auto my-1.5 flex w-full max-w-2xl flex-wrap items-center justify-between gap-3 rounded-xl border border-[#FDA4AF]/45 bg-[#E11D48]/20 px-4 py-2.5 text-xs text-[#FECDD3] uppercase">
-        <div className="flex items-center gap-2">
-          <AlertTriangle className="h-4 w-4 shrink-0" />
-          <span>
-            SITZUNG ABGELAUFEN
-            {meta.errorMessage ? ` – ${meta.errorMessage}` : ''}
-          </span>
-        </div>
+    pillContent = (
+      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[#FDA4AF]" />
+        <span className="truncate max-w-[200px] sm:max-w-xs">
+          {meta.errorMessage || 'SITZUNG ABGELAUFEN'}
+        </span>
         {onExitExpired && (
           <button
             type="button"
             onClick={onExitExpired}
-            className="rounded-lg border border-white/25 bg-white/10 px-3 py-1 text-[11px] text-white hover:bg-white/20 cursor-pointer"
+            className="rounded-full border border-white/25 bg-white/15 px-2 py-0.5 text-[10px] text-white hover:bg-white/25 cursor-pointer shrink-0"
           >
-            ZURÜCK ZUM MENÜ
+            MENÜ
           </button>
         )}
       </div>
     );
-  }
-
-  if (meta.status === 'failed') {
-    return (
-      <div className="font-arcade mx-auto my-1.5 flex w-full max-w-2xl flex-wrap items-center justify-between gap-3 rounded-xl border border-[#FDA4AF]/45 bg-[#E11D48]/20 px-4 py-2.5 text-xs text-[#FECDD3] uppercase">
-        <div className="flex items-center gap-2">
-          <WifiOff className="h-4 w-4 shrink-0" />
-          <span>WIEDERVERBINDUNG FEHLGESCHLAGEN – BITTE ERNEUT VERSUCHEN</span>
-        </div>
-        <button
-          type="button"
-          onClick={() => socketService.manualReconnect()}
-          className="inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-white/15 px-3 py-1 text-[11px] text-white hover:bg-white/25 cursor-pointer"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-          <span>NEU VERBINDEN</span>
-        </button>
+  } else if (meta.status === 'failed') {
+    pillContent = (
+      <button
+        type="button"
+        onClick={() => socketService.manualReconnect()}
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-[#E11D48]/30 cursor-pointer"
+      >
+        <RefreshCw className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate max-w-[230px] sm:max-w-sm">
+          WIEDERVERBINDUNG FEHLGESCHLAGEN – NEU VERBINDEN
+        </span>
+      </button>
+    );
+  } else if (meta.status === 'disconnected' || meta.status === 'reconnecting') {
+    pillContent = (
+      <button
+        type="button"
+        onClick={() => socketService.manualReconnect()}
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FDE68A] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl cursor-pointer"
+      >
+        {meta.status === 'reconnecting' ? (
+          <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+        ) : (
+          <WifiOff className="h-3.5 w-3.5 shrink-0" />
+        )}
+        <span className="truncate max-w-[220px] sm:max-w-md">
+          {meta.status === 'reconnecting'
+            ? 'VERBINDUNG WIRD WIEDERHERGESTELLT'
+            : 'VERBINDUNG UNTERBROCHEN'}
+          {countdown !== null ? ` (${countdown}S)` : ''}
+        </span>
+      </button>
+    );
+  } else if (meta.status === 'reconnected') {
+    pillContent = (
+      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#6EE7B7] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+        <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+        <span>WIEDERVERBINDUNG ERFOLGREICH</span>
       </div>
     );
+  } else if (disconnectedPlayers.length > 0 || isLobbyPaused) {
+    const p = disconnectedPlayers[0];
+    const label = p
+      ? `WARTE AUF ${p.name}${countdown !== null ? ` (${countdown} S)` : ''}...`
+      : lobby?.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...';
+    pillContent = (
+      <div className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FDE68A] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-pulse">
+        <WifiOff className="h-3.5 w-3.5 shrink-0" />
+        <span className="truncate max-w-[220px] sm:max-w-md">{label}</span>
+      </div>
+    );
+  } else if (message) {
+    pillContent = (
+      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-fade-in">
+        <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[#FDA4AF]" />
+        <span className="truncate max-w-[230px] sm:max-w-md">{message}</span>
+      </div>
+    );
+  } else if (showWhenConnected) {
+    pillContent = <ConnectionStatusBadge />;
+  }
+
+  if (!pillContent) {
+    return null;
   }
 
   return (
-    <div className="font-arcade mx-auto my-1.5 flex w-full max-w-2xl flex-wrap items-center justify-between gap-2 rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-4 py-2 text-xs text-[#FDE68A] uppercase">
-      <div className="flex items-center gap-2">
-        <Loader2 className="h-4 w-4 animate-spin shrink-0" />
-        <span>
-          {meta.status === 'reconnecting'
-            ? `VERBINDUNG WIRD WIEDERHERGESTELLT (VERSUCH ${Math.max(1, meta.attempt)})`
-            : 'VERBINDUNG UNTERBROCHEN'}
-          {countdown !== null ? ` – NOCH ${countdown} S` : ''}
-        </span>
-      </div>
-      <span className="text-[10px] tracking-wider text-[#FDE68A]/80">
-        AKTIONEN GESPERRT BIS VERBINDUNG STEHT
-      </span>
+    <div
+      aria-live="polite"
+      className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 flex justify-center px-2"
+    >
+      <div className="max-w-[min(92vw,32rem)]">{pillContent}</div>
     </div>
   );
 }
