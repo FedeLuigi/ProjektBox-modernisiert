@@ -10,6 +10,11 @@ interface LobbyGameSettingsProps {
 }
 
 const CATEGORIES = ['Alle', 'Tiere', 'Essen', 'Fahrzeuge', 'Natur', 'Gegenstände'];
+const SLF_PRESETS = [
+  { id: 'klassisch', label: 'KLASSISCH', preview: 'Stadt • Land • Fluss • Tier • Name' },
+  { id: 'party', label: 'PARTY-MIX', preview: 'Stadt • Land • Tier • Beruf • Essen' },
+  { id: 'bunt', label: 'BUNT', preview: 'Stadt • Tier • Film • Marke • Gegenstand' },
+] as const;
 const ROUND_OPTIONS = [3, 5, 8];
 const DURATION_OPTIONS = [45, 60, 90];
 
@@ -22,10 +27,13 @@ export function LobbyGameSettings({
   const [isOpen, setIsOpen] = useState(false);
 
   const isDrawAndGuess = gameId === 'draw-and-guess';
+  const isStadtLandFluss = gameId === 'stadt-land-fluss';
   const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
   const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
   const customWordsEnabled = settings?.customWordsEnabled === true;
   const category = settings?.category || 'Alle';
+  const stopButtonEnabled = settings?.stopButtonEnabled !== false;
+  const categoryPreset = settings?.categoryPreset || 'klassisch';
 
   const handleSetRounds = (val: number) => {
     if (!isHost) return;
@@ -47,11 +55,26 @@ export function LobbyGameSettings({
     onUpdate({ ...settings, category: cat });
   };
 
+  const handleSetStopButton = (val: boolean) => {
+    if (!isHost) return;
+    onUpdate({ ...settings, stopButtonEnabled: val });
+  };
+
+  const handleSetPreset = (presetId: string) => {
+    if (!isHost) return;
+    onUpdate({ ...settings, categoryPreset: presetId });
+  };
+
+  const activePresetLabel =
+    SLF_PRESETS.find((p) => p.id === categoryPreset)?.label || 'KLASSISCH';
+
   const summaryText = isDrawAndGuess
     ? `${rounds} RUNDEN • ${roundDuration}S • ${
         customWordsEnabled ? 'EIGENE WÖRTER AN' : `EIGENE WÖRTER AUS • ${category}`
       }`
-    : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
+    : isStadtLandFluss
+      ? `${rounds} RUNDEN • ${roundDuration}S • ${stopButtonEnabled ? 'STOPP AN' : 'STOPP AUS'} • ${activePresetLabel}`
+      : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
 
   return (
     <div className="w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden">
@@ -170,6 +193,84 @@ export function LobbyGameSettings({
                   </div>
                 </div>
               )}
+            </>
+          ) : isStadtLandFluss ? (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">RUNDEN</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {ROUND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
+                    >
+                      {opt}
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">ZEIT</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STOPP-KNOPF</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <OpenButton
+                    size="sm"
+                    disabled={!isHost}
+                    variant={stopButtonEnabled ? 'primary' : 'secondary'}
+                    onClick={() => handleSetStopButton(true)}
+                  >
+                    AN
+                  </OpenButton>
+                  <OpenButton
+                    size="sm"
+                    disabled={!isHost}
+                    variant={!stopButtonEnabled ? 'primary' : 'secondary'}
+                    onClick={() => handleSetStopButton(false)}
+                  >
+                    AUS
+                  </OpenButton>
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIEN</span>
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  {SLF_PRESETS.map((preset) => (
+                    <OpenButton
+                      key={preset.id}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
+                      onClick={() => handleSetPreset(preset.id)}
+                    >
+                      {preset.label}
+                    </OpenButton>
+                  ))}
+                </div>
+                <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5">
+                  {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
+                </p>
+              </div>
             </>
           ) : (
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">

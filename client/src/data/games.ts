@@ -1,4 +1,5 @@
 import {
+  Compass,
   Palette,
   type LucideIcon,
 } from 'lucide-react';
@@ -74,5 +75,27 @@ export const GAMES: Game[] = [
     icon: Palette,
     tone: 'sunset',
     accent: 'rose',
+  },
+  {
+    id: 'stadt-land-fluss',
+    title: 'Stadt, Land, Fluss',
+    subtitle: 'Der Wort-Klassiker fürs Wohnzimmer',
+    description:
+      'Finde zu einem Zufallsbuchstaben blitzschnell passende Begriffe – mit Live-Veto auf dem Handy & TV!',
+    howToPlay:
+      'Alle erhalten gleichzeitig einen Buchstaben und füllen heimlich die 5 Kategorien aus. Wer alles hat, kann STOPP drücken! Danach werden alle Antworten gemeinsam auf dem Handy oder TV-Board aufgedeckt, angefochten und mit 5, 10 oder 20 Punkten belohnt.',
+    category: 'Kreativ',
+    gameType: 'party',
+    gameTypeLabel: 'GRUPPE',
+    players: '2–8 Spieler',
+    minPlayers: 2,
+    maxPlayers: 8,
+    duration: '5–12 Min.',
+    durationMinutes: 8,
+    supportsTv: true,
+    tags: ['Party', 'Gruppe', 'Wörter', 'Quiz', 'Klassiker', 'TV-Highlight'],
+    icon: Compass,
+    tone: 'ocean',
+    accent: 'cyan',
   },
 ];

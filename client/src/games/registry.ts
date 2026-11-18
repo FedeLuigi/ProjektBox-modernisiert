@@ -1,6 +1,7 @@
 import type { ComponentType } from 'react';
 import type { GameRendererProps } from './types';
 import { DrawAndGuessBoard } from './components/DrawAndGuessBoard';
+import { StadtLandFlussBoard } from './components/StadtLandFlussBoard';
 import { GenericDuelBoard } from './components/GenericDuelBoard';
 
 export class ClientGameRegistry {
@@ -8,6 +9,7 @@ export class ClientGameRegistry {
 
   constructor() {
     this.register('draw-and-guess', DrawAndGuessBoard);
+    this.register('stadt-land-fluss', StadtLandFlussBoard);
   }
 
   public register(gameId: string, component: ComponentType<GameRendererProps<any, any>>): void {

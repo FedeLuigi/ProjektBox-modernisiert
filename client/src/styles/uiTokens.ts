@@ -214,6 +214,15 @@ const GAME_WORLD_STAGES: Record<string, GameWorldStageTheme> = {
     hudBadgeText: 'text-[#FBCFE8]',
     worldLabel: 'ATELIER LIVE STUDIO',
   },
+  'stadt-land-fluss': {
+    bgGradient: 'from-[#0F172A] via-[#0B2942] to-[#081C2E]',
+    glowPrimary: 'bg-[#06B6D4]/20',
+    glowSecondary: 'bg-[#F59E0B]/15',
+    hudBadgeBg: 'bg-[#164E63]/90',
+    hudBadgeBorder: 'border-[#22D3EE]',
+    hudBadgeText: 'text-[#CFFAFE]',
+    worldLabel: 'WORT-ARENA LIVE',
+  },
 };
 
 export function getGameWorldStage(gameId?: string): GameWorldStageTheme {

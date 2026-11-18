@@ -63,6 +63,14 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
       customWordsEnabled: false,
     };
   }
+  if (gameId === 'stadt-land-fluss') {
+    return {
+      rounds: 3,
+      roundDuration: 60,
+      stopButtonEnabled: true,
+      categoryPreset: 'klassisch',
+    };
+  }
   return {};
 }
 
@@ -895,13 +903,16 @@ export class LobbyManager {
       return { success: false, error: 'Spieler ist in diesem Spiel nicht aktiv.' };
     }
 
+    const isSimultaneousPartyGame =
+      lobby.gameId === 'draw-and-guess' || lobby.gameId === 'stadt-land-fluss';
     const isStructuralOrTurnAction =
-      lobby.gameId !== 'draw-and-guess' ||
-      move?.type === 'set_word' ||
-      move?.type === 'next_round' ||
-      move?.type === 'time_up' ||
-      move?.type === 'clear' ||
-      move?.type === 'undo';
+      !isSimultaneousPartyGame ||
+      (lobby.gameId === 'draw-and-guess' &&
+        (move?.type === 'set_word' ||
+          move?.type === 'next_round' ||
+          move?.type === 'time_up' ||
+          move?.type === 'clear' ||
+          move?.type === 'undo'));
 
     if (
       expectedVersion !== undefined &&
@@ -945,11 +956,13 @@ export class LobbyManager {
     }
 
     const shouldPersistMilestone =
-      lobby.gameId !== 'draw-and-guess' ||
       lobby.status === 'finished' ||
+      (!isSimultaneousPartyGame) ||
       nextState.round !== prevGameState.round ||
       nextState.roundStatus !== prevGameState.roundStatus ||
-      nextState.correctGuesserIds?.length !== prevGameState.correctGuesserIds?.length;
+      nextState.phase !== prevGameState.phase ||
+      nextState.correctGuesserIds?.length !== prevGameState.correctGuesserIds?.length ||
+      nextState.submittedPlayerIds?.length !== prevGameState.submittedPlayerIds?.length;
 
     if (shouldPersistMilestone) {
       this.persistSnapshot();

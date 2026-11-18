@@ -12,6 +12,7 @@ import { SESSION_COOKIE_NAME, parseCookieHeader } from '../session/sessionManage
 import { registerSocketHandlers } from './socketHandlers.js';
 import { apiRouter } from '../routes/api.js';
 import { drawAndGuessGame } from '../games/definitions/drawAndGuess.js';
+import { stadtLandFlussGame } from '../games/definitions/stadtLandFluss.js';
 import { checkRateLimit, cleanupSocketRateLimit, consumeRateLimit } from '../utils/rateLimiter.js';
 import {
   DrawStrokesSchema,
@@ -910,6 +911,185 @@ test('Moduswechsel Standard <-> TV Screen funktioniert wiederholt ohne Lobby-Neu
     assert.equal(checkRateLimit('switch_rate_sock', 'lobby:create', 10_000 + i), true);
   }
   cleanupSocketRateLimit('switch_rate_sock');
+
+  manager.clearAllTimers();
+});
+
+test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abstimmung sowie TV- und Spieler-Flow', () => {
+  const manager = new LobbyManager();
+  const sHost = manager.sessionManager.createSession('u_slf1').session;
+  const sGuest = manager.sessionManager.createSession('u_slf2').session;
+
+  // 1) Nur-Spieler-Modus (ohne TV): Anna & Ben spielen direkt
+  const created = manager.createLobby({
+    name: 'SLF-Runde',
+    isPrivate: true,
+    gameId: 'stadt-land-fluss',
+    userProfile: { id: 'u_slf1', name: 'Anna', avatar: {} },
+    socketId: 'slf_sock1',
+    isTvMode: false,
+    sessionId: sHost.sessionId,
+  });
+  assert.equal(created.success, true);
+  assert.equal(created.lobby?.settings?.stopButtonEnabled, true);
+  assert.equal(created.lobby?.settings?.categoryPreset, 'klassisch');
+
+  const lobbyId = created.lobby!.id;
+  manager.updateSettings({
+    lobbyId,
+    playerId: 'u_slf1',
+    settings: { rounds: 1, roundDuration: 60, stopButtonEnabled: true, categoryPreset: 'klassisch' },
+  });
+
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_slf2', name: 'Ben', avatar: {} },
+    socketId: 'slf_sock2',
+    sessionId: sGuest.sessionId,
+  });
+  manager.toggleReady('slf_sock2');
+  const started = manager.startGame('slf_sock1');
+  assert.equal(started.success, true);
+  assert.equal(started.lobby?.status, 'in_progress');
+
+  const gs0 = started.lobby!.gameState as any;
+  assert.equal(gs0.phase, 'writing');
+  const L = gs0.letter as string;
+
+  // Entwurf speichern aktualisiert filledCounts live für Mitspieler
+  const draftBen = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf2',
+    move: {
+      type: 'save_draft',
+      answers: {
+        Stadt: `${L}berlin`,
+        Land: `${L}belgien`,
+        Fluss: '',
+        Tier: '',
+        Name: '',
+      },
+    },
+  });
+  assert.equal(draftBen.success, true);
+  assert.equal((draftBen.lobby?.gameState as any).filledCounts.u_slf2, 2);
+
+  // Stopp darf NICHT ausgelöst werden solange nicht alle 5 Kategorien ausgefüllt sind
+  const invalidStop = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf1',
+    move: {
+      type: 'submit_round',
+      answers: { Stadt: `${L}stadtx` },
+      triggerStop: true,
+    },
+  });
+  assert.equal(invalidStop.success, false);
+
+  const wrongStart = L === 'Z' ? 'A' : 'Z';
+  const annaStop = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf1',
+    move: {
+      type: 'submit_round',
+      answers: {
+        Stadt: `${L}berlin`, // doppelt mit Ben (+5)
+        Land: `${L}spanien`, // einzigartig während Ben belgium hat (+10)
+        Fluss: `${L}fluss`, // Solo (+20, Ben hat leer)
+        Tier: `${wrongStart}tier`, // falscher Buchstabe -> 0 Punkte!
+        Name: `${L}anna`, // Solo (+20)
+      },
+      triggerStop: true,
+    },
+  });
+  assert.equal(annaStop.success, true);
+  const reviewState = annaStop.lobby!.gameState as any;
+  assert.equal(reviewState.phase, 'review');
+  assert.equal(reviewState.stoppedByPlayerName, 'Anna');
+  assert.equal(reviewState.evaluated.Stadt.u_slf1.points, 5);
+  assert.equal(reviewState.evaluated.Stadt.u_slf2.points, 5);
+  assert.equal(reviewState.evaluated.Land.u_slf1.points, 10);
+  assert.equal(reviewState.evaluated.Land.u_slf2.points, 10);
+  assert.equal(reviewState.evaluated.Fluss.u_slf1.points, 20);
+  assert.equal(reviewState.evaluated.Fluss.u_slf2.points, 0);
+  assert.equal(reviewState.evaluated.Tier.u_slf1.points, 0);
+  assert.equal(reviewState.evaluated.Tier.u_slf1.valid, false);
+
+  // Veto: Ben streicht Annas 'Name'-Antwort -> Anna verliert die 20 Punkte sofort live!
+  assert.equal(reviewState.evaluated.Name.u_slf1.points, 20);
+  const vetoRes = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf2',
+    move: { type: 'toggle_vote', targetPlayerId: 'u_slf1', category: 'Name' },
+  });
+  assert.equal(vetoRes.success, true);
+  const afterVeto = vetoRes.lobby!.gameState as any;
+  assert.equal(afterVeto.evaluated.Name.u_slf1.rejected, true);
+  assert.equal(afterVeto.evaluated.Name.u_slf1.points, 0);
+
+  // Beide bestätigen Auswertung -> 'round_over' -> 'next_round' -> Spielende ('finished')
+  manager.makeMove({ lobbyId, playerId: 'u_slf1', move: { type: 'review_ready' } });
+  const roundOver = manager.makeMove({ lobbyId, playerId: 'u_slf2', move: { type: 'review_ready' } });
+  assert.equal((roundOver.lobby?.gameState as any).phase, 'round_over');
+
+  const gameFinished = manager.makeMove({ lobbyId, playerId: 'u_slf1', move: { type: 'next_round' } });
+  assert.equal(gameFinished.lobby?.status, 'finished');
+  assert.equal((gameFinished.lobby?.gameState as any).phase, 'game_over');
+  assert.equal(gameFinished.lobby?.gameState?.winnerId, 'u_slf1'); // 35 vs 15 Punkte
+
+  // 2) TV-Modus mit 1 TV + 2 Smartphones starten
+  const sTv = manager.sessionManager.createSession('u_tv').session;
+  const sP1 = manager.sessionManager.createSession('u_p1').session;
+  const sP2 = manager.sessionManager.createSession('u_p2').session;
+  const tvLobby = manager.createLobby({
+    name: 'SLF-TV',
+    isPrivate: true,
+    gameId: 'stadt-land-fluss',
+    userProfile: { id: 'u_tv', name: 'TV', avatar: {} },
+    socketId: 'tv_s',
+    isTvMode: true,
+    sessionId: sTv.sessionId,
+  }).lobby!;
+  manager.joinLobby({
+    lobbyIdOrCode: tvLobby.id,
+    userProfile: { id: 'u_p1', name: 'P1', avatar: {} },
+    socketId: 'p1_s',
+    sessionId: sP1.sessionId,
+  });
+  manager.joinLobby({
+    lobbyIdOrCode: tvLobby.id,
+    userProfile: { id: 'u_p2', name: 'P2', avatar: {} },
+    socketId: 'p2_s',
+    sessionId: sP2.sessionId,
+  });
+  manager.toggleReady('p1_s');
+  manager.toggleReady('p2_s');
+  const tvStarted = manager.startGame('tv_s');
+  assert.equal(tvStarted.success, true);
+  assert.equal(tvStarted.lobby?.isTvMode, true);
+  assert.equal((tvStarted.lobby?.gameState as any).phase, 'writing');
+
+  // 3) Direkter Check auf onPlayerLeave bei 3 Spielern: Spiel läuft weiter und geht bei Bedarf in 'review'
+  const threePlayers: Player[] = [
+    ...mockPlayers,
+    { id: 'p3', socketId: 'sock_3', name: 'Clara', avatar: {}, isReady: true, isHost: false, connected: true },
+  ];
+  let s3 = stadtLandFlussGame.initGameState(threePlayers, 'p1', { rounds: 2 });
+  s3 = stadtLandFlussGame.validateAndApplyMove({
+    state: s3,
+    players: threePlayers,
+    playerId: 'p1',
+    move: { type: 'submit_round', answers: { Stadt: `${s3.letter}a` } },
+  }).state;
+  s3 = stadtLandFlussGame.validateAndApplyMove({
+    state: s3,
+    players: threePlayers,
+    playerId: 'p2',
+    move: { type: 'submit_round', answers: { Stadt: `${s3.letter}b` } },
+  }).state;
+  const afterLeave = stadtLandFlussGame.onPlayerLeave!(s3, 'p3', mockPlayers);
+  assert.equal(afterLeave.status, 'playing');
+  assert.equal(afterLeave.phase, 'review');
 
   manager.clearAllTimers();
 });

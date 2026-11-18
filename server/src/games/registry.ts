@@ -1,5 +1,6 @@
 import { MultiplayerGameDefinition, Player } from '../types/multiplayer.js';
 import { drawAndGuessGame } from './definitions/drawAndGuess.js';
+import { stadtLandFlussGame } from './definitions/stadtLandFluss.js';
 
 function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlayers = 4): MultiplayerGameDefinition {
   return {
@@ -53,6 +54,7 @@ export class GameRegistry {
   constructor() {
     // Multiplayer- & Party-Spiele
     this.register(drawAndGuessGame);
+    this.register(stadtLandFlussGame);
   }
 
   public register(game: MultiplayerGameDefinition<any, any>): void {

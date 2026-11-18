@@ -184,6 +184,110 @@ export function GamePreviewArtwork({
     );
   }
 
+  if (gameId === 'stadt-land-fluss') {
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0B2942] via-[#155E75] to-[#0F172A] ${className}`}
+      >
+        <svg
+          viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
+          className="h-full w-full object-cover"
+          aria-hidden="true"
+        >
+          {/* Großer Buchstabe links */}
+          <g transform={isHero ? 'translate(88, 42)' : 'translate(32, 26)'}>
+            <rect
+              x="0"
+              y="0"
+              width={isHero ? '150' : '112'}
+              height={isHero ? '160' : '132'}
+              rx="22"
+              fill="#0F172A"
+              stroke="#22D3EE"
+              strokeWidth="4"
+            />
+            <text
+              x={isHero ? '75' : '56'}
+              y={isHero ? '112' : '90'}
+              textAnchor="middle"
+              fill="#FDE68A"
+              fontSize={isHero ? '96' : '74'}
+              fontWeight="900"
+              fontFamily="sans-serif"
+            >
+              S
+            </text>
+            <text
+              x={isHero ? '75' : '56'}
+              y={isHero ? '142' : '116'}
+              textAnchor="middle"
+              fill="#67E8F9"
+              fontSize={isHero ? '12' : '10'}
+              fontWeight="800"
+              fontFamily="sans-serif"
+            >
+              BUCHSTABE
+            </text>
+          </g>
+
+          {/* Kategorie-Karten rechts */}
+          <g transform={isHero ? 'translate(270, 42)' : 'translate(166, 26)'}>
+            {[
+              { cat: 'STADT', word: 'STUTTGART', pts: '+10', color: '#38BDF8', y: 0 },
+              { cat: 'LAND', word: 'SPANIEN', pts: '+5', color: '#F59E0B', y: isHero ? 56 : 46 },
+              { cat: 'FLUSS', word: 'SPREE', pts: '+20', color: '#34D399', y: isHero ? 112 : 92 },
+            ].map((row) => (
+              <g key={row.cat} transform={`translate(0, ${row.y})`}>
+                <rect
+                  x="0"
+                  y="0"
+                  width={isHero ? '280' : '198'}
+                  height={isHero ? '46' : '38'}
+                  rx="12"
+                  fill="#0F172A"
+                  fillOpacity="0.88"
+                  stroke={row.color}
+                  strokeWidth="2.5"
+                />
+                <text
+                  x="14"
+                  y={isHero ? '28' : '23'}
+                  fill="#94A3B8"
+                  fontSize={isHero ? '11' : '9'}
+                  fontWeight="800"
+                  fontFamily="sans-serif"
+                >
+                  {row.cat}
+                </text>
+                <text
+                  x={isHero ? '80' : '60'}
+                  y={isHero ? '29' : '24'}
+                  fill="#FFFFFF"
+                  fontSize={isHero ? '14' : '11'}
+                  fontWeight="900"
+                  fontFamily="sans-serif"
+                >
+                  {row.word}
+                </text>
+                <text
+                  x={isHero ? '262' : '184'}
+                  y={isHero ? '28' : '23'}
+                  textAnchor="end"
+                  fill={row.color}
+                  fontSize={isHero ? '13' : '11'}
+                  fontWeight="900"
+                  fontFamily="sans-serif"
+                >
+                  {row.pts}
+                </text>
+              </g>
+            ))}
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (gameId === 'connect') {
     const cols = 7;
     const rows = 5;

@@ -98,6 +98,8 @@ export const LobbyUpdateSettingsSchema = z.object({
     roundDuration: z.number().int().min(15).max(180).optional(),
     category: z.string().trim().min(1).max(32).optional(),
     customWordsEnabled: z.boolean().optional(),
+    stopButtonEnabled: z.boolean().optional(),
+    categoryPreset: z.enum(['klassisch', 'party', 'bunt']).optional(),
   }),
   ...ActionMetaFields,
 });
@@ -116,6 +118,11 @@ export const SessionPingSchema = z.object({
   clientTime: z.number().finite().optional(),
 });
 
+const AnswersRecordSchema = z.record(
+  z.string().trim().min(1).max(40),
+  z.string().max(40)
+);
+
 export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('guess'),
@@ -131,6 +138,24 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('clear'), ...ActionMetaFields }),
   z.object({ type: z.literal('time_up'), ...ActionMetaFields }),
   z.object({ type: z.literal('next_round'), ...ActionMetaFields }),
+  z.object({
+    type: z.literal('save_draft'),
+    answers: AnswersRecordSchema,
+    ...ActionMetaFields,
+  }),
+  z.object({
+    type: z.literal('submit_round'),
+    answers: AnswersRecordSchema,
+    triggerStop: z.boolean().optional(),
+    ...ActionMetaFields,
+  }),
+  z.object({
+    type: z.literal('toggle_vote'),
+    targetPlayerId: z.string().trim().min(1).max(80),
+    category: z.string().trim().min(1).max(40),
+    ...ActionMetaFields,
+  }),
+  z.object({ type: z.literal('review_ready'), ...ActionMetaFields }),
 ]);
 
 export const StrokeSegmentSchema = z.object({

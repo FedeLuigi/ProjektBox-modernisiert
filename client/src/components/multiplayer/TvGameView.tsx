@@ -23,32 +23,34 @@ export function TvGameView({
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
+  const isStadtLandFluss = lobby.gameId === 'stadt-land-fluss';
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const player1 = activePlayers[0];
   const player2 = activePlayers[1];
 
   const currentTurnPlayer = activePlayers.find((p) => p.id === gameState?.currentTurn);
   const isGameOver = gameState?.status === 'won' || gameState?.status === 'draw';
-  const isRoundOver = gameState?.roundStatus === 'round_over';
+  const isRoundOver = gameState?.roundStatus === 'round_over' || gameState?.phase === 'round_over';
   const winner = activePlayers.find((p) => p.id === gameState?.winnerId);
 
+  const activeEndsAt = gameState?.phaseEndsAt ?? gameState?.roundEndsAt;
   const [timeLeft, setTimeLeft] = useState(() => {
-    if (!gameState?.roundEndsAt) return 60;
-    return Math.max(0, Math.ceil((gameState.roundEndsAt - Date.now()) / 1000));
+    if (!activeEndsAt) return 60;
+    return Math.max(0, Math.ceil((activeEndsAt - Date.now()) / 1000));
   });
 
   useEffect(() => {
-    if (!gameState?.roundEndsAt || gameState?.status !== 'playing') return;
+    if (!activeEndsAt || gameState?.status !== 'playing') return;
 
     const updateTimer = () => {
-      const remaining = Math.max(0, Math.ceil((gameState.roundEndsAt! - Date.now()) / 1000));
+      const remaining = Math.max(0, Math.ceil((activeEndsAt - Date.now()) / 1000));
       setTimeLeft(remaining);
     };
 
     updateTimer();
     const interval = setInterval(updateTimer, 500);
     return () => clearInterval(interval);
-  }, [gameState?.roundEndsAt, gameState?.status]);
+  }, [activeEndsAt, gameState?.status]);
 
   useEffect(() => {
     setLobby(initialLobby);
@@ -131,8 +133,19 @@ export function TvGameView({
             </div>
           )}
 
+          {isStadtLandFluss && !isGameOver && (
+            <div className="flex items-center gap-2 rounded-xl border border-[#22D3EE]/35 bg-white/[0.06] px-4 py-1.5 backdrop-blur-md">
+              <span className="font-arcade text-[10px] tracking-wider text-[#67E8F9] uppercase">
+                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3}
+              </span>
+              <span className="font-arcade text-sm sm:text-base text-[#FDE68A] uppercase">
+                BUCHSTABE {gameState?.letter || '?'}
+              </span>
+            </div>
+          )}
+
           <div className="flex items-center gap-2">
-            {isDrawAndGuess && !isGameOver && !isRoundOver && (
+            {(isDrawAndGuess || isStadtLandFluss) && !isGameOver && !isRoundOver && (
               <span className="font-arcade rounded-lg border border-white/20 bg-white/[0.06] px-3 py-1 text-xs text-white">
                 {timeLeft} S
               </span>
@@ -254,6 +267,22 @@ export function TvGameView({
               </div>
             </div>
           </main>
+        ) : isStadtLandFluss ? (
+          <main className="my-auto flex flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto py-3 w-full">
+            {BoardComponent && (
+              <BoardComponent
+                gameId={lobby.gameId}
+                gameState={gameState}
+                myPlayer={{ id: 'tv_screen', name: 'TV', isTvScreen: true } as any}
+                opponent={player2}
+                allPlayers={activePlayers}
+                isMyTurn={false}
+                isGameOver={isGameOver}
+                onMove={() => {}}
+                disabled={true}
+              />
+            )}
+          </main>
         ) : (
           <main className="my-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-12 py-4 w-full">
             {/* Spieler 1 */}
@@ -331,18 +360,24 @@ export function TvGameView({
                 </span>
               </div>
 
-              <div className="flex w-full flex-col gap-2.5">
-                {activePlayers.slice(0, 2).map((p) => (
-                  <div
-                    key={p.id}
-                    className="flex items-center justify-between rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5"
-                  >
-                    <span className="font-arcade text-xs text-[#CBD5E1] uppercase">{p.name}</span>
-                    <span className="font-arcade text-base text-[#FDE68A]">
-                      {String(gameState?.scores?.[p.id] ?? 0)}
-                    </span>
-                  </div>
-                ))}
+              <div className="flex w-full flex-col gap-2.5 max-h-[50vh] overflow-y-auto">
+                {[...activePlayers]
+                  .sort(
+                    (a, b) =>
+                      (gameState?.scores?.[b.id] ?? 0) - (gameState?.scores?.[a.id] ?? 0)
+                  )
+                  .slice(0, isDrawAndGuess || isStadtLandFluss ? 8 : 2)
+                  .map((p) => (
+                    <div
+                      key={p.id}
+                      className="flex items-center justify-between rounded-xl border border-white/15 bg-white/[0.05] px-4 py-2.5"
+                    >
+                      <span className="font-arcade text-xs text-[#CBD5E1] uppercase">{p.name}</span>
+                      <span className="font-arcade text-base text-[#FDE68A]">
+                        {String(gameState?.scores?.[p.id] ?? 0)}
+                      </span>
+                    </div>
+                  ))}
               </div>
 
               <OpenButton size="lg" variant="primary" onClick={onLeave} className="min-w-[160px]">

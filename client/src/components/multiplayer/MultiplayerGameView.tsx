@@ -37,7 +37,9 @@ export function MultiplayerGameView({
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
-  const isMyTurn = isDrawAndGuess
+  const isStadtLandFluss = lobby.gameId === 'stadt-land-fluss';
+  const isSimultaneousParty = isDrawAndGuess || isStadtLandFluss;
+  const isMyTurn = isSimultaneousParty
     ? gameState?.status === 'playing'
     : gameState?.status === 'playing' && gameState.currentTurn === currentUser.id;
 
@@ -115,15 +117,23 @@ export function MultiplayerGameView({
   }, [errorMsg]);
 
   const handleSendMove = async (moveData: any) => {
-    if (!isMyTurn || isSubmitting || isConnectionBlocked || isLobbyPaused) return;
+    if (!isMyTurn || isConnectionBlocked || isLobbyPaused) return;
+    const isSilentDraft = moveData?.type === 'save_draft';
+    if (!isSilentDraft && isSubmitting) return;
 
-    setIsSubmitting(true);
+    if (!isSilentDraft) {
+      setIsSubmitting(true);
+    }
     try {
       await socketService.sendMove(moveData);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Ungültiger Zug.');
+      if (!isSilentDraft) {
+        setErrorMsg(err.message || 'Ungültiger Zug.');
+      }
     } finally {
-      setIsSubmitting(false);
+      if (!isSilentDraft) {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -166,6 +176,12 @@ export function MultiplayerGameView({
                 {gameState?.scores?.[currentUser.id] || 0} : {gameState?.scores?.[opponent?.id || ''] || 0}
               </span>
               <Avatar config={opponent?.avatar || ({} as any)} size={22} />
+            </div>
+          ) : isStadtLandFluss ? (
+            <div className="justify-self-center flex items-center gap-2 rounded-xl border border-[#22D3EE]/35 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-white uppercase">
+              <span className="text-[#67E8F9]">{gameState?.letter || '?'}</span>
+              <span className="text-white/40">•</span>
+              <span>{gameState?.scores?.[currentUser.id] || 0} PKT</span>
             </div>
           ) : (
             <div
@@ -214,6 +230,37 @@ export function MultiplayerGameView({
                   )}
                 </h2>
               </div>
+
+              {isStadtLandFluss && (
+                <div className="flex w-full flex-col gap-2 max-h-[38vh] overflow-y-auto">
+                  {[...activePlayers]
+                    .sort(
+                      (a, b) =>
+                        (gameState?.scores?.[b.id] ?? 0) - (gameState?.scores?.[a.id] ?? 0)
+                    )
+                    .map((p, idx) => (
+                      <div
+                        key={p.id}
+                        className={`flex items-center justify-between rounded-xl border px-3.5 py-2 ${
+                          p.id === currentUser.id
+                            ? 'border-[#22D3EE]/55 bg-[#164E63]/35'
+                            : 'border-white/15 bg-white/[0.04]'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className="font-arcade text-xs text-[#FBBF24]">#{idx + 1}</span>
+                          <Avatar config={p.avatar} size={24} />
+                          <span className="font-arcade text-xs text-white uppercase truncate">
+                            {p.name}
+                          </span>
+                        </div>
+                        <span className="font-arcade text-sm text-[#FDE68A]">
+                          {String(gameState?.scores?.[p.id] ?? 0)} PKT
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              )}
 
               <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
                 <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
