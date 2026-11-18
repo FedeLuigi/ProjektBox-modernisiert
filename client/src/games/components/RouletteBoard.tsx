@@ -781,7 +781,7 @@ export function RouletteBoard({
     return (
       <div className="flex w-full flex-1 min-h-0 flex-col gap-3 justify-between">
         {/* Obere History-Leiste der letzten Zahlen */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/12 bg-[#0F172A]/75 px-3.5 py-2 backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-0.5">
           <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
             <span className="font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase shrink-0">
               VERLAUF
@@ -815,7 +815,11 @@ export function RouletteBoard({
                     : 'ERGEBNIS'}
             </span>
             {phase === 'betting' && (
-              <span className="font-arcade inline-flex items-center gap-1 rounded-lg border border-[#F59E0B]/45 bg-[#F59E0B]/15 px-2.5 py-0.5 text-xs text-[#FDE68A]">
+              <span
+                className={`font-arcade inline-flex items-center gap-1 text-xs ${
+                  timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-[#FDE68A]'
+                }`}
+              >
                 <Clock className="h-3 w-3" />
                 {timeLeft}S
               </span>
@@ -826,7 +830,7 @@ export function RouletteBoard({
         {/* Hauptbereich: Kessel links, Live-Tisch & Spieler-Guthaben rechts */}
         <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-center gap-4 lg:gap-6 flex-1 min-h-0">
           {/* Links: Roulette-Kessel */}
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-white/15 bg-[#0F172A]/70 p-4 backdrop-blur-xl">
+          <div className="flex flex-col items-center justify-center gap-3 p-1">
             <RouletteWheel
               phase={phase}
               round={round}
@@ -835,7 +839,7 @@ export function RouletteBoard({
               sizeClass="h-56 w-56 lg:h-68 lg:w-68"
             />
             {phase === 'result' && winningNumber !== null && (
-              <div className="flex items-center gap-2 rounded-xl border border-[#FDE047]/45 bg-[#F59E0B]/15 px-4 py-1.5">
+              <div className="flex items-center gap-2 px-2 py-0.5">
                 <Sparkles className="h-4 w-4 text-[#FDE047]" />
                 <span className="font-arcade text-sm text-[#FEF08A] uppercase">
                   {winningNumber === 0
@@ -859,7 +863,7 @@ export function RouletteBoard({
               onPlaceBet={() => {}}
             />
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {rankedPlayers.map((p, idx) => {
                 const origIdx = Math.max(
                   0,
@@ -874,10 +878,8 @@ export function RouletteBoard({
                 return (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between gap-2 rounded-xl border px-3 py-2 ${
-                      idx === 0
-                        ? 'border-[#F59E0B]/50 bg-[#F59E0B]/10'
-                        : 'border-white/12 bg-white/[0.04]'
+                    className={`flex items-center justify-between gap-2 px-1 py-1 ${
+                      idx === 0 ? 'border-b-2 border-[#F59E0B]/70' : ''
                     }`}
                   >
                     <div className="flex items-center gap-2 min-w-0">
@@ -937,17 +939,15 @@ export function RouletteBoard({
   return (
     <div className="roulette-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[225px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-4 overflow-hidden py-0.5">
       {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
-      <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 rounded-2xl border border-white/12 bg-[#0F172A]/70 px-3 py-2 lg:p-3">
+      <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 px-1 py-0.5 lg:p-1">
         <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
           <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
             R {round}/{maxRounds}
           </span>
           {phase === 'betting' && (
             <span
-              className={`font-arcade inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] ${
-                timeLeft <= 5
-                  ? 'border-[#F87171]/60 bg-[#E11D48]/20 text-[#FECDD3] animate-pulse'
-                  : 'border-white/15 bg-white/[0.06] text-white'
+              className={`font-arcade inline-flex items-center gap-1 text-[10px] ${
+                timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
               }`}
             >
               <Clock className="h-2.5 w-2.5" />
@@ -1050,22 +1050,29 @@ export function RouletteBoard({
           />
 
           {allPlayers.length > 1 && (
-            <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
               {rankedPlayers.map((p) => {
                 const bal = gameState?.scores?.[p.id] ?? startingBalance;
                 const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
                 const pLocked = (gameState?.lockedPlayerIds || []).includes(p.id);
+                const isMe = p.id === myId;
                 return (
                   <div
                     key={p.id}
-                    className={`flex shrink-0 items-center gap-1 rounded-md border px-2 py-0.5 ${
-                      p.id === myId
-                        ? 'border-[#34D399]/50 bg-[#10B981]/15'
-                        : 'border-white/12 bg-white/[0.04]'
-                    }`}
+                    className="flex shrink-0 items-center gap-1.5 py-0.5"
                   >
-                    <Avatar config={p.avatar} size={14} />
-                    <span className="font-arcade text-[9px] text-white uppercase max-w-[60px] truncate">
+                    <span
+                      className={`inline-flex rounded-full ${
+                        isMe ? 'ring-1 ring-[#34D399]' : ''
+                      }`}
+                    >
+                      <Avatar config={p.avatar} size={15} />
+                    </span>
+                    <span
+                      className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
+                        isMe ? 'text-[#6EE7B7]' : 'text-white'
+                      }`}
+                    >
                       {p.name}
                     </span>
                     <span className="font-arcade text-[9px] text-[#FDE68A]">
@@ -1092,7 +1099,7 @@ export function RouletteBoard({
 
         {/* Untere Chip-Leiste & Aktions-Buttons */}
         {phase === 'result' ? (
-          <div className="flex shrink-0 items-center justify-between gap-2 rounded-xl border border-white/15 bg-[#0F172A]/85 px-3 py-1.5 backdrop-blur-md">
+          <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
             <div className="flex items-center gap-1.5 min-w-0">
               <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
               <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
@@ -1114,7 +1121,7 @@ export function RouletteBoard({
             </OpenButton>
           </div>
         ) : (
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 rounded-xl border border-white/15 bg-[#0F172A]/85 px-2 py-1.5 backdrop-blur-md">
+          <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
             {/* Casino-Chips */}
             <div className="flex items-center gap-1 flex-wrap">
               {CHIP_DENOMINATIONS.map((chip) => {

@@ -498,9 +498,9 @@ export function TexasHoldemBoard({
     return (
       <div className="flex w-full flex-1 min-h-0 flex-col justify-between gap-3">
         {/* Obere Info-Zeile */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/12 bg-[#0F172A]/75 px-4 py-2 backdrop-blur-md">
+        <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-0.5">
           <div className="flex items-center gap-2.5">
-            <span className="font-arcade rounded-md border border-[#34D399]/45 bg-[#10B981]/15 px-2.5 py-0.5 text-xs text-[#6EE7B7] uppercase">
+            <span className="font-arcade text-xs text-[#6EE7B7] uppercase">
               HAND #{handNumber}/{maxHands}
             </span>
             <span className="font-arcade text-xs text-[#CBD5E1] uppercase">
@@ -512,12 +512,12 @@ export function TexasHoldemBoard({
             {gameState?.lastActionText || PHASE_LABELS[phase]}
           </span>
 
-          <div className="flex items-center gap-2">
-            <span className="font-arcade rounded-md border border-[#F59E0B]/45 bg-[#F59E0B]/15 px-2.5 py-0.5 text-xs text-[#FDE68A] uppercase">
+          <div className="flex items-center gap-2.5">
+            <span className="font-arcade text-xs text-[#FDE68A] uppercase">
               {PHASE_LABELS[phase]}
             </span>
             {phase !== 'game_over' && (
-              <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/20 bg-white/[0.06] px-2.5 py-0.5 text-xs text-white">
+              <span className="font-arcade inline-flex items-center gap-1 text-xs text-white">
                 <Clock className="h-3 w-3" />
                 {timeLeft}S
               </span>
@@ -526,7 +526,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* Spielerplätze rund um den Tisch */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {orderedSeats.map((pid) => {
             const p = playerMap.get(pid);
             if (!p) return null;
@@ -545,22 +545,40 @@ export function TexasHoldemBoard({
             return (
               <div
                 key={pid}
-                className={`relative flex flex-col justify-between gap-2 rounded-2xl border p-3 transition-all ${
+                className={`relative flex flex-col justify-between gap-2 px-1.5 py-1 transition-all ${
                   showResult?.isWinner
-                    ? 'border-[#FDE047] bg-[#F59E0B]/20 shadow-[0_0_24px_rgba(253,224,71,0.35)]'
+                    ? 'border-b-2 border-[#FDE047]'
                     : isActiveTurn
-                      ? 'border-[#34D399] bg-[#064E3B]/65 ring-2 ring-[#34D399]/60'
+                      ? 'border-b-2 border-[#34D399]'
                       : isFolded
-                        ? 'border-white/10 bg-white/[0.02] opacity-55'
-                        : 'border-white/15 bg-[#0F172A]/75'
+                        ? 'opacity-45'
+                        : ''
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2 min-w-0">
-                    <Avatar config={p.avatar} size={32} />
+                    <span
+                      className={`inline-flex rounded-full ${
+                        showResult?.isWinner
+                          ? 'ring-2 ring-[#FDE047]'
+                          : isActiveTurn
+                            ? 'ring-2 ring-[#34D399]'
+                            : ''
+                      }`}
+                    >
+                      <Avatar config={p.avatar} size={32} />
+                    </span>
                     <div className="min-w-0">
                       <div className="flex items-center gap-1">
-                        <span className="font-arcade text-xs text-white uppercase truncate">
+                        <span
+                          className={`font-arcade text-xs uppercase truncate ${
+                            showResult?.isWinner
+                              ? 'text-[#FDE047]'
+                              : isActiveTurn
+                                ? 'text-[#6EE7B7]'
+                                : 'text-white'
+                          }`}
+                        >
                           {p.name}
                         </span>
                         {isDealer && (
@@ -569,12 +587,12 @@ export function TexasHoldemBoard({
                           </span>
                         )}
                         {isSb && (
-                          <span className="rounded bg-[#38BDF8]/25 px-1 font-arcade text-[9px] text-[#7DD3FC]">
+                          <span className="font-arcade text-[9px] text-[#7DD3FC]">
                             SB
                           </span>
                         )}
                         {isBb && (
-                          <span className="rounded bg-[#EC4899]/25 px-1 font-arcade text-[9px] text-[#F9A8D4]">
+                          <span className="font-arcade text-[9px] text-[#F9A8D4]">
                             BB
                           </span>
                         )}
@@ -618,7 +636,7 @@ export function TexasHoldemBoard({
                       +{formatEuro(showResult.wonAmount)}
                     </span>
                   ) : streetBet > 0 ? (
-                    <span className="rounded bg-[#F59E0B]/20 px-1.5 py-0.5 text-[#FDE68A] shrink-0">
+                    <span className="text-[#FDE68A] shrink-0">
                       EINSATZ {streetBet} €
                     </span>
                   ) : null}
@@ -630,7 +648,7 @@ export function TexasHoldemBoard({
 
         {/* Großer Pokertisch in der Mitte */}
         <div className="my-auto flex flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-5 sm:p-7 shadow-[0_24px_60px_rgba(0,0,0,0.65)] ring-1 ring-[#F59E0B]/40">
-          <div className="flex items-center gap-2.5 rounded-full border border-[#FBBF24]/50 bg-[#0F172A]/80 px-5 py-1.5 shadow">
+          <div className="flex items-center gap-2.5 px-1">
             <Coins className="h-4 w-4 text-[#FBBF24]" />
             <span className="font-arcade text-base sm:text-lg tracking-wider text-[#FDE68A] uppercase">
               POT: {formatEuro(pot)}
@@ -668,7 +686,7 @@ export function TexasHoldemBoard({
       <div className="poker-landscape-left flex flex-1 min-h-0 flex-col justify-between gap-1.5">
         {/* 1. Kompakte Hand/Blind/Timer-Leiste + Spieler-Chips */}
         <div className="flex shrink-0 flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2 rounded-lg border border-white/12 bg-[#0F172A]/75 px-2.5 py-1 backdrop-blur-md">
+          <div className="flex items-center justify-between gap-2 px-0.5 py-0.5">
             <div className="flex items-center gap-2 min-w-0">
               <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
                 HAND {handNumber}/{maxHands}
@@ -678,16 +696,14 @@ export function TexasHoldemBoard({
               </span>
             </div>
 
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className="font-arcade rounded border border-[#F59E0B]/40 bg-[#F59E0B]/15 px-1.5 py-0.5 text-[10px] text-[#FDE68A] uppercase">
+            <div className="flex items-center gap-2 shrink-0">
+              <span className="font-arcade text-[10px] text-[#FDE68A] uppercase">
                 {PHASE_LABELS[phase]}
               </span>
               {phase !== 'game_over' && (
                 <span
-                  className={`font-arcade inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[11px] ${
-                    isMyTurn && timeLeft <= 6
-                      ? 'border-[#F87171]/60 bg-[#E11D48]/20 text-[#FECDD3] animate-pulse'
-                      : 'border-white/15 bg-white/[0.06] text-white'
+                  className={`font-arcade inline-flex items-center gap-1 text-[11px] ${
+                    isMyTurn && timeLeft <= 6 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
                   }`}
                 >
                   <Clock className="h-3 w-3" />
@@ -697,7 +713,7 @@ export function TexasHoldemBoard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+          <div className="flex shrink-0 items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
             {orderedSeats.map((pid) => {
               const p = playerMap.get(pid);
               if (!p) return null;
@@ -715,22 +731,40 @@ export function TexasHoldemBoard({
               return (
                 <div
                   key={pid}
-                  className={`flex shrink-0 flex-col gap-0.5 rounded-lg border px-2 py-1 min-w-[98px] ${
+                  className={`flex shrink-0 flex-col gap-0.5 px-1 py-0.5 min-w-[78px] transition-opacity ${
                     showdownRes?.isWinner
-                      ? 'border-[#FDE047] bg-[#F59E0B]/20'
+                      ? 'border-b-2 border-[#FDE047]'
                       : isActiveTurn
-                        ? 'border-[#34D399] bg-[#064E3B]/65 ring-1 ring-[#34D399]/70'
+                        ? 'border-b-2 border-[#34D399]'
                         : isFolded
-                          ? 'border-white/10 bg-white/[0.02] opacity-50'
-                          : pid === myId
-                            ? 'border-[#38BDF8]/45 bg-[#0F172A]/75'
-                            : 'border-white/12 bg-white/[0.04]'
+                          ? 'opacity-45'
+                          : ''
                   }`}
                 >
                   <div className="flex items-center justify-between gap-1">
                     <div className="flex items-center gap-1 min-w-0">
-                      <Avatar config={p.avatar} size={16} />
-                      <span className="font-arcade text-[9px] text-white uppercase truncate max-w-[54px]">
+                      <span
+                        className={`inline-flex rounded-full ${
+                          showdownRes?.isWinner
+                            ? 'ring-2 ring-[#FDE047]'
+                            : isActiveTurn
+                              ? 'ring-2 ring-[#34D399]'
+                              : ''
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={16} />
+                      </span>
+                      <span
+                        className={`font-arcade text-[9px] uppercase truncate max-w-[58px] ${
+                          showdownRes?.isWinner
+                            ? 'text-[#FDE047]'
+                            : isActiveTurn
+                              ? 'text-[#6EE7B7]'
+                              : pid === myId
+                                ? 'text-[#7DD3FC]'
+                                : 'text-white'
+                        }`}
+                      >
                         {p.name}
                       </span>
                     </div>
@@ -777,7 +811,7 @@ export function TexasHoldemBoard({
         {/* 2. Pokertisch-Mitte: Pot + 5 Community Cards + kompaktes Ergebnis */}
         <div className="poker-landscape-table flex flex-1 min-h-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.45)] ring-1 ring-[#F59E0B]/30">
           <div className="flex flex-wrap items-center justify-center gap-2">
-            <div className="flex items-center gap-1.5 rounded-full border border-[#FBBF24]/50 bg-[#0F172A]/85 px-3 py-0.5">
+            <div className="flex items-center gap-1.5 px-1">
               <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
               <span className="font-arcade text-xs text-[#FDE68A] uppercase">
                 POT {formatEuro(pot)}
@@ -820,7 +854,7 @@ export function TexasHoldemBoard({
       </div>
 
       {/* RECHTE SPALTE IM QUERFORMAT (UNTEN IM HOCHFORMAT): EIGENE KARTEN & AKTIONEN */}
-      <div className="poker-landscape-right flex shrink-0 flex-col justify-between gap-2 rounded-2xl border border-white/15 bg-[#0F172A]/90 p-2.5 sm:p-3 backdrop-blur-md">
+      <div className="poker-landscape-right flex shrink-0 flex-col justify-between gap-2 px-0.5 py-0.5">
         <div className="flex items-center justify-between gap-2">
           {/* Eigene Pocket-Karten */}
           <div className="flex items-center gap-2 min-w-0">
@@ -911,10 +945,8 @@ export function TexasHoldemBoard({
             </OpenButton>
           ) : (
             <span
-              className={`font-arcade rounded-md border px-2 py-1 text-[10px] uppercase shrink-0 ${
-                isMyTurn
-                  ? 'border-[#34D399]/60 bg-[#10B981]/20 text-[#6EE7B7]'
-                  : 'border-white/15 bg-white/[0.04] text-[#94A3B8]'
+              className={`font-arcade text-[10px] uppercase shrink-0 ${
+                isMyTurn ? 'text-[#6EE7B7]' : 'text-[#94A3B8]'
               }`}
             >
               {isMyTurn
@@ -926,7 +958,7 @@ export function TexasHoldemBoard({
 
         {/* Wett-Buttons wenn am Zug */}
         {isMyTurn && (
-          <div className="flex flex-col gap-1.5 border-t border-white/12 pt-1.5">
+          <div className="flex flex-col gap-1.5 pt-1">
             {canRaise && (
               <div className="flex flex-wrap items-center gap-1.5">
                 <div className="flex items-center gap-1">

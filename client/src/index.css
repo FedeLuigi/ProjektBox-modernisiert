@@ -984,7 +984,7 @@ body::-webkit-scrollbar,
     flex-direction: column !important;
     justify-content: space-between !important;
     min-height: 0 !important;
-    padding: 8px 10px !important;
+    padding: 2px 0 !important;
     gap: 6px !important;
   }
 
@@ -1013,7 +1013,7 @@ body::-webkit-scrollbar,
     justify-content: space-between !important;
     align-items: center !important;
     min-height: 0 !important;
-    padding: 8px !important;
+    padding: 2px 4px !important;
     gap: 4px !important;
   }
 
