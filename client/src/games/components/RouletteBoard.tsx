@@ -91,6 +91,25 @@ const CHIP_DENOMINATIONS: Array<{
   { value: 'all', label: 'ALL-IN', bg: '#D97706', border: '#FEF08A', text: '#0F172A' },
 ];
 
+function getChipStyleForAmount(amount: number): {
+  bg: string;
+  border: string;
+  text: string;
+} {
+  if (amount >= 1000) return CHIP_DENOMINATIONS[4];
+  if (amount >= 500) return CHIP_DENOMINATIONS[3];
+  if (amount >= 100) return CHIP_DENOMINATIONS[2];
+  if (amount >= 25) return CHIP_DENOMINATIONS[1];
+  return CHIP_DENOMINATIONS[0];
+}
+
+function findBetKeyAtPoint(clientX: number, clientY: number): string | null {
+  if (typeof document === 'undefined') return null;
+  const el = document.elementFromPoint(clientX, clientY);
+  const target = el?.closest<HTMLElement>('[data-bet-key]');
+  return target?.dataset.betKey ?? null;
+}
+
 const HORIZONTAL_ROWS = [
   Array.from({ length: 12 }, (_, c) => (c + 1) * 3), // 3, 6, ..., 36
   Array.from({ length: 12 }, (_, c) => c * 3 + 2), // 2, 5, ..., 35
@@ -462,6 +481,7 @@ interface BettingTableProps {
   canBet: boolean;
   winningNumber: number | null;
   phase: RouletteState['phase'];
+  hoveredBetKey?: string | null;
   onPlaceBet: (betKey: string) => void;
 }
 
@@ -473,6 +493,7 @@ function BettingTable({
   canBet,
   winningNumber,
   phase,
+  hoveredBetKey,
   onPlaceBet,
 }: BettingTableProps) {
   const playerColorMap = useMemo(() => {
@@ -520,11 +541,21 @@ function BettingTable({
 
     return (
       <>
-        {myAmount > 0 && (
-          <span className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-[#0F172A] bg-[#FBBF24] px-1 font-arcade text-[9px] leading-none text-[#0F172A] shadow">
-            {formatCompactChip(myAmount)}
-          </span>
-        )}
+        {myAmount > 0 && (() => {
+          const chipStyle = getChipStyleForAmount(myAmount);
+          return (
+            <span
+              style={{
+                backgroundColor: chipStyle.bg,
+                borderColor: chipStyle.border,
+                color: chipStyle.text,
+              }}
+              className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 inline-flex h-[18px] min-w-[18px] sm:h-5 sm:min-w-5 items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade text-[8px] sm:text-[9px] leading-none ring-1 ring-[#0F172A]/85 shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
+            >
+              {formatCompactChip(myAmount)}
+            </span>
+          );
+        })()}
         {othersCount > 0 && (
           <span className="pointer-events-none absolute bottom-0.5 right-0.5 z-10 flex gap-0.5">
             {players
@@ -547,11 +578,13 @@ function BettingTable({
     const betKey = `number:${num}`;
     const color = getRouletteColor(num);
     const isWinner = showWinHighlight && winningNumber === num;
+    const isDragHovered = canBet && hoveredBetKey === betKey;
 
     return (
       <button
         key={betKey}
         type="button"
+        data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
         className={`relative flex items-center justify-center rounded-md border font-arcade text-xs sm:text-sm transition-transform select-none ${
@@ -563,9 +596,11 @@ function BettingTable({
               ? 'border-[#F87171]/45 bg-[#B91C1C] text-white'
               : 'border-white/25 bg-[#0F172A] text-white'
         } ${
-          isWinner
-            ? 'ring-2 ring-[#FDE047] shadow-[0_0_16px_rgba(253,224,71,0.85)] z-10'
-            : ''
+          isDragHovered
+            ? 'ring-2 ring-[#FDE047] shadow-[0_0_18px_rgba(253,224,71,0.95)] brightness-125 scale-[1.04] z-20'
+            : isWinner
+              ? 'ring-2 ring-[#FDE047] shadow-[0_0_16px_rgba(253,224,71,0.85)] z-10'
+              : ''
         } ${extraClass}`}
       >
         <span>{num}</span>
@@ -581,19 +616,23 @@ function BettingTable({
     extraClass = ''
   ) => {
     const isWinner = showWinHighlight && winningNumber !== null && doesBetWin(betKey, winningNumber);
+    const isDragHovered = canBet && hoveredBetKey === betKey;
 
     return (
       <button
         key={betKey}
         type="button"
+        data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
         className={`relative flex items-center justify-center rounded-md border px-1.5 py-1.5 font-arcade text-[10px] sm:text-xs tracking-wide uppercase transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
         } ${toneClass} ${
-          isWinner
-            ? 'ring-2 ring-[#FDE047] shadow-[0_0_14px_rgba(253,224,71,0.75)] z-10'
-            : ''
+          isDragHovered
+            ? 'ring-2 ring-[#FDE047] shadow-[0_0_18px_rgba(253,224,71,0.95)] brightness-125 scale-[1.03] z-20'
+            : isWinner
+              ? 'ring-2 ring-[#FDE047] shadow-[0_0_14px_rgba(253,224,71,0.75)] z-10'
+              : ''
         } ${extraClass}`}
       >
         <span className="truncate">{label}</span>
@@ -603,7 +642,7 @@ function BettingTable({
   };
 
   return (
-    <div className="roulette-landscape-felt w-full rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5 shadow-[0_16px_38px_rgba(0,0,0,0.45)]">
+    <div className="roulette-landscape-felt w-full select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5 shadow-[0_16px_38px_rgba(0,0,0,0.45)]">
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
       <div className="hidden sm:flex flex-col gap-1">
         <div className="grid grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
@@ -689,12 +728,24 @@ export function RouletteBoard({
   const history = gameState?.history ?? [];
 
   const [selectedChip, setSelectedChip] = useState<number | 'all'>(25);
+  const [dragChip, setDragChip] = useState<{
+    value: number | 'all';
+    amount: number;
+    label: string;
+    bg: string;
+    border: string;
+    text: string;
+  } | null>(null);
+  const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
   const [timeLeft, setTimeLeft] = useState(() =>
     phaseEndsAt ? Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000)) : 0
   );
 
-  const sentPhaseTriggerRef = useRef<string | null>(null);
+  const sentPhaseTriggerRef = useRef<{ phaseKey: string; sentAt: number } | null>(null);
   const lastSoundOutcomeRoundRef = useRef<number | null>(null);
+  const ghostChipRef = useRef<HTMLDivElement | null>(null);
+  const dragPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
   // Timer + autoritative Phasenübergänge auslösen (nur aktive Smartphone-Clients, TV bleibt reiner Zuschauer)
   useEffect(() => {
@@ -703,18 +754,23 @@ export function RouletteBoard({
     const phaseKey = `${round}:${phase}:${phaseEndsAt}`;
 
     const syncTimer = () => {
-      const remainingMs = phaseEndsAt - Date.now();
+      const now = Date.now();
+      const remainingMs = phaseEndsAt - now;
       setTimeLeft(Math.max(0, Math.ceil(remainingMs / 1000)));
 
-      if (!isTvScreen && !disabled && remainingMs <= 0 && sentPhaseTriggerRef.current !== phaseKey) {
+      const prevTrigger = sentPhaseTriggerRef.current;
+      const canSendTrigger =
+        !prevTrigger || prevTrigger.phaseKey !== phaseKey || now - prevTrigger.sentAt >= 1500;
+
+      if (!isTvScreen && !disabled && remainingMs <= 0 && canSendTrigger) {
         if (phase === 'betting') {
-          sentPhaseTriggerRef.current = phaseKey;
+          sentPhaseTriggerRef.current = { phaseKey, sentAt: now };
           onMove({ type: 'time_up' });
         } else if (phase === 'spinning' && remainingMs <= -120) {
-          sentPhaseTriggerRef.current = phaseKey;
+          sentPhaseTriggerRef.current = { phaseKey, sentAt: now };
           onMove({ type: 'finish_spin' });
         } else if (phase === 'result') {
-          sentPhaseTriggerRef.current = phaseKey;
+          sentPhaseTriggerRef.current = { phaseKey, sentAt: now };
           onMove({ type: 'time_up' });
         }
       }
@@ -727,6 +783,13 @@ export function RouletteBoard({
       clearInterval(timer);
     };
   }, [phase, round, phaseEndsAt, isTvScreen, disabled, onMove]);
+
+  // Drag-Cleanup bei Unmount
+  useEffect(() => {
+    return () => {
+      dragCleanupRef.current?.();
+    };
+  }, []);
 
   // Gewinn- / Verlust-Sound einmalig beim Ergebnis
   useEffect(() => {
@@ -753,21 +816,128 @@ export function RouletteBoard({
       ? gameState.lastOutcome.settledBets
       : gameState?.bets || {};
 
+  const isMultiplayer = allPlayers.length > 1;
   const myWagered = sumBets(gameState?.bets?.[myId]);
   const myLastRoundBets = gameState?.lastRoundBets?.[myId] || {};
   const canRebet = sumBets(myLastRoundBets) > 0 && sumBets(myLastRoundBets) <= myBalance + myWagered;
   const canDouble = myWagered > 0 && myWagered <= myBalance;
-  const isLocked = (gameState?.lockedPlayerIds || []).includes(myId);
+  const isLocked = !isMultiplayer && (gameState?.lockedPlayerIds || []).includes(myId);
   const isNextReady = (gameState?.nextReadyIds || []).includes(myId);
   const canBet = !isTvScreen && !disabled && phase === 'betting' && !isLocked && myBalance > 0;
 
-  const handlePlaceBet = (betKey: string) => {
+  const handlePlaceBet = (betKey: string, chipOverride?: number | 'all') => {
     if (!canBet) return;
-    const amount = selectedChip === 'all' ? myBalance : Math.min(selectedChip, myBalance);
+    const chipChoice = chipOverride ?? selectedChip;
+    const amount = chipChoice === 'all' ? myBalance : Math.min(chipChoice, myBalance);
     if (amount <= 0) return;
     playMoveSound();
     triggerHapticFeedback(8);
     onMove({ type: 'place_bet', betKey, amount });
+  };
+
+  const latestCanBetRef = useRef(canBet);
+  const latestPlaceBetRef = useRef(handlePlaceBet);
+  useEffect(() => {
+    latestCanBetRef.current = canBet;
+    latestPlaceBetRef.current = handlePlaceBet;
+  });
+
+  const handleChipPointerDown = (
+    e: React.PointerEvent<HTMLButtonElement>,
+    chip: (typeof CHIP_DENOMINATIONS)[number]
+  ) => {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    const chipAmount = chip.value === 'all' ? myBalance : chip.value;
+    if (!canBet || myBalance <= 0 || chipAmount > myBalance) return;
+    if (e.pointerType === 'mouse') {
+      e.preventDefault();
+    }
+
+    dragCleanupRef.current?.();
+
+    const pointerId = e.pointerId;
+    const startX = e.clientX;
+    const startY = e.clientY;
+    dragPosRef.current = { x: startX, y: startY };
+    let hasMoved = false;
+
+    const cleanup = () => {
+      window.removeEventListener('pointermove', onPointerMove);
+      window.removeEventListener('pointerup', onPointerUp);
+      window.removeEventListener('pointercancel', onPointerCancel);
+      window.removeEventListener('blur', onWindowBlur);
+      dragCleanupRef.current = null;
+    };
+
+    const finishDrag = () => {
+      cleanup();
+      setDragChip(null);
+      setHoveredBetKey(null);
+    };
+
+    const onPointerMove = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      if (!latestCanBetRef.current) {
+        finishDrag();
+        return;
+      }
+
+      const x = ev.clientX;
+      const y = ev.clientY;
+      dragPosRef.current = { x, y };
+
+      if (ghostChipRef.current) {
+        ghostChipRef.current.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+      }
+
+      if (!hasMoved) {
+        if (Math.hypot(x - startX, y - startY) < 4) return;
+        hasMoved = true;
+        setSelectedChip(chip.value);
+        setDragChip({
+          value: chip.value,
+          amount: chipAmount,
+          label: chip.value === 'all' ? 'MAX' : `${chip.label}€`,
+          bg: chip.bg,
+          border: chip.border,
+          text: chip.text,
+        });
+      }
+
+      const nextHover = findBetKeyAtPoint(x, y);
+      setHoveredBetKey((prev) => (prev === nextHover ? prev : nextHover));
+    };
+
+    const onPointerUp = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      const dropKey = hasMoved && latestCanBetRef.current ? findBetKeyAtPoint(ev.clientX, ev.clientY) : null;
+      const wasMoved = hasMoved;
+      finishDrag();
+
+      if (!wasMoved) {
+        setSelectedChip(chip.value);
+        return;
+      }
+
+      if (dropKey) {
+        latestPlaceBetRef.current(dropKey, chip.value);
+      }
+    };
+
+    const onPointerCancel = (ev: PointerEvent) => {
+      if (ev.pointerId !== pointerId) return;
+      finishDrag();
+    };
+
+    const onWindowBlur = () => {
+      finishDrag();
+    };
+
+    dragCleanupRef.current = cleanup;
+    window.addEventListener('pointermove', onPointerMove, { passive: true });
+    window.addEventListener('pointerup', onPointerUp);
+    window.addEventListener('pointercancel', onPointerCancel);
+    window.addEventListener('blur', onWindowBlur);
   };
 
   const rankedPlayers = useMemo(() => {
@@ -907,10 +1077,10 @@ export function RouletteBoard({
                             </span>
                           ) : activeWager > 0 ? (
                             `SETZT ${formatEuro(activeWager)}`
-                          ) : playerLocked ? (
+                          ) : !isMultiplayer && playerLocked ? (
                             'BEREIT ✓'
                           ) : (
-                            'WÄHLT...'
+                            'SETZT...'
                           )}
                         </div>
                       </div>
@@ -933,291 +1103,316 @@ export function RouletteBoard({
   const myOutcomeNet = gameState?.lastOutcome?.netProfit?.[myId] ?? 0;
   const myOutcomePayout = gameState?.lastOutcome?.totalPayout?.[myId] ?? 0;
   const myOutcomeWager = gameState?.lastOutcome?.totalWagered?.[myId] ?? 0;
-  const lockedCount = (gameState?.lockedPlayerIds || []).length;
   const nextReadyCount = (gameState?.nextReadyIds || []).length;
 
   return (
-    <div className="roulette-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[225px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-4 overflow-hidden py-0.5">
-      {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
-      <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 px-1 py-0.5 lg:p-1">
-        <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
-          <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
-            R {round}/{maxRounds}
-          </span>
-          {phase === 'betting' && (
-            <span
-              className={`font-arcade inline-flex items-center gap-1 text-[10px] ${
-                timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
-              }`}
-            >
-              <Clock className="h-2.5 w-2.5" />
-              {timeLeft}S
+    <>
+      <div className="roulette-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[225px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-4 overflow-hidden py-0.5">
+        {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
+        <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 px-1 py-0.5 lg:p-1">
+          <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
+            <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+              R {round}/{maxRounds}
             </span>
-          )}
-        </div>
-
-        <RouletteWheel
-          phase={phase}
-          round={round}
-          winningNumber={winningNumber}
-          spinStartedAt={gameState?.spinStartedAt}
-          sizeClass={
-            phase === 'spinning'
-              ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 lg:h-48 lg:w-48'
-              : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-24 sm:w-24 lg:h-44 lg:w-44'
-          }
-        />
-
-        <div className="flex flex-1 lg:flex-initial flex-col items-end lg:items-center text-right lg:text-center gap-1 min-w-0">
-          {phase === 'betting' && (
-            <>
-              <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
-                EINSATZ: {formatEuro(myWagered)}
+            {phase === 'betting' && (
+              <span
+                className={`font-arcade inline-flex items-center gap-1 text-[10px] ${
+                  timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
+                }`}
+              >
+                <Clock className="h-2.5 w-2.5" />
+                {timeLeft}S
               </span>
-              <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
-                {isLocked ? `BEREIT (${lockedCount}/${allPlayers.length})` : 'CHIPS PLATZIEREN'}
-              </span>
-            </>
-          )}
+            )}
+          </div>
 
-          {phase === 'spinning' && (
-            <span className="font-arcade text-xs text-[#FDE68A] uppercase animate-pulse">
-              KUGEL LÄUFT...
-            </span>
-          )}
-
-          {phase === 'result' && winningNumber !== null && (
-            <>
-              <span className="font-arcade text-xs text-[#FEF08A] uppercase">
-                ZAHL {winningNumber}{' '}
-                {winningNumber === 0
-                  ? '(GRÜN)'
-                  : getRouletteColor(winningNumber) === 'red'
-                    ? '(ROT)'
-                    : '(SCHWARZ)'}
-              </span>
-              {myOutcomeWager > 0 ? (
-                <span
-                  className={`font-arcade text-[11px] uppercase ${
-                    myOutcomeNet > 0
-                      ? 'text-[#34D399]'
-                      : myOutcomeNet < 0
-                        ? 'text-[#FCA5A5]'
-                        : 'text-[#CBD5E1]'
-                  }`}
-                >
-                  {myOutcomePayout > 0
-                    ? `+${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
-                    : formatSignedEuro(myOutcomeNet)}
-                </span>
-              ) : (
-                <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-                  KEIN EINSATZ
-                </span>
-              )}
-            </>
-          )}
-
-          {history.length > 0 && (
-            <div className="flex items-center gap-1 pt-0.5">
-              {history.slice(0, 5).map((item, idx) => (
-                <span
-                  key={`${item.round}-${idx}`}
-                  className={`inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-arcade text-[9px] ${getColorClasses(
-                    item.color
-                  )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-75'}`}
-                >
-                  {item.number}
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* RECHTE SPALTE (UNTEN IM HOCHFORMAT): WETTTISCH + CHIPS & AKTIONEN */}
-      <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
-        <div className="flex flex-col gap-1.5 min-w-0 my-auto">
-          <BettingTable
-            allBets={activeTableBets}
-            players={allPlayers}
-            myPlayerId={myId}
-            isTvScreen={false}
-            canBet={canBet}
-            winningNumber={winningNumber}
+          <RouletteWheel
             phase={phase}
-            onPlaceBet={handlePlaceBet}
+            round={round}
+            winningNumber={winningNumber}
+            spinStartedAt={gameState?.spinStartedAt}
+            sizeClass={
+              phase === 'spinning'
+                ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 lg:h-48 lg:w-48'
+                : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-24 sm:w-24 lg:h-44 lg:w-44'
+            }
           />
 
-          {allPlayers.length > 1 && (
-            <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
-              {rankedPlayers.map((p) => {
-                const bal = gameState?.scores?.[p.id] ?? startingBalance;
-                const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
-                const pLocked = (gameState?.lockedPlayerIds || []).includes(p.id);
-                const isMe = p.id === myId;
-                return (
-                  <div
-                    key={p.id}
-                    className="flex shrink-0 items-center gap-1.5 py-0.5"
+          <div className="flex flex-1 lg:flex-initial flex-col items-end lg:items-center text-right lg:text-center gap-1 min-w-0">
+            {phase === 'betting' && (
+              <>
+                <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                  EINSATZ: {formatEuro(myWagered)}
+                </span>
+                <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+                  {!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN'}
+                </span>
+              </>
+            )}
+
+            {phase === 'spinning' && (
+              <span className="font-arcade text-xs text-[#FDE68A] uppercase animate-pulse">
+                KUGEL LÄUFT...
+              </span>
+            )}
+
+            {phase === 'result' && winningNumber !== null && (
+              <>
+                <span className="font-arcade text-xs text-[#FEF08A] uppercase">
+                  ZAHL {winningNumber}{' '}
+                  {winningNumber === 0
+                    ? '(GRÜN)'
+                    : getRouletteColor(winningNumber) === 'red'
+                      ? '(ROT)'
+                      : '(SCHWARZ)'}
+                </span>
+                {myOutcomeWager > 0 ? (
+                  <span
+                    className={`font-arcade text-[11px] uppercase ${
+                      myOutcomeNet > 0
+                        ? 'text-[#34D399]'
+                        : myOutcomeNet < 0
+                          ? 'text-[#FCA5A5]'
+                          : 'text-[#CBD5E1]'
+                    }`}
                   >
-                    <span
-                      className={`inline-flex rounded-full ${
-                        isMe ? 'ring-1 ring-[#34D399]' : ''
-                      }`}
-                    >
-                      <Avatar config={p.avatar} size={15} />
-                    </span>
-                    <span
-                      className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
-                        isMe ? 'text-[#6EE7B7]' : 'text-white'
-                      }`}
-                    >
-                      {p.name}
-                    </span>
-                    <span className="font-arcade text-[9px] text-[#FDE68A]">
-                      {formatEuro(bal)}
-                    </span>
-                    {phase === 'betting' && pLocked && (
-                      <Check className="h-2.5 w-2.5 text-[#34D399]" />
-                    )}
-                    {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
-                      <span
-                        className={`font-arcade text-[9px] ${
-                          pNet > 0 ? 'text-[#34D399]' : 'text-[#FCA5A5]'
-                        }`}
-                      >
-                        {formatSignedEuro(pNet)}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          )}
+                    {myOutcomePayout > 0
+                      ? `+${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
+                      : formatSignedEuro(myOutcomeNet)}
+                  </span>
+                ) : (
+                  <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
+                    KEIN EINSATZ
+                  </span>
+                )}
+              </>
+            )}
+
+            {history.length > 0 && (
+              <div className="flex items-center gap-1 pt-0.5">
+                {history.slice(0, 5).map((item, idx) => (
+                  <span
+                    key={`${item.round}-${idx}`}
+                    className={`inline-flex h-4 min-w-4 items-center justify-center rounded border px-1 font-arcade text-[9px] ${getColorClasses(
+                      item.color
+                    )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-75'}`}
+                  >
+                    {item.number}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Untere Chip-Leiste & Aktions-Buttons */}
-        {phase === 'result' ? (
-          <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
-            <div className="flex items-center gap-1.5 min-w-0">
-              <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
-              <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
-                {round >= maxRounds ? `FINALE (${timeLeft}S)` : `WEITER (${timeLeft}S)`}
-              </span>
-            </div>
+        {/* RECHTE SPALTE (UNTEN IM HOCHFORMAT): WETTTISCH + CHIPS & AKTIONEN */}
+        <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
+          <div className="flex flex-col gap-1.5 min-w-0 my-auto">
+            <BettingTable
+              allBets={activeTableBets}
+              players={allPlayers}
+              myPlayerId={myId}
+              isTvScreen={false}
+              canBet={canBet}
+              winningNumber={winningNumber}
+              phase={phase}
+              hoveredBetKey={canBet && dragChip ? hoveredBetKey : null}
+              onPlaceBet={handlePlaceBet}
+            />
 
-            <OpenButton
-              size="sm"
-              variant="primary"
-              disabled={isNextReady || Boolean(disabled)}
-              onClick={() => onMove({ type: 'next_round' })}
-            >
-              {isNextReady
-                ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
-                : round >= maxRounds
-                  ? 'ENDERGEBNIS'
-                  : 'NÄCHSTE RUNDE'}
-            </OpenButton>
+            {isMultiplayer && (
+              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
+                {rankedPlayers.map((p) => {
+                  const bal = gameState?.scores?.[p.id] ?? startingBalance;
+                  const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
+                  const isMe = p.id === myId;
+                  return (
+                    <div
+                      key={p.id}
+                      className="flex shrink-0 items-center gap-1.5 py-0.5"
+                    >
+                      <span
+                        className={`inline-flex rounded-full ${
+                          isMe ? 'ring-1 ring-[#34D399]' : ''
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={15} />
+                      </span>
+                      <span
+                        className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
+                          isMe ? 'text-[#6EE7B7]' : 'text-white'
+                        }`}
+                      >
+                        {p.name}
+                      </span>
+                      <span className="font-arcade text-[9px] text-[#FDE68A]">
+                        {formatEuro(bal)}
+                      </span>
+                      {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
+                        <span
+                          className={`font-arcade text-[9px] ${
+                            pNet > 0 ? 'text-[#34D399]' : 'text-[#FCA5A5]'
+                          }`}
+                        >
+                          {formatSignedEuro(pNet)}
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
-        ) : (
-          <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
-            {/* Casino-Chips */}
-            <div className="flex items-center gap-1 flex-wrap">
-              {CHIP_DENOMINATIONS.map((chip) => {
-                const isSelected = selectedChip === chip.value;
-                const chipDisabled =
-                  chip.value === 'all'
-                    ? myBalance <= 0 || !canBet
-                    : myBalance < chip.value || !canBet;
 
-                return (
-                  <button
-                    key={String(chip.value)}
-                    type="button"
-                    disabled={!canBet}
-                    onClick={() => setSelectedChip(chip.value)}
-                    style={{
-                      backgroundColor: chip.bg,
-                      borderColor: isSelected ? '#FFFFFF' : chip.border,
-                      color: chip.text,
-                    }}
-                    className={`font-arcade inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 items-center justify-center rounded-full border-2 border-dashed px-1.5 text-[9px] sm:text-[11px] shadow transition-transform cursor-pointer active:scale-95 ${
-                      isSelected
-                        ? 'scale-105 ring-2 ring-[#FDE047] shadow-[0_0_10px_rgba(253,224,71,0.6)]'
-                        : 'opacity-85 hover:opacity-100'
-                    } ${chipDisabled ? 'opacity-40' : ''}`}
-                  >
-                    {chip.value === 'all' ? 'MAX' : `${chip.label}€`}
-                  </button>
-                );
-              })}
-            </div>
-
-            {/* Aktionen: Undo, Rebet, 2x, Clear & Drehen */}
-            <div className="flex items-center gap-1 ml-auto">
-              <button
-                type="button"
-                disabled={!canBet || myWagered === 0}
-                onClick={() => onMove({ type: 'undo_bet' })}
-                title="Letzten Chip zurücknehmen"
-                className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-              >
-                <RotateCcw className="h-3 w-3" />
-              </button>
-
-              <button
-                type="button"
-                disabled={!canBet || !canRebet}
-                onClick={() => onMove({ type: 'rebet' })}
-                title="Einsätze der letzten Runde wiederholen"
-                className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-              >
-                <Repeat className="h-3 w-3" />
-              </button>
-
-              <button
-                type="button"
-                disabled={!canBet || !canDouble}
-                onClick={() => onMove({ type: 'double_bets' })}
-                title="Einsätze verdoppeln"
-                className="font-arcade inline-flex h-7 items-center rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-              >
-                2×
-              </button>
-
-              <button
-                type="button"
-                disabled={!canBet || myWagered === 0}
-                onClick={() => onMove({ type: 'clear_bets' })}
-                title="Alle Einsätze löschen"
-                className="font-arcade inline-flex h-7 items-center rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-1.5 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
-              >
-                <Trash2 className="h-3 w-3" />
-              </button>
+          {/* Untere Chip-Leiste & Aktions-Buttons */}
+          {phase === 'result' ? (
+            <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
+              <div className="flex items-center gap-1.5 min-w-0">
+                <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
+                <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
+                  {round >= maxRounds ? `FINALE (${timeLeft}S)` : `WEITER (${timeLeft}S)`}
+                </span>
+              </div>
 
               <OpenButton
                 size="sm"
                 variant="primary"
-                disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
-                onClick={() => onMove({ type: 'lock_bets' })}
-                className="h-7! px-2.5! text-[10px]! min-w-[82px]"
+                disabled={isNextReady || Boolean(disabled)}
+                onClick={() => onMove({ type: 'next_round' })}
               >
-                <Check className="h-3 w-3 stroke-[3]" />
-                <span>
-                  {phase === 'spinning'
-                    ? 'DREHT...'
-                    : isLocked
-                      ? `BEREIT`
-                      : allPlayers.length === 1
-                        ? 'DREHEN!'
-                        : 'BEREIT'}
-                </span>
+                {isNextReady
+                  ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
+                  : round >= maxRounds
+                    ? 'ENDERGEBNIS'
+                    : 'NÄCHSTE RUNDE'}
               </OpenButton>
             </div>
-          </div>
-        )}
+          ) : (
+            <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
+              {/* Ziehbarer Spielstein-Vorrat (Touch & Drag-and-Drop) */}
+              <div className="flex items-center gap-1.5 flex-wrap">
+                {CHIP_DENOMINATIONS.map((chip) => {
+                  const isSelected = selectedChip === chip.value;
+                  const chipDisabled =
+                    chip.value === 'all'
+                      ? myBalance <= 0 || !canBet
+                      : myBalance < chip.value || !canBet;
+                  const isBeingDragged = Boolean(canBet && dragChip?.value === chip.value);
+
+                  return (
+                    <button
+                      key={String(chip.value)}
+                      type="button"
+                      disabled={chipDisabled}
+                      onPointerDown={(e) => handleChipPointerDown(e, chip)}
+                      onClick={() => setSelectedChip(chip.value)}
+                      onContextMenu={(e) => e.preventDefault()}
+                      style={{
+                        backgroundColor: chip.bg,
+                        borderColor: isSelected ? '#FFFFFF' : chip.border,
+                        color: chip.text,
+                        WebkitTouchCallout: 'none',
+                      }}
+                      className={`touch-none select-none font-arcade inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 items-center justify-center rounded-full border-2 border-dashed px-1.5 text-[9px] sm:text-[11px] shadow transition-transform cursor-grab active:cursor-grabbing active:scale-95 ${
+                        isSelected
+                          ? 'scale-105 ring-2 ring-[#FDE047] shadow-[0_0_10px_rgba(253,224,71,0.6)]'
+                          : 'opacity-90 hover:opacity-100'
+                      } ${chipDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${
+                        isBeingDragged ? 'opacity-45 scale-90' : ''
+                      }`}
+                    >
+                      {chip.value === 'all' ? 'MAX' : `${chip.label}€`}
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Aktionen: Undo, Rebet, 2x, Clear (+ Drehen nur im Solo-Modus) */}
+              <div className="flex items-center gap-1 ml-auto">
+                <button
+                  type="button"
+                  disabled={!canBet || myWagered === 0}
+                  onClick={() => onMove({ type: 'undo_bet' })}
+                  title="Letzten Chip zurücknehmen"
+                  className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canBet || !canRebet}
+                  onClick={() => onMove({ type: 'rebet' })}
+                  title="Einsätze der letzten Runde wiederholen"
+                  className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+                >
+                  <Repeat className="h-3 w-3" />
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canBet || !canDouble}
+                  onClick={() => onMove({ type: 'double_bets' })}
+                  title="Einsätze verdoppeln"
+                  className="font-arcade inline-flex h-7 items-center rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
+                >
+                  2×
+                </button>
+
+                <button
+                  type="button"
+                  disabled={!canBet || myWagered === 0}
+                  onClick={() => onMove({ type: 'clear_bets' })}
+                  title="Alle Einsätze löschen"
+                  className="font-arcade inline-flex h-7 items-center rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-1.5 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
+                >
+                  <Trash2 className="h-3 w-3" />
+                </button>
+
+                {!isMultiplayer && (
+                  <OpenButton
+                    size="sm"
+                    variant="primary"
+                    disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
+                    onClick={() => onMove({ type: 'lock_bets' })}
+                    className="h-7! px-2.5! text-[10px]! min-w-[82px]"
+                  >
+                    <Check className="h-3 w-3 stroke-[3]" />
+                    <span>
+                      {phase === 'spinning'
+                        ? 'DREHT...'
+                        : isLocked
+                          ? 'BEREIT'
+                          : 'DREHEN!'}
+                    </span>
+                  </OpenButton>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Schwebender Spielstein während Touch-/Maus-Drag (folgt per translate3d flüssig dem Finger) */}
+      {canBet && dragChip && (
+        <div
+          ref={(el) => {
+            ghostChipRef.current = el;
+            if (el) {
+              const { x, y } = dragPosRef.current;
+              el.style.transform = `translate3d(${x}px, ${y}px, 0) translate(-50%, -50%)`;
+            }
+          }}
+          style={{
+            backgroundColor: dragChip.bg,
+            borderColor: dragChip.border,
+            color: dragChip.text,
+          }}
+          className="pointer-events-none fixed top-0 left-0 z-[9999] inline-flex h-10 min-w-10 items-center justify-center rounded-full border-2 border-dashed px-2 font-arcade text-xs shadow-[0_14px_30px_rgba(0,0,0,0.75)] ring-2 ring-[#FDE047] will-change-transform"
+        >
+          {dragChip.label}
+        </div>
+      )}
+    </>
   );
 }

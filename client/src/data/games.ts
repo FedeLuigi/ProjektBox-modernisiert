@@ -107,7 +107,7 @@ export const GAMES: Game[] = [
     description:
       'Alle starten mit Startguthaben: Setze deine Chips auf Zahlen, Rot/Schwarz oder Dutzende und kassiere bis zu 35:1 ab!',
     howToPlay:
-      'Jeder startet mit demselben Startguthaben (z. B. 1.000 €). Wähle deine Chip-Höhe und tippe auf Zahlen (35:1), Dutzende/Kolonnen (2:1) oder Rot/Schwarz, Gerade/Ungerade & 1–18/19–36 (1:1). Nach allen Spins gewinnt das höchste Guthaben!',
+      'Jeder startet mit demselben Startguthaben (z. B. 1.000 €). Ziehe deine Spielsteine bis zum Ablauf der Zeit auf Zahlen (35:1), Dutzende/Kolonnen (2:1) oder Rot/Schwarz, Gerade/Ungerade & 1–18/19–36 (1:1). Nach allen Spins gewinnt das höchste Guthaben!',
     category: 'Strategie',
     gameType: 'party',
     gameTypeLabel: 'CASINO',
