@@ -178,9 +178,7 @@ export function MultiplayerGameView({
               <Avatar config={opponent?.avatar || ({} as any)} size={22} />
             </div>
           ) : isStadtLandFluss ? (
-            <div className="justify-self-center flex items-center gap-2 rounded-xl border border-[#22D3EE]/35 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-white uppercase">
-              <span className="text-[#67E8F9]">{gameState?.letter || '?'}</span>
-              <span className="text-white/40">•</span>
+            <div className="justify-self-center flex items-center rounded-xl border border-[#22D3EE]/35 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-white uppercase">
               <span>{gameState?.scores?.[currentUser.id] || 0} PKT</span>
             </div>
           ) : (

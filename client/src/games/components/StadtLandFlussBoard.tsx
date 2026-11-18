@@ -151,9 +151,9 @@ function WritingSheet({
       {/* Kopfzeile mit Buchstabe, Timer & Live-Fortschritt */}
       <div className="flex flex-wrap items-center justify-between gap-2.5 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border-2 border-[#22D3EE]/70 bg-[#0F172A]/85 shadow-[0_0_24px_rgba(34,211,238,0.28)]">
-            <span className="font-arcade text-2xl sm:text-3xl text-[#FDE68A]">{letter}</span>
-          </div>
+          <span className="font-arcade text-4xl sm:text-5xl leading-none text-[#FDE68A] drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)] shrink-0 px-1">
+            {letter}
+          </span>
           <div className="flex flex-col">
             <span className="font-arcade text-[10px] sm:text-xs tracking-widest text-[#67E8F9] uppercase">
               RUNDE {round} / {maxRounds}
@@ -389,11 +389,9 @@ export function StadtLandFlussBoard({
           {/* Große Buchstaben-Bühne */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-5 rounded-3xl border border-[#22D3EE]/35 bg-[#0F172A]/80 p-5 sm:p-6 backdrop-blur-xl">
             <div className="flex items-center gap-5">
-              <div className="flex h-24 w-24 sm:h-28 sm:w-28 items-center justify-center rounded-3xl border-4 border-[#22D3EE] bg-gradient-to-br from-[#164E63] to-[#0F172A] shadow-[0_0_40px_rgba(34,211,238,0.35)]">
-                <span className="font-arcade text-5xl sm:text-6xl text-[#FDE68A]">
-                  {gameState.letter}
-                </span>
-              </div>
+              <span className="font-arcade text-6xl sm:text-7xl leading-none text-[#FDE68A] drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] shrink-0 px-2">
+                {gameState.letter}
+              </span>
               <div className="flex flex-col gap-1.5 text-left">
                 <span className="font-arcade text-xs tracking-widest text-[#67E8F9] uppercase">
                   RUNDE {round} VON {maxRounds} • EINGABE LÄUFT
