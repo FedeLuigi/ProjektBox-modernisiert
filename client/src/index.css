@@ -999,6 +999,10 @@ body::-webkit-scrollbar,
   }
 
   /* ─── Casino Roulette im Smartphone-Querformat (2-Spalten, 0 Überlappung) ─── */
+  .roulette-stage-portrait {
+    display: none !important;
+  }
+
   .roulette-landscape-shell {
     display: grid !important;
     grid-template-columns: clamp(9.5rem, 21vw, 13.5rem) minmax(0, 1fr) !important;
@@ -1075,14 +1079,29 @@ body::-webkit-scrollbar,
   }
 }
 
-/* ─── Kompakte Portrait-Smartphones (< 700px Höhe): Roulette-Tableau ohne Überlauf ─── */
+/* ─── Roulette Hochformat auf Smartphones & Portrait-Tablets ─── */
+@media (orientation: portrait) and (max-width: 1023px) {
+  .roulette-stage-portrait {
+    display: flex !important;
+  }
+
+  .roulette-landscape-shell {
+    display: none !important;
+  }
+}
+
+/* ─── Kompakte Portrait-Smartphones (< 700px Höhe): Vertikales Roulette-Tableau ohne Überlauf ─── */
 @media (max-height: 700px) and (orientation: portrait) {
+  .roulette-portrait-felt {
+    padding: 4px !important;
+  }
+
   .roulette-felt-portrait {
     gap: 2px !important;
+    grid-template-rows: minmax(21px, 0.9fr) repeat(12, minmax(19px, 1fr)) minmax(21px, 0.9fr) !important;
   }
 
   .roulette-felt-portrait button {
-    height: 19px !important;
-    font-size: 9.5px !important;
+    font-size: 10px !important;
   }
 }

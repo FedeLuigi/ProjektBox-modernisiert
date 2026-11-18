@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import {
   Check,
@@ -8,6 +8,7 @@ import {
   Sparkles,
   Trash2,
   Trophy,
+  ZoomIn,
 } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { Avatar } from '../../components/Avatar';
@@ -225,13 +226,19 @@ function RouletteWheel({
   winningNumber,
   spinStartedAt,
   sizeClass = 'h-48 w-48 sm:h-60 sm:w-60',
+  compactBadge = false,
 }: {
   phase: RouletteState['phase'];
   round: number;
   winningNumber: number | null;
   spinStartedAt?: number;
   sizeClass?: string;
+  compactBadge?: boolean;
 }) {
+  const uid = useId();
+  const woodRimId = `wheelWoodRim-${uid}`;
+  const centerHubId = `wheelCenterHub-${uid}`;
+  const ballGradId = `wheelBallGrad-${uid}`;
   const rotorRef = useRef<SVGGElement | null>(null);
   const ballRef = useRef<SVGCircleElement | null>(null);
   const lastRestingDegRef = useRef<number>(0);
@@ -362,17 +369,17 @@ function RouletteWheel({
     <div className={`relative shrink-0 ${sizeClass}`}>
       <svg viewBox="0 0 320 320" className="h-full w-full">
         <defs>
-          <radialGradient id="wheelWoodRim" cx="50%" cy="50%" r="50%">
+          <radialGradient id={woodRimId} cx="50%" cy="50%" r="50%">
             <stop offset="78%" stopColor="#451A03" />
             <stop offset="92%" stopColor="#78350F" />
             <stop offset="100%" stopColor="#271002" />
           </radialGradient>
-          <radialGradient id="wheelCenterHub" cx="40%" cy="35%" r="60%">
+          <radialGradient id={centerHubId} cx="40%" cy="35%" r="60%">
             <stop offset="0%" stopColor="#FEF08A" />
             <stop offset="55%" stopColor="#D97706" />
             <stop offset="100%" stopColor="#78350F" />
           </radialGradient>
-          <radialGradient id="wheelBallGrad" cx="35%" cy="30%" r="65%">
+          <radialGradient id={ballGradId} cx="35%" cy="30%" r="65%">
             <stop offset="0%" stopColor="#FFFFFF" />
             <stop offset="55%" stopColor="#E2E8F0" />
             <stop offset="100%" stopColor="#64748B" />
@@ -380,7 +387,7 @@ function RouletteWheel({
         </defs>
 
         {/* Äußerer Mahagoni-Kranz + Goldrand */}
-        <circle cx="160" cy="160" r="156" fill="url(#wheelWoodRim)" stroke="#F59E0B" strokeWidth="3" />
+        <circle cx="160" cy="160" r="156" fill={`url(#${woodRimId})`} stroke="#F59E0B" strokeWidth="3" />
         <circle cx="160" cy="160" r="136" fill="none" stroke="#FBBF24" strokeWidth="1.5" strokeOpacity="0.55" />
 
         {/* 8 Messing-Deflektoren auf dem äußeren Kugelring */}
@@ -442,7 +449,7 @@ function RouletteWheel({
           <line x1="112" y1="160" x2="208" y2="160" stroke="#FBBF24" strokeWidth="4" strokeLinecap="round" />
           <line x1="160" y1="112" x2="160" y2="208" stroke="#FBBF24" strokeWidth="4" strokeLinecap="round" />
           <circle cx="160" cy="160" r="30" fill="#0F172A" stroke="#F59E0B" strokeWidth="2.5" />
-          <circle cx="160" cy="160" r="14" fill="url(#wheelCenterHub)" />
+          <circle cx="160" cy="160" r="14" fill={`url(#${centerHubId})`} />
         </g>
 
         {/* Metallische Roulette-Kugel */}
@@ -451,7 +458,7 @@ function RouletteWheel({
           cx="160"
           cy="16"
           r={phase === 'betting' ? 5 : 6.2}
-          fill="url(#wheelBallGrad)"
+          fill={`url(#${ballGradId})`}
           stroke="#0F172A"
           strokeWidth="0.9"
           opacity={phase === 'betting' ? 0.55 : 1}
@@ -462,11 +469,17 @@ function RouletteWheel({
       {phase === 'result' && winningNumber !== null && winColor && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div
-            className={`flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 ${getColorClasses(
-              winColor
-            )}`}
+            className={`flex flex-col items-center justify-center rounded-full ${
+              compactBadge ? 'h-6 w-6 border' : 'h-14 w-14 border-2'
+            } ${getColorClasses(winColor)}`}
           >
-            <span className="font-arcade text-xl leading-none">{winningNumber}</span>
+            <span
+              className={`font-arcade leading-none ${
+                compactBadge ? 'text-[10px]' : 'text-xl'
+              }`}
+            >
+              {winningNumber}
+            </span>
           </div>
         </div>
       )}
@@ -483,6 +496,7 @@ interface BettingTableProps {
   winningNumber: number | null;
   phase: RouletteState['phase'];
   hoveredBetKey?: string | null;
+  layout?: 'horizontal' | 'portrait';
   onPlaceBet: (betKey: string) => void;
 }
 
@@ -495,8 +509,10 @@ function BettingTable({
   winningNumber,
   phase,
   hoveredBetKey,
+  layout = 'horizontal',
   onPlaceBet,
 }: BettingTableProps) {
+  const isPortraitLayout = layout === 'portrait';
   const playerColorMap = useMemo(() => {
     const map = new Map<string, string>();
     players.forEach((p, idx) => {
@@ -524,7 +540,7 @@ function BettingTable({
             <span
               key={e.id}
               style={{ backgroundColor: e.color }}
-              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-[#0F172A] px-1 font-arcade text-[8px] leading-none text-[#0F172A] shadow"
+              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-[#0F172A] px-1 font-arcade text-[8px] leading-none text-[#0F172A]"
             >
               {formatCompactChip(e.amount)}
             </span>
@@ -551,7 +567,11 @@ function BettingTable({
                 borderColor: chipStyle.border,
                 color: chipStyle.text,
               }}
-              className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 inline-flex h-[18px] min-w-[18px] sm:h-5 sm:min-w-5 items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade text-[8px] sm:text-[9px] leading-none ring-1 ring-[#0F172A]/85 shadow-[0_2px_6px_rgba(0,0,0,0.8)]"
+              className={`pointer-events-none absolute z-10 inline-flex items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade leading-none ring-1 ring-[#0F172A]/85 ${
+                isPortraitLayout
+                  ? '-top-1 -right-1 h-4 min-w-4 text-[7.5px]'
+                  : '-top-1.5 -right-1.5 h-[18px] min-w-[18px] sm:h-5 sm:min-w-5 text-[8px] sm:text-[9px]'
+              }`}
             >
               {formatCompactChip(myAmount)}
             </span>
@@ -575,7 +595,11 @@ function BettingTable({
     );
   };
 
-  const renderNumberCell = (num: number, extraClass = '') => {
+  const renderNumberCell = (
+    num: number,
+    extraClass = '',
+    gridStyle?: React.CSSProperties
+  ) => {
     const betKey = `number:${num}`;
     const color = getRouletteColor(num);
     const isWinner = showWinHighlight && winningNumber === num;
@@ -588,6 +612,7 @@ function BettingTable({
         data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
+        style={gridStyle}
         className={`relative flex items-center justify-center rounded-md border font-arcade text-xs sm:text-sm transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
         } ${
@@ -598,9 +623,9 @@ function BettingTable({
               : 'border-white/25 bg-[#0F172A] text-white'
         } ${
           isDragHovered
-            ? 'ring-2 ring-[#FDE047] shadow-[0_0_18px_rgba(253,224,71,0.95)] brightness-125 scale-[1.04] z-20'
+            ? 'ring-2 ring-[#FDE047] brightness-125 scale-[1.04] z-20'
             : isWinner
-              ? 'ring-2 ring-[#FDE047] shadow-[0_0_16px_rgba(253,224,71,0.85)] z-10'
+              ? 'ring-2 ring-[#FDE047] z-10'
               : ''
         } ${extraClass}`}
       >
@@ -612,9 +637,11 @@ function BettingTable({
 
   const renderOutsideCell = (
     betKey: string,
-    label: string,
+    label: ReactNode,
     toneClass: string,
-    extraClass = ''
+    extraClass = '',
+    gridStyle?: React.CSSProperties,
+    ariaLabel?: string
   ) => {
     const isWinner = showWinHighlight && winningNumber !== null && doesBetWin(betKey, winningNumber);
     const isDragHovered = canBet && hoveredBetKey === betKey;
@@ -623,29 +650,169 @@ function BettingTable({
       <button
         key={betKey}
         type="button"
+        aria-label={ariaLabel}
         data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
+        style={gridStyle}
         className={`relative flex items-center justify-center rounded-md border px-1.5 py-1.5 font-arcade text-[10px] sm:text-xs tracking-wide uppercase transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
         } ${toneClass} ${
           isDragHovered
-            ? 'ring-2 ring-[#FDE047] shadow-[0_0_18px_rgba(253,224,71,0.95)] brightness-125 scale-[1.03] z-20'
+            ? 'ring-2 ring-[#FDE047] brightness-125 scale-[1.03] z-20'
             : isWinner
-              ? 'ring-2 ring-[#FDE047] shadow-[0_0_14px_rgba(253,224,71,0.75)] z-10'
+              ? 'ring-2 ring-[#FDE047] z-10'
               : ''
         } ${extraClass}`}
       >
-        <span className="truncate">{label}</span>
+        {typeof label === 'string' ? <span className="truncate">{label}</span> : label}
         {renderChipIndicators(betKey)}
       </button>
     );
   };
 
+  if (isPortraitLayout) {
+    const verticalLabel = (text: string) => (
+      <span className="[writing-mode:vertical-rl] leading-none whitespace-nowrap text-[8px] min-[390px]:text-[9px] sm:text-[10px] tracking-tight">
+        {text}
+      </span>
+    );
+
+    return (
+      <div className="roulette-portrait-felt flex h-full w-full flex-col select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2">
+        <div
+          className="roulette-felt-portrait grid h-full w-full flex-1 min-h-0 grid-cols-[26px_repeat(3,minmax(0,1fr))_26px] min-[390px]:grid-cols-[30px_repeat(3,minmax(0,1fr))_30px] sm:grid-cols-[36px_repeat(3,minmax(0,1fr))_36px] gap-[3px]"
+          style={{
+            gridTemplateRows:
+              'minmax(24px, 0.95fr) repeat(12, minmax(22px, 1fr)) minmax(24px, 0.9fr)',
+          }}
+        >
+          {/* 0 oben mittig über den 3 Zahlen-Spalten */}
+          {renderNumberCell(0, 'h-full w-full text-sm sm:text-base', {
+            gridColumn: '2 / 5',
+            gridRow: '1 / 2',
+          })}
+
+          {/* Linke Außenwetten (je 2 Zahlenreihen hoch, vertikal ausgerichtet) */}
+          {renderOutsideCell(
+            'range:low',
+            verticalLabel('1-18'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '2 / 4' },
+            '1 bis 18'
+          )}
+          {renderOutsideCell(
+            'parity:even',
+            verticalLabel('GERADE'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '4 / 6' },
+            'Gerade'
+          )}
+          {renderOutsideCell(
+            'color:red',
+            <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-white/85 bg-[#DC2626]" />,
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '6 / 8' },
+            'Rot'
+          )}
+          {renderOutsideCell(
+            'color:black',
+            <span className="h-3.5 w-3.5 rotate-45 rounded-[2px] border border-white/85 bg-[#0F172A]" />,
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '8 / 10' },
+            'Schwarz'
+          )}
+          {renderOutsideCell(
+            'parity:odd',
+            verticalLabel('UNGERADE'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '10 / 12' },
+            'Ungerade'
+          )}
+          {renderOutsideCell(
+            'range:high',
+            verticalLabel('19-36'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '1 / 2', gridRow: '12 / 14' },
+            '19 bis 36'
+          )}
+
+          {/* Zahlenraster 1–36 (12 Reihen × 3 Spalten) */}
+          {PORTRAIT_ROWS.flatMap((row, rowIdx) =>
+            row.map((num, colIdx) =>
+              renderNumberCell(num, 'h-full w-full text-xs min-[390px]:text-sm sm:text-base', {
+                gridColumn: String(colIdx + 2),
+                gridRow: String(rowIdx + 2),
+              })
+            )
+          )}
+
+          {/* Rechte Dutzend-Wetten (je 4 Zahlenreihen hoch, vertikal ausgerichtet) */}
+          {renderOutsideCell(
+            'dozen:1',
+            verticalLabel('1. 12'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '5 / 6', gridRow: '2 / 6' },
+            '1. Dutzend (1 bis 12)'
+          )}
+          {renderOutsideCell(
+            'dozen:2',
+            verticalLabel('2. 12'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '5 / 6', gridRow: '6 / 10' },
+            '2. Dutzend (13 bis 24)'
+          )}
+          {renderOutsideCell(
+            'dozen:3',
+            verticalLabel('3. 12'),
+            'border-white/25 bg-[#047857]/60 text-white',
+            'h-full w-full px-0! py-0.5!',
+            { gridColumn: '5 / 6', gridRow: '10 / 14' },
+            '3. Dutzend (25 bis 36)'
+          )}
+
+          {/* Untere 2:1 Spaltenwetten */}
+          {renderOutsideCell(
+            'column:1',
+            '2:1',
+            'border-white/25 bg-[#047857]/65 text-[#FDE68A]',
+            'h-full w-full px-0! py-0.5! text-[10px] sm:text-xs',
+            { gridColumn: '2 / 3', gridRow: '14 / 15' },
+            'Erste Kolonne 2 zu 1'
+          )}
+          {renderOutsideCell(
+            'column:2',
+            '2:1',
+            'border-white/25 bg-[#047857]/65 text-[#FDE68A]',
+            'h-full w-full px-0! py-0.5! text-[10px] sm:text-xs',
+            { gridColumn: '3 / 4', gridRow: '14 / 15' },
+            'Zweite Kolonne 2 zu 1'
+          )}
+          {renderOutsideCell(
+            'column:3',
+            '2:1',
+            'border-white/25 bg-[#047857]/65 text-[#FDE68A]',
+            'h-full w-full px-0! py-0.5! text-[10px] sm:text-xs',
+            { gridColumn: '4 / 5', gridRow: '14 / 15' },
+            'Dritte Kolonne 2 zu 1'
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="roulette-landscape-felt w-full select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5">
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
-      <div className="roulette-felt-horizontal hidden sm:flex flex-col gap-1">
+      <div className="roulette-felt-horizontal flex flex-col gap-1">
         <div className="grid grid-cols-[32px_repeat(12,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
           {renderNumberCell(0, 'roulette-zero-cell row-span-3 min-h-[104px]')}
 
@@ -678,33 +845,6 @@ function BettingTable({
           {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           <div aria-hidden="true" />
-        </div>
-      </div>
-
-      {/* PORTRAIT SMARTPHONE CASINO FELT (kompakt ohne Scrollen, daumenfreundlich) */}
-      <div className="roulette-felt-portrait flex sm:hidden flex-col gap-[3px]">
-        {renderNumberCell(0, 'h-[26px] w-full')}
-
-        <div className="grid grid-cols-3 gap-[3px]">
-          {PORTRAIT_ROWS.flatMap((row) => row.map((n) => renderNumberCell(n, 'h-[23px] text-[11px]')))}
-          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
-          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
-          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-[23px] text-[10px]')}
-        </div>
-
-        <div className="grid grid-cols-3 gap-[3px]">
-          {renderOutsideCell('dozen:1', '1–12', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
-          {renderOutsideCell('dozen:2', '13–24', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
-          {renderOutsideCell('dozen:3', '25–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-[23px] text-[10px]')}
-        </div>
-
-        <div className="grid grid-cols-3 gap-[3px]">
-          {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
-          {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
-          {renderOutsideCell('color:red', 'ROT', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-[24px] text-[10px]')}
-          {renderOutsideCell('color:black', 'SCHWARZ', 'border-white/30 bg-[#0F172A] text-white', 'h-[24px] text-[10px]')}
-          {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
-          {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-[24px] text-[10px]')}
         </div>
       </div>
     </div>
@@ -741,6 +881,11 @@ export function RouletteBoard({
     Array<{ id: number; round: number; targetOrderLen: number; betKey: string; amount: number }>
   >([]);
   const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
+  const [isCompactScreen, setIsCompactScreen] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 1023px), (max-height: 540px)').matches;
+  });
+  const [isWheelZoomed, setIsWheelZoomed] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() =>
     phaseEndsAt ? Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000)) : 0
   );
@@ -795,6 +940,32 @@ export function RouletteBoard({
       dragCleanupRef.current?.();
     };
   }, []);
+
+  // Kleine Bildschirme erkennen (Drehrad-Zoom nur dort aktiv) & per Escape schließen
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 1023px), (max-height: 540px)');
+    const syncViewport = () => {
+      setIsCompactScreen(mq.matches);
+      if (!mq.matches) {
+        setIsWheelZoomed(false);
+      }
+    };
+    syncViewport();
+    mq.addEventListener('change', syncViewport);
+    return () => mq.removeEventListener('change', syncViewport);
+  }, []);
+
+  useEffect(() => {
+    if (!isWheelZoomed) return;
+    const onKeyDown = (ev: KeyboardEvent) => {
+      if (ev.key === 'Escape') {
+        setIsWheelZoomed(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isWheelZoomed]);
 
   // Gewinn- / Verlust-Sound einmalig beim Ergebnis
   useEffect(() => {
@@ -895,6 +1066,7 @@ export function RouletteBoard({
     }
 
     dragCleanupRef.current?.();
+    setIsWheelZoomed(false);
 
     const pointerId = e.pointerId;
     const touchOffsetY = e.pointerType === 'touch' ? -26 : 0;
@@ -1158,23 +1330,387 @@ export function RouletteBoard({
   const myOutcomeWager = gameState?.lastOutcome?.totalWagered?.[myId] ?? 0;
   const nextReadyCount = (gameState?.nextReadyIds || []).length;
 
+  const renderWheelControl = (sizeClass: string, compactBadge = false) => {
+    const wheelNode = (
+      <RouletteWheel
+        phase={phase}
+        round={round}
+        winningNumber={winningNumber}
+        spinStartedAt={gameState?.spinStartedAt}
+        sizeClass={sizeClass}
+        compactBadge={compactBadge}
+      />
+    );
+
+    if (!isCompactScreen) {
+      return wheelNode;
+    }
+
+    return (
+      <button
+        type="button"
+        onClick={() => setIsWheelZoomed(true)}
+        aria-label="Drehrad vergrößern"
+        title="Drehrad vergrößern"
+        className="group relative flex items-center justify-center rounded-full cursor-pointer transition-transform active:scale-95 focus:outline-none"
+      >
+        {wheelNode}
+        <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full border border-[#FBBF24]/75 bg-[#0F172A]/90 text-[#FDE68A]">
+          <ZoomIn className="h-2.5 w-2.5" />
+        </span>
+      </button>
+    );
+  };
+
+  const renderChipButton = (
+    chip: (typeof CHIP_DENOMINATIONS)[number],
+    variant: 'portrait' | 'landscape'
+  ) => {
+    const isSelected = selectedChip === chip.value;
+    const chipDisabled =
+      chip.value === 'all'
+        ? effectiveBalance <= 0 || !canBet
+        : effectiveBalance < chip.value || !canBet;
+    const isBeingDragged = Boolean(canBet && dragChip?.value === chip.value);
+    const isPortraitVariant = variant === 'portrait';
+
+    return (
+      <button
+        key={String(chip.value)}
+        type="button"
+        draggable={false}
+        disabled={chipDisabled}
+        onPointerDown={(e) => handleChipPointerDown(e, chip)}
+        onClick={() => setSelectedChip(chip.value)}
+        onContextMenu={(e) => e.preventDefault()}
+        style={{
+          backgroundColor: chip.bg,
+          borderColor: isSelected ? '#FFFFFF' : chip.border,
+          color: chip.text,
+          WebkitTouchCallout: 'none',
+          WebkitUserSelect: 'none',
+        }}
+        className={`touch-none select-none font-arcade inline-flex items-center justify-center rounded-full border-2 border-dashed transition-transform cursor-grab active:cursor-grabbing active:scale-95 ${
+          isPortraitVariant
+            ? 'h-9.5 w-9.5 min-[390px]:h-11 min-[390px]:w-11 sm:h-12 sm:w-12 px-0.5 text-[9px] min-[390px]:text-[10px]'
+            : 'h-7 min-w-7 sm:h-8 sm:min-w-8 px-1.5 text-[9px] sm:text-[11px] shadow'
+        } ${
+          isSelected
+            ? 'scale-105 ring-2 ring-[#FDE047] shadow-[0_0_10px_rgba(253,224,71,0.6)]'
+            : 'opacity-90 hover:opacity-100'
+        } ${chipDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${
+          isBeingDragged ? 'opacity-45 scale-90' : ''
+        }`}
+      >
+        {chip.value === 'all' ? 'MAX' : isPortraitVariant ? chip.label : `${chip.label}€`}
+      </button>
+    );
+  };
+
+  const renderActionButtons = (variant: 'portrait' | 'landscape') => {
+    const isPortraitVariant = variant === 'portrait';
+    const baseBtnClass = isPortraitVariant
+      ? 'font-arcade inline-flex h-9 w-9 min-[390px]:h-10 min-[390px]:w-10 sm:h-11 sm:w-11 items-center justify-center rounded-full border text-[10px] transition-colors disabled:opacity-35 cursor-pointer'
+      : 'font-arcade inline-flex h-7 items-center gap-1 rounded-lg border px-1.5 text-[10px] uppercase disabled:opacity-35 cursor-pointer';
+
+    return (
+      <>
+        <button
+          type="button"
+          disabled={!canBet || displayedWagered === 0}
+          onClick={() => {
+            setPendingDrops([]);
+            onMove({ type: 'undo_bet' });
+          }}
+          title="Letzten Chip zurücknehmen"
+          aria-label="Letzten Chip zurücknehmen"
+          className={`${baseBtnClass} border-white/20 bg-white/[0.06] text-white hover:bg-white/12`}
+        >
+          <RotateCcw className={isPortraitVariant ? 'h-3.5 w-3.5' : 'h-3 w-3'} />
+        </button>
+
+        <button
+          type="button"
+          disabled={!canBet || !canRebet}
+          onClick={() => {
+            setPendingDrops([]);
+            onMove({ type: 'rebet' });
+          }}
+          title="Einsätze der letzten Runde wiederholen"
+          aria-label="Einsätze der letzten Runde wiederholen"
+          className={`${baseBtnClass} border-white/20 bg-white/[0.06] text-white hover:bg-white/12`}
+        >
+          <Repeat className={isPortraitVariant ? 'h-3.5 w-3.5' : 'h-3 w-3'} />
+        </button>
+
+        <button
+          type="button"
+          disabled={!canBet || !canDouble}
+          onClick={() => {
+            setPendingDrops([]);
+            onMove({ type: 'double_bets' });
+          }}
+          title="Einsätze verdoppeln"
+          aria-label="Einsätze verdoppeln"
+          className={`${baseBtnClass} border-white/20 bg-white/[0.06] text-[#FDE68A] hover:bg-white/12`}
+        >
+          2×
+        </button>
+
+        <button
+          type="button"
+          disabled={!canBet || displayedWagered === 0}
+          onClick={() => {
+            setPendingDrops([]);
+            onMove({ type: 'clear_bets' });
+          }}
+          title="Alle Einsätze löschen"
+          aria-label="Alle Einsätze löschen"
+          className={`${baseBtnClass} border-[#FDA4AF]/35 bg-[#E11D48]/15 text-[#FECDD3] hover:bg-[#E11D48]/25`}
+        >
+          <Trash2 className={isPortraitVariant ? 'h-3.5 w-3.5' : 'h-3 w-3'} />
+        </button>
+
+        {!isMultiplayer &&
+          (isPortraitVariant ? (
+            <button
+              type="button"
+              disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
+              onClick={() => {
+                setPendingDrops([]);
+                onMove({ type: 'lock_bets' });
+              }}
+              title="Jetzt drehen"
+              aria-label="Jetzt drehen"
+              className="font-arcade inline-flex h-10 w-10 min-[390px]:h-11 min-[390px]:w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[#34D399]/75 bg-[#059669] text-white hover:bg-[#10B981] disabled:opacity-40 cursor-pointer transition-transform active:scale-95"
+            >
+              <Check className="h-4 w-4 stroke-[3]" />
+            </button>
+          ) : (
+            <OpenButton
+              size="sm"
+              variant="primary"
+              disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
+              onClick={() => {
+                setPendingDrops([]);
+                onMove({ type: 'lock_bets' });
+              }}
+              className="h-7! px-2.5! text-[10px]! min-w-[82px]"
+            >
+              <Check className="h-3 w-3 stroke-[3]" />
+              <span>
+                {phase === 'spinning' ? 'DREHT...' : isLocked ? 'BEREIT' : 'DREHEN!'}
+              </span>
+            </OpenButton>
+          ))}
+      </>
+    );
+  };
+
+  const playersStrip = isMultiplayer && (
+    <div className="flex shrink-0 items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
+      {rankedPlayers.map((p) => {
+        const bal = gameState?.scores?.[p.id] ?? startingBalance;
+        const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
+        const isMe = p.id === myId;
+        return (
+          <div key={p.id} className="flex shrink-0 items-center gap-1.5 py-0.5">
+            <span className={`inline-flex rounded-full ${isMe ? 'ring-1 ring-[#34D399]' : ''}`}>
+              <Avatar config={p.avatar} size={15} />
+            </span>
+            <span
+              className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
+                isMe ? 'text-[#6EE7B7]' : 'text-white'
+              }`}
+            >
+              {p.name}
+            </span>
+            <span className="font-arcade text-[9px] text-[#FDE68A]">{formatEuro(bal)}</span>
+            {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
+              <span
+                className={`font-arcade text-[9px] ${
+                  pNet > 0 ? 'text-[#34D399]' : 'text-[#FCA5A5]'
+                }`}
+              >
+                {formatSignedEuro(pNet)}
+              </span>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+
+  const resultFooter = phase === 'result' && (
+    <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
+      <div className="flex items-center gap-1.5 min-w-0">
+        <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
+        <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
+          {round >= maxRounds ? `FINALE (${timeLeft}S)` : `WEITER (${timeLeft}S)`}
+        </span>
+      </div>
+
+      <OpenButton
+        size="sm"
+        variant="primary"
+        disabled={isNextReady || Boolean(disabled)}
+        onClick={() => onMove({ type: 'next_round' })}
+      >
+        {isNextReady
+          ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
+          : round >= maxRounds
+            ? 'ENDERGEBNIS'
+            : 'NÄCHSTE RUNDE'}
+      </OpenButton>
+    </div>
+  );
+
+  const winningStatusLabel =
+    winningNumber !== null
+      ? `ZAHL ${winningNumber} ${
+          winningNumber === 0
+            ? '(GRÜN)'
+            : getRouletteColor(winningNumber) === 'red'
+              ? '(ROT)'
+              : '(SCHWARZ)'
+        }`
+      : '';
+
   return (
     <>
-      <div className="roulette-landscape-shell flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
-        {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
+      {/* ─── HOCHFORMAT-ANSICHT (SMARTPHONES & PORTRAIT-TABLETS WIE CASINO-VORLAGE) ─── */}
+      <div className="roulette-stage-portrait flex sm:hidden w-full max-w-2xl flex-1 min-h-0 flex-col justify-between gap-1.5 overflow-y-auto overflow-x-hidden py-0.5">
+        {/* Obere kompakte Verlaufs-, Runden- & Statuszeile (ohne dunkle Container-Box) */}
+        <div className="flex shrink-0 flex-col gap-0.5 px-1">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar">
+              {history.length === 0 ? (
+                <span className="font-arcade text-[10px] text-white/50 uppercase whitespace-nowrap">
+                  NOCH KEINE ZIEHUNG
+                </span>
+              ) : (
+                history.slice(0, 7).map((item, idx) => (
+                  <span
+                    key={`${item.round}-${idx}`}
+                    className={`inline-flex h-4.5 min-w-4.5 shrink-0 items-center justify-center rounded border px-1 font-arcade text-[9px] ${getColorClasses(
+                      item.color
+                    )} ${idx === 0 ? 'ring-1 ring-[#FDE047]' : 'opacity-80'}`}
+                  >
+                    {item.number}
+                  </span>
+                ))
+              )}
+            </div>
+
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+                R {round}/{maxRounds}
+              </span>
+              {phase === 'betting' && (
+                <span
+                  className={`font-arcade inline-flex items-center gap-1 text-[10px] ${
+                    timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
+                  }`}
+                >
+                  <Clock className="h-2.5 w-2.5" />
+                  {timeLeft}S
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between gap-2">
+            {phase === 'result' && winningNumber !== null ? (
+              <span className="font-arcade text-[10px] text-[#FEF08A] uppercase truncate">
+                {winningStatusLabel}
+                {myOutcomeWager > 0 ? (
+                  <span
+                    className={`ml-1.5 ${
+                      myOutcomeNet > 0
+                        ? 'text-[#34D399]'
+                        : myOutcomeNet < 0
+                          ? 'text-[#FCA5A5]'
+                          : 'text-[#CBD5E1]'
+                    }`}
+                  >
+                    ·{' '}
+                    {myOutcomePayout > 0
+                      ? `+${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
+                      : formatSignedEuro(myOutcomeNet)}
+                  </span>
+                ) : (
+                  <span className="ml-1.5 text-[#94A3B8]">· KEIN EINSATZ</span>
+                )}
+              </span>
+            ) : phase === 'spinning' ? (
+              <span className="font-arcade text-[10px] text-[#FDE68A] uppercase animate-pulse">
+                KUGEL LÄUFT...
+              </span>
+            ) : (
+              <span className="font-arcade text-[10px] text-[#FDE68A] uppercase">
+                EINSATZ: {formatEuro(displayedWagered)}
+              </span>
+            )}
+
+            {phase === 'betting' && (
+              <span className="font-arcade text-[9px] text-[#6EE7B7] uppercase shrink-0">
+                {!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN'}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Mittlere 3-Spalten-Bühne: Links (Drehrad + Aktionen) | Mitte (Hochformat-Tisch) | Rechts (Chips) */}
+        <div className="grid w-full flex-1 min-h-0 grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-1.5 min-[390px]:gap-2 sm:gap-4 px-0.5">
+          {/* Linke Leiste: Klickbares Mini-Drehrad oben + Aktions-Buttons vertikal darunter */}
+          <div className="flex shrink-0 flex-col items-center justify-between gap-2 py-0.5">
+            {renderWheelControl(
+              'h-12 w-12 min-[390px]:h-14 min-[390px]:w-14 sm:h-16 sm:w-16',
+              true
+            )}
+
+            <div className="mt-auto flex flex-col items-center gap-1.5 sm:gap-2">
+              {renderActionButtons('portrait')}
+            </div>
+          </div>
+
+          {/* Mitte: Vertikales Roulette-Tableau */}
+          <div className="my-auto flex h-full max-h-[min(100%,640px)] min-h-0 min-w-0 flex-col justify-center">
+            <BettingTable
+              allBets={displayedTableBets}
+              players={allPlayers}
+              myPlayerId={myId}
+              isTvScreen={false}
+              canBet={canBet}
+              winningNumber={winningNumber}
+              phase={phase}
+              hoveredBetKey={canBet && dragChip ? hoveredBetKey : null}
+              layout="portrait"
+              onPlaceBet={handlePlaceBet}
+            />
+          </div>
+
+          {/* Rechte Leiste: Vertikale Poker-Chips (per Drag-and-Drop oder Tap) */}
+          <div className="flex shrink-0 flex-col items-center justify-center gap-2 sm:gap-2.5 py-0.5 touch-none select-none">
+            {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'portrait'))}
+          </div>
+        </div>
+
+        {playersStrip}
+        {resultFooter}
+      </div>
+
+      {/* ─── QUERFORMAT / DESKTOP / TABLET HORIZONTAL-ANSICHT ─── */}
+      <div className="roulette-landscape-shell hidden sm:flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
+        {/* LINKE SPALTE: KESSEL + RUNDE/TIMER + STATUS */}
         <div className="roulette-landscape-left grid w-full shrink-0 grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-center gap-x-3 gap-y-0.5 px-1 py-0.5 lg:flex lg:w-auto lg:min-w-[230px] lg:flex-col lg:items-center lg:justify-center lg:gap-2.5 lg:p-1">
           <div className="roulette-wheel-wrap row-span-2 flex items-center justify-center shrink-0 lg:row-span-1 lg:order-2">
-            <RouletteWheel
-              phase={phase}
-              round={round}
-              winningNumber={winningNumber}
-              spinStartedAt={gameState?.spinStartedAt}
-              sizeClass={
-                phase === 'spinning'
-                  ? 'roulette-landscape-wheel w-20 sm:w-28 md:w-32 lg:w-[min(280px,46vh)] xl:w-[min(350px,52vh)] 2xl:w-[min(390px,56vh)] aspect-square'
-                  : 'roulette-landscape-wheel w-[72px] sm:w-24 md:w-28 lg:w-[min(268px,44vh)] xl:w-[min(336px,50vh)] 2xl:w-[min(384px,54vh)] aspect-square'
-              }
-            />
+            {renderWheelControl(
+              phase === 'spinning'
+                ? 'roulette-landscape-wheel w-20 sm:w-28 md:w-32 lg:w-[min(280px,46vh)] xl:w-[min(350px,52vh)] 2xl:w-[min(390px,56vh)] aspect-square'
+                : 'roulette-landscape-wheel w-[72px] sm:w-24 md:w-28 lg:w-[min(268px,44vh)] xl:w-[min(336px,50vh)] 2xl:w-[min(384px,54vh)] aspect-square',
+              isCompactScreen
+            )}
           </div>
 
           <div className="roulette-meta col-start-2 row-start-1 flex min-w-0 items-center justify-between gap-2 lg:order-1 lg:w-full">
@@ -1214,12 +1750,7 @@ export function RouletteBoard({
             {phase === 'result' && winningNumber !== null && (
               <>
                 <span className="font-arcade text-xs text-[#FEF08A] uppercase">
-                  ZAHL {winningNumber}{' '}
-                  {winningNumber === 0
-                    ? '(GRÜN)'
-                    : getRouletteColor(winningNumber) === 'red'
-                      ? '(ROT)'
-                      : '(SCHWARZ)'}
+                  {winningStatusLabel}
                 </span>
                 {myOutcomeWager > 0 ? (
                   <span
@@ -1260,7 +1791,7 @@ export function RouletteBoard({
           </div>
         </div>
 
-        {/* RECHTE SPALTE (UNTEN IM HOCHFORMAT): WETTTISCH + CHIPS & AKTIONEN */}
+        {/* RECHTE SPALTE: WETTTISCH + CHIPS & AKTIONEN */}
         <div className="roulette-landscape-right flex flex-1 min-h-0 min-w-0 flex-col justify-between gap-1.5">
           <div className="flex flex-col gap-1.5 min-w-0 my-auto">
             <BettingTable
@@ -1272,198 +1803,89 @@ export function RouletteBoard({
               winningNumber={winningNumber}
               phase={phase}
               hoveredBetKey={canBet && dragChip ? hoveredBetKey : null}
+              layout="horizontal"
               onPlaceBet={handlePlaceBet}
             />
 
-            {isMultiplayer && (
-              <div className="flex items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
-                {rankedPlayers.map((p) => {
-                  const bal = gameState?.scores?.[p.id] ?? startingBalance;
-                  const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
-                  const isMe = p.id === myId;
-                  return (
-                    <div
-                      key={p.id}
-                      className="flex shrink-0 items-center gap-1.5 py-0.5"
-                    >
-                      <span
-                        className={`inline-flex rounded-full ${
-                          isMe ? 'ring-1 ring-[#34D399]' : ''
-                        }`}
-                      >
-                        <Avatar config={p.avatar} size={15} />
-                      </span>
-                      <span
-                        className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
-                          isMe ? 'text-[#6EE7B7]' : 'text-white'
-                        }`}
-                      >
-                        {p.name}
-                      </span>
-                      <span className="font-arcade text-[9px] text-[#FDE68A]">
-                        {formatEuro(bal)}
-                      </span>
-                      {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
-                        <span
-                          className={`font-arcade text-[9px] ${
-                            pNet > 0 ? 'text-[#34D399]' : 'text-[#FCA5A5]'
-                          }`}
-                        >
-                          {formatSignedEuro(pNet)}
-                        </span>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+            {playersStrip}
           </div>
 
-          {/* Untere Chip-Leiste & Aktions-Buttons */}
           {phase === 'result' ? (
-            <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
-              <div className="flex items-center gap-1.5 min-w-0">
-                <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
-                <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
-                  {round >= maxRounds ? `FINALE (${timeLeft}S)` : `WEITER (${timeLeft}S)`}
-                </span>
-              </div>
-
-              <OpenButton
-                size="sm"
-                variant="primary"
-                disabled={isNextReady || Boolean(disabled)}
-                onClick={() => onMove({ type: 'next_round' })}
-              >
-                {isNextReady
-                  ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
-                  : round >= maxRounds
-                    ? 'ENDERGEBNIS'
-                    : 'NÄCHSTE RUNDE'}
-              </OpenButton>
-            </div>
+            resultFooter
           ) : (
             <div className="flex shrink-0 flex-wrap items-center justify-between gap-1.5 px-0.5 py-0.5">
               {/* Ziehbarer Spielstein-Vorrat (Touch & Drag-and-Drop) */}
               <div className="flex items-center gap-1.5 flex-wrap touch-none select-none">
-                {CHIP_DENOMINATIONS.map((chip) => {
-                  const isSelected = selectedChip === chip.value;
-                  const chipDisabled =
-                    chip.value === 'all'
-                      ? effectiveBalance <= 0 || !canBet
-                      : effectiveBalance < chip.value || !canBet;
-                  const isBeingDragged = Boolean(canBet && dragChip?.value === chip.value);
-
-                  return (
-                    <button
-                      key={String(chip.value)}
-                      type="button"
-                      draggable={false}
-                      disabled={chipDisabled}
-                      onPointerDown={(e) => handleChipPointerDown(e, chip)}
-                      onClick={() => setSelectedChip(chip.value)}
-                      onContextMenu={(e) => e.preventDefault()}
-                      style={{
-                        backgroundColor: chip.bg,
-                        borderColor: isSelected ? '#FFFFFF' : chip.border,
-                        color: chip.text,
-                        WebkitTouchCallout: 'none',
-                        WebkitUserSelect: 'none',
-                      }}
-                      className={`touch-none select-none font-arcade inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 items-center justify-center rounded-full border-2 border-dashed px-1.5 text-[9px] sm:text-[11px] shadow transition-transform cursor-grab active:cursor-grabbing active:scale-95 ${
-                        isSelected
-                          ? 'scale-105 ring-2 ring-[#FDE047] shadow-[0_0_10px_rgba(253,224,71,0.6)]'
-                          : 'opacity-90 hover:opacity-100'
-                      } ${chipDisabled ? 'opacity-40 cursor-not-allowed' : ''} ${
-                        isBeingDragged ? 'opacity-45 scale-90' : ''
-                      }`}
-                    >
-                      {chip.value === 'all' ? 'MAX' : `${chip.label}€`}
-                    </button>
-                  );
-                })}
+                {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'landscape'))}
               </div>
 
               {/* Aktionen: Undo, Rebet, 2x, Clear (+ Drehen nur im Solo-Modus) */}
               <div className="flex items-center gap-1 ml-auto">
-                <button
-                  type="button"
-                  disabled={!canBet || displayedWagered === 0}
-                  onClick={() => {
-                    setPendingDrops([]);
-                    onMove({ type: 'undo_bet' });
-                  }}
-                  title="Letzten Chip zurücknehmen"
-                  className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!canBet || !canRebet}
-                  onClick={() => {
-                    setPendingDrops([]);
-                    onMove({ type: 'rebet' });
-                  }}
-                  title="Einsätze der letzten Runde wiederholen"
-                  className="font-arcade inline-flex h-7 items-center gap-1 rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-white uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-                >
-                  <Repeat className="h-3 w-3" />
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!canBet || !canDouble}
-                  onClick={() => {
-                    setPendingDrops([]);
-                    onMove({ type: 'double_bets' });
-                  }}
-                  title="Einsätze verdoppeln"
-                  className="font-arcade inline-flex h-7 items-center rounded-lg border border-white/20 bg-white/[0.06] px-1.5 text-[10px] text-[#FDE68A] uppercase hover:bg-white/12 disabled:opacity-35 cursor-pointer"
-                >
-                  2×
-                </button>
-
-                <button
-                  type="button"
-                  disabled={!canBet || displayedWagered === 0}
-                  onClick={() => {
-                    setPendingDrops([]);
-                    onMove({ type: 'clear_bets' });
-                  }}
-                  title="Alle Einsätze löschen"
-                  className="font-arcade inline-flex h-7 items-center rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-1.5 text-[10px] text-[#FECDD3] uppercase hover:bg-[#E11D48]/25 disabled:opacity-35 cursor-pointer"
-                >
-                  <Trash2 className="h-3 w-3" />
-                </button>
-
-                {!isMultiplayer && (
-                  <OpenButton
-                    size="sm"
-                    variant="primary"
-                    disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
-                    onClick={() => {
-                      setPendingDrops([]);
-                      onMove({ type: 'lock_bets' });
-                    }}
-                    className="h-7! px-2.5! text-[10px]! min-w-[82px]"
-                  >
-                    <Check className="h-3 w-3 stroke-[3]" />
-                    <span>
-                      {phase === 'spinning'
-                        ? 'DREHT...'
-                        : isLocked
-                          ? 'BEREIT'
-                          : 'DREHEN!'}
-                    </span>
-                  </OpenButton>
-                )}
+                {renderActionButtons('landscape')}
               </div>
             </div>
           )}
         </div>
       </div>
+
+      {/* Vergrößertes Drehrad auf kleinen Bildschirmen (schließt automatisch bei Klick daneben) */}
+      {isWheelZoomed &&
+        isCompactScreen &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Vergrößertes Roulette-Drehrad"
+            onClick={() => setIsWheelZoomed(false)}
+            className="fixed inset-0 z-[9990] flex flex-col items-center justify-center gap-3 bg-[#020617]/75 backdrop-blur-sm p-4 animate-fade-in cursor-pointer"
+          >
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className="flex flex-col items-center justify-center gap-3 cursor-default"
+            >
+              <RouletteWheel
+                phase={phase}
+                round={round}
+                winningNumber={winningNumber}
+                spinStartedAt={gameState?.spinStartedAt}
+                sizeClass="w-[min(84vw,68vh,360px)] aspect-square"
+              />
+
+              <div className="flex flex-col items-center gap-1 text-center">
+                <span className="font-arcade text-xs text-[#FDE68A] uppercase">
+                  {phase === 'betting'
+                    ? `RUNDE ${round}/${maxRounds} · NOCH ${timeLeft}S`
+                    : phase === 'spinning'
+                      ? 'KUGEL LÄUFT...'
+                      : winningNumber !== null
+                        ? winningStatusLabel
+                        : `RUNDE ${round}/${maxRounds}`}
+                </span>
+                {phase === 'result' && myOutcomeWager > 0 && (
+                  <span
+                    className={`font-arcade text-xs uppercase ${
+                      myOutcomeNet > 0
+                        ? 'text-[#34D399]'
+                        : myOutcomeNet < 0
+                          ? 'text-[#FCA5A5]'
+                          : 'text-[#CBD5E1]'
+                    }`}
+                  >
+                    {myOutcomePayout > 0
+                      ? `+${formatEuro(myOutcomePayout)} (${formatSignedEuro(myOutcomeNet)})`
+                      : formatSignedEuro(myOutcomeNet)}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <span className="font-arcade text-[10px] tracking-wider text-white/65 uppercase">
+              ZUM SCHLIESSEN DANEBEN TIPPEN
+            </span>
+          </div>,
+          document.body
+        )}
 
       {/* Schwebender Spielstein im Portal (frei von CSS-Transforms) während Touch-/Maus-Drag */}
       {canBet &&
