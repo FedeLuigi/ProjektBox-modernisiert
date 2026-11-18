@@ -158,7 +158,7 @@ export function MultiplayerGameView({
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
-        className="relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(8px+env(safe-area-inset-top,0px))] pb-[calc(8px+env(safe-area-inset-bottom,0px))] px-4 sm:px-6 lg:px-8"
+        className="safe-game-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between"
       >
         {/* 1. OPEN-GALLERY TOP-BAR */}
         <header className="game-landscape-header relative grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">

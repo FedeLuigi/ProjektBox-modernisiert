@@ -36,12 +36,14 @@ export function BackgroundCometCanvas({
 
     const updateSize = () => {
       if (!canvas) return;
-      width = canvas.width = window.innerWidth;
-      height = canvas.height = window.innerHeight;
+      const rect = canvas.getBoundingClientRect();
+      width = canvas.width = Math.max(Math.ceil(rect.width), window.innerWidth);
+      height = canvas.height = Math.max(Math.ceil(rect.height), window.innerHeight);
     };
 
     updateSize();
     window.addEventListener('resize', updateSize);
+    window.addEventListener('orientationchange', updateSize);
     window.visualViewport?.addEventListener('resize', updateSize);
 
     const shards: CrystalShard[] = Array.from({ length: 16 }, (_, idx) => ({
@@ -126,6 +128,7 @@ export function BackgroundCometCanvas({
 
     return () => {
       window.removeEventListener('resize', updateSize);
+      window.removeEventListener('orientationchange', updateSize);
       window.visualViewport?.removeEventListener('resize', updateSize);
       if (animId !== null) cancelAnimationFrame(animId);
     };

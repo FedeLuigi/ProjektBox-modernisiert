@@ -98,11 +98,7 @@ export function TvGameView({
       <BackgroundCometCanvas opacity={0.85} />
 
       <div
-        style={{
-          paddingTop: 'calc(16px + env(safe-area-inset-top, 0px))',
-          paddingBottom: 'calc(16px + env(safe-area-inset-bottom, 0px))',
-        }}
-        className="relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between px-4 sm:px-8 lg:px-12 max-w-[1440px] mx-auto"
+        className="safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1440px] mx-auto"
       >
         {/* 1. OPEN-GALLERY TV HEADER */}
         <header className="relative flex flex-wrap shrink-0 items-center justify-between gap-3 border-b border-white/15 pb-2.5">

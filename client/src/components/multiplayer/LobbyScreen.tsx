@@ -578,7 +578,7 @@ export function LobbyScreen({
       <div
         inert={isAvatarModalOpen}
         aria-hidden={isAvatarModalOpen}
-        className={`lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between pt-[calc(12px+env(safe-area-inset-top,0px))] pb-[calc(12px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))] sm:pt-[calc(20px+env(safe-area-inset-top,0px))] sm:pb-[calc(20px+env(safe-area-inset-bottom,0px))] sm:px-6 lg:px-10 ${
+        className={`lobby-landscape-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between ${
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
