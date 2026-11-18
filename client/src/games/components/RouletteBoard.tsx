@@ -1324,16 +1324,18 @@ export function RouletteBoard({
               spinStartedAt={gameState?.spinStartedAt}
               sizeClass="w-[min(220px,36vh)] lg:w-[min(320px,48vh)] xl:w-[min(390px,54vh)] aspect-square"
             />
-            {phase === 'result' && winningNumber !== null && (
-              <div className="flex items-center gap-2 px-2 py-0.5">
-                <Sparkles className="h-4 w-4 text-[#FDE047]" />
-                <span className="font-arcade text-sm text-[#FEF08A] uppercase">
-                  {winningNumber === 0
-                    ? '0 GRÜN!'
-                    : `${winningNumber} ${getRouletteColor(winningNumber) === 'red' ? 'ROT' : 'SCHWARZ'}`}
-                </span>
-              </div>
-            )}
+            <div className="flex h-7 items-center justify-center">
+              {phase === 'result' && winningNumber !== null && (
+                <div className="flex items-center gap-2 px-2">
+                  <Sparkles className="h-4 w-4 text-[#FDE047]" />
+                  <span className="font-arcade text-sm text-[#FEF08A] uppercase">
+                    {winningNumber === 0
+                      ? '0 GRÜN!'
+                      : `${winningNumber} ${getRouletteColor(winningNumber) === 'red' ? 'ROT' : 'SCHWARZ'}`}
+                  </span>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Rechts: Live-Tisch mit allen Spieler-Chips + Kassenstand */}
@@ -1658,7 +1660,7 @@ export function RouletteBoard({
   const activePreviewLabel = canBet ? formatBetLabel(hoveredBetKey ?? tableHoverBetKey) : null;
 
   const resultFooter = phase === 'result' && (
-    <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
+    <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-0.5">
       <div className="flex items-center gap-1.5 min-w-0">
         <Trophy className="h-3.5 w-3.5 shrink-0 text-[#FBBF24]" />
         <span className="font-arcade text-[11px] text-[#CBD5E1] uppercase truncate">
@@ -1671,6 +1673,7 @@ export function RouletteBoard({
         variant="primary"
         disabled={isNextReady || Boolean(disabled)}
         onClick={() => onMove({ type: 'next_round' })}
+        className="h-8! py-0!"
       >
         {isNextReady
           ? `WARTE (${nextReadyCount}/${allPlayers.length})...`
@@ -1824,7 +1827,7 @@ export function RouletteBoard({
       {/* ─── QUERFORMAT / DESKTOP / TABLET HORIZONTAL-ANSICHT ─── */}
       <div className="roulette-landscape-shell hidden sm:flex w-full max-w-6xl flex-1 min-h-0 flex-col justify-between gap-2 lg:gap-4 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
         {/* 1. OBERE INFO-LEISTE OBERHALB DES SPIELFELDS: GEZOGENE ZAHLEN · EINSATZ · RUNDE & ZEIT */}
-        <div className="roulette-landscape-topbar grid w-full shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4 px-1">
+        <div className="roulette-landscape-topbar grid min-h-[24px] w-full shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4 px-1">
           {/* Links: Gezogene Zahlen (Verlauf) */}
           <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar justify-self-start">
             <span className="hidden md:inline font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase shrink-0">
@@ -1924,12 +1927,10 @@ export function RouletteBoard({
 
         {/* 2. MITTE: DREHRAD (LINKS) & SPIELBRETT (RECHTS) EXAKT AUF EINER LINIE + CHIPS MITTIG DARUNTER */}
         <div className="roulette-landscape-body my-auto grid w-full min-h-0 grid-cols-[auto_minmax(0,1fr)] items-center gap-x-4 md:gap-x-6 lg:gap-x-8 xl:gap-x-10 gap-y-2.5">
-          {/* Reihe 1, Links: Nur das Drehrad — exakt vertikal zentriert mit dem Spielbrett */}
+          {/* Reihe 1, Links: Nur das Drehrad — exakt vertikal zentriert mit dem Spielbrett & konstante Größe */}
           <div className="roulette-wheel-wrap flex items-center justify-center shrink-0 self-center">
             {renderWheelControl(
-              phase === 'spinning'
-                ? 'roulette-landscape-wheel w-28 sm:w-32 md:w-44 lg:w-[min(276px,44vh)] xl:w-[min(340px,50vh)] 2xl:w-[min(380px,54vh)] aspect-square'
-                : 'roulette-landscape-wheel w-24 sm:w-28 md:w-40 lg:w-[min(264px,42vh)] xl:w-[min(328px,48vh)] 2xl:w-[min(372px,52vh)] aspect-square',
+              'roulette-landscape-wheel w-28 sm:w-32 md:w-44 lg:w-[min(276px,44vh)] xl:w-[min(340px,50vh)] 2xl:w-[min(380px,54vh)] aspect-square',
               isCompactScreen
             )}
           </div>
@@ -1952,7 +1953,11 @@ export function RouletteBoard({
           </div>
 
           {/* Reihe 2, Rechts: Chips mittig direkt unterhalb des Spielbrettes (+ Aktionen & Spieler) */}
-          <div className="col-start-2 flex w-full min-w-0 flex-col items-center gap-1.5 self-start">
+          <div
+            className={`col-start-2 flex w-full min-w-0 flex-col items-center gap-1.5 self-start ${
+              isMultiplayer ? 'min-[760px]:min-h-[62px]' : 'min-[760px]:min-h-[40px]'
+            }`}
+          >
             {phase === 'result' ? (
               <div className="flex w-full items-center justify-center">
                 {resultFooter}
