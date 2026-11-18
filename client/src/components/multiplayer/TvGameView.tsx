@@ -6,7 +6,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
-import { HeaderStatusOverlay } from './ConnectionStatusBadge';
+import { ConnectionStatusBadge, HeaderStatusOverlay } from './ConnectionStatusBadge';
 
 interface TvGameViewProps {
   lobby: Lobby;
@@ -137,6 +137,9 @@ export function TvGameView({
                 {timeLeft} S
               </span>
             )}
+            <div className="hidden md:block">
+              <ConnectionStatusBadge />
+            </div>
             <span className="font-arcade rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </span>

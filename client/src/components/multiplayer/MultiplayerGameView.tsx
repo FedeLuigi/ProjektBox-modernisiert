@@ -7,7 +7,7 @@ import { Avatar } from '../Avatar';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { clientGameRegistry } from '../../games/registry';
 import { OpenButton } from '../OpenSubpageUI';
-import { HeaderStatusOverlay } from './ConnectionStatusBadge';
+import { ConnectionStatusBadge, HeaderStatusOverlay } from './ConnectionStatusBadge';
 
 interface MultiplayerGameViewProps {
   lobby: Lobby;
@@ -179,7 +179,10 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <div className="justify-self-end">
+          <div className="justify-self-end flex items-center gap-2">
+            <div className="hidden sm:block">
+              <ConnectionStatusBadge />
+            </div>
             <div className="rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </div>

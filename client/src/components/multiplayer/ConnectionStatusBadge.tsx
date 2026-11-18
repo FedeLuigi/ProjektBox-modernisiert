@@ -47,12 +47,11 @@ export function ConnectionStatusBadge() {
     return (
       <div
         title={meta.errorMessage || 'Verbindung wird automatisch wiederhergestellt'}
-        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl"
+        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl"
       >
         <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
-        <span className="truncate max-w-[170px] sm:max-w-xs">
-          VERBINDUNG WIRD WIEDERHERGESTELLT
-          {countdown !== null ? ` (${countdown}S)` : ''}
+        <span className="truncate max-w-[110px] sm:max-w-xs">
+          VERBINDE...{countdown !== null ? ` (${countdown}S)` : ''}
         </span>
       </div>
     );
@@ -60,9 +59,9 @@ export function ConnectionStatusBadge() {
 
   if (meta.status === 'reconnected') {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/55 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/55 bg-[#0F172A]/90 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-        <span>WIEDERVERBINDUNG ERFOLGREICH</span>
+        <span className="truncate max-w-[130px] sm:max-w-none">VERBUNDEN</span>
       </div>
     );
   }
@@ -73,11 +72,11 @@ export function ConnectionStatusBadge() {
         type="button"
         onClick={handleRetry}
         title="Verbindung unterbrochen – Klicken zum erneuten Verbinden"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#1E293B] transition-colors cursor-pointer"
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#F59E0B]/45 bg-[#0F172A]/90 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#1E293B] transition-colors cursor-pointer"
       >
         <WifiOff className="h-3.5 w-3.5 shrink-0" />
-        <span>
-          VERBINDUNG UNTERBROCHEN{countdown !== null ? ` (${countdown}S)` : ''}
+        <span className="truncate max-w-[110px] sm:max-w-none">
+          OFFLINE{countdown !== null ? ` (${countdown}S)` : ''}
         </span>
       </button>
     );
@@ -89,19 +88,19 @@ export function ConnectionStatusBadge() {
         type="button"
         onClick={handleRetry}
         title="Automatische Wiederverbindung fehlgeschlagen – Klicken zum erneuten Versuch"
-        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#E11D48]/30 transition-colors cursor-pointer"
+        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#E11D48]/30 transition-colors cursor-pointer"
       >
         <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-        <span>WIEDERVERBINDUNG FEHLGESCHLAGEN</span>
+        <span className="truncate max-w-[120px] sm:max-w-none">FEHLER</span>
       </button>
     );
   }
 
   if (meta.status === 'expired') {
     return (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
+      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/50 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl">
         <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-        <span>SITZUNG ABGELAUFEN</span>
+        <span className="truncate max-w-[120px] sm:max-w-none">ABGELAUFEN</span>
       </div>
     );
   }

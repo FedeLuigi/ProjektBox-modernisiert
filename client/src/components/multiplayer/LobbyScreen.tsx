@@ -20,7 +20,7 @@ import { Avatar } from '../Avatar';
 import { AvatarCustomizerModal } from '../AvatarCustomizerModal';
 import { BackgroundCometCanvas } from '../BackgroundCometCanvas';
 import { OpenButton } from '../OpenSubpageUI';
-import { HeaderStatusOverlay } from './ConnectionStatusBadge';
+import { ConnectionStatusBadge, HeaderStatusOverlay } from './ConnectionStatusBadge';
 import { LobbyGameSettings } from './LobbyGameSettings';
 import { MultiplayerGameView } from './MultiplayerGameView';
 import { TvGameView } from './TvGameView';
@@ -607,20 +607,22 @@ export function LobbyScreen({
             )}
           </div>
 
+          <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
+            <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
+              {game.title}
+            </span>
+          </div>
+
           <HeaderStatusOverlay
             lobby={currentLobby}
             currentUserId={currentUser.id}
             message={errorMsg}
-            showWhenConnected={true}
+            showWhenConnected={false}
             onExitExpired={() => void handleLeaveLobby()}
           />
 
-          <div className="flex items-center justify-end min-w-0 shrink-0">
-            <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
-              <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
-                {game.title}
-              </span>
-            </div>
+          <div className="flex items-center justify-end shrink-0">
+            <ConnectionStatusBadge />
           </div>
         </header>
 
