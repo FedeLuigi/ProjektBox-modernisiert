@@ -16,6 +16,7 @@ import { DRAW_AND_GUESS_WORDS, drawAndGuessGame } from '../games/definitions/dra
 import {
   doesBetWin,
   getBetPayoutMultiplier,
+  isValidBetKey,
   rouletteGame,
   type RouletteState,
 } from '../games/definitions/roulette.js';
@@ -1138,9 +1139,40 @@ test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1
   assert.equal(doesBetWin('dozen:2', 17), true);
   assert.equal(doesBetWin('column:2', 17), true);
 
+  // Multi-Feld-Wetten (2er Split, 3er Street/Trio, 4er Corner/First-Four, 6er Line)
+  assert.equal(isValidBetKey('split:14-17'), true);
+  assert.equal(isValidBetKey('split:0-2'), true);
+  assert.equal(isValidBetKey('street:7-8-9'), true);
+  assert.equal(isValidBetKey('street:0-1-2'), true);
+  assert.equal(isValidBetKey('corner:14-15-17-18'), true);
+  assert.equal(isValidBetKey('corner:0-1-2-3'), true);
+  assert.equal(isValidBetKey('line:13-18'), true);
+
+  assert.equal(isValidBetKey('split:3-4'), false);
+  assert.equal(isValidBetKey('split:17-14'), false);
+  assert.equal(isValidBetKey('corner:3-4-6-7'), false);
+  assert.equal(isValidBetKey('street:2-3-4'), false);
+  assert.equal(isValidBetKey('line:2-7'), false);
+
+  assert.equal(getBetPayoutMultiplier('split:14-17'), 18); // 17:1 + Einsatz
+  assert.equal(getBetPayoutMultiplier('street:7-8-9'), 12); // 11:1 + Einsatz
+  assert.equal(getBetPayoutMultiplier('corner:14-15-17-18'), 9); // 8:1 + Einsatz
+  assert.equal(getBetPayoutMultiplier('line:13-18'), 6); // 5:1 + Einsatz
+
+  assert.equal(doesBetWin('split:14-17', 17), true);
+  assert.equal(doesBetWin('split:14-17', 14), true);
+  assert.equal(doesBetWin('split:14-17', 15), false);
+  assert.equal(doesBetWin('corner:14-15-17-18', 15), true);
+  assert.equal(doesBetWin('corner:0-1-2-3', 0), true);
+  assert.equal(doesBetWin('line:13-18', 18), true);
+
   // Zod-Schemas akzeptieren Roulette-Moves und Startguthaben
   assert.equal(
     GameMoveSchema.safeParse({ type: 'place_bet', betKey: 'number:17', amount: 100 }).success,
+    true
+  );
+  assert.equal(
+    GameMoveSchema.safeParse({ type: 'place_bet', betKey: 'corner:32-33-35-36', amount: 50 }).success,
     true
   );
   assert.equal(GameMoveSchema.safeParse({ type: 'lock_bets' }).success, true);
@@ -1300,6 +1332,51 @@ test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1
   }).state;
   assert.equal(state2p.bets.p1['number:17'], 100);
   assert.equal(state2p.balances.p1, 3900);
+
+  // Bob platziert in Runde 2 sowohl eine 4er-Wette (Corner 14-15-17-18) als auch einen 2er-Split (14-17)
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'place_bet', betKey: 'corner:14-15-17-18', amount: 25 },
+  }).state;
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'place_bet', betKey: 'split:14-17', amount: 25 },
+  }).state;
+  assert.equal(state2p.bets.p2['corner:14-15-17-18'], 25);
+  assert.equal(state2p.bets.p2['split:14-17'], 25);
+  assert.equal(state2p.balances.p2, 0);
+
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'lock_bets' },
+  }).state;
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'lock_bets' },
+  }).state;
+  state2p = {
+    ...state2p,
+    winningNumber: 14,
+    winningColor: 'red',
+    phaseEndsAt: Date.now() - 10,
+  };
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'finish_spin' },
+  }).state;
+  // Gewinnzahl 14 trifft Bobs Corner (25*9=225) + Split (25*18=450) => 675 € Auszahlung (+625 Reingewinn)
+  assert.equal(state2p.balances.p2, 675);
+  assert.equal(state2p.lastOutcome?.netProfit.p2, 625);
 
   // Spielrunde 2 zu Ende bringen -> Alice gewinnt mit höchstem Guthaben
   state2p = {

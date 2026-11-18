@@ -1065,7 +1065,7 @@ body::-webkit-scrollbar,
     padding: 6px !important;
   }
 
-  .roulette-landscape-felt button {
+  .roulette-landscape-felt button:not(.roulette-inside-hotspot) {
     height: clamp(1.3rem, 6vh, 1.65rem) !important;
     min-height: clamp(1.3rem, 6vh, 1.65rem) !important;
     font-size: 0.68rem !important;
@@ -1096,12 +1096,16 @@ body::-webkit-scrollbar,
     padding: 4px !important;
   }
 
-  .roulette-felt-portrait {
+  .roulette-felt-portrait,
+  .roulette-felt-portrait-numbers {
     gap: 2px !important;
+  }
+
+  .roulette-felt-portrait {
     grid-template-rows: minmax(21px, 0.9fr) repeat(12, minmax(19px, 1fr)) minmax(21px, 0.9fr) !important;
   }
 
-  .roulette-felt-portrait button {
+  .roulette-felt-portrait button:not(.roulette-inside-hotspot) {
     font-size: 10px !important;
   }
 }

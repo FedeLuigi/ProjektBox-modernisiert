@@ -23,14 +23,79 @@ export function getRouletteColor(num: number): RouletteColor {
   return RED_NUMBERS.has(num) ? 'red' : 'black';
 }
 
+function parseCanonicalNumbers(raw: string, expectedCount: number): number[] | null {
+  const parts = raw.split('-');
+  if (parts.length !== expectedCount) return null;
+  const nums: number[] = [];
+  for (let i = 0; i < parts.length; i++) {
+    const part = parts[i];
+    if (!/^(0|[1-9]\d*)$/.test(part)) return null;
+    const n = Number(part);
+    if (!Number.isInteger(n) || n < 0 || n > 36) return null;
+    if (i > 0 && n <= nums[i - 1]) return null;
+    nums.push(n);
+  }
+  return nums;
+}
+
+/**
+ * Liefert bei gültigen Innenwetten (Einzelzahl, 2er-Split, 3er-Straße/Trio, 4er-Carré/First-Four, 6er-Linie)
+ * alle abgedeckten Gewinnzahlen; sonst null.
+ */
+export function getInsideBetNumbers(betKey: string): number[] | null {
+  if (typeof betKey !== 'string') return null;
+
+  if (betKey.startsWith('number:')) {
+    return parseCanonicalNumbers(betKey.slice('number:'.length), 1);
+  }
+
+  if (betKey.startsWith('split:')) {
+    const nums = parseCanonicalNumbers(betKey.slice('split:'.length), 2);
+    if (!nums) return null;
+    const [a, b] = nums;
+    if (a === 0 && (b === 1 || b === 2 || b === 3)) return nums;
+    if (a >= 1 && b === a + 1 && a % 3 !== 0) return nums;
+    if (a >= 1 && b === a + 3 && b <= 36) return nums;
+    return null;
+  }
+
+  if (betKey.startsWith('street:')) {
+    const nums = parseCanonicalNumbers(betKey.slice('street:'.length), 3);
+    if (!nums) return null;
+    const [a, b, c] = nums;
+    if (a === 0 && b === 1 && c === 2) return nums;
+    if (a === 0 && b === 2 && c === 3) return nums;
+    if (a >= 1 && a % 3 === 1 && b === a + 1 && c === a + 2 && c <= 36) return nums;
+    return null;
+  }
+
+  if (betKey.startsWith('corner:')) {
+    const nums = parseCanonicalNumbers(betKey.slice('corner:'.length), 4);
+    if (!nums) return null;
+    const [a, b, c, d] = nums;
+    if (a === 0 && b === 1 && c === 2 && d === 3) return nums;
+    if (a >= 1 && a % 3 !== 0 && b === a + 1 && c === a + 3 && d === a + 4 && d <= 36) {
+      return nums;
+    }
+    return null;
+  }
+
+  if (betKey.startsWith('line:')) {
+    const nums = parseCanonicalNumbers(betKey.slice('line:'.length), 2);
+    if (!nums) return null;
+    const [a, b] = nums;
+    if (a >= 1 && a % 3 === 1 && b === a + 5 && b <= 36) {
+      return [a, a + 1, a + 2, a + 3, a + 4, a + 5];
+    }
+    return null;
+  }
+
+  return null;
+}
+
 export function isValidBetKey(betKey: string): boolean {
   if (typeof betKey !== 'string') return false;
-  if (betKey.startsWith('number:')) {
-    const raw = betKey.slice('number:'.length);
-    if (!/^\d+$/.test(raw)) return false;
-    const n = Number(raw);
-    return Number.isInteger(n) && n >= 0 && n <= 36;
-  }
+  if (getInsideBetNumbers(betKey) !== null) return true;
   return (
     betKey === 'dozen:1' ||
     betKey === 'dozen:2' ||
@@ -51,14 +116,19 @@ export function isValidBetKey(betKey: string): boolean {
  * Gesamtrückzahlung (Einsatz + Gewinn) als Multiplikator auf den Einsatz.
  */
 export function getBetPayoutMultiplier(betKey: string): number {
-  if (betKey.startsWith('number:')) return 36; // 35:1 + Einsatz
+  const insideNums = getInsideBetNumbers(betKey);
+  if (insideNums) {
+    // 36/1=36 (35:1), 36/2=18 (17:1), 36/3=12 (11:1), 36/4=9 (8:1), 36/6=6 (5:1)
+    return 36 / insideNums.length;
+  }
   if (betKey.startsWith('dozen:') || betKey.startsWith('column:')) return 3; // 2:1 + Einsatz
   return 2; // 1:1 + Einsatz (Rot/Schwarz, Gerade/Ungerade, 1-18/19-36)
 }
 
 export function doesBetWin(betKey: string, winningNumber: number): boolean {
-  if (betKey.startsWith('number:')) {
-    return Number(betKey.slice('number:'.length)) === winningNumber;
+  const insideNums = getInsideBetNumbers(betKey);
+  if (insideNums) {
+    return insideNums.includes(winningNumber);
   }
 
   // Bei der 0 verlieren alle Außenwetten nach Casino-Regel
@@ -407,7 +477,7 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
       }
 
       const currentPlayerBets = { ...(state.bets[playerId] || {}) };
-      if (!(move.betKey in currentPlayerBets) && Object.keys(currentPlayerBets).length >= 49) {
+      if (!(move.betKey in currentPlayerBets) && Object.keys(currentPlayerBets).length >= 160) {
         return { valid: false, error: 'Maximale Anzahl Wettfelder erreicht.', state };
       }
 

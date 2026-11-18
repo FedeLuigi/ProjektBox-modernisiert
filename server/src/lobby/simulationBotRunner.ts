@@ -19,6 +19,14 @@ const ROULETTE_SAMPLE_BETS = [
   'number:17',
   'number:23',
   'number:32',
+  'split:14-17',
+  'split:8-11',
+  'split:0-2',
+  'corner:1-2-4-5',
+  'corner:14-15-17-18',
+  'corner:25-26-28-29',
+  'street:7-8-9',
+  'line:13-18',
 ];
 
 const SLF_WORDS: Record<

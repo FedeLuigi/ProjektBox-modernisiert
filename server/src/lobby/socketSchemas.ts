@@ -169,7 +169,7 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('review_ready'), ...ActionMetaFields }),
   z.object({
     type: z.literal('place_bet'),
-    betKey: z.string().trim().min(3).max(24),
+    betKey: z.string().trim().min(3).max(32),
     amount: z.number().int().min(1).max(1000000),
     ...ActionMetaFields,
   }),

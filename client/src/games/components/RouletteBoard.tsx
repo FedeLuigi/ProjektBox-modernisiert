@@ -19,17 +19,24 @@ import {
   playWinSound,
   triggerHapticFeedback,
 } from '../../utils/soundEffects';
+import {
+  buildPlayerChipMarkers,
+  doesBetWin,
+  formatBetLabel,
+  getRouletteColor,
+  HORIZONTAL_INSIDE_SPOTS,
+  isNumberCellHighlightedByBet,
+  PORTRAIT_INSIDE_SPOTS,
+  type InsideSpot,
+  type RouletteColor,
+} from './rouletteBets';
+
+export type { RouletteColor };
 
 const ROULETTE_WHEEL_NUMBERS = [
   0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14,
   31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
 ] as const;
-
-const RED_NUMBERS = new Set<number>([
-  1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
-]);
-
-export type RouletteColor = 'green' | 'red' | 'black';
 
 export interface RouletteSpinOutcome {
   round: number;
@@ -67,17 +74,6 @@ export interface RouletteState {
 }
 
 const SPIN_DURATION_MS = 4800;
-
-const PLAYER_TAG_COLORS = [
-  '#F59E0B',
-  '#38BDF8',
-  '#10B981',
-  '#F472B6',
-  '#A78BFA',
-  '#FB7185',
-  '#22D3EE',
-  '#FACC15',
-];
 
 const CHIP_DENOMINATIONS: Array<{
   value: number | 'all';
@@ -120,11 +116,6 @@ const HORIZONTAL_ROWS = [
 
 const PORTRAIT_ROWS = Array.from({ length: 12 }, (_, r) => [r * 3 + 1, r * 3 + 2, r * 3 + 3]);
 
-function getRouletteColor(num: number): RouletteColor {
-  if (num === 0) return 'green';
-  return RED_NUMBERS.has(num) ? 'red' : 'black';
-}
-
 function formatEuro(amount: number): string {
   return `${Math.round(amount).toLocaleString('de-DE')} €`;
 }
@@ -152,41 +143,6 @@ function sumBets(playerBets: Record<string, number> | undefined): number {
     if (typeof val === 'number' && val > 0) total += val;
   }
   return total;
-}
-
-function doesBetWin(betKey: string, winningNumber: number): boolean {
-  if (betKey.startsWith('number:')) {
-    return Number(betKey.slice('number:'.length)) === winningNumber;
-  }
-  if (winningNumber === 0) return false;
-  switch (betKey) {
-    case 'dozen:1':
-      return winningNumber >= 1 && winningNumber <= 12;
-    case 'dozen:2':
-      return winningNumber >= 13 && winningNumber <= 24;
-    case 'dozen:3':
-      return winningNumber >= 25 && winningNumber <= 36;
-    case 'column:1':
-      return winningNumber % 3 === 1;
-    case 'column:2':
-      return winningNumber % 3 === 2;
-    case 'column:3':
-      return winningNumber % 3 === 0;
-    case 'color:red':
-      return RED_NUMBERS.has(winningNumber);
-    case 'color:black':
-      return !RED_NUMBERS.has(winningNumber);
-    case 'parity:even':
-      return winningNumber % 2 === 0;
-    case 'parity:odd':
-      return winningNumber % 2 === 1;
-    case 'range:low':
-      return winningNumber >= 1 && winningNumber <= 18;
-    case 'range:high':
-      return winningNumber >= 19 && winningNumber <= 36;
-    default:
-      return false;
-  }
 }
 
 function getColorClasses(color: RouletteColor): string {
@@ -497,6 +453,7 @@ interface BettingTableProps {
   phase: RouletteState['phase'];
   hoveredBetKey?: string | null;
   layout?: 'horizontal' | 'portrait';
+  onHoverBetChange?: (betKey: string | null) => void;
   onPlaceBet: (betKey: string) => void;
 }
 
@@ -510,88 +467,101 @@ function BettingTable({
   phase,
   hoveredBetKey,
   layout = 'horizontal',
+  onHoverBetChange,
   onPlaceBet,
 }: BettingTableProps) {
   const isPortraitLayout = layout === 'portrait';
-  const playerColorMap = useMemo(() => {
-    const map = new Map<string, string>();
-    players.forEach((p, idx) => {
-      map.set(p.id, PLAYER_TAG_COLORS[idx % PLAYER_TAG_COLORS.length]);
-    });
-    return map;
-  }, [players]);
+  const [mouseHoverBetKey, setMouseHoverBetKey] = useState<string | null>(null);
 
+  const playerMarkers = useMemo(
+    () => buildPlayerChipMarkers(players, myPlayerId),
+    [players, myPlayerId]
+  );
+
+  const showPlayerDistinction = isTvScreen || players.length > 1;
   const showWinHighlight = phase === 'result' && winningNumber !== null;
+  const activePreviewBetKey = canBet ? hoveredBetKey ?? mouseHoverBetKey : null;
 
-  const renderChipIndicators = (betKey: string) => {
-    if (isTvScreen) {
-      const entries = players
-        .map((p) => ({
-          id: p.id,
-          amount: allBets[p.id]?.[betKey] || 0,
-          color: playerColorMap.get(p.id) || '#F59E0B',
-        }))
-        .filter((e) => e.amount > 0);
-      if (entries.length === 0) return null;
+  const setDesktopHover = (betKey: string | null) => {
+    setMouseHoverBetKey(betKey);
+    onHoverBetChange?.(betKey);
+  };
 
-      return (
-        <span className="pointer-events-none absolute -top-1.5 -right-1.5 z-10 flex items-center -space-x-1">
-          {entries.slice(0, 3).map((e) => (
-            <span
-              key={e.id}
-              style={{ backgroundColor: e.color }}
-              className="inline-flex h-4 min-w-4 items-center justify-center rounded-full border border-[#0F172A] px-1 font-arcade text-[8px] leading-none text-[#0F172A]"
-            >
-              {formatCompactChip(e.amount)}
-            </span>
-          ))}
-        </span>
-      );
-    }
+  const renderChipStack = (betKey: string, mode: 'cell' | 'spot') => {
+    const entries = players
+      .map((p) => {
+        const amount = allBets[p.id]?.[betKey] || 0;
+        const marker = playerMarkers.get(p.id);
+        return marker && amount > 0 ? { player: p, amount, marker } : null;
+      })
+      .filter((e): e is NonNullable<typeof e> => e !== null);
 
-    const myAmount = allBets[myPlayerId]?.[betKey] || 0;
-    const othersCount = players.filter(
-      (p) => p.id !== myPlayerId && (allBets[p.id]?.[betKey] || 0) > 0
-    ).length;
+    if (entries.length === 0) return null;
 
-    if (myAmount <= 0 && othersCount === 0) return null;
+    // Eigener Chip immer zuerst/prominent vorne
+    entries.sort((a, b) => Number(b.marker.isMe) - Number(a.marker.isMe));
+
+    const isCompactChip = mode === 'spot' || isPortraitLayout;
+    const stackPositionClass =
+      mode === 'spot'
+        ? 'relative flex items-center -space-x-1.5'
+        : isPortraitLayout
+          ? 'pointer-events-none absolute -top-1 -right-1 z-20 flex items-center -space-x-1'
+          : 'pointer-events-none absolute -top-1.5 -right-1.5 z-20 flex items-center -space-x-1';
 
     return (
-      <>
-        {myAmount > 0 && (() => {
-          const chipStyle = getChipStyleForAmount(myAmount);
+      <span className={stackPositionClass}>
+        {entries.slice(0, 4).map(({ player, amount, marker }) => {
+          const isMyChip = marker.isMe && !isTvScreen;
+          const denomStyle = getChipStyleForAmount(amount);
+          const chipStyle: React.CSSProperties = isMyChip
+            ? {
+                backgroundColor: denomStyle.bg,
+                borderColor: denomStyle.border,
+                color: denomStyle.text,
+                boxShadow: showPlayerDistinction
+                  ? `0 0 0 2px ${marker.theme.color}`
+                  : undefined,
+              }
+            : {
+                backgroundColor: marker.theme.color,
+                borderColor: marker.theme.border,
+                color: marker.theme.text,
+              };
+
           return (
             <span
-              style={{
-                backgroundColor: chipStyle.bg,
-                borderColor: chipStyle.border,
-                color: chipStyle.text,
-              }}
-              className={`pointer-events-none absolute z-10 inline-flex items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade leading-none ring-1 ring-[#0F172A]/85 ${
-                isPortraitLayout
-                  ? '-top-1 -right-1 h-4 min-w-4 text-[7.5px]'
-                  : '-top-1.5 -right-1.5 h-[18px] min-w-[18px] sm:h-5 sm:min-w-5 text-[8px] sm:text-[9px]'
+              key={player.id}
+              title={`${player.name}: ${formatEuro(amount)}`}
+              style={chipStyle}
+              className={`relative inline-flex items-center justify-center rounded-full border-2 border-dashed px-0.5 font-arcade leading-none ring-1 ring-[#0F172A]/85 ${
+                isCompactChip
+                  ? 'h-[17px] min-w-[17px] text-[7px]'
+                  : 'h-[19px] min-w-[19px] sm:h-5 sm:min-w-5 text-[8px] sm:text-[9px]'
               }`}
             >
-              {formatCompactChip(myAmount)}
+              <span>{formatCompactChip(amount)}</span>
+              {showPlayerDistinction && !isMyChip && (
+                <span
+                  style={{
+                    borderColor: marker.theme.color,
+                    color: marker.theme.color,
+                  }}
+                  className="pointer-events-none absolute -bottom-1.5 -left-1 inline-flex h-2.5 min-w-2.5 items-center justify-center rounded-full border bg-[#0F172A] px-0.5 font-arcade text-[6px] leading-none"
+                >
+                  {marker.shortTag}
+                </span>
+              )}
+              {showPlayerDistinction && isMyChip && entries.length > 1 && (
+                <span
+                  style={{ backgroundColor: marker.theme.color }}
+                  className="pointer-events-none absolute -bottom-0.5 -right-0.5 h-1.5 w-1.5 rounded-full ring-1 ring-[#0F172A]"
+                />
+              )}
             </span>
           );
-        })()}
-        {othersCount > 0 && (
-          <span className="pointer-events-none absolute bottom-0.5 right-0.5 z-10 flex gap-0.5">
-            {players
-              .filter((p) => p.id !== myPlayerId && (allBets[p.id]?.[betKey] || 0) > 0)
-              .slice(0, 3)
-              .map((p) => (
-                <span
-                  key={p.id}
-                  style={{ backgroundColor: playerColorMap.get(p.id) || '#38BDF8' }}
-                  className="h-1.5 w-1.5 rounded-full ring-1 ring-[#0F172A]"
-                />
-              ))}
-          </span>
-        )}
-      </>
+        })}
+      </span>
     );
   };
 
@@ -603,7 +573,9 @@ function BettingTable({
     const betKey = `number:${num}`;
     const color = getRouletteColor(num);
     const isWinner = showWinHighlight && winningNumber === num;
-    const isDragHovered = canBet && hoveredBetKey === betKey;
+    const isPreviewHighlighted =
+      canBet && isNumberCellHighlightedByBet(activePreviewBetKey, num);
+    const isDirectPreview = canBet && activePreviewBetKey === betKey;
 
     return (
       <button
@@ -612,6 +584,12 @@ function BettingTable({
         data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
+        onPointerEnter={(e) => {
+          if (canBet && e.pointerType === 'mouse') setDesktopHover(betKey);
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === 'mouse' && mouseHoverBetKey === betKey) setDesktopHover(null);
+        }}
         style={gridStyle}
         className={`relative flex items-center justify-center rounded-md border font-arcade text-xs sm:text-sm transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
@@ -622,15 +600,15 @@ function BettingTable({
               ? 'border-[#F87171]/45 bg-[#B91C1C] text-white'
               : 'border-white/25 bg-[#0F172A] text-white'
         } ${
-          isDragHovered
-            ? 'ring-2 ring-[#FDE047] brightness-125 scale-[1.04] z-20'
+          isPreviewHighlighted
+            ? `ring-2 ring-[#FDE047] brightness-125 ${isDirectPreview ? 'scale-[1.04]' : ''} z-10`
             : isWinner
               ? 'ring-2 ring-[#FDE047] z-10'
               : ''
         } ${extraClass}`}
       >
         <span>{num}</span>
-        {renderChipIndicators(betKey)}
+        {renderChipStack(betKey, 'cell')}
       </button>
     );
   };
@@ -644,7 +622,7 @@ function BettingTable({
     ariaLabel?: string
   ) => {
     const isWinner = showWinHighlight && winningNumber !== null && doesBetWin(betKey, winningNumber);
-    const isDragHovered = canBet && hoveredBetKey === betKey;
+    const isDragHovered = canBet && activePreviewBetKey === betKey;
 
     return (
       <button
@@ -654,6 +632,12 @@ function BettingTable({
         data-bet-key={canBet ? betKey : undefined}
         disabled={!canBet}
         onClick={() => onPlaceBet(betKey)}
+        onPointerEnter={(e) => {
+          if (canBet && e.pointerType === 'mouse') setDesktopHover(betKey);
+        }}
+        onPointerLeave={(e) => {
+          if (e.pointerType === 'mouse' && mouseHoverBetKey === betKey) setDesktopHover(null);
+        }}
         style={gridStyle}
         className={`relative flex items-center justify-center rounded-md border px-1.5 py-1.5 font-arcade text-[10px] sm:text-xs tracking-wide uppercase transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
@@ -666,10 +650,83 @@ function BettingTable({
         } ${extraClass}`}
       >
         {typeof label === 'string' ? <span className="truncate">{label}</span> : label}
-        {renderChipIndicators(betKey)}
+        {renderChipStack(betKey, 'cell')}
       </button>
     );
   };
+
+  const renderInsideOverlay = (spots: InsideSpot[]) => (
+    <>
+      {/* Unsichtbare präzise Klick- & Drag-Hotspots auf Kanten/Ecken zwischen Zahlen */}
+      {canBet && (
+        <div className="pointer-events-none absolute inset-0 z-20">
+          {spots.map((spot) => {
+            const isHovered = activePreviewBetKey === spot.betKey;
+            return (
+              <button
+                key={spot.betKey}
+                type="button"
+                aria-label={spot.title}
+                title={spot.title}
+                data-bet-key={spot.betKey}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPlaceBet(spot.betKey);
+                }}
+                onPointerEnter={(e) => {
+                  if (e.pointerType === 'mouse') setDesktopHover(spot.betKey);
+                }}
+                onPointerLeave={(e) => {
+                  if (e.pointerType === 'mouse' && mouseHoverBetKey === spot.betKey) {
+                    setDesktopHover(null);
+                  }
+                }}
+                style={{
+                  left: `${spot.leftPct}%`,
+                  top: `${spot.topPct}%`,
+                  width: spot.widthStyle,
+                  height: spot.heightStyle,
+                  zIndex: spot.zIndex,
+                  transform: 'translate(-50%, -50%)',
+                }}
+                className="roulette-inside-hotspot pointer-events-auto absolute flex items-center justify-center rounded-full bg-transparent cursor-pointer focus:outline-none"
+              >
+                {isHovered && (
+                  <span className="pointer-events-none h-2.5 w-2.5 rounded-full bg-[#FDE047] ring-2 ring-[#0F172A]" />
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Abgelegte Multi-Feld-Chips exakt auf der Linie / Ecke */}
+      <div className="pointer-events-none absolute inset-0 z-40">
+        {spots.map((spot) => {
+          const hasAnyBet = players.some((p) => (allBets[p.id]?.[spot.betKey] || 0) > 0);
+          if (!hasAnyBet) return null;
+          const isWinningSpot =
+            showWinHighlight && winningNumber !== null && doesBetWin(spot.betKey, winningNumber);
+
+          return (
+            <div
+              key={`chip-${spot.betKey}`}
+              style={{
+                left: `${spot.leftPct}%`,
+                top: `${spot.topPct}%`,
+                transform: 'translate(-50%, -50%)',
+              }}
+              className={`pointer-events-none absolute flex items-center justify-center rounded-full ${
+                isWinningSpot ? 'ring-2 ring-[#FDE047]' : ''
+              }`}
+            >
+              {renderChipStack(spot.betKey, 'spot')}
+            </div>
+          );
+        })}
+      </div>
+    </>
+  );
 
   if (isPortraitLayout) {
     const verticalLabel = (text: string) => (
@@ -743,16 +800,6 @@ function BettingTable({
             '19 bis 36'
           )}
 
-          {/* Zahlenraster 1–36 (12 Reihen × 3 Spalten) */}
-          {PORTRAIT_ROWS.flatMap((row, rowIdx) =>
-            row.map((num, colIdx) =>
-              renderNumberCell(num, 'h-full w-full text-xs min-[390px]:text-sm sm:text-base', {
-                gridColumn: String(colIdx + 2),
-                gridRow: String(rowIdx + 2),
-              })
-            )
-          )}
-
           {/* Rechte Dutzend-Wetten (je 4 Zahlenreihen hoch, vertikal ausgerichtet) */}
           {renderOutsideCell(
             'dozen:1',
@@ -804,6 +851,19 @@ function BettingTable({
             { gridColumn: '4 / 5', gridRow: '14 / 15' },
             'Dritte Kolonne 2 zu 1'
           )}
+
+          {/* Zahlenraster 1–36 (12 Reihen × 3 Spalten) + Kanten/Ecken-Overlay für Multi-Feld-Wetten */}
+          <div
+            style={{ gridColumn: '2 / 5', gridRow: '2 / 14' }}
+            className="roulette-felt-portrait-numbers relative grid h-full w-full grid-cols-3 grid-rows-12 gap-[3px]"
+          >
+            {PORTRAIT_ROWS.flatMap((row) =>
+              row.map((num) =>
+                renderNumberCell(num, 'h-full w-full text-xs min-[390px]:text-sm sm:text-base')
+              )
+            )}
+            {renderInsideOverlay(PORTRAIT_INSIDE_SPOTS)}
+          </div>
         </div>
       </div>
     );
@@ -814,16 +874,41 @@ function BettingTable({
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
       <div className="roulette-felt-horizontal flex flex-col gap-1">
         <div className="grid grid-cols-[32px_repeat(12,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
-          {renderNumberCell(0, 'roulette-zero-cell row-span-3 min-h-[104px]')}
+          {renderNumberCell(0, 'roulette-zero-cell row-span-3 min-h-[104px]', {
+            gridColumn: '1 / 2',
+            gridRow: '1 / 4',
+          })}
 
-          {HORIZONTAL_ROWS[0].map((n) => renderNumberCell(n, 'h-8.5'))}
-          {renderOutsideCell('column:3', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
+          {renderOutsideCell(
+            'column:3',
+            '2:1',
+            'border-white/25 bg-[#047857]/60 text-[#FDE68A]',
+            'h-8.5',
+            { gridColumn: '14 / 15', gridRow: '1 / 2' }
+          )}
+          {renderOutsideCell(
+            'column:2',
+            '2:1',
+            'border-white/25 bg-[#047857]/60 text-[#FDE68A]',
+            'h-8.5',
+            { gridColumn: '14 / 15', gridRow: '2 / 3' }
+          )}
+          {renderOutsideCell(
+            'column:1',
+            '2:1',
+            'border-white/25 bg-[#047857]/60 text-[#FDE68A]',
+            'h-8.5',
+            { gridColumn: '14 / 15', gridRow: '3 / 4' }
+          )}
 
-          {HORIZONTAL_ROWS[1].map((n) => renderNumberCell(n, 'h-8.5'))}
-          {renderOutsideCell('column:2', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
-
-          {HORIZONTAL_ROWS[2].map((n) => renderNumberCell(n, 'h-8.5'))}
-          {renderOutsideCell('column:1', '2:1', 'border-white/25 bg-[#047857]/60 text-[#FDE68A]', 'h-8.5')}
+          {/* 12×3 Zahlenraster + Kanten/Ecken-Overlay für Multi-Feld-Wetten (z-10 über Nachbar-Naht) */}
+          <div
+            style={{ gridColumn: '2 / 14', gridRow: '1 / 4' }}
+            className="relative z-10 grid grid-cols-12 grid-rows-3 gap-1"
+          >
+            {HORIZONTAL_ROWS.flatMap((row) => row.map((n) => renderNumberCell(n, 'h-8.5')))}
+            {renderInsideOverlay(HORIZONTAL_INSIDE_SPOTS)}
+          </div>
         </div>
 
         {/* Dutzende */}
@@ -881,6 +966,7 @@ export function RouletteBoard({
     Array<{ id: number; round: number; targetOrderLen: number; betKey: string; amount: number }>
   >([]);
   const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
+  const [tableHoverBetKey, setTableHoverBetKey] = useState<string | null>(null);
   const [isCompactScreen, setIsCompactScreen] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 1023px), (max-height: 540px)').matches;
@@ -1165,6 +1251,11 @@ export function RouletteBoard({
     window.addEventListener('blur', onWindowBlur);
   };
 
+  const playerMarkers = useMemo(
+    () => buildPlayerChipMarkers(allPlayers, myId),
+    [allPlayers, myId]
+  );
+
   const rankedPlayers = useMemo(() => {
     return [...allPlayers].sort(
       (a, b) => (gameState?.scores?.[b.id] ?? 0) - (gameState?.scores?.[a.id] ?? 0)
@@ -1260,11 +1351,11 @@ export function RouletteBoard({
 
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {rankedPlayers.map((p, idx) => {
-                const origIdx = Math.max(
-                  0,
-                  allPlayers.findIndex((ap) => ap.id === p.id)
-                );
-                const chipColor = PLAYER_TAG_COLORS[origIdx % PLAYER_TAG_COLORS.length];
+                const marker = playerMarkers.get(p.id);
+                const chipBg = marker?.theme.color || '#F59E0B';
+                const chipBorder = marker?.theme.border || '#FEF08A';
+                const chipText = marker?.theme.text || '#0F172A';
+                const shortTag = marker?.shortTag || `S${idx + 1}`;
                 const totalScore = gameState?.scores?.[p.id] ?? startingBalance;
                 const activeWager = sumBets(gameState?.bets?.[p.id]);
                 const roundNet = gameState?.lastOutcome?.netProfit?.[p.id];
@@ -1279,9 +1370,16 @@ export function RouletteBoard({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       <span
-                        style={{ backgroundColor: chipColor }}
-                        className="h-2.5 w-2.5 rounded-full shrink-0"
-                      />
+                        title={`${p.name} (${shortTag})`}
+                        style={{
+                          backgroundColor: chipBg,
+                          borderColor: chipBorder,
+                          color: chipText,
+                        }}
+                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade text-[7px] leading-none ring-1 ring-[#0F172A]"
+                      >
+                        {shortTag}
+                      </span>
                       <Avatar config={p.avatar} size={28} />
                       <div className="min-w-0">
                         <div className="font-arcade text-[11px] text-white uppercase truncate">
@@ -1508,18 +1606,34 @@ export function RouletteBoard({
   };
 
   const playersStrip = isMultiplayer && (
-    <div className="flex shrink-0 items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
-      {rankedPlayers.map((p) => {
+    <div className="flex shrink-0 flex-wrap items-center justify-center sm:justify-start gap-x-2.5 gap-y-0.5 px-0.5">
+      {rankedPlayers.map((p, idx) => {
         const bal = gameState?.scores?.[p.id] ?? startingBalance;
         const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
         const isMe = p.id === myId;
+        const marker = playerMarkers.get(p.id);
+        const chipBg = marker?.theme.color || '#F59E0B';
+        const chipBorder = marker?.theme.border || '#FEF08A';
+        const chipText = marker?.theme.text || '#0F172A';
+        const shortTag = marker?.shortTag || `S${idx + 1}`;
         return (
-          <div key={p.id} className="flex shrink-0 items-center gap-1.5 py-0.5">
+          <div key={p.id} className="flex shrink-0 items-center gap-1 py-0.5">
+            <span
+              title={`${p.name} (${shortTag})`}
+              style={{
+                backgroundColor: chipBg,
+                borderColor: chipBorder,
+                color: chipText,
+              }}
+              className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border border-dashed px-0.5 font-arcade text-[7px] leading-none ring-1 ring-[#0F172A]"
+            >
+              {shortTag}
+            </span>
             <span className={`inline-flex rounded-full ${isMe ? 'ring-1 ring-[#34D399]' : ''}`}>
-              <Avatar config={p.avatar} size={15} />
+              <Avatar config={p.avatar} size={14} />
             </span>
             <span
-              className={`font-arcade text-[9px] uppercase max-w-[68px] truncate ${
+              className={`font-arcade text-[9px] uppercase max-w-[52px] sm:max-w-[74px] truncate ${
                 isMe ? 'text-[#6EE7B7]' : 'text-white'
               }`}
             >
@@ -1540,6 +1654,8 @@ export function RouletteBoard({
       })}
     </div>
   );
+
+  const activePreviewLabel = canBet ? formatBetLabel(hoveredBetKey ?? tableHoverBetKey) : null;
 
   const resultFooter = phase === 'result' && (
     <div className="flex shrink-0 items-center justify-between gap-2 px-0.5 py-1">
@@ -1653,8 +1769,12 @@ export function RouletteBoard({
             )}
 
             {phase === 'betting' && (
-              <span className="font-arcade text-[9px] text-[#6EE7B7] uppercase shrink-0">
-                {!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN'}
+              <span
+                className={`font-arcade text-[9px] uppercase shrink-0 ${
+                  activePreviewLabel ? 'text-[#FDE047]' : 'text-[#6EE7B7]'
+                }`}
+              >
+                {activePreviewLabel ?? (!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN')}
               </span>
             )}
           </div>
@@ -1686,6 +1806,7 @@ export function RouletteBoard({
               phase={phase}
               hoveredBetKey={canBet && dragChip ? hoveredBetKey : null}
               layout="portrait"
+              onHoverBetChange={setTableHoverBetKey}
               onPlaceBet={handlePlaceBet}
             />
           </div>
@@ -1735,8 +1856,12 @@ export function RouletteBoard({
                 <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
                   EINSATZ: {formatEuro(displayedWagered)}
                 </span>
-                <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
-                  {!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN'}
+                <span
+                  className={`font-arcade text-[10px] uppercase ${
+                    activePreviewLabel ? 'text-[#FDE047]' : 'text-[#6EE7B7]'
+                  }`}
+                >
+                  {activePreviewLabel ?? (!isMultiplayer && isLocked ? 'BEREIT ✓' : 'CHIPS ZIEHEN')}
                 </span>
               </>
             )}
@@ -1804,6 +1929,7 @@ export function RouletteBoard({
               phase={phase}
               hoveredBetKey={canBet && dragChip ? hoveredBetKey : null}
               layout="horizontal"
+              onHoverBetChange={setTableHoverBetKey}
               onPlaceBet={handlePlaceBet}
             />
 
