@@ -138,7 +138,7 @@ export function LobbyGameSettings({
             )}
           </div>
           {!isOpen && (
-            <p className="font-arcade text-xs text-[#94A3B8] truncate mt-0.5 uppercase">
+            <p className="font-arcade text-[11px] sm:text-xs text-[#94A3B8] leading-snug mt-0.5 uppercase">
               {summaryText}
             </p>
           )}

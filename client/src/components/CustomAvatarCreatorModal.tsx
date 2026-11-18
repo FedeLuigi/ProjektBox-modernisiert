@@ -232,7 +232,7 @@ export function CustomAvatarCreatorModal({
             {/* 1. GROSSE ZEICHENFLÄCHE MIT GESICHT */}
             <div className="flex flex-col items-center justify-center shrink-0 gap-1">
               <div
-                className="avatar-creator-canvas-landscape relative aspect-square w-[172px] sm:w-[196px] md:w-[250px] rounded-full border-[3.5px] sm:border-[4px] border-[#334155] shadow-[0_5px_0_rgba(15,23,42,0.28)] overflow-hidden"
+                className="avatar-creator-canvas-landscape relative aspect-square w-[clamp(124px,34dvh,196px)] sm:w-[196px] md:w-[250px] rounded-full border-[3.5px] sm:border-[4px] border-[#334155] shadow-[0_5px_0_rgba(15,23,42,0.28)] overflow-hidden"
                 style={{
                   backgroundImage: `linear-gradient(135deg, ${bgMeta.from}, ${bgMeta.to})`,
                 }}
@@ -395,7 +395,7 @@ export function CustomAvatarCreatorModal({
                 <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                   GESICHTSFARBE
                 </span>
-                <div className="grid grid-cols-8 gap-1.5">
+                <div className="grid grid-cols-4 lg:grid-cols-8 gap-1.5">
                   {AVATAR_SKIN_COLORS.map((s) => {
                     const active = skinColor === s.id;
                     return (

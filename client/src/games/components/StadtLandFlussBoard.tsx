@@ -385,25 +385,25 @@ export function StadtLandFlussBoard({
   if (isTv) {
     if (phase === 'writing') {
       return (
-        <div className="flex w-full flex-col gap-5 select-none animate-fade-in">
+        <div className="flex w-full flex-col gap-3 sm:gap-5 select-none animate-fade-in">
           {/* Große Buchstaben-Bühne */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-5 rounded-3xl border border-[#22D3EE]/35 bg-[#0F172A]/80 p-5 sm:p-6 backdrop-blur-xl">
-            <div className="flex items-center gap-5">
-              <span className="font-arcade text-6xl sm:text-7xl leading-none text-[#FDE68A] drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] shrink-0 px-2">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-5 rounded-2xl sm:rounded-3xl border border-[#22D3EE]/35 bg-[#0F172A]/80 p-3 sm:p-5 lg:p-6 backdrop-blur-xl">
+            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
+              <span className="font-arcade text-4xl sm:text-6xl lg:text-7xl leading-none text-[#FDE68A] drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] shrink-0 px-1 sm:px-2">
                 {gameState.letter}
               </span>
-              <div className="flex flex-col gap-1.5 text-left">
-                <span className="font-arcade text-xs tracking-widest text-[#67E8F9] uppercase">
+              <div className="flex min-w-0 flex-col gap-1 text-left">
+                <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#67E8F9] uppercase">
                   RUNDE {round} VON {maxRounds} • EINGABE LÄUFT
                 </span>
-                <h2 className="font-arcade text-xl sm:text-3xl text-white uppercase">
+                <h2 className="font-arcade text-base sm:text-2xl lg:text-3xl text-white uppercase leading-tight">
                   STADT, LAND, FLUSS MIT {gameState.letter}
                 </h2>
-                <div className="flex flex-wrap gap-1.5 pt-1">
+                <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-0.5">
                   {categories.map((cat) => (
                     <span
                       key={cat}
-                      className="rounded-lg border border-white/15 bg-white/[0.06] px-2.5 py-1 font-arcade text-xs text-[#CBD5E1] uppercase"
+                      className="rounded-lg border border-white/15 bg-white/[0.06] px-2 py-0.5 sm:px-2.5 sm:py-1 font-arcade text-[10px] sm:text-xs text-[#CBD5E1] uppercase"
                     >
                       {cat}
                     </span>
@@ -413,7 +413,7 @@ export function StadtLandFlussBoard({
             </div>
 
             <div
-              className={`flex flex-col items-center justify-center rounded-2xl border px-6 py-3 shrink-0 ${
+              className={`flex flex-col items-center justify-center rounded-xl sm:rounded-2xl border px-4 py-1.5 sm:px-6 sm:py-3 shrink-0 ${
                 timeLeft <= 10
                   ? 'border-[#FDA4AF]/70 bg-[#E11D48]/80 text-white animate-pulse'
                   : 'border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]'
@@ -485,8 +485,8 @@ export function StadtLandFlussBoard({
 
     if (phase === 'review') {
       return (
-        <div className="flex w-full flex-col gap-4 select-none animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/15 bg-[#0F172A]/85 px-5 py-3 backdrop-blur-xl">
+        <div className="flex w-full flex-col gap-2.5 sm:gap-4 select-none animate-fade-in">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-white/15 bg-[#0F172A]/85 px-3.5 sm:px-5 py-2 sm:py-3 backdrop-blur-xl">
             <div className="flex items-center gap-3">
               <span className="rounded-xl border border-[#22D3EE]/50 bg-[#164E63]/70 px-3 py-1 font-arcade text-base text-[#FDE68A]">
                 {gameState.letter}
@@ -509,7 +509,7 @@ export function StadtLandFlussBoard({
           </div>
 
           {/* TV-Übersichtstabelle aller Kategorien & Antworten */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
             {categories.map((cat) => (
               <div
                 key={cat}
@@ -679,7 +679,7 @@ export function StadtLandFlussBoard({
         </div>
 
         {/* Kategorie-Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 py-0.5">
+        <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 sm:gap-1.5 sm:overflow-x-auto no-scrollbar shrink-0 py-0.5">
           {categories.map((cat) => {
             const active = cat === activeCategoryTab;
             const myCatPoints = gameState.evaluated?.[cat]?.[myPlayer.id]?.points || 0;
@@ -830,8 +830,8 @@ export function StadtLandFlussBoard({
   // D) SPIELER-ANSICHT: PHASE 3 (RUNDEN-ZWISCHENSTAND)
   // ───────────────────────────────────────────────────────────────
   return (
-    <div className="my-auto mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-2 py-4 select-none animate-fade-in">
-      <div className="my-auto flex w-full flex-col items-center gap-5 text-center">
+    <div className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center overflow-y-auto px-2 py-2 sm:py-4 select-none animate-fade-in">
+      <div className="my-auto flex w-full flex-col items-center gap-3 sm:gap-5 text-center">
         <div className="flex items-center gap-2 border-b-2 border-[#22D3EE] px-3 pb-1">
           <Sparkles className="h-5 w-5 text-[#67E8F9]" />
           <h2 className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">

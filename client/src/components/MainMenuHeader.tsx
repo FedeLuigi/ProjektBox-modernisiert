@@ -30,14 +30,14 @@ export function MainMenuHeader({
   return (
     <div className="mx-auto w-full max-w-[1440px] shrink-0 px-4 sm:px-6 lg:px-8">
       <header className="tablet-header landscape-top-bar relative z-30 flex w-full flex-nowrap items-center justify-between gap-2 sm:gap-3 border-b border-white/15 py-2 landscape:py-1">
-        {/* Links: Avatar + Wortmarke verschmolzen */}
+        {/* Links: Avatar + Wortmarke verschmolzen (unter 420px verborgen, damit nichts die Buttons rechts überlagert) */}
         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
           <div className="shrink-0 rounded-full ring-2 ring-white/20 shadow-[0_4px_14px_rgba(0,0,0,0.35)]">
             <PlayerAvatarButton avatar={avatar} onClick={onOpenProfile} />
           </div>
 
-          <div className="landscape-hide-logo landscape:hidden! border-b-2 border-[#F59E0B] px-1 pb-0.5 select-none">
-            <span className="font-arcade text-sm sm:text-xl md:text-2xl tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)] whitespace-nowrap">
+          <div className="landscape-hide-logo landscape:hidden! hidden min-[420px]:block min-w-0 overflow-hidden border-b-2 border-[#F59E0B] px-1 pb-0.5 select-none">
+            <span className="font-arcade block truncate text-sm md:text-base lg:text-xl xl:text-2xl tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
               PROJEKT <span className="text-[#FBBF24]">BOX</span>
             </span>
           </div>

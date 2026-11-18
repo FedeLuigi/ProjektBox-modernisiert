@@ -275,12 +275,12 @@ function PlayingCard({
 }) {
   const sizeClass =
     size === 'xs'
-      ? 'h-9 w-6 rounded text-[9px]'
+      ? 'h-9.5 w-6.5 rounded text-[9px] leading-none'
       : size === 'sm'
-        ? 'h-12 w-8.5 rounded-md text-[11px]'
+        ? 'h-12 w-8.5 rounded-md text-[10px] leading-none'
         : size === 'lg'
-          ? 'h-20 w-14 sm:h-24 sm:w-16 rounded-xl text-sm sm:text-base'
-          : 'poker-landscape-card h-15 w-10.5 sm:h-18 sm:w-12.5 rounded-lg text-xs sm:text-sm';
+          ? 'h-12 w-8.5 min-[480px]:h-14 min-[480px]:w-10 landscape:h-11 landscape:w-8 md:h-20 md:w-14 xl:h-24 xl:w-16 rounded-lg md:rounded-xl text-[10px] landscape:text-[9px] md:text-sm xl:text-base leading-none'
+          : 'poker-landscape-card h-15 w-10.5 sm:h-18 sm:w-12.5 rounded-lg text-[11px] sm:text-sm landscape:text-[10px] leading-none';
 
   if (faceDown || !card) {
     return (
@@ -302,7 +302,7 @@ function PlayingCard({
 
   return (
     <div
-      className={`relative flex shrink-0 flex-col justify-between border bg-[#F8FAFC] p-1 font-bold shadow-[0_8px_20px_rgba(0,0,0,0.45)] select-none ${sizeClass} ${
+      className={`relative flex shrink-0 flex-col justify-between overflow-hidden border bg-[#F8FAFC] p-[2px] sm:p-1 landscape:p-[2px] font-bold shadow-[0_8px_20px_rgba(0,0,0,0.45)] select-none ${sizeClass} ${
         isRed ? 'text-[#DC2626]' : 'text-[#0F172A]'
       } ${
         highlighted
@@ -310,14 +310,18 @@ function PlayingCard({
           : 'border-white/75'
       } ${dimmed ? 'opacity-45' : ''}`}
     >
-      <div className="flex flex-col items-start leading-none">
+      <div className="flex flex-col items-start leading-[0.88]">
         <span>{rankLabel}</span>
-        <span className="text-[0.8em]">{suitSym}</span>
+        {size !== 'xs' && <span className="text-[0.75em]">{suitSym}</span>}
       </div>
-      <div className="self-center text-[1.45em] leading-none">{suitSym}</div>
-      <div className="flex flex-col items-end leading-none rotate-180">
-        <span>{rankLabel}</span>
-      </div>
+      <div className="self-center text-[1.18em] leading-none">{suitSym}</div>
+      {size !== 'xs' ? (
+        <div className="flex flex-col items-end leading-[0.88] rotate-180">
+          <span>{rankLabel}</span>
+        </div>
+      ) : (
+        <div className="h-[1px]" aria-hidden="true" />
+      )}
     </div>
   );
 }
@@ -327,7 +331,7 @@ function EmptyCardSlot({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     size === 'sm'
       ? 'h-12 w-8.5 rounded-md'
       : size === 'lg'
-        ? 'h-20 w-14 sm:h-24 sm:w-16 rounded-xl'
+        ? 'h-12 w-8.5 min-[480px]:h-14 min-[480px]:w-10 landscape:h-11 landscape:w-8 md:h-20 md:w-14 xl:h-24 xl:w-16 rounded-lg md:rounded-xl'
         : 'poker-landscape-slot h-15 w-10.5 sm:h-18 sm:w-12.5 rounded-lg';
 
   return (
@@ -496,14 +500,14 @@ export function TexasHoldemBoard({
   // ─── TV-ANSICHT: WOHNZIMMER-POKERTISCH MIT GEMEINSCHAFTSKARTEN & SHOWDOWN ───
   if (isTvScreen) {
     return (
-      <div className="flex w-full flex-1 min-h-0 flex-col justify-between gap-3">
+      <div className="flex w-full flex-1 min-h-0 flex-col justify-between gap-2 sm:gap-3 landscape:gap-1">
         {/* Obere Info-Zeile */}
         <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-0.5">
           <div className="flex items-center gap-2.5">
-            <span className="font-arcade text-xs text-[#6EE7B7] uppercase">
+            <span className="font-arcade text-xs text-[#6EE7B7] uppercase whitespace-nowrap">
               HAND #{handNumber}/{maxHands}
             </span>
-            <span className="font-arcade text-xs text-[#CBD5E1] uppercase">
+            <span className="font-arcade text-xs text-[#CBD5E1] uppercase whitespace-nowrap">
               BLINDS {smallBlind}/{bigBlind} €
             </span>
           </div>
@@ -526,7 +530,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* Spielerplätze rund um den Tisch */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 landscape:grid-cols-4 gap-2 sm:gap-3 landscape:gap-1.5">
           {orderedSeats.map((pid) => {
             const p = playerMap.get(pid);
             if (!p) return null;
@@ -545,7 +549,7 @@ export function TexasHoldemBoard({
             return (
               <div
                 key={pid}
-                className={`relative flex flex-col justify-between gap-2 px-1.5 py-1 transition-all ${
+                className={`relative flex flex-col justify-between gap-1 px-1.5 py-1 transition-all ${
                   showResult?.isWinner
                     ? 'border-b-2 border-[#FDE047]'
                     : isActiveTurn
@@ -555,53 +559,46 @@ export function TexasHoldemBoard({
                         : ''
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <span
-                      className={`inline-flex rounded-full ${
-                        showResult?.isWinner
-                          ? 'ring-2 ring-[#FDE047]'
-                          : isActiveTurn
-                            ? 'ring-2 ring-[#34D399]'
-                            : ''
-                      }`}
-                    >
-                      <Avatar config={p.avatar} size={32} />
-                    </span>
-                    <div className="min-w-0">
-                      <div className="flex items-center gap-1">
-                        <span
-                          className={`font-arcade text-xs uppercase truncate ${
-                            showResult?.isWinner
-                              ? 'text-[#FDE047]'
-                              : isActiveTurn
-                                ? 'text-[#6EE7B7]'
-                                : 'text-white'
-                          }`}
-                        >
-                          {p.name}
-                        </span>
-                        {isDealer && (
-                          <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#FBBF24] font-arcade text-[9px] text-[#0F172A]">
-                            D
-                          </span>
-                        )}
-                        {isSb && (
-                          <span className="font-arcade text-[9px] text-[#7DD3FC]">
-                            SB
-                          </span>
-                        )}
-                        {isBb && (
-                          <span className="font-arcade text-[9px] text-[#F9A8D4]">
-                            BB
-                          </span>
-                        )}
-                      </div>
-                      <div className="font-arcade text-xs text-[#FDE68A]">
-                        {formatEuro(bal)}
-                      </div>
-                    </div>
+                {/* Reihe 1: Avatar + Name (volle Breite ohne Karten-Konkurrenz) + Position */}
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <span
+                    className={`inline-flex shrink-0 rounded-full ${
+                      showResult?.isWinner
+                        ? 'ring-2 ring-[#FDE047]'
+                        : isActiveTurn
+                          ? 'ring-2 ring-[#34D399]'
+                          : ''
+                    }`}
+                  >
+                    <Avatar config={p.avatar} size={24} />
+                  </span>
+                  <span
+                    className={`font-arcade text-[11px] sm:text-xs uppercase truncate min-w-0 flex-1 ${
+                      showResult?.isWinner
+                        ? 'text-[#FDE047]'
+                        : isActiveTurn
+                          ? 'text-[#6EE7B7]'
+                          : 'text-white'
+                    }`}
+                  >
+                    {p.name}
+                  </span>
+                  <div className="flex items-center gap-1 shrink-0">
+                    {isDealer && (
+                      <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#FBBF24] font-arcade text-[9px] text-[#0F172A]">
+                        D
+                      </span>
+                    )}
+                    {isSb && <span className="font-arcade text-[9px] text-[#7DD3FC]">SB</span>}
+                    {isBb && <span className="font-arcade text-[9px] text-[#F9A8D4]">BB</span>}
                   </div>
+                </div>
+
+                {/* Reihe 2: Guthaben (ohne Umbruch) + Hole-Karten */}
+                <div className="flex items-center justify-between gap-1.5">
+                  <span className="font-arcade text-[11px] sm:text-xs text-[#FDE68A] whitespace-nowrap">
+                    {formatEuro(bal)}
+                  </span>
 
                   {inHand && (
                     <div className="flex items-center gap-1 shrink-0">
@@ -625,19 +622,20 @@ export function TexasHoldemBoard({
                   )}
                 </div>
 
-                <div className="flex items-center justify-between gap-2 text-[10px] font-arcade uppercase">
+                {/* Reihe 3: Aktion / Gewinn / Einsatz */}
+                <div className="flex items-center justify-between gap-1 text-[9px] sm:text-[10px] font-arcade uppercase">
                   <span className="text-[#94A3B8] truncate">
                     {showResult
                       ? showResult.handName
                       : lastAction || (isActiveTurn ? 'AM ZUG...' : inHand ? 'IM SPIEL' : 'RAUS')}
                   </span>
                   {showResult && showResult.wonAmount > 0 ? (
-                    <span className="text-[#34D399] shrink-0">
+                    <span className="text-[#34D399] shrink-0 whitespace-nowrap">
                       +{formatEuro(showResult.wonAmount)}
                     </span>
                   ) : streetBet > 0 ? (
-                    <span className="text-[#FDE68A] shrink-0">
-                      EINSATZ {streetBet} €
+                    <span className="text-[#FDE68A] shrink-0 whitespace-nowrap">
+                      {streetBet} €
                     </span>
                   ) : null}
                 </div>
@@ -647,7 +645,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* Großer Pokertisch in der Mitte */}
-        <div className="my-auto flex flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-5 sm:p-7 ring-1 ring-[#F59E0B]/40">
+        <div className="my-auto flex flex-col items-center justify-center gap-2 sm:gap-4 landscape:gap-1 rounded-2xl sm:rounded-[32px] border-2 sm:border-4 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-5 landscape:p-1.5 lg:p-7 ring-1 ring-[#F59E0B]/40">
           <div className="flex items-center gap-2.5 px-1">
             <Coins className="h-4 w-4 text-[#FBBF24]" />
             <span className="font-arcade text-base sm:text-lg tracking-wider text-[#FDE68A] uppercase">
@@ -713,7 +711,7 @@ export function TexasHoldemBoard({
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-3 overflow-x-auto no-scrollbar px-0.5">
+          <div className="grid grid-cols-2 min-[300px]:grid-cols-4 sm:flex sm:flex-wrap sm:items-center sm:justify-center gap-1 sm:gap-2.5 px-0.5">
             {orderedSeats.map((pid) => {
               const p = playerMap.get(pid);
               if (!p) return null;
@@ -731,7 +729,7 @@ export function TexasHoldemBoard({
               return (
                 <div
                   key={pid}
-                  className={`flex shrink-0 flex-col gap-0.5 px-1 py-0.5 min-w-[78px] transition-opacity ${
+                  className={`flex min-w-0 flex-col gap-0.5 px-1 py-0.5 sm:min-w-[82px] transition-opacity ${
                     showdownRes?.isWinner
                       ? 'border-b-2 border-[#FDE047]'
                       : isActiveTurn

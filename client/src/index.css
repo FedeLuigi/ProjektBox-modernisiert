@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@theme {
+  --breakpoint-xs: 24rem;
+}
+
 @custom-variant landscape (@media (orientation: landscape) and (max-height: 540px));
 
 /* ─── Basis-Regeln für natives App-Verhalten & globales Crystal-UI Design ─── */
@@ -304,7 +308,8 @@ body::-webkit-scrollbar,
    TABLET & IPAD BREAKPOINT SCOPING (768px - 1199px ONLY)
    Strikt gekapselt: Smartphone (< 768px) und Desktop (>= 1200px) bleiben 100% unberührt!
    ═══════════════════════════════════════════════════════════════════════════ */
-@media (min-width: 768px) and (max-width: 1199px) {
+/* ─── Tablet root scale ONLY when there is sufficient vertical height (excludes compact 900×560 landscape windows) ─── */
+@media (min-width: 768px) and (max-width: 1199px) and (min-height: 700px) {
   /* Basisskalierung um ca. 15% auf iPads für proportionale Touch-Bedienung */
   html {
     font-size: 18px;
@@ -910,21 +915,21 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-qr-canvas {
-    width: 176px !important;
-    height: 176px !important;
+    width: clamp(104px, 32dvh, 176px) !important;
+    height: clamp(104px, 32dvh, 176px) !important;
   }
 
   .lobby-landscape-code-btn {
-    font-size: 0.95rem !important;
-    padding: 4px 10px !important;
+    font-size: 0.9rem !important;
+    padding: 3px 10px !important;
   }
 
   .lobby-landscape-right {
-    gap: 8px !important;
+    gap: 6px !important;
   }
 
   .lobby-landscape-players {
-    max-height: 92px !important;
+    max-height: clamp(68px, 24dvh, 96px) !important;
     gap: 4px !important;
   }
 
@@ -937,29 +942,29 @@ body::-webkit-scrollbar,
   }
 
   .qr-scanner-landscape {
-    max-width: 190px !important;
-    max-height: 190px !important;
+    max-width: clamp(112px, 34dvh, 184px) !important;
+    max-height: clamp(112px, 34dvh, 184px) !important;
   }
 
   .join-landscape-form {
-    gap: 10px !important;
-    padding-top: 4px !important;
-    padding-bottom: 4px !important;
+    gap: 8px !important;
+    padding-top: 2px !important;
+    padding-bottom: 2px !important;
   }
 
   .join-landscape-qr-tile {
-    padding: 12px 24px !important;
+    padding: 10px 20px !important;
   }
 
   .avatar-creator-canvas-landscape {
-    width: 168px !important;
+    width: clamp(116px, 34dvh, 168px) !important;
   }
 
-  /* ─── Poker Texas Hold'em im Smartphone-Querformat (2-Spalten, 0 Scrollen) ─── */
+  /* ─── Poker Texas Hold'em im Smartphone-Querformat (2-Spalten, skalierbar ohne Überlappung) ─── */
   .poker-landscape-shell {
     display: grid !important;
-    grid-template-columns: minmax(0, 1.15fr) minmax(17.5rem, 0.85fr) !important;
-    gap: 10px !important;
+    grid-template-columns: minmax(0, 1.15fr) minmax(14rem, 0.85fr) !important;
+    gap: 8px !important;
     align-items: stretch !important;
     overflow: hidden !important;
   }
@@ -969,33 +974,35 @@ body::-webkit-scrollbar,
     flex-direction: column !important;
     justify-content: space-between !important;
     min-height: 0 !important;
-    gap: 6px !important;
+    overflow-y: auto !important;
+    gap: 3px !important;
   }
 
   .poker-landscape-table {
     flex: 1 1 0% !important;
     min-height: 0 !important;
-    padding: 8px 10px !important;
-    gap: 6px !important;
+    padding: 4px 8px !important;
+    gap: 3px !important;
   }
 
   .poker-landscape-right {
     display: flex !important;
     flex-direction: column !important;
-    justify-content: space-between !important;
+    justify-content: flex-start !important;
     min-height: 0 !important;
-    padding: 2px 0 !important;
-    gap: 6px !important;
+    overflow-y: auto !important;
+    padding: 2px !important;
+    gap: 4px !important;
   }
 
   .poker-landscape-card {
-    height: 3.4rem !important;
-    width: 2.4rem !important;
+    height: clamp(2.65rem, 15dvh, 3.6rem) !important;
+    width: clamp(1.88rem, 10.6dvh, 2.55rem) !important;
   }
 
   .poker-landscape-slot {
-    height: 3.4rem !important;
-    width: 2.4rem !important;
+    height: clamp(2.65rem, 15dvh, 3.6rem) !important;
+    width: clamp(1.88rem, 10.6dvh, 2.55rem) !important;
   }
 
   /* ─── Casino Roulette im Smartphone-Querformat (Drehrad & Spielbrett auf 1 Linie, Info oben, Chips mittig) ─── */
@@ -1007,8 +1014,9 @@ body::-webkit-scrollbar,
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    gap: 4px !important;
-    overflow: hidden !important;
+    gap: 2px !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
   }
 
   .roulette-landscape-topbar {
@@ -1019,14 +1027,14 @@ body::-webkit-scrollbar,
   .roulette-landscape-body {
     display: grid !important;
     grid-template-columns: auto minmax(0, 1fr) !important;
-    column-gap: 10px !important;
-    row-gap: 4px !important;
+    column-gap: 8px !important;
+    row-gap: 2px !important;
     align-items: center !important;
   }
 
   .roulette-landscape-wheel {
-    width: clamp(5.5rem, 34vh, 8.25rem) !important;
-    height: clamp(5.5rem, 34vh, 8.25rem) !important;
+    width: clamp(4.75rem, 30dvh, 8rem) !important;
+    height: clamp(4.75rem, 30dvh, 8rem) !important;
   }
 
   .roulette-felt-horizontal {
@@ -1038,19 +1046,19 @@ body::-webkit-scrollbar,
   }
 
   .roulette-landscape-felt {
-    padding: 5px !important;
+    padding: 4px !important;
   }
 
   .roulette-landscape-felt button:not(.roulette-inside-hotspot) {
-    height: clamp(1.25rem, 5.8vh, 1.6rem) !important;
-    min-height: clamp(1.25rem, 5.8vh, 1.6rem) !important;
-    font-size: 0.68rem !important;
+    height: clamp(1.06rem, 4.7dvh, 1.44rem) !important;
+    min-height: clamp(1.06rem, 4.7dvh, 1.44rem) !important;
+    font-size: clamp(0.45rem, 1.45vw, 0.62rem) !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }
 
   .roulette-landscape-felt button.roulette-zero-cell {
-    min-height: calc(clamp(1.25rem, 5.8vh, 1.6rem) * 3 + 0.5rem) !important;
+    min-height: calc(clamp(1.06rem, 4.7dvh, 1.44rem) * 3 + 0.5rem) !important;
     height: 100% !important;
   }
 }

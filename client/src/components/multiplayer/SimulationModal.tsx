@@ -160,14 +160,14 @@ export function SimulationModal({
                   />
                 </div>
 
-                <div className="flex flex-1 min-w-0 flex-col gap-1">
-                  <span className="font-arcade text-sm sm:text-base text-white uppercase truncate">
+                <div className="flex flex-1 min-w-0 flex-col gap-0.5 sm:gap-1">
+                  <span className="font-arcade text-xs sm:text-sm text-white uppercase leading-snug">
                     {game.title}
                   </span>
                   <span className="font-arcade text-[10px] text-[#7DD3FC] uppercase truncate">
                     {participantSummary}
                   </span>
-                  <span className="text-[11px] text-[#94A3B8] line-clamp-1">
+                  <span className="text-[11px] text-[#94A3B8] line-clamp-2 leading-snug">
                     {game.subtitle}
                   </span>
                 </div>

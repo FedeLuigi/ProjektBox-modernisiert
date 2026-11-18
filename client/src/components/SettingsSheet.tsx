@@ -31,7 +31,7 @@ function SettingToggleRow({
       role="switch"
       aria-checked={enabled}
       onClick={() => onToggle(!enabled)}
-      className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-3.5 text-left transition-colors hover:border-white/30 cursor-pointer active:scale-[0.99]"
+      className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-2.5 sm:py-3.5 landscape:py-1.5 text-left transition-colors hover:border-white/30 cursor-pointer active:scale-[0.99]"
     >
       <div className="flex items-center gap-3 min-w-0">
         <div
@@ -104,14 +104,14 @@ export function SettingsSheet({
           </button>
         </div>
 
-        <div className="my-auto mx-auto flex w-full max-w-lg flex-col items-center gap-6 px-4 sm:px-6 py-4">
+        <div className="my-auto mx-auto flex w-full max-w-lg flex-col items-center gap-3 sm:gap-6 landscape:gap-2 px-4 sm:px-6 py-2 sm:py-4 landscape:py-1">
           <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-            <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+            <span className="font-arcade text-xl sm:text-3xl landscape:text-lg tracking-wider text-white uppercase">
               EINSTELLUNGEN
             </span>
           </div>
 
-          <div className="flex flex-col gap-2.5 w-full">
+          <div className="flex flex-col gap-1.5 sm:gap-2.5 landscape:gap-1 w-full">
             <SettingToggleRow
               label="MUSIK & TON"
               description={soundEnabled ? 'Aktiviert' : 'Stummgeschaltet'}

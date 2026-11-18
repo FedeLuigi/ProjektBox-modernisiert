@@ -104,14 +104,14 @@ export function TvGameView({
         className="safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1440px] mx-auto"
       >
         {/* 1. OPEN-GALLERY TV HEADER */}
-        <header className="relative flex flex-wrap shrink-0 items-center justify-between gap-3 border-b border-white/15 pb-2.5">
-          <div className="flex items-center gap-3">
+        <header className="relative flex flex-wrap shrink-0 items-center justify-between gap-1.5 sm:gap-3 landscape:gap-1 border-b border-white/15 pb-1.5 sm:pb-2.5 landscape:pb-1">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-3.5 w-3.5" />
               <span>EXIT TV</span>
             </OpenButton>
-            <div className="border-b-2 border-[#F59E0B] px-1 pb-0.5">
-              <span className="font-arcade text-sm sm:text-lg tracking-wider text-white uppercase">
+            <div className="min-w-0 border-b-2 border-[#F59E0B] px-1 pb-0.5">
+              <span className="font-arcade block truncate text-xs sm:text-lg tracking-wider text-white uppercase">
                 {gameTitle || lobby.name}
               </span>
             </div>
@@ -188,15 +188,15 @@ export function TvGameView({
 
         {/* 2. MITTE: TV-BÜHNE */}
         {isDrawAndGuess ? (
-          <main className="my-auto flex flex-1 min-h-0 flex-col lg:flex-row items-center justify-between gap-4 lg:gap-10 overflow-y-auto py-3 w-full">
+          <main className="flex flex-1 min-h-0 flex-col min-[540px]:flex-row items-stretch min-[540px]:items-center justify-start min-[540px]:justify-between gap-2.5 sm:gap-4 lg:gap-8 overflow-y-auto py-1.5 sm:py-3 w-full">
             {/* Linke Spalte: Spieler & Punkte */}
-            <div className="w-full max-w-md lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-4 backdrop-blur-xl">
-              <div className="mb-3 border-b-2 border-[#F59E0B] self-start inline-block pb-0.5">
+            <div className="w-full max-w-md min-[540px]:w-36 sm:w-44 md:w-52 lg:w-68 mx-auto min-[540px]:mx-0 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-2.5 sm:p-3.5 backdrop-blur-xl">
+              <div className="mb-1.5 sm:mb-2.5 border-b-2 border-[#F59E0B] self-start inline-block pb-0.5">
                 <span className="font-arcade text-xs tracking-wider text-white uppercase">
                   SPIELER
                 </span>
               </div>
-              <div className="flex flex-col gap-2 max-h-[52vh] overflow-y-auto no-scrollbar">
+              <div className="flex flex-col gap-1.5 sm:gap-2 max-h-[24dvh] min-[540px]:max-h-[46dvh] lg:max-h-[52vh] overflow-y-auto no-scrollbar">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
                   const score = gameState?.scores?.[p.id] || 0;
@@ -226,11 +226,11 @@ export function TvGameView({
             </div>
 
             {/* Mittlere Spalte: TV-Leinwand */}
-            <div className="flex-1 flex flex-col items-center justify-center max-w-xl mx-auto">
+            <div className="w-full shrink-0 min-[540px]:flex-1 min-[540px]:min-h-0 flex flex-col items-center justify-center max-w-xl mx-auto">
               {!isRoundOver && !isGameOver && (
-                <div className="font-arcade mb-3 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs text-white uppercase flex items-center gap-2">
-                  <Wifi className="h-3.5 w-3.5 text-[#F472B6] animate-pulse" />
-                  <span>
+                <div className="font-arcade mb-1.5 sm:mb-3 shrink-0 rounded-xl border border-white/15 bg-white/[0.06] px-3 sm:px-4 py-1 sm:py-1.5 text-[11px] sm:text-xs text-white uppercase flex items-center gap-2">
+                  <Wifi className="h-3.5 w-3.5 text-[#F472B6] animate-pulse shrink-0" />
+                  <span className="truncate">
                     {currentTurnPlayer?.name || 'SPIELER'}{' '}
                     {gameState?.roundStatus === 'choosing_word'
                       ? 'WÄHLT EIN EIGENES WORT...'
@@ -239,7 +239,7 @@ export function TvGameView({
                 </div>
               )}
 
-              <div className="w-full flex-1 flex items-center justify-center pointer-events-none">
+              <div className="w-full shrink-0 min-[540px]:flex-1 min-[540px]:min-h-0 flex items-center justify-center pointer-events-none">
                 {BoardComponent && (
                   <BoardComponent
                     gameId={lobby.gameId}
@@ -257,13 +257,13 @@ export function TvGameView({
             </div>
 
             {/* Rechte Spalte: Tipps */}
-            <div className="w-full max-w-md lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-4 backdrop-blur-xl">
-              <div className="mb-3 border-b-2 border-[#10B981] self-start inline-block pb-0.5">
+            <div className="w-full max-w-md min-[540px]:w-36 sm:w-44 md:w-52 lg:w-68 mx-auto min-[540px]:mx-0 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-2.5 sm:p-3.5 backdrop-blur-xl">
+              <div className="mb-1.5 sm:mb-2.5 border-b-2 border-[#10B981] self-start inline-block pb-0.5">
                 <span className="font-arcade text-xs tracking-wider text-white uppercase">
                   TIPPS
                 </span>
               </div>
-              <div className="flex flex-col gap-2 max-h-[52vh] overflow-y-auto no-scrollbar">
+              <div className="flex flex-col gap-1.5 sm:gap-2 max-h-[24dvh] min-[540px]:max-h-[46dvh] lg:max-h-[52vh] overflow-y-auto no-scrollbar">
                 {gameState?.guesses && gameState.guesses.length > 0 ? (
                   gameState.guesses.map((g: any) => (
                     <div
@@ -289,20 +289,22 @@ export function TvGameView({
             </div>
           </main>
         ) : isStadtLandFluss || isMoneyGame ? (
-          <main className="my-auto flex flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto py-3 w-full">
-            {BoardComponent && (
-              <BoardComponent
-                gameId={lobby.gameId}
-                gameState={gameState}
-                myPlayer={{ id: 'tv_screen', name: 'TV', isTvScreen: true } as any}
-                opponent={player2}
-                allPlayers={activePlayers}
-                isMyTurn={false}
-                isGameOver={isGameOver}
-                onMove={() => {}}
-                disabled={true}
-              />
-            )}
+          <main className="flex flex-1 min-h-0 flex-col items-center overflow-y-auto py-1.5 sm:py-3 w-full">
+            <div className="my-auto flex w-full flex-col items-center">
+              {BoardComponent && (
+                <BoardComponent
+                  gameId={lobby.gameId}
+                  gameState={gameState}
+                  myPlayer={{ id: 'tv_screen', name: 'TV', isTvScreen: true } as any}
+                  opponent={player2}
+                  allPlayers={activePlayers}
+                  isMyTurn={false}
+                  isGameOver={isGameOver}
+                  onMove={() => {}}
+                  disabled={true}
+                />
+              )}
+            </div>
           </main>
         ) : (
           <main className="my-auto grid grid-cols-1 md:grid-cols-[1fr_auto_1fr] items-center gap-6 lg:gap-12 py-4 w-full">

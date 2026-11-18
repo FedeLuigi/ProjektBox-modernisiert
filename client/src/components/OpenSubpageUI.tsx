@@ -129,12 +129,12 @@ export function OpenModalFrame({
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`relative flex w-full flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#0F172A]/90 text-white backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.65)] ${className}`}
+      className={`relative flex w-full max-h-[calc(100dvh-16px)] sm:max-h-[calc(100dvh-32px)] flex-col overflow-hidden rounded-2xl border border-white/15 bg-[#0F172A]/90 text-white backdrop-blur-xl shadow-[0_24px_60px_rgba(0,0,0,0.65)] ${className}`}
     >
-      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 py-3 landscape:py-2">
-        <div className="flex items-center gap-2">
-          <div className="border-b-2 border-[#F59E0B] pb-0.5 select-none">
-            <span className="font-arcade text-base sm:text-lg tracking-wider text-white uppercase">
+      <div className="flex shrink-0 items-center justify-between gap-3 border-b border-white/15 px-4 sm:px-6 py-2.5 sm:py-3 landscape:py-1.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="min-w-0 border-b-2 border-[#F59E0B] pb-0.5 select-none">
+            <span className="font-arcade block truncate text-sm sm:text-lg tracking-wider text-white uppercase">
               {title}
               {accentWord && <span className="text-[#FBBF24]"> {accentWord}</span>}
             </span>
@@ -146,13 +146,13 @@ export function OpenModalFrame({
           type="button"
           onClick={onClose}
           aria-label="Schließen"
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-white/15 bg-white/[0.04] text-white/75 transition-colors hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-white/15 bg-white/[0.04] text-white/75 transition-colors hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
         >
           <X className="h-4 w-4" />
         </button>
       </div>
 
-      <div className={`flex flex-col p-4 sm:p-6 landscape:p-3.5 ${contentClassName}`}>
+      <div className={`flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain p-3.5 sm:p-6 landscape:p-3 ${contentClassName}`}>
         {children}
       </div>
     </div>

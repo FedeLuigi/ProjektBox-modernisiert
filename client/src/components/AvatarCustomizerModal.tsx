@@ -74,7 +74,7 @@ export function AvatarCustomizerModal({
   };
 
   const optionCardClass = (isSelected: boolean) =>
-    `min-w-0 w-full h-[76px] sm:h-[82px] landscape:h-[68px] flex flex-col items-center justify-center rounded-xl py-1.5 px-1.5 landscape:py-1 landscape:px-1 border transition-all cursor-pointer active:scale-95 ${
+    `min-w-0 w-full h-[76px] sm:h-[82px] landscape:h-[58px] flex flex-col items-center justify-center rounded-xl py-1.5 px-1.5 landscape:py-0.5 landscape:px-1 border transition-all cursor-pointer active:scale-95 ${
       isSelected
         ? 'bg-[#F59E0B]/15 border-[#F59E0B] text-[#FDE68A] shadow-[0_0_18px_rgba(245,158,11,0.2)]'
         : 'bg-white/[0.04] hover:bg-white/[0.08] border-white/15 text-white/85 hover:text-white'
@@ -166,15 +166,15 @@ export function AvatarCustomizerModal({
           title="SPIELER"
           accentWord="PROFIL"
           onClose={onClose}
-          contentClassName="w-full gap-2.5 sm:gap-3.5 landscape:gap-2 p-3.5 sm:p-5 landscape:p-3"
+          contentClassName="w-full gap-2 sm:gap-3.5 landscape:gap-1.5 p-3.5 sm:p-5 landscape:p-2.5"
         >
           {/* Hauptinhalt: In Portrait vertikal, in Landscape 2-spaltig nebeneinander */}
-          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-5 w-full gap-3 sm:gap-4">
+          <div className="flex flex-col landscape:flex-row landscape:items-center landscape:gap-4 w-full gap-2.5 sm:gap-4">
             {/* Linke Seite: Zentrierte Avatar-Vorschau, Spielername & Aktions-Buttons im Querformat */}
-            <div className="flex flex-col items-center justify-center landscape:w-52 shrink-0 gap-2.5 landscape:gap-2">
+            <div className="flex flex-col items-center justify-center landscape:w-48 shrink-0 gap-2 landscape:gap-1.5">
               <div className="flex w-full items-center justify-center">
                 <div className="flex items-center justify-center rounded-full ring-2 ring-white/20 shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
-                  <Avatar config={current} size={68} className="sm:w-[76px] sm:h-[76px] landscape:w-[60px] landscape:h-[60px]" />
+                  <Avatar config={current} size={64} className="sm:w-[76px] sm:h-[76px] landscape:w-[48px] landscape:h-[48px]" />
                 </div>
               </div>
 
@@ -551,11 +551,11 @@ export function AvatarCustomizerModal({
       </div>
 
       {/* Untere Aktionsleiste in Portrait: ABBRECHEN & SPEICHERN */}
-      <div className="flex landscape:hidden w-full items-center justify-center gap-3.5 sm:gap-4 pt-2 sm:pt-3">
-        <OpenButton size="md" variant="secondary" onClick={onClose} className="min-w-[130px]">
+      <div className="flex landscape:hidden w-full items-center justify-center gap-3 sm:gap-4 pt-1.5 sm:pt-3">
+        <OpenButton size="md" variant="secondary" onClick={onClose} className="min-w-[116px] sm:min-w-[130px]">
           ABBRECHEN
         </OpenButton>
-        <OpenButton size="md" variant="primary" onClick={handleSave} className="min-w-[145px]">
+        <OpenButton size="md" variant="primary" onClick={handleSave} className="min-w-[126px] sm:min-w-[145px]">
           SPEICHERN
         </OpenButton>
       </div>

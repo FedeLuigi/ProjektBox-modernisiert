@@ -124,7 +124,7 @@ export function GameCard({
           <div className="flex flex-1 min-w-0 flex-col justify-between py-0.5 h-full">
             {/* Spieltitel */}
             <div className="w-full">
-              <h3 className="font-arcade text-base sm:text-lg font-bold tracking-wider text-[#1E293B] uppercase leading-tight truncate">
+              <h3 className="font-arcade text-sm sm:text-base font-bold tracking-normal text-[#1E293B] uppercase leading-tight line-clamp-1">
                 {game.title}
               </h3>
             </div>
@@ -247,9 +247,9 @@ export function GameCard({
             </div>
           </div>
 
-          {/* 3. SPIEL-TITEL & BESCHREIBUNG (max. 2 Zeilen ohne "..." Abschneiden) */}
+          {/* 3. SPIEL-TITEL & BESCHREIBUNG */}
           <div className="w-full text-center">
-            <h3 className="font-arcade text-lg sm:text-2xl tracking-wider text-[#1E293B] uppercase leading-tight truncate w-full">
+            <h3 className="font-arcade text-base sm:text-xl xl:text-[22px] tracking-normal sm:tracking-wide text-[#1E293B] uppercase leading-tight line-clamp-2 sm:line-clamp-1 w-full">
               {game.title}
             </h3>
             <p className="mt-1 min-h-[2.25rem] text-[11.5px] sm:text-xs leading-snug font-semibold text-[#334155] px-1">

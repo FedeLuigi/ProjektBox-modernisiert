@@ -770,7 +770,7 @@ export function DrawAndGuessBoard({
   if (isChoosingWord) {
     if (isTv) {
       return (
-        <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A]/80 backdrop-blur-xl mx-auto flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+        <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A]/80 backdrop-blur-xl mx-auto flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none animate-fade-in">
           <Paintbrush className="h-10 w-10 text-[#FBBF24] mb-3 animate-bounce" />
           <p className="font-arcade text-lg sm:text-2xl tracking-wider text-white uppercase">
             {drawerPlayer?.name || 'SPIELER'} WÄHLT EIN WORT...
@@ -820,7 +820,7 @@ export function DrawAndGuessBoard({
   // A) FERNSEHER-ANSICHT
   if (isTv) {
     return (
-      <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white mx-auto flex items-center justify-center select-none">
+      <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white mx-auto flex items-center justify-center select-none">
         <canvas
           ref={canvasRef}
           width={640}
@@ -874,30 +874,30 @@ export function DrawAndGuessBoard({
   // B) RUNDENENDE-SCREEN IM OFFENEN SIEG-STIL (OHNE KASTEN)
   if (isRoundOver && !isTv) {
     return (
-      <div className="my-auto mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-2 py-4 select-none">
-        <div className="my-auto flex w-full flex-col items-center gap-6 landscape:gap-4 text-center animate-fade-in">
+      <div className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center overflow-y-auto px-2 py-2 sm:py-4 select-none">
+        <div className="my-auto flex w-full flex-col items-center gap-3 sm:gap-5 landscape:gap-2.5 text-center animate-fade-in">
           <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-            <h2 className="font-arcade text-2xl sm:text-4xl landscape:text-2xl tracking-wider text-white uppercase">
+            <h2 className="font-arcade text-xl sm:text-4xl landscape:text-xl tracking-wider text-white uppercase">
               RUNDE <span className="text-[#FBBF24]">BEENDET</span>
             </h2>
           </div>
 
-          <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
-            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
-              <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+          <div className="grid w-full grid-cols-2 gap-2 sm:gap-3">
+            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2 sm:px-4 sm:py-3">
+              <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                 GESUCHTES WORT
               </span>
-              <span className="font-arcade mt-1 text-xl sm:text-2xl text-[#FDE68A] uppercase truncate max-w-full">
+              <span className="font-arcade mt-0.5 sm:mt-1 text-base sm:text-2xl text-[#FDE68A] uppercase truncate max-w-full">
                 {gameState?.secretWord}
               </span>
             </div>
 
-            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
-              <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+            <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2 sm:px-4 sm:py-3">
+              <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                 ERGEBNIS
               </span>
               <span
-                className={`font-arcade mt-1 text-sm sm:text-base uppercase truncate max-w-full ${
+                className={`font-arcade mt-0.5 sm:mt-1 text-xs sm:text-base uppercase truncate max-w-full ${
                   gameState?.roundWinnerName ? 'text-[#34D399]' : 'text-[#CBD5E1]'
                 }`}
               >
@@ -1009,7 +1009,7 @@ export function DrawAndGuessBoard({
           </div>
 
           <div className="flex flex-col gap-2.5 sm:gap-3">
-            <div className="game-color-grid flex items-center gap-2 overflow-x-auto overscroll-x-contain scrollbar-none px-0.5 py-1 md:grid md:grid-cols-5 md:gap-2.5 md:justify-items-center md:overflow-visible">
+            <div className="game-color-grid flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 px-0.5 py-1 md:grid md:grid-cols-5 md:gap-2.5 md:justify-items-center">
               {COLORS.map((col) => {
                 const isSelected = currentColor === col;
                 return (

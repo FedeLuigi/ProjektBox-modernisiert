@@ -186,12 +186,12 @@ export function MultiplayerGameView({
           </div>
 
           {isDrawAndGuess ? (
-            <div className="justify-self-center flex items-center gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-1 backdrop-blur-md">
-              <Avatar config={currentUser.avatar} size={22} />
-              <span className="font-arcade text-sm text-white">
+            <div className="justify-self-center flex items-center gap-1.5 sm:gap-2.5 rounded-xl border border-white/15 bg-white/[0.06] px-2.5 sm:px-3.5 py-1 backdrop-blur-md shrink-0">
+              <Avatar config={currentUser.avatar} size={20} />
+              <span className="font-arcade text-xs sm:text-sm text-white whitespace-nowrap">
                 {gameState?.scores?.[currentUser.id] || 0} : {gameState?.scores?.[opponent?.id || ''] || 0}
               </span>
-              <Avatar config={opponent?.avatar || ({} as any)} size={22} />
+              <Avatar config={opponent?.avatar || ({} as any)} size={20} />
             </div>
           ) : isStadtLandFluss ? (
             <div className="justify-self-center flex items-center rounded-xl border border-[#22D3EE]/35 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-white uppercase">
@@ -238,10 +238,10 @@ export function MultiplayerGameView({
 
         {/* 2. MITTE: OFFENE ERGEBNIS-BÜHNE ODER SPIELFELD */}
         {isGameOver ? (
-          <main className="my-auto mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center justify-center overflow-y-auto px-2 py-4">
-            <div className="my-auto flex w-full flex-col items-center gap-6 text-center animate-fade-in">
+          <main className="mx-auto flex w-full max-w-lg flex-1 min-h-0 flex-col items-center overflow-y-auto px-2 py-2 sm:py-4">
+            <div className="my-auto flex w-full flex-col items-center gap-3 sm:gap-5 text-center animate-fade-in">
               <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-                <h2 className="font-arcade text-2xl sm:text-4xl tracking-wider text-white uppercase">
+                <h2 className="font-arcade text-xl sm:text-4xl tracking-wider text-white uppercase">
                   {isWinner ? (
                     <>
                       SIEG<span className="text-[#34D399]">!</span>
@@ -255,7 +255,7 @@ export function MultiplayerGameView({
               </div>
 
               {(isStadtLandFluss || isMoneyGame) && (
-                <div className="flex w-full flex-col gap-2 max-h-[38vh] overflow-y-auto">
+                <div className="flex w-full flex-col gap-1.5 sm:gap-2 max-h-[30vh] sm:max-h-[38vh] overflow-y-auto">
                   {[...activePlayers]
                     .sort(
                       (a, b) =>
@@ -289,23 +289,23 @@ export function MultiplayerGameView({
                 </div>
               )}
 
-              <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3">
-                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
-                  <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+              <div className="grid w-full grid-cols-2 gap-2 sm:gap-3">
+                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2 sm:px-4 sm:py-3">
+                  <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                     {isMoneyGame ? 'ENDGUTHABEN' : 'PUNKTE'}
                   </span>
-                  <span className="font-arcade mt-1 text-2xl text-[#FDE68A]">
+                  <span className="font-arcade mt-0.5 sm:mt-1 text-lg sm:text-2xl text-[#FDE68A]">
                     {isMoneyGame
                       ? `${Math.round(gameState?.scores?.[currentUser.id] ?? 0).toLocaleString('de-DE')} €`
                       : String(gameState?.scores?.[currentUser.id] ?? (isWinner ? 1 : 0))}
                   </span>
                 </div>
 
-                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3">
-                  <span className="font-arcade text-[11px] tracking-wider text-[#94A3B8] uppercase">
+                <div className="flex flex-col items-center rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2 sm:px-4 sm:py-3">
+                  <span className="font-arcade text-[10px] sm:text-[11px] tracking-wider text-[#94A3B8] uppercase">
                     {isDrawAndGuess && gameState?.secretWord ? 'GESUCHTES WORT' : 'REVANCHE'}
                   </span>
-                  <span className="font-arcade mt-1 text-lg sm:text-xl text-white truncate max-w-full">
+                  <span className="font-arcade mt-0.5 sm:mt-1 text-sm sm:text-xl text-white truncate max-w-full">
                     {isDrawAndGuess && gameState?.secretWord
                       ? gameState.secretWord
                       : `${lobby.rematchVotes.length}/${activePlayers.length} BEREIT`}
@@ -336,7 +336,7 @@ export function MultiplayerGameView({
             </div>
           </main>
         ) : (
-          <main className="game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col items-center justify-center overflow-hidden py-2 sm:py-3">
+          <main className="game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col items-center overflow-hidden py-1.5 sm:py-3">
             {BoardComponent && myPlayer ? (
               <BoardComponent
                 gameId={lobby.gameId}

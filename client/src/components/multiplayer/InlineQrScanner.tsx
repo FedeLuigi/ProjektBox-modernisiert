@@ -288,13 +288,13 @@ export function InlineQrScanner({
   }
 
   return (
-    <div className="flex w-full flex-col items-center gap-4 text-center">
+    <div className="flex w-full flex-col items-center gap-2 sm:gap-4 landscape:gap-2 text-center">
       {/* Sucher mit Pinch-to-Zoom auf Smartphones */}
       <div
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
-        className="qr-scanner-landscape relative w-full max-w-[280px] sm:max-w-[320px] aspect-square overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center touch-none"
+        className="qr-scanner-landscape relative w-full max-w-[min(280px,40dvh)] sm:max-w-[min(320px,42dvh)] aspect-square overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A] shadow-[0_20px_50px_rgba(0,0,0,0.5)] flex items-center justify-center touch-none"
       >
         <video
           ref={videoRef}
@@ -304,7 +304,7 @@ export function InlineQrScanner({
           playsInline
         />
 
-        <div className="relative z-10 w-44 h-44 sm:w-52 sm:h-52 landscape:w-32 landscape:h-32 rounded-xl border-2 border-[#F59E0B] pointer-events-none flex items-center justify-center">
+        <div className="relative z-10 w-[62%] h-[62%] rounded-xl border-2 border-[#F59E0B] pointer-events-none flex items-center justify-center">
           {hasScanned && (
             <span className="font-arcade rounded-lg border border-[#34D399]/60 bg-[#10B981] px-4 py-1.5 text-sm text-white uppercase">
               GEFUNDEN!

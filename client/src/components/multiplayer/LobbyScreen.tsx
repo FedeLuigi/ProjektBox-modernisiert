@@ -387,7 +387,7 @@ export function LobbyScreen({
   );
 
   const modeTabs = (
-    <div className="flex items-center gap-5 border-b border-white/15">
+    <div className="flex shrink-0 items-center gap-3 sm:gap-5 border-b border-white/15">
       {[
         { tv: false, label: 'STANDARD', Icon: Smartphone },
         { tv: true, label: 'TV SCREEN', Icon: Tv },
@@ -404,7 +404,7 @@ export function LobbyScreen({
                 ? 'Moduswechsel nur möglich, solange noch keine Mitspieler beigetreten sind'
                 : undefined
             }
-            className={`font-arcade relative inline-flex items-center gap-1.5 pb-1.5 text-xs tracking-wider uppercase transition-colors ${
+            className={`font-arcade relative inline-flex shrink-0 items-center gap-1.5 pb-1.5 text-[11px] sm:text-xs tracking-wider uppercase whitespace-nowrap transition-colors ${
               active ? 'text-[#FDE68A]' : 'text-[#94A3B8] hover:text-white'
             } ${!canSwitchMode ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
           >

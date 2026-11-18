@@ -78,9 +78,9 @@ export function TvJoinModal({
         </div>
 
         {entryMode === 'qr' ? (
-          <div className="join-landscape-form my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 py-4 text-center">
+          <div className="join-landscape-form my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-3 sm:gap-5 landscape:gap-2 py-2 sm:py-4 landscape:py-1 text-center">
             <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-              <span className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+              <span className="font-arcade text-xl sm:text-3xl landscape:text-lg tracking-wider text-white uppercase">
                 QR-CODE <span className="text-[#FBBF24]">SCANNEN</span>
               </span>
             </div>

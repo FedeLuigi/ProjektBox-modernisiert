@@ -505,9 +505,7 @@ function BettingTable({
     const stackPositionClass =
       mode === 'spot'
         ? 'relative flex items-center -space-x-1.5'
-        : isPortraitLayout
-          ? 'pointer-events-none absolute -top-1 -right-1 z-20 flex items-center -space-x-1'
-          : 'pointer-events-none absolute -top-1.5 -right-1.5 z-20 flex items-center -space-x-1';
+        : 'pointer-events-none absolute top-0.5 right-0.5 z-20 flex items-center -space-x-1';
 
     return (
       <span className={stackPositionClass}>
@@ -534,10 +532,10 @@ function BettingTable({
               key={player.id}
               title={`${player.name}: ${formatEuro(amount)}`}
               style={chipStyle}
-              className={`relative inline-flex items-center justify-center rounded-full border-2 border-dashed px-0.5 font-arcade leading-none ring-1 ring-[#0F172A]/85 ${
+              className={`relative inline-flex items-center justify-center rounded-full border border-dashed px-0.5 font-arcade leading-none ring-1 ring-[#0F172A]/85 ${
                 isCompactChip
-                  ? 'h-[17px] min-w-[17px] text-[7px]'
-                  : 'h-[19px] min-w-[19px] sm:h-5 sm:min-w-5 text-[8px] sm:text-[9px]'
+                  ? 'h-[15px] min-w-[15px] text-[6.5px]'
+                  : 'h-[17px] min-w-[17px] sm:h-[19px] sm:min-w-[19px] text-[7px] sm:text-[8px]'
               }`}
             >
               <span>{formatCompactChip(amount)}</span>
@@ -639,7 +637,7 @@ function BettingTable({
           if (e.pointerType === 'mouse' && mouseHoverBetKey === betKey) setDesktopHover(null);
         }}
         style={gridStyle}
-        className={`relative flex items-center justify-center rounded-md border px-1.5 py-1.5 font-arcade text-[10px] sm:text-xs tracking-wide uppercase transition-transform select-none ${
+        className={`relative flex items-center justify-center rounded-md border px-0.5 sm:px-1 py-1 font-arcade text-[8.5px] min-[480px]:text-[9.5px] lg:text-[10.5px] tracking-tight uppercase transition-transform select-none ${
           canBet ? 'cursor-pointer hover:brightness-125 active:scale-95' : 'cursor-default'
         } ${toneClass} ${
           isDragHovered
@@ -925,8 +923,8 @@ function BettingTable({
           <div aria-hidden="true" />
           {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
-          {renderOutsideCell('color:red', 'ROT ◆', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-7.5')}
-          {renderOutsideCell('color:black', 'SCHWARZ ◆', 'border-white/30 bg-[#0F172A] text-white', 'h-7.5')}
+          {renderOutsideCell('color:red', 'ROT', 'border-[#FCA5A5]/50 bg-[#B91C1C] text-white', 'h-7.5')}
+          {renderOutsideCell('color:black', 'SCHWARZ', 'border-white/30 bg-[#0F172A] text-white', 'h-7.5')}
           {renderOutsideCell('parity:odd', 'UNGERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           {renderOutsideCell('range:high', '19–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           <div aria-hidden="true" />
@@ -970,6 +968,10 @@ export function RouletteBoard({
   const [isCompactScreen, setIsCompactScreen] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 1023px), (max-height: 540px)').matches;
+  });
+  const [isTvPortrait, setIsTvPortrait] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 599px)').matches;
   });
   const [isWheelZoomed, setIsWheelZoomed] = useState(false);
   const [timeLeft, setTimeLeft] = useState(() =>
@@ -1031,15 +1033,21 @@ export function RouletteBoard({
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const mq = window.matchMedia('(max-width: 1023px), (max-height: 540px)');
+    const mqPortrait = window.matchMedia('(max-width: 599px)');
     const syncViewport = () => {
       setIsCompactScreen(mq.matches);
+      setIsTvPortrait(mqPortrait.matches);
       if (!mq.matches) {
         setIsWheelZoomed(false);
       }
     };
     syncViewport();
     mq.addEventListener('change', syncViewport);
-    return () => mq.removeEventListener('change', syncViewport);
+    mqPortrait.addEventListener('change', syncViewport);
+    return () => {
+      mq.removeEventListener('change', syncViewport);
+      mqPortrait.removeEventListener('change', syncViewport);
+    };
   }, []);
 
   useEffect(() => {
@@ -1314,21 +1322,21 @@ export function RouletteBoard({
         </div>
 
         {/* Hauptbereich: Kessel links, Live-Tisch & Spieler-Guthaben rechts */}
-        <div className="grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)] items-center gap-4 lg:gap-7 flex-1 min-h-0">
+        <div className="grid grid-cols-1 min-[600px]:grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 sm:gap-4 lg:gap-7 flex-1 min-h-0">
           {/* Links: Roulette-Kessel */}
-          <div className="flex flex-col items-center justify-center gap-3 p-1 lg:min-w-[260px]">
+          <div className="flex flex-col items-center justify-center gap-1.5 sm:gap-3 p-0.5 sm:p-1 lg:min-w-[260px]">
             <RouletteWheel
               phase={phase}
               round={round}
               winningNumber={winningNumber}
               spinStartedAt={gameState?.spinStartedAt}
-              sizeClass="w-[min(220px,36vh)] lg:w-[min(320px,48vh)] xl:w-[min(390px,54vh)] aspect-square"
+              sizeClass="w-[min(140px,24dvh)] min-[600px]:w-[min(165px,36dvh)] lg:w-[min(300px,46vh)] xl:w-[min(390px,54vh)] aspect-square"
             />
-            <div className="flex h-7 items-center justify-center">
+            <div className="flex h-6 sm:h-7 items-center justify-center">
               {phase === 'result' && winningNumber !== null && (
                 <div className="flex items-center gap-2 px-2">
                   <Sparkles className="h-4 w-4 text-[#FDE047]" />
-                  <span className="font-arcade text-sm text-[#FEF08A] uppercase">
+                  <span className="font-arcade text-xs sm:text-sm text-[#FEF08A] uppercase">
                     {winningNumber === 0
                       ? '0 GRÜN!'
                       : `${winningNumber} ${getRouletteColor(winningNumber) === 'red' ? 'ROT' : 'SCHWARZ'}`}
@@ -1339,19 +1347,22 @@ export function RouletteBoard({
           </div>
 
           {/* Rechts: Live-Tisch mit allen Spieler-Chips + Kassenstand */}
-          <div className="flex flex-col gap-3 min-w-0">
-            <BettingTable
-              allBets={activeTableBets}
-              players={allPlayers}
-              myPlayerId={myId}
-              isTvScreen={true}
-              canBet={false}
-              winningNumber={winningNumber}
-              phase={phase}
-              onPlaceBet={() => {}}
-            />
+          <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
+            <div className={isTvPortrait ? 'h-[min(320px,44dvh)] w-full' : ''}>
+              <BettingTable
+                allBets={activeTableBets}
+                players={allPlayers}
+                myPlayerId={myId}
+                isTvScreen={true}
+                canBet={false}
+                winningNumber={winningNumber}
+                phase={phase}
+                layout={isTvPortrait ? 'portrait' : 'horizontal'}
+                onPlaceBet={() => {}}
+              />
+            </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
               {rankedPlayers.map((p, idx) => {
                 const marker = playerMarkers.get(p.id);
                 const chipBg = marker?.theme.color || '#F59E0B';
@@ -1366,11 +1377,11 @@ export function RouletteBoard({
                 return (
                   <div
                     key={p.id}
-                    className={`flex items-center justify-between gap-2 px-1 py-1 ${
+                    className={`flex flex-col gap-0.5 px-1.5 py-1 ${
                       idx === 0 ? 'border-b-2 border-[#F59E0B]/70' : ''
                     }`}
                   >
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div className="flex items-center gap-1.5 min-w-0">
                       <span
                         title={`${p.name} (${shortTag})`}
                         style={{
@@ -1378,42 +1389,43 @@ export function RouletteBoard({
                           borderColor: chipBorder,
                           color: chipText,
                         }}
-                        className="inline-flex h-5 min-w-5 shrink-0 items-center justify-center rounded-full border-2 border-dashed px-1 font-arcade text-[7px] leading-none ring-1 ring-[#0F172A]"
+                        className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border-2 border-dashed px-0.5 font-arcade text-[6.5px] leading-none ring-1 ring-[#0F172A]"
                       >
                         {shortTag}
                       </span>
-                      <Avatar config={p.avatar} size={28} />
-                      <div className="min-w-0">
-                        <div className="font-arcade text-[11px] text-white uppercase truncate">
-                          {p.name}
-                        </div>
-                        <div className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-                          {phase === 'result' && typeof roundNet === 'number' ? (
-                            <span
-                              className={
-                                roundNet > 0
-                                  ? 'text-[#34D399]'
-                                  : roundNet < 0
-                                    ? 'text-[#FCA5A5]'
-                                    : ''
-                              }
-                            >
-                              {formatSignedEuro(roundNet)}
-                            </span>
-                          ) : activeWager > 0 ? (
-                            `SETZT ${formatEuro(activeWager)}`
-                          ) : !isMultiplayer && playerLocked ? (
-                            'BEREIT ✓'
-                          ) : (
-                            'SETZT...'
-                          )}
-                        </div>
+                      <Avatar config={p.avatar} size={20} />
+                      <div className="font-arcade text-[10px] sm:text-[11px] text-white uppercase truncate min-w-0 flex-1">
+                        {p.name}
                       </div>
                     </div>
 
-                    <span className="font-arcade text-xs sm:text-sm text-[#FDE68A] shrink-0">
-                      {formatEuro(totalScore)}
-                    </span>
+                    <div className="flex items-center justify-between gap-1.5">
+                      <div className="font-arcade text-[9px] sm:text-[10px] text-[#94A3B8] uppercase truncate">
+                        {phase === 'result' && typeof roundNet === 'number' ? (
+                          <span
+                            className={
+                              roundNet > 0
+                                ? 'text-[#34D399]'
+                                : roundNet < 0
+                                  ? 'text-[#FCA5A5]'
+                                  : ''
+                            }
+                          >
+                            {formatSignedEuro(roundNet)}
+                          </span>
+                        ) : activeWager > 0 ? (
+                          `SETZT ${formatEuro(activeWager)}`
+                        ) : !isMultiplayer && playerLocked ? (
+                          'BEREIT ✓'
+                        ) : (
+                          'SETZT...'
+                        )}
+                      </div>
+
+                      <span className="font-arcade text-[11px] sm:text-xs text-[#FDE68A] shrink-0 whitespace-nowrap">
+                        {formatEuro(totalScore)}
+                      </span>
+                    </div>
                   </div>
                 );
               })}
@@ -1608,7 +1620,7 @@ export function RouletteBoard({
   };
 
   const playersStrip = isMultiplayer && (
-    <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2.5 gap-y-0.5 px-0.5">
+    <div className="flex shrink-0 flex-wrap items-center justify-center gap-x-2 gap-y-0.5 px-0.5">
       {rankedPlayers.map((p, idx) => {
         const bal = gameState?.scores?.[p.id] ?? startingBalance;
         const pNet = gameState?.lastOutcome?.netProfit?.[p.id];
@@ -1619,7 +1631,7 @@ export function RouletteBoard({
         const chipText = marker?.theme.text || '#0F172A';
         const shortTag = marker?.shortTag || `S${idx + 1}`;
         return (
-          <div key={p.id} className="flex shrink-0 items-center gap-1 py-0.5">
+          <div key={p.id} className="flex shrink-0 items-center gap-1 py-0">
             <span
               title={`${p.name} (${shortTag})`}
               style={{
@@ -1627,21 +1639,23 @@ export function RouletteBoard({
                 borderColor: chipBorder,
                 color: chipText,
               }}
-              className="inline-flex h-4 min-w-4 shrink-0 items-center justify-center rounded-full border border-dashed px-0.5 font-arcade text-[7px] leading-none ring-1 ring-[#0F172A]"
+              className="inline-flex h-3.5 min-w-3.5 shrink-0 items-center justify-center rounded-full border border-dashed px-0.5 font-arcade text-[6.5px] leading-none ring-1 ring-[#0F172A]"
             >
               {shortTag}
             </span>
             <span className={`inline-flex rounded-full ${isMe ? 'ring-1 ring-[#34D399]' : ''}`}>
-              <Avatar config={p.avatar} size={14} />
+              <Avatar config={p.avatar} size={13} />
             </span>
             <span
-              className={`font-arcade text-[9px] uppercase max-w-[52px] sm:max-w-[74px] truncate ${
+              className={`font-arcade text-[8.5px] sm:text-[9px] uppercase max-w-[66px] sm:max-w-[92px] truncate ${
                 isMe ? 'text-[#6EE7B7]' : 'text-white'
               }`}
             >
               {p.name}
             </span>
-            <span className="font-arcade text-[9px] text-[#FDE68A]">{formatEuro(bal)}</span>
+            <span className="font-arcade text-[8.5px] sm:text-[9px] text-[#FDE68A] whitespace-nowrap">
+              {formatEuro(bal)}
+            </span>
             {phase === 'result' && typeof pNet === 'number' && pNet !== 0 && (
               <span
                 className={`font-arcade text-[9px] ${

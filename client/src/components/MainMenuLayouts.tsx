@@ -172,12 +172,12 @@ export function OpenGalleryLayout({
 
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-1 min-h-0 flex-col gap-2.5 landscape:gap-1.5 px-4 sm:px-6 pt-2.5 landscape:pt-1">
-      {/* Filter-Tabs links & adaptive Suchleiste rechts auf derselben Höhe ohne Zeilenumbruch */}
+      {/* Filter-Tabs links & adaptive Suchleiste rechts (bricht unter 540px sauber um, damit nichts abgeschnitten wird) */}
       <div
         ref={barRef}
-        className="flex w-full shrink-0 flex-nowrap items-end justify-between gap-3"
+        className="flex w-full shrink-0 flex-wrap min-[540px]:flex-nowrap items-center min-[540px]:items-end justify-between gap-x-2.5 gap-y-1.5 sm:gap-3"
       >
-        <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-4 sm:gap-5 overflow-x-auto">
+        <div className="no-scrollbar flex min-w-0 flex-1 flex-wrap min-[540px]:flex-nowrap items-center gap-x-3 gap-y-1 sm:gap-3 lg:gap-5 pr-2 min-[540px]:overflow-x-auto">
           {SECTION_ITEMS.map((item) => {
             const active = activeSection === item.id;
             const count = filterCounts[item.id] ?? 0;
@@ -186,7 +186,7 @@ export function OpenGalleryLayout({
                 key={item.id}
                 type="button"
                 onClick={() => onSelectSection(item.id)}
-                className={`font-arcade relative shrink-0 pb-2 text-xs sm:text-sm tracking-wider uppercase transition-colors cursor-pointer ${
+                className={`font-arcade relative shrink-0 pb-1.5 sm:pb-2 text-[10px] min-[390px]:text-[11px] lg:text-sm tracking-normal sm:tracking-wide lg:tracking-wider uppercase transition-colors cursor-pointer ${
                   active ? 'text-[#FDE68A]' : 'text-[#94A3B8] hover:text-white'
                 }`}
               >
@@ -259,7 +259,7 @@ export function OpenGalleryLayout({
 
                   <div className="flex items-center justify-between gap-2 px-1">
                     <div className="min-w-0">
-                      <h3 className="font-arcade text-base sm:text-lg tracking-wider text-white uppercase truncate">
+                      <h3 className="font-arcade text-xs min-[390px]:text-sm sm:text-base xl:text-lg tracking-normal xl:tracking-wide text-white uppercase leading-tight line-clamp-2 xl:line-clamp-1">
                         {game.title}
                       </h3>
                       <p className="text-xs text-[#94A3B8] truncate">{game.description}</p>
