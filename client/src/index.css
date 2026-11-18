@@ -998,10 +998,10 @@ body::-webkit-scrollbar,
     width: 2.4rem !important;
   }
 
-  /* ─── Casino Roulette im Smartphone-Querformat (2-Spalten, 0 Scrollen) ─── */
+  /* ─── Casino Roulette im Smartphone-Querformat (2-Spalten, 0 Überlappung) ─── */
   .roulette-landscape-shell {
     display: grid !important;
-    grid-template-columns: 11.25rem minmax(0, 1fr) !important;
+    grid-template-columns: clamp(9.5rem, 21vw, 13.5rem) minmax(0, 1fr) !important;
     gap: 10px !important;
     align-items: stretch !important;
     overflow: hidden !important;
@@ -1012,14 +1012,32 @@ body::-webkit-scrollbar,
     flex-direction: column !important;
     justify-content: space-between !important;
     align-items: center !important;
+    width: 100% !important;
+    min-width: 0 !important;
     min-height: 0 !important;
     padding: 2px 4px !important;
     gap: 4px !important;
   }
 
+  .roulette-meta {
+    order: 1 !important;
+    width: 100% !important;
+  }
+
+  .roulette-wheel-wrap {
+    order: 2 !important;
+  }
+
+  .roulette-status {
+    order: 3 !important;
+    width: 100% !important;
+    align-items: center !important;
+    text-align: center !important;
+  }
+
   .roulette-landscape-wheel {
-    height: 7.75rem !important;
-    width: 7.75rem !important;
+    width: clamp(5.25rem, 32vh, 7.75rem) !important;
+    height: clamp(5.25rem, 32vh, 7.75rem) !important;
   }
 
   .roulette-landscape-right {
@@ -1031,20 +1049,40 @@ body::-webkit-scrollbar,
     gap: 6px !important;
   }
 
+  .roulette-felt-horizontal {
+    display: flex !important;
+  }
+
+  .roulette-felt-portrait {
+    display: none !important;
+  }
+
   .roulette-landscape-felt {
     padding: 6px !important;
   }
 
   .roulette-landscape-felt button {
-    height: 1.55rem !important;
-    min-height: 1.55rem !important;
+    height: clamp(1.3rem, 6vh, 1.65rem) !important;
+    min-height: clamp(1.3rem, 6vh, 1.65rem) !important;
     font-size: 0.68rem !important;
     padding-top: 0 !important;
     padding-bottom: 0 !important;
   }
 
   .roulette-landscape-felt button.roulette-zero-cell {
-    min-height: 4.95rem !important;
+    min-height: calc(clamp(1.3rem, 6vh, 1.65rem) * 3 + 0.5rem) !important;
     height: 100% !important;
+  }
+}
+
+/* ─── Kompakte Portrait-Smartphones (< 700px Höhe): Roulette-Tableau ohne Überlauf ─── */
+@media (max-height: 700px) and (orientation: portrait) {
+  .roulette-felt-portrait {
+    gap: 2px !important;
+  }
+
+  .roulette-felt-portrait button {
+    height: 19px !important;
+    font-size: 9.5px !important;
   }
 }

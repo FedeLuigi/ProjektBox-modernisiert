@@ -645,8 +645,8 @@ function BettingTable({
   return (
     <div className="roulette-landscape-felt w-full select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5">
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
-      <div className="hidden sm:flex flex-col gap-1">
-        <div className="grid grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
+      <div className="roulette-felt-horizontal hidden sm:flex flex-col gap-1">
+        <div className="grid grid-cols-[32px_repeat(12,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
           {renderNumberCell(0, 'roulette-zero-cell row-span-3 min-h-[104px]')}
 
           {HORIZONTAL_ROWS[0].map((n) => renderNumberCell(n, 'h-8.5'))}
@@ -660,7 +660,7 @@ function BettingTable({
         </div>
 
         {/* Dutzende */}
-        <div className="grid grid-cols-[40px_repeat(3,minmax(0,1fr))_42px] gap-1">
+        <div className="grid grid-cols-[32px_repeat(3,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(3,minmax(0,1fr))_42px] gap-1">
           <div aria-hidden="true" />
           {renderOutsideCell('dozen:1', '1. 12 (1–12)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           {renderOutsideCell('dozen:2', '2. 12 (13–24)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
@@ -669,7 +669,7 @@ function BettingTable({
         </div>
 
         {/* Einfache Chancen */}
-        <div className="grid grid-cols-[40px_repeat(6,minmax(0,1fr))_42px] gap-1">
+        <div className="grid grid-cols-[32px_repeat(6,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(6,minmax(0,1fr))_42px] gap-1">
           <div aria-hidden="true" />
           {renderOutsideCell('range:low', '1–18', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           {renderOutsideCell('parity:even', 'GERADE', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
@@ -682,7 +682,7 @@ function BettingTable({
       </div>
 
       {/* PORTRAIT SMARTPHONE CASINO FELT (kompakt ohne Scrollen, daumenfreundlich) */}
-      <div className="flex sm:hidden flex-col gap-[3px]">
+      <div className="roulette-felt-portrait flex sm:hidden flex-col gap-[3px]">
         {renderNumberCell(0, 'h-[26px] w-full')}
 
         <div className="grid grid-cols-3 gap-[3px]">
@@ -1051,15 +1051,15 @@ export function RouletteBoard({
         </div>
 
         {/* Hauptbereich: Kessel links, Live-Tisch & Spieler-Guthaben rechts */}
-        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)] items-center gap-4 lg:gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_minmax(0,1fr)] items-center gap-4 lg:gap-7 flex-1 min-h-0">
           {/* Links: Roulette-Kessel */}
-          <div className="flex flex-col items-center justify-center gap-3 p-1">
+          <div className="flex flex-col items-center justify-center gap-3 p-1 lg:min-w-[260px]">
             <RouletteWheel
               phase={phase}
               round={round}
               winningNumber={winningNumber}
               spinStartedAt={gameState?.spinStartedAt}
-              sizeClass="h-60 w-60 lg:h-80 lg:w-80 xl:h-96 xl:w-96"
+              sizeClass="w-[min(220px,36vh)] lg:w-[min(320px,48vh)] xl:w-[min(390px,54vh)] aspect-square"
             />
             {phase === 'result' && winningNumber !== null && (
               <div className="flex items-center gap-2 px-2 py-0.5">
@@ -1160,16 +1160,30 @@ export function RouletteBoard({
 
   return (
     <>
-      <div className="roulette-landscape-shell flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[410px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-hidden py-0.5">
+      <div className="roulette-landscape-shell flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[auto_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-y-auto overflow-x-hidden lg:overflow-hidden py-0.5">
         {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
-        <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 px-1 py-0.5 lg:p-1">
-          <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
-            <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase">
+        <div className="roulette-landscape-left grid w-full shrink-0 grid-cols-[auto_minmax(0,1fr)] grid-rows-[auto_auto] items-center gap-x-3 gap-y-0.5 px-1 py-0.5 lg:flex lg:w-auto lg:min-w-[230px] lg:flex-col lg:items-center lg:justify-center lg:gap-2.5 lg:p-1">
+          <div className="roulette-wheel-wrap row-span-2 flex items-center justify-center shrink-0 lg:row-span-1 lg:order-2">
+            <RouletteWheel
+              phase={phase}
+              round={round}
+              winningNumber={winningNumber}
+              spinStartedAt={gameState?.spinStartedAt}
+              sizeClass={
+                phase === 'spinning'
+                  ? 'roulette-landscape-wheel w-20 sm:w-28 md:w-32 lg:w-[min(280px,46vh)] xl:w-[min(350px,52vh)] 2xl:w-[min(390px,56vh)] aspect-square'
+                  : 'roulette-landscape-wheel w-[72px] sm:w-24 md:w-28 lg:w-[min(268px,44vh)] xl:w-[min(336px,50vh)] 2xl:w-[min(384px,54vh)] aspect-square'
+              }
+            />
+          </div>
+
+          <div className="roulette-meta col-start-2 row-start-1 flex min-w-0 items-center justify-between gap-2 lg:order-1 lg:w-full">
+            <span className="font-arcade text-[10px] text-[#6EE7B7] uppercase shrink-0">
               R {round}/{maxRounds}
             </span>
             {phase === 'betting' && (
               <span
-                className={`font-arcade inline-flex items-center gap-1 text-[10px] ${
+                className={`font-arcade inline-flex items-center gap-1 text-[10px] shrink-0 ${
                   timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-white/90'
                 }`}
               >
@@ -1179,19 +1193,7 @@ export function RouletteBoard({
             )}
           </div>
 
-          <RouletteWheel
-            phase={phase}
-            round={round}
-            winningNumber={winningNumber}
-            spinStartedAt={gameState?.spinStartedAt}
-            sizeClass={
-              phase === 'spinning'
-                ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 lg:h-72 lg:w-72 xl:h-88 xl:w-88 2xl:h-96 2xl:w-96'
-                : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-28 sm:w-28 md:h-36 md:w-36 lg:h-68 lg:w-68 xl:h-84 xl:w-84 2xl:h-96 2xl:w-96'
-            }
-          />
-
-          <div className="flex flex-1 lg:flex-initial flex-col items-end lg:items-center text-right lg:text-center gap-1 min-w-0">
+          <div className="roulette-status col-start-2 row-start-2 flex min-w-0 flex-col items-end lg:items-center text-right lg:text-center gap-0.5 lg:order-3 lg:w-full">
             {phase === 'betting' && (
               <>
                 <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
@@ -1242,7 +1244,7 @@ export function RouletteBoard({
             )}
 
             {history.length > 0 && (
-              <div className="flex items-center gap-1 pt-0.5">
+              <div className="flex items-center gap-1 pt-0.5 flex-wrap justify-end lg:justify-center">
                 {history.slice(0, 5).map((item, idx) => (
                   <span
                     key={`${item.round}-${idx}`}
