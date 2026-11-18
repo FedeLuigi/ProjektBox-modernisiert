@@ -96,9 +96,8 @@ export const LobbyUpdateSettingsSchema = z.object({
   settings: z.object({
     rounds: z.number().int().min(1).max(20).optional(),
     roundDuration: z.number().int().min(15).max(180).optional(),
-    hints: z.boolean().optional(),
     category: z.string().trim().min(1).max(32).optional(),
-    customWords: z.array(z.string().trim().min(2).max(28)).max(40).optional(),
+    customWordsEnabled: z.boolean().optional(),
   }),
   ...ActionMetaFields,
 });
@@ -121,6 +120,11 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({
     type: z.literal('guess'),
     text: z.string().trim().min(1).max(64),
+    ...ActionMetaFields,
+  }),
+  z.object({
+    type: z.literal('set_word'),
+    word: z.string().trim().min(2).max(28),
     ...ActionMetaFields,
   }),
   z.object({ type: z.literal('undo'), ...ActionMetaFields }),

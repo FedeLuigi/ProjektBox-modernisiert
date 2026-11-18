@@ -666,6 +666,7 @@ export function registerSocketHandlers(
         const lobby = manager.getLobbyBySocket(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
+        if ((lobby.gameState as any).roundStatus !== 'drawing') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
         if (
@@ -697,6 +698,7 @@ export function registerSocketHandlers(
         const lobby = manager.getLobbyBySocket(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
+        if ((lobby.gameState as any).roundStatus !== 'drawing') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
         if (
@@ -722,6 +724,7 @@ export function registerSocketHandlers(
         const lobby = manager.getLobbyBySocket(socket.id);
         if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
         if (lobby.gameId !== 'draw-and-guess') return;
+        if ((lobby.gameState as any).roundStatus !== 'drawing') return;
 
         const player = lobby.players.find((p) => p.socketId === socket.id);
         if (

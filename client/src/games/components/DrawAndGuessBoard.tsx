@@ -42,20 +42,133 @@ export interface DrawAndGuessState {
   gameId: 'draw-and-guess';
   currentDrawerId: string;
   secretWord: string;
-  wordHint: string;
+  wordLength: number;
   categoryName: string;
+  customWordsEnabled?: boolean;
   round: number;
   maxRounds: number;
   roundDuration?: number;
   roundEndsAt?: number;
+  chooseWordEndsAt?: number;
   strokes: StrokeSegment[];
   guesses: DrawAndGuessGuess[];
   scores: Record<string, number>;
   correctGuesserIds: string[];
-  roundStatus: 'drawing' | 'round_over' | 'game_over';
+  roundStatus: 'choosing_word' | 'drawing' | 'round_over' | 'game_over';
   roundWinnerName?: string;
   roundEndReason?: 'guessed' | 'time_up';
   winnerId?: string | null;
+}
+
+function CustomWordChooser({
+  timeLeft,
+  onConfirm,
+}: {
+  timeLeft: number;
+  onConfirm: (word: string) => Promise<void> | void;
+}) {
+  const [word, setWord] = useState('');
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const normalizedPreview = word.trim().replace(/ß/gi, 'ss');
+  const hasInvalidChars =
+    normalizedPreview.length > 0 && !/^[a-zA-ZäöüÄÖÜ]+$/.test(normalizedPreview);
+  const isTooShort = normalizedPreview.length < 2;
+  const isTooLong = normalizedPreview.length > 20;
+  const isValid = !isTooShort && !isTooLong && !hasInvalidChars;
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!isValid || isSubmitting) {
+      setError(
+        hasInvalidChars
+          ? 'Nur Buchstaben (A–Z, Ä, Ö, Ü) ohne Leer- oder Sonderzeichen.'
+          : 'Bitte mindestens 2 Buchstaben eingeben.'
+      );
+      return;
+    }
+
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onConfirm(normalizedPreview);
+    } catch (err: any) {
+      setError(err?.message || 'Wort konnte nicht bestätigt werden.');
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="my-auto mx-auto flex w-full max-w-md flex-1 min-h-0 flex-col items-center justify-center px-3 py-4 select-none animate-fade-in">
+      <div className="w-full flex flex-col items-center gap-5 text-center">
+        <div className="flex w-full items-center justify-between gap-2">
+          <div className="flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5">
+            <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
+            <span className="font-arcade text-xs uppercase tracking-wider text-[#FDE68A]">
+              DU BIST DRAN
+            </span>
+          </div>
+          <div
+            className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs transition-colors ${
+              timeLeft <= 8
+                ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse'
+                : 'border-white/15 bg-white/[0.06] text-[#FDE68A]'
+            }`}
+          >
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>{timeLeft} S</span>
+          </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <h2 className="font-arcade text-2xl sm:text-3xl tracking-wider text-white uppercase">
+            WÄHLE DEIN WORT
+          </h2>
+          <p className="font-arcade text-[11px] leading-relaxed text-[#CBD5E1] uppercase">
+            GIB EIN WORT EIN (2–20 BUCHSTABEN) UND BESTÄTIGE ES, UM ZU ZEICHNEN.
+          </p>
+        </div>
+
+        <form onSubmit={(e) => void handleSubmit(e)} className="w-full space-y-3">
+          <input
+            type="text"
+            value={word}
+            onChange={(e) => {
+              setWord(e.target.value);
+              if (error) setError(null);
+            }}
+            maxLength={20}
+            autoFocus
+            autoComplete="off"
+            autoCorrect="off"
+            spellCheck={false}
+            placeholder="DEIN WORT..."
+            aria-label="Eigenes Wort eingeben"
+            className="w-full h-13 rounded-2xl border border-white/25 bg-white/[0.08] px-4 text-center font-arcade text-lg sm:text-xl tracking-[0.15em] text-white uppercase placeholder:text-white/35 focus:border-[#F59E0B] focus:outline-none backdrop-blur-md"
+          />
+
+          {(hasInvalidChars || error) && (
+            <div className="rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-3 py-1.5 font-arcade text-[11px] text-[#FECDD3] uppercase">
+              {error || 'NUR BUCHSTABEN (A–Z, Ä, Ö, Ü) OHNE LEERZEICHEN ERLAUBT.'}
+            </div>
+          )}
+
+          <OpenButton
+            type="submit"
+            fullWidth
+            size="lg"
+            variant="primary"
+            disabled={!isValid || isSubmitting}
+          >
+            <Check className="h-4 w-4 shrink-0" />
+            <span>{isSubmitting ? 'WIRD GESTARTET...' : 'WORT BESTÄTIGEN'}</span>
+          </OpenButton>
+        </form>
+      </div>
+    </div>
+  );
 }
 
 const COLORS = [
@@ -157,6 +270,7 @@ export function DrawAndGuessBoard({
   const hasGuessedCorrectly = Boolean(
     myPlayer?.id && gameState?.correctGuesserIds?.includes(myPlayer.id)
   );
+  const isChoosingWord = gameState?.roundStatus === 'choosing_word';
   const isRoundOver = gameState?.roundStatus === 'round_over';
 
   const [timeLeft, setTimeLeft] = useState(() => {
@@ -165,7 +279,12 @@ export function DrawAndGuessBoard({
   });
 
   useEffect(() => {
-    if (gameState?.roundStatus !== 'drawing' || !gameState?.roundEndsAt) return;
+    if (
+      (gameState?.roundStatus !== 'drawing' && gameState?.roundStatus !== 'choosing_word') ||
+      !gameState?.roundEndsAt
+    ) {
+      return;
+    }
 
     let sentTimeUp = false;
     const updateTimer = () => {
@@ -558,36 +677,35 @@ export function DrawAndGuessBoard({
     onMove({ type: 'clear' });
   };
 
-  const hintTokens = gameState?.wordHint ? gameState.wordHint.split(' ') : [];
   const targetLength =
     isRoundOver && gameState?.secretWord
       ? gameState.secretWord.length
-      : Math.max(hintTokens.length, 1);
+      : Math.max(gameState?.wordLength || 0, 1);
 
   const handleGuessSubmit = useCallback(() => {
     const text = guessInput.trim();
-    if (!text || isDrawer || hasGuessedCorrectly || isRoundOver) return;
+    if (!text || isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
     onMove({ type: 'guess', text });
     setGuessInput('');
-  }, [guessInput, isDrawer, hasGuessedCorrectly, isRoundOver, onMove]);
+  }, [guessInput, isDrawer, hasGuessedCorrectly, isRoundOver, isChoosingWord, onMove]);
 
   const handleKeyboardChar = useCallback(
     (char: string) => {
-      if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+      if (isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
       playMoveSound();
       setGuessInput((prev) => (prev.length < targetLength ? prev + char : prev));
     },
-    [isDrawer, hasGuessedCorrectly, isRoundOver, targetLength]
+    [isDrawer, hasGuessedCorrectly, isRoundOver, isChoosingWord, targetLength]
   );
 
   const handleKeyboardBackspace = useCallback(() => {
-    if (isDrawer || hasGuessedCorrectly || isRoundOver) return;
+    if (isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
     playMoveSound();
     setGuessInput((prev) => prev.slice(0, -1));
-  }, [isDrawer, hasGuessedCorrectly, isRoundOver]);
+  }, [isDrawer, hasGuessedCorrectly, isRoundOver, isChoosingWord]);
 
   useEffect(() => {
-    if (isTv || isDrawer || hasGuessedCorrectly || isRoundOver) return;
+    if (isTv || isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
@@ -610,6 +728,7 @@ export function DrawAndGuessBoard({
     isDrawer,
     hasGuessedCorrectly,
     isRoundOver,
+    isChoosingWord,
     handleKeyboardBackspace,
     handleKeyboardChar,
     handleGuessSubmit,
@@ -645,6 +764,57 @@ export function DrawAndGuessBoard({
 
   if (isGameOver) {
     return null;
+  }
+
+  // PHASE 0: EIGENES WORT WÄHLEN (WENN "EIGENE WÖRTER" IN DEN LOBBY-OPTIONEN AKTIV IST)
+  if (isChoosingWord) {
+    if (isTv) {
+      return (
+        <div className="relative w-full aspect-[4/3] max-h-[48vh] sm:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A]/80 backdrop-blur-xl mx-auto flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+          <Paintbrush className="h-10 w-10 text-[#FBBF24] mb-3 animate-bounce" />
+          <p className="font-arcade text-lg sm:text-2xl tracking-wider text-white uppercase">
+            {drawerPlayer?.name || 'SPIELER'} WÄHLT EIN WORT...
+          </p>
+          <p className="mt-2 font-arcade text-xs text-[#FDE68A] uppercase">
+            NOCH {timeLeft} S
+          </p>
+        </div>
+      );
+    }
+
+    if (isDrawer) {
+      return (
+        <CustomWordChooser
+          key={`word-${gameState?.round}-${gameState?.currentDrawerId}`}
+          timeLeft={timeLeft}
+          onConfirm={async (word) => {
+            await onMove({ type: 'set_word', word });
+          }}
+        />
+      );
+    }
+
+    return (
+      <div className="my-auto mx-auto flex w-full max-w-md flex-1 min-h-0 flex-col items-center justify-center px-3 py-6 text-center select-none animate-fade-in">
+        <div className="flex flex-col items-center gap-4">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#F59E0B]/40 bg-[#F59E0B]/15 text-[#FDE68A]">
+            <Paintbrush className="h-7 w-7 animate-pulse" />
+          </div>
+          <div className="space-y-1.5">
+            <h2 className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
+              {drawerPlayer?.name || 'SPIELER'} WÄHLT EIN WORT...
+            </h2>
+            <p className="font-arcade text-xs text-[#CBD5E1] uppercase">
+              SOBALD DAS WORT BESTÄTIGT WURDE, STARTET DIE ZEICHENRUNDE.
+            </p>
+          </div>
+          <div className="flex items-center gap-1.5 rounded-xl border border-white/15 bg-white/[0.06] px-3.5 py-1.5 font-arcade text-xs text-[#FDE68A]">
+            <Clock className="h-3.5 w-3.5 shrink-0" />
+            <span>{timeLeft} S</span>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   // A) FERNSEHER-ANSICHT

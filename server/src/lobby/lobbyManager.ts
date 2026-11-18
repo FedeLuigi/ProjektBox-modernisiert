@@ -59,9 +59,8 @@ export function getDefaultSettings(gameId: string): Record<string, any> {
     return {
       rounds: 3,
       roundDuration: 60,
-      hints: false,
       category: 'Alle',
-      customWords: [],
+      customWordsEnabled: false,
     };
   }
   return {};
@@ -898,6 +897,7 @@ export class LobbyManager {
 
     const isStructuralOrTurnAction =
       lobby.gameId !== 'draw-and-guess' ||
+      move?.type === 'set_word' ||
       move?.type === 'next_round' ||
       move?.type === 'time_up' ||
       move?.type === 'clear' ||

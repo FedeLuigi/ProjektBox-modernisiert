@@ -122,7 +122,11 @@ export function TvGameView({
                 {gameState?.categoryName || 'WORD'}
               </span>
               <span className="font-arcade text-sm sm:text-base tracking-[0.2em] text-white uppercase">
-                {gameState?.wordHint || '_ _ _ _'}
+                {gameState?.roundStatus === 'choosing_word'
+                  ? 'WORTWAHL...'
+                  : gameState?.wordLength
+                    ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
+                    : '_ _ _ _'}
               </span>
             </div>
           )}
@@ -194,7 +198,12 @@ export function TvGameView({
               {!isRoundOver && !isGameOver && (
                 <div className="font-arcade mb-3 rounded-xl border border-white/15 bg-white/[0.06] px-4 py-1.5 text-xs text-white uppercase flex items-center gap-2">
                   <Wifi className="h-3.5 w-3.5 text-[#F472B6] animate-pulse" />
-                  <span>{currentTurnPlayer?.name || 'SPIELER'} ZEICHNET...</span>
+                  <span>
+                    {currentTurnPlayer?.name || 'SPIELER'}{' '}
+                    {gameState?.roundStatus === 'choosing_word'
+                      ? 'WÄHLT EIN EIGENES WORT...'
+                      : 'ZEICHNET...'}
+                  </span>
                 </div>
               )}
 

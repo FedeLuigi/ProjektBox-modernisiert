@@ -23,21 +23,21 @@ export interface DrawAndGuessState extends BaseGameState {
   gameId: 'draw-and-guess';
   currentDrawerId: string;
   secretWord: string;
-  wordHint: string;
+  wordLength: number;
   categoryName: string;
   categoryFilter?: string;
-  customWords?: string[];
+  customWordsEnabled: boolean;
   usedWords?: string[];
-  hintsEnabled?: boolean;
   round: number;
   maxRounds: number;
   roundDuration: number; // Dauer einer Runde in Sekunden (z. B. 60)
-  roundEndsAt: number;   // Timestamp wann die Runde abläuft
+  roundEndsAt: number; // Timestamp wann aktuelle Phase (Wortwahl oder Zeichnen) abläuft
+  chooseWordEndsAt?: number;
   strokes: StrokeSegment[];
   guesses: DrawAndGuessGuess[];
   scores: Record<string, number>;
   correctGuesserIds: string[];
-  roundStatus: 'drawing' | 'round_over' | 'game_over';
+  roundStatus: 'choosing_word' | 'drawing' | 'round_over' | 'game_over';
   roundWinnerName?: string;
   roundEndReason?: 'guessed' | 'time_up';
 }
@@ -46,9 +46,12 @@ export type DrawAndGuessMove =
   | { type: 'stroke'; stroke: StrokeSegment }
   | { type: 'undo' }
   | { type: 'clear' }
+  | { type: 'set_word'; word: string }
   | { type: 'guess'; text: string }
   | { type: 'time_up' }
   | { type: 'next_round' };
+
+const CHOOSE_WORD_DURATION_SEC = 30;
 
 // Umfangreicher deutscher Wortschatz für Zeichnen & Raten mit klaren Kategorien
 const WORDS: { word: string; category: string }[] = [
@@ -149,41 +152,37 @@ const WORDS: { word: string; category: string }[] = [
   { word: 'Schatzkiste', category: 'Gegenstände' },
 ];
 
-function normalizeCustomWords(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  const seen = new Set<string>();
-  const result: string[] = [];
-  for (const item of raw) {
-    if (typeof item !== 'string') continue;
-    const cleaned = item.trim().slice(0, 28);
-    if (cleaned.length < 2) continue;
-    const key = cleaned.toLowerCase();
-    if (seen.has(key)) continue;
-    seen.add(key);
-    result.push(cleaned);
-    if (result.length >= 40) break;
+function validateCustomWordInput(
+  rawWord: unknown
+): { valid: true; word: string } | { valid: false; error: string } {
+  if (typeof rawWord !== 'string') {
+    return { valid: false, error: 'Bitte gib ein gültiges Wort ein.' };
   }
-  return result;
+  const normalized = rawWord.trim().replace(/ß/gi, 'ss');
+  if (normalized.length < 2 || normalized.length > 20) {
+    return { valid: false, error: 'Das Wort muss zwischen 2 und 20 Buchstaben lang sein.' };
+  }
+  if (!/^[a-zA-ZäöüÄÖÜ]+$/.test(normalized)) {
+    return {
+      valid: false,
+      error: 'Bitte nur Buchstaben (A–Z, Ä, Ö, Ü) ohne Leer- oder Sonderzeichen eingeben.',
+    };
+  }
+  return { valid: true, word: normalized };
 }
 
 function getRandomWord(
   categoryFilter?: string,
-  customWords: string[] = [],
   usedWords: string[] = []
 ): { word: string; category: string } {
-  const customEntries = customWords.map((w) => ({ word: w, category: 'Eigene' }));
-  let pool = customEntries.length > 0 ? [...WORDS, ...customEntries] : WORDS;
+  let pool = WORDS;
 
   if (categoryFilter && categoryFilter !== 'Alle') {
-    if (categoryFilter.toLowerCase() === 'eigene' && customEntries.length > 0) {
-      pool = customEntries;
-    } else {
-      const filtered = WORDS.filter(
-        (w) => w.category.toLowerCase() === categoryFilter.toLowerCase()
-      );
-      if (filtered.length > 0) {
-        pool = filtered;
-      }
+    const filtered = WORDS.filter(
+      (w) => w.category.toLowerCase() === categoryFilter.toLowerCase()
+    );
+    if (filtered.length > 0) {
+      pool = filtered;
     }
   }
 
@@ -195,17 +194,47 @@ function getRandomWord(
   return activePool[index];
 }
 
-function makeWordHint(word: string, hintsEnabled = true): string {
-  const letters = word.split('');
-  if (!hintsEnabled) {
-    return letters.map(() => '_').join(' ');
+function createRoundPhaseFields(params: {
+  customWordsEnabled: boolean;
+  categoryFilter: string;
+  usedWords: string[];
+  roundDuration: number;
+  now: number;
+}): {
+  secretWord: string;
+  wordLength: number;
+  categoryName: string;
+  usedWords: string[];
+  roundStatus: 'choosing_word' | 'drawing';
+  roundStartedAt: number;
+  roundEndsAt: number;
+  chooseWordEndsAt?: number;
+} {
+  if (params.customWordsEnabled) {
+    const deadline = params.now + CHOOSE_WORD_DURATION_SEC * 1000;
+    return {
+      secretWord: '',
+      wordLength: 0,
+      categoryName: 'Eigene',
+      usedWords: params.usedWords,
+      roundStatus: 'choosing_word',
+      roundStartedAt: params.now,
+      roundEndsAt: deadline,
+      chooseWordEndsAt: deadline,
+    };
   }
-  if (letters.length <= 3) {
-    return letters.map(() => '_').join(' ');
-  }
-  return letters
-    .map((char, idx) => (idx === 0 || idx === letters.length - 1 ? char : '_'))
-    .join(' ');
+
+  const { word, category } = getRandomWord(params.categoryFilter, params.usedWords);
+  return {
+    secretWord: word,
+    wordLength: word.length,
+    categoryName: category,
+    usedWords: [...params.usedWords, word],
+    roundStatus: 'drawing',
+    roundStartedAt: params.now,
+    roundEndsAt: params.now + params.roundDuration * 1000,
+    chooseWordEndsAt: undefined,
+  };
 }
 
 export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, DrawAndGuessMove> = {
@@ -231,33 +260,32 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     const rounds = typeof settings?.rounds === 'number' ? settings.rounds : 3;
     const roundDuration = typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
-    const hintsEnabled = settings?.hints === true;
+    const customWordsEnabled = settings?.customWordsEnabled === true;
     const categoryFilter = settings?.category || 'Alle';
-    const customWords = normalizeCustomWords(settings?.customWords);
-
-    const { word, category } = getRandomWord(categoryFilter, customWords);
     const now = Date.now();
+
+    const roundFields = createRoundPhaseFields({
+      customWordsEnabled,
+      categoryFilter,
+      usedWords: [],
+      roundDuration,
+      now,
+    });
 
     return {
       gameId: 'draw-and-guess',
       currentTurn: drawer,
       currentDrawerId: drawer,
-      secretWord: word,
-      wordHint: makeWordHint(word, hintsEnabled),
-      categoryName: category,
+      ...roundFields,
       categoryFilter,
-      customWords,
-      usedWords: [word],
-      hintsEnabled,
+      customWordsEnabled,
       round: 1,
       maxRounds: rounds,
       roundDuration,
-      roundEndsAt: now + roundDuration * 1000,
       strokes: [],
       guesses: [],
       scores: Object.fromEntries(players.map((p) => [p.id, 0])),
       correctGuesserIds: [],
-      roundStatus: 'drawing',
       status: 'playing',
       winnerId: null,
       startedAt: now,
@@ -271,6 +299,40 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     const player = players.find((p) => p.id === playerId);
     const isDrawer = playerId === state.currentDrawerId;
+
+    // 0. ZUG: EIGENES WORT EINGEBEN UND BESTÄTIGEN (NUR ZEICHNER IN DER WORTWAHL-PHASE)
+    if (move.type === 'set_word') {
+      if (!isDrawer) {
+        return { valid: false, error: 'Nur der aktuelle Zeichner darf das Wort festlegen.', state };
+      }
+      if (state.roundStatus !== 'choosing_word') {
+        return { valid: false, error: 'Aktuell wird kein Wort gewählt.', state };
+      }
+
+      const checked = validateCustomWordInput(move.word);
+      if (!checked.valid) {
+        return { valid: false, error: checked.error, state };
+      }
+
+      const now = Date.now();
+      const roundDuration = state.roundDuration || 60;
+      const usedWords = [...(state.usedWords || []), checked.word];
+
+      return {
+        valid: true,
+        state: {
+          ...state,
+          secretWord: checked.word,
+          wordLength: checked.word.length,
+          categoryName: 'Eigene',
+          usedWords,
+          roundStatus: 'drawing',
+          roundStartedAt: now,
+          roundEndsAt: now + roundDuration * 1000,
+          chooseWordEndsAt: undefined,
+        },
+      };
+    }
 
     // 1. ZUG: STRICHE ZEICHNEN (NUR ZEICHNER)
     if (move.type === 'stroke') {
@@ -368,7 +430,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
       const newScores = { ...state.scores };
       const newCorrectIds = [...state.correctGuesserIds];
-      let newRoundStatus: 'drawing' | 'round_over' | 'game_over' = state.roundStatus;
+      let newRoundStatus: DrawAndGuessState['roundStatus'] = state.roundStatus;
       let roundWinnerName = state.roundWinnerName;
 
       if (isMatch) {
@@ -401,6 +463,33 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     // 3b. ZUG: ZEIT ABGELAUFEN (AUTOMATISCH VOM CLIENT/SERVER)
     if (move.type === 'time_up') {
+      if (state.roundStatus === 'choosing_word') {
+        if (!isDrawer && state.roundEndsAt && Date.now() < state.roundEndsAt - 1500) {
+          return { valid: true, state };
+        }
+        // Fallback falls der Zeichner rechtzeitig kein Wort bestätigt hat -> Zufallswort starten
+        const now = Date.now();
+        const roundDuration = state.roundDuration || 60;
+        const { word, category } = getRandomWord(
+          state.categoryFilter || 'Alle',
+          state.usedWords || []
+        );
+        return {
+          valid: true,
+          state: {
+            ...state,
+            secretWord: word,
+            wordLength: word.length,
+            categoryName: category,
+            usedWords: [...(state.usedWords || []), word],
+            roundStatus: 'drawing',
+            roundStartedAt: now,
+            roundEndsAt: now + roundDuration * 1000,
+            chooseWordEndsAt: undefined,
+          },
+        };
+      }
+
       if (state.roundStatus !== 'drawing') {
         return { valid: true, state };
       }
@@ -461,12 +550,17 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       }
 
       const categoryFilter = state.categoryFilter || 'Alle';
-      const customWords = state.customWords || [];
       const prevUsed = state.usedWords || [];
-      const hintsEnabled = state.hintsEnabled === true;
-      const { word, category } = getRandomWord(categoryFilter, customWords, prevUsed);
       const roundDuration = state.roundDuration || 60;
+      const customWordsEnabled = state.customWordsEnabled === true;
       const now = Date.now();
+      const nextRoundFields = createRoundPhaseFields({
+        customWordsEnabled,
+        categoryFilter,
+        usedWords: prevUsed,
+        roundDuration,
+        now,
+      });
 
       return {
         valid: true,
@@ -474,17 +568,12 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           ...state,
           currentTurn: nextDrawer.id,
           currentDrawerId: nextDrawer.id,
-          secretWord: word,
-          wordHint: makeWordHint(word, hintsEnabled),
-          categoryName: category,
-          usedWords: [...prevUsed, word],
+          ...nextRoundFields,
           round: nextRoundNum,
           roundDuration,
-          roundEndsAt: now + roundDuration * 1000,
           strokes: [],
           guesses: [],
           correctGuesserIds: [],
-          roundStatus: 'drawing',
           roundWinnerName: undefined,
           roundEndReason: undefined,
         },
@@ -514,29 +603,31 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
 
     // Wenn der Zeichner geht -> Nächster aktiver Spieler übernimmt, Punktestände bleiben erhalten
     if (leavingPlayerId === state.currentDrawerId) {
-      const nextIndex = state.drawerIndex % activePlayers.length;
+      const baseIndex = typeof state.drawerIndex === 'number' ? state.drawerIndex : 0;
+      const nextIndex = baseIndex % activePlayers.length;
       const nextDrawer = activePlayers[nextIndex];
       const categoryFilter = state.categoryFilter || 'Alle';
-      const customWords = state.customWords || [];
       const usedWords = [...(state.usedWords || [])];
-      const hintsEnabled = state.hintsEnabled === true;
-      const { word, category } = getRandomWord(categoryFilter, customWords, usedWords);
-      usedWords.push(word);
+      const roundDuration = state.roundDuration || 60;
+      const customWordsEnabled = state.customWordsEnabled === true;
+      const now = Date.now();
+      const nextFields = createRoundPhaseFields({
+        customWordsEnabled,
+        categoryFilter,
+        usedWords,
+        roundDuration,
+        now,
+      });
 
       return {
         ...state,
         drawerIndex: nextIndex,
         currentTurn: nextDrawer.id,
         currentDrawerId: nextDrawer.id,
-        secretWord: word,
-        wordHint: makeWordHint(word, hintsEnabled),
-        categoryName: category,
-        usedWords,
+        ...nextFields,
         strokes: [],
         guesses: [],
         correctGuesserIds: [],
-        roundStatus: 'drawing',
-        roundStartedAt: Date.now(),
         roundWinnerName: undefined,
         roundEndReason: undefined,
       };

@@ -47,11 +47,12 @@ test('Draw & Guess: Punktevergabe, Rundenwechsel und Idempotenz bei next_round',
   let state = drawAndGuessGame.initGameState(mockPlayers, 'p1', {
     rounds: 2,
     roundDuration: 60,
-    hints: true,
     category: 'Tiere',
   });
 
   assert.equal(state.currentDrawerId, 'p1');
+  assert.equal(state.wordLength, state.secretWord.length);
+  assert.equal('wordHint' in state, false);
   const secret = state.secretWord;
 
   // Zeichner darf nicht selbst raten
@@ -200,7 +201,7 @@ test('SocketSchemas: Zod-Validierung und Payload-Größenlimits greifen zuverlä
   assert.equal(isPayloadWithinLimit(oversized, EVENT_MAX_PAYLOAD_BYTES['game:move']), false);
 });
 
-test('Draw & Guess: Tipps standardmäßig aus und eigene Wörter werden gewählt', () => {
+test('Draw & Guess: Eigene Wörter Option (An/Aus), Wort-Eingabe vor Zeichenstart und ohne Tipps', () => {
   const manager = new LobbyManager();
   const created = manager.createLobby({
     name: 'TestLobby',
@@ -209,16 +210,95 @@ test('Draw & Guess: Tipps standardmäßig aus und eigene Wörter werden gewählt
     userProfile: { id: 'u1', name: 'Host', avatar: {} },
     socketId: 's1',
   });
-  assert.equal(created.lobby?.settings?.hints, false);
+  assert.equal(created.lobby?.settings?.customWordsEnabled, false);
+  assert.equal('hints' in (created.lobby?.settings || {}), false);
 
-  const state = drawAndGuessGame.initGameState(mockPlayers, 'p1', {
-    category: 'Eigene',
-    customWords: ['SuperRakete'],
+  // Mit Eigene Wörter = AN startet die Runde in 'choosing_word'
+  let state = drawAndGuessGame.initGameState(mockPlayers, 'p1', {
+    rounds: 2,
+    roundDuration: 45,
+    customWordsEnabled: true,
   });
-  assert.equal(state.hintsEnabled, false);
+  assert.equal(state.customWordsEnabled, true);
+  assert.equal(state.roundStatus, 'choosing_word');
+  assert.equal(state.secretWord, '');
+  assert.equal(state.wordLength, 0);
+
+  // Rater darf weder raten noch ein Wort festlegen
+  const guesserSet = drawAndGuessGame.validateAndApplyMove({
+    state,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'set_word', word: 'Rakete' },
+  });
+  assert.equal(guesserSet.valid, false);
+
+  const earlyGuess = drawAndGuessGame.validateAndApplyMove({
+    state,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'guess', text: 'Rakete' },
+  });
+  assert.equal(earlyGuess.valid, false);
+
+  // Ungültiges Wort mit Sonderzeichen/Leerzeichen wird abgewiesen
+  const badWord = drawAndGuessGame.validateAndApplyMove({
+    state,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'set_word', word: 'Zwei Wörter!' },
+  });
+  assert.equal(badWord.valid, false);
+
+  // Zeichner bestätigt sein eigenes Wort -> Spiel startet Zeichenphase mit voller Rundenzeit
+  const confirmed = drawAndGuessGame.validateAndApplyMove({
+    state,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'set_word', word: 'SuperRakete' },
+  });
+  assert.equal(confirmed.valid, true);
+  state = confirmed.state;
+  assert.equal(state.roundStatus, 'drawing');
   assert.equal(state.secretWord, 'SuperRakete');
+  assert.equal(state.wordLength, 11);
   assert.equal(state.categoryName, 'Eigene');
-  assert.equal(state.wordHint, '_ _ _ _ _ _ _ _ _ _ _');
+
+  // Rater errät das selbst eingegebene Wort
+  const guessed = drawAndGuessGame.validateAndApplyMove({
+    state,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'guess', text: 'superrakete' },
+  });
+  assert.equal(guessed.valid, true);
+  assert.equal(guessed.state.scores.p2, 100);
+  assert.equal(guessed.state.roundStatus, 'round_over');
+
+  // Nächste Runde wechselt zu p2 und startet erneut mit 'choosing_word'
+  const nextRound = drawAndGuessGame.validateAndApplyMove({
+    state: guessed.state,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'next_round' },
+  });
+  assert.equal(nextRound.valid, true);
+  assert.equal(nextRound.state.round, 2);
+  assert.equal(nextRound.state.currentDrawerId, 'p2');
+  assert.equal(nextRound.state.roundStatus, 'choosing_word');
+  assert.equal(nextRound.state.secretWord, '');
+
+  // Fallback: Wenn Zeichner beim Wählen nichts eingibt und time_up kommt -> Zufallswort startet Zeichenphase
+  const timedOutChoose = drawAndGuessGame.validateAndApplyMove({
+    state: nextRound.state,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'time_up' },
+  });
+  assert.equal(timedOutChoose.valid, true);
+  assert.equal(timedOutChoose.state.roundStatus, 'drawing');
+  assert.ok(timedOutChoose.state.secretWord.length >= 2);
+  assert.equal(timedOutChoose.state.wordLength, timedOutChoose.state.secretWord.length);
 });
 
 function waitMs(ms: number): Promise<void> {
