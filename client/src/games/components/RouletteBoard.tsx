@@ -360,7 +360,7 @@ function RouletteWheel({
 
   return (
     <div className={`relative shrink-0 ${sizeClass}`}>
-      <svg viewBox="0 0 320 320" className="h-full w-full drop-shadow-[0_18px_36px_rgba(0,0,0,0.6)]">
+      <svg viewBox="0 0 320 320" className="h-full w-full">
         <defs>
           <radialGradient id="wheelWoodRim" cx="50%" cy="50%" r="50%">
             <stop offset="78%" stopColor="#451A03" />
@@ -462,7 +462,7 @@ function RouletteWheel({
       {phase === 'result' && winningNumber !== null && winColor && (
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
           <div
-            className={`flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 shadow-[0_0_24px_rgba(0,0,0,0.75)] ${getColorClasses(
+            className={`flex h-14 w-14 flex-col items-center justify-center rounded-full border-2 ${getColorClasses(
               winColor
             )}`}
           >
@@ -643,7 +643,7 @@ function BettingTable({
   };
 
   return (
-    <div className="roulette-landscape-felt w-full select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5 shadow-[0_16px_38px_rgba(0,0,0,0.45)]">
+    <div className="roulette-landscape-felt w-full select-none rounded-2xl border border-[#34D399]/35 bg-gradient-to-br from-[#064E3B]/95 via-[#065F46]/90 to-[#022C22]/95 p-1.5 sm:p-2.5">
       {/* WIDE / LANDSCAPE / TV HORIZONTAL CASINO FELT */}
       <div className="hidden sm:flex flex-col gap-1">
         <div className="grid grid-cols-[40px_repeat(12,minmax(0,1fr))_42px] gap-1">
@@ -1051,7 +1051,7 @@ export function RouletteBoard({
         </div>
 
         {/* Hauptbereich: Kessel links, Live-Tisch & Spieler-Guthaben rechts */}
-        <div className="grid grid-cols-1 lg:grid-cols-[320px_minmax(0,1fr)] items-center gap-4 lg:gap-6 flex-1 min-h-0">
+        <div className="grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[440px_minmax(0,1fr)] items-center gap-4 lg:gap-6 flex-1 min-h-0">
           {/* Links: Roulette-Kessel */}
           <div className="flex flex-col items-center justify-center gap-3 p-1">
             <RouletteWheel
@@ -1059,7 +1059,7 @@ export function RouletteBoard({
               round={round}
               winningNumber={winningNumber}
               spinStartedAt={gameState?.spinStartedAt}
-              sizeClass="h-56 w-56 lg:h-68 lg:w-68"
+              sizeClass="h-60 w-60 lg:h-80 lg:w-80 xl:h-96 xl:w-96"
             />
             {phase === 'result' && winningNumber !== null && (
               <div className="flex items-center gap-2 px-2 py-0.5">
@@ -1160,7 +1160,7 @@ export function RouletteBoard({
 
   return (
     <>
-      <div className="roulette-landscape-shell flex w-full max-w-5xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[225px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-4 overflow-hidden py-0.5">
+      <div className="roulette-landscape-shell flex w-full max-w-6xl flex-1 min-h-0 flex-col lg:grid lg:grid-cols-[290px_minmax(0,1fr)] xl:grid-cols-[360px_minmax(0,1fr)] 2xl:grid-cols-[410px_minmax(0,1fr)] lg:items-center justify-between gap-2 lg:gap-6 xl:gap-8 overflow-hidden py-0.5">
         {/* LINKE SPALTE (OBEN IM HOCHFORMAT): KOMPAKTER KESSEL + RUNDE/TIMER + STATUS */}
         <div className="roulette-landscape-left flex shrink-0 flex-row lg:flex-col items-center justify-between lg:justify-center gap-2.5 px-1 py-0.5 lg:p-1">
           <div className="flex w-full lg:w-auto items-center justify-between gap-2 lg:order-first">
@@ -1186,8 +1186,8 @@ export function RouletteBoard({
             spinStartedAt={gameState?.spinStartedAt}
             sizeClass={
               phase === 'spinning'
-                ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 lg:h-48 lg:w-48'
-                : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-24 sm:w-24 lg:h-44 lg:w-44'
+                ? 'roulette-landscape-wheel h-24 w-24 sm:h-32 sm:w-32 md:h-40 md:w-40 lg:h-72 lg:w-72 xl:h-88 xl:w-88 2xl:h-96 2xl:w-96'
+                : 'roulette-landscape-wheel h-[72px] w-[72px] sm:h-28 sm:w-28 md:h-36 md:w-36 lg:h-68 lg:w-68 xl:h-84 xl:w-84 2xl:h-96 2xl:w-96'
             }
           />
 

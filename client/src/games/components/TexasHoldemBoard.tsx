@@ -647,7 +647,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* Großer Pokertisch in der Mitte */}
-        <div className="my-auto flex flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-5 sm:p-7 shadow-[0_24px_60px_rgba(0,0,0,0.65)] ring-1 ring-[#F59E0B]/40">
+        <div className="my-auto flex flex-col items-center justify-center gap-4 rounded-[32px] border-4 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-5 sm:p-7 ring-1 ring-[#F59E0B]/40">
           <div className="flex items-center gap-2.5 px-1">
             <Coins className="h-4 w-4 text-[#FBBF24]" />
             <span className="font-arcade text-base sm:text-lg tracking-wider text-[#FDE68A] uppercase">
@@ -809,7 +809,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* 2. Pokertisch-Mitte: Pot + 5 Community Cards + kompaktes Ergebnis */}
-        <div className="poker-landscape-table flex flex-1 min-h-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-3.5 shadow-[0_14px_34px_rgba(0,0,0,0.45)] ring-1 ring-[#F59E0B]/30">
+        <div className="poker-landscape-table flex flex-1 min-h-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-3.5 ring-1 ring-[#F59E0B]/30">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <div className="flex items-center gap-1.5 px-1">
               <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
