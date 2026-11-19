@@ -736,7 +736,7 @@ export function DrawAndGuessBoard({
   if (isChoosingWord) {
     if (isTv) {
       return (
-        <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-[#0F172A]/80 backdrop-blur-xl mx-auto flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none animate-fade-in">
+        <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] mx-auto flex flex-col items-center justify-center p-4 sm:p-6 text-center select-none animate-fade-in">
           <Paintbrush className="h-10 w-10 text-[#FBBF24] mb-3 animate-bounce" />
           <p className="font-arcade text-lg sm:text-2xl tracking-wider text-white uppercase">
             {drawerPlayer?.name || 'SPIELER'} WÄHLT EIN WORT...
@@ -785,6 +785,48 @@ export function DrawAndGuessBoard({
 
   // A) FERNSEHER-ANSICHT
   if (isTv) {
+    if (isRoundOver) {
+      return (
+        <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] mx-auto flex flex-col items-center justify-center p-6 text-center select-none animate-fade-in">
+          <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+            <span className="text-xs font-arcade uppercase tracking-widest text-[#FDE68A]">
+              GESUCHTES WORT
+            </span>
+          </div>
+
+          <div className="text-4xl sm:text-5xl lg:text-6xl font-arcade uppercase tracking-[0.16em] text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)] my-3">
+            {gameState.secretWord}
+          </div>
+
+          <p className="mt-1 text-xs sm:text-sm font-arcade uppercase text-[#CBD5E1] max-w-md leading-relaxed">
+            {gameState.roundWinnerName ? (
+              <span>
+                {gameState.roundWinnerName} HAT ES ERRATEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
+              </span>
+            ) : (
+              <span>
+                ZEIT ABGELAUFEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
+              </span>
+            )}
+          </p>
+
+          {transitionCountdown > 0 && (
+            <div className="mt-5 flex flex-col items-center gap-1.5 w-full max-w-xs">
+              <div className="w-full h-2 rounded-full bg-white/15 overflow-hidden">
+                <div
+                  className="h-full bg-[#F59E0B] transition-all duration-1000 ease-linear"
+                  style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
+                />
+              </div>
+              <span className="text-[11px] font-arcade uppercase text-[#94A3B8]">
+                NÄCHSTE RUNDE IN {transitionCountdown}S...
+              </span>
+            </div>
+          )}
+        </div>
+      );
+    }
+
     return (
       <div className="relative w-full aspect-[4/3] max-h-[36dvh] min-[640px]:max-h-[48vh] lg:max-h-[52vh] overflow-hidden rounded-2xl border border-white/20 bg-white mx-auto flex items-center justify-center select-none">
         <canvas
@@ -793,46 +835,6 @@ export function DrawAndGuessBoard({
           height={480}
           className="w-full h-full block cursor-default"
         />
-
-        {isRoundOver && (
-          <div className="absolute inset-0 bg-[#0F172A]/90 backdrop-blur-xl flex flex-col items-center justify-center p-6 text-center animate-fade-in z-20">
-            <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
-              <span className="text-xs font-arcade uppercase tracking-widest text-[#FDE68A]">
-                GESUCHTES WORT
-              </span>
-            </div>
-
-            <div className="text-4xl sm:text-5xl lg:text-6xl font-arcade uppercase tracking-[0.16em] text-white drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)] my-3">
-              {gameState.secretWord}
-            </div>
-
-            <p className="mt-1 text-xs sm:text-sm font-arcade uppercase text-[#CBD5E1] max-w-md leading-relaxed">
-              {gameState.roundWinnerName ? (
-                <span>
-                  {gameState.roundWinnerName} HAT ES ERRATEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
-                </span>
-              ) : (
-                <span>
-                  ZEIT ABGELAUFEN • GEZEICHNET VON {drawerPlayer?.name || 'SPIELER'}
-                </span>
-              )}
-            </p>
-
-            {transitionCountdown > 0 && (
-              <div className="mt-5 flex flex-col items-center gap-1.5 w-full max-w-xs">
-                <div className="w-full h-2 rounded-full bg-white/15 overflow-hidden">
-                  <div
-                    className="h-full bg-[#F59E0B] transition-all duration-1000 ease-linear"
-                    style={{ width: `${Math.max(0, (transitionCountdown / 3) * 100)}%` }}
-                  />
-                </div>
-                <span className="text-[11px] font-arcade uppercase text-[#94A3B8]">
-                  NÄCHSTE RUNDE IN {transitionCountdown}S...
-                </span>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   }

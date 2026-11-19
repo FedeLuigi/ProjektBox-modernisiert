@@ -120,78 +120,67 @@ export function TvGameView({
       <BackgroundCometCanvas opacity={0.85} />
 
       <div className="safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3">
-        {/* 1. TV-KOPFZEILE */}
-        <header className="relative flex flex-wrap shrink-0 items-center justify-between gap-3 border-b border-white/15 pb-2.5">
-          <div className="flex min-w-0 items-center gap-3">
+        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL */}
+        <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 border-b border-white/15 pb-2.5">
+          <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
             <OpenButton size="md" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-4 w-4" />
               <span>EXIT TV</span>
             </OpenButton>
-            <div className="min-w-0 border-b-2 border-[#F59E0B] px-1 pb-0.5">
-              <span className="font-arcade block truncate text-lg lg:text-2xl tracking-wider text-white uppercase">
+
+            {isDrawAndGuess && !isGameOver && !isRoundOver && (
+              <div className="hidden lg:flex items-center gap-2.5 min-w-0">
+                <span className="font-arcade text-xs tracking-wider text-[#FBBF24] uppercase shrink-0">
+                  {gameState?.categoryName || 'WORT'}
+                </span>
+                <span className="font-arcade text-sm tracking-[0.2em] text-white uppercase truncate">
+                  {gameState?.roundStatus === 'choosing_word'
+                    ? 'WORTWAHL...'
+                    : gameState?.wordLength
+                      ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
+                      : '_ _ _ _'}
+                </span>
+              </div>
+            )}
+
+            {isStadtLandFluss && !isGameOver && (
+              <span className="font-arcade hidden md:inline text-xs tracking-wider text-[#67E8F9] uppercase truncate">
+                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3} •{' '}
+                {gameState?.letter ? `BUCHSTABE ${gameState.letter}` : 'KATEGORIENWAHL'}
+              </span>
+            )}
+
+            {isRoulette && !isGameOver && (
+              <span className="font-arcade hidden md:inline text-xs tracking-wider text-[#6EE7B7] uppercase truncate">
+                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 5}
+              </span>
+            )}
+
+            {isTexasHoldem && !isGameOver && (
+              <span className="font-arcade hidden md:inline text-xs tracking-wider text-[#FBBF24] uppercase truncate">
+                HAND {gameState?.handNumber || 1}/{gameState?.maxHands || 10}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center justify-center px-2 text-center">
+            <div className="border-b-2 border-[#F59E0B] px-2 pb-0.5">
+              <span className="font-arcade block whitespace-nowrap text-lg sm:text-xl lg:text-2xl tracking-wider text-white uppercase">
                 {gameTitle || lobby.name}
               </span>
             </div>
           </div>
 
-          {isDrawAndGuess && !isGameOver && !isRoundOver && (
-            <div className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-2 backdrop-blur-md">
-              <span className="font-arcade text-xs tracking-wider text-[#FBBF24] uppercase">
-                {gameState?.categoryName || 'WORT'}
-              </span>
-              <span className="font-arcade text-lg lg:text-2xl tracking-[0.22em] text-white uppercase">
-                {gameState?.roundStatus === 'choosing_word'
-                  ? 'WORTWAHL...'
-                  : gameState?.wordLength
-                    ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
-                    : '_ _ _ _'}
-              </span>
-            </div>
-          )}
-
-          {isStadtLandFluss && !isGameOver && (
-            <div className="flex items-center gap-3 rounded-xl border border-[#22D3EE]/35 bg-white/[0.06] px-5 py-2 backdrop-blur-md">
-              <span className="font-arcade text-xs tracking-wider text-[#67E8F9] uppercase">
-                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3}
-              </span>
-              <span className="font-arcade text-lg lg:text-xl text-[#FDE68A] uppercase">
-                BUCHSTABE {gameState?.letter || '?'}
-              </span>
-            </div>
-          )}
-
-          {isRoulette && !isGameOver && (
-            <div className="flex items-center gap-3 rounded-xl border border-[#34D399]/40 bg-[#064E3B]/55 px-5 py-2 backdrop-blur-md">
-              <span className="font-arcade text-xs tracking-wider text-[#6EE7B7] uppercase">
-                CASINO ROULETTE
-              </span>
-              <span className="font-arcade text-lg text-[#FDE68A] uppercase">
-                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 5}
-              </span>
-            </div>
-          )}
-
-          {isTexasHoldem && !isGameOver && (
-            <div className="flex items-center gap-3 rounded-xl border border-[#F59E0B]/45 bg-[#064E3B]/60 px-5 py-2 backdrop-blur-md">
-              <span className="font-arcade text-xs tracking-wider text-[#FBBF24] uppercase">
-                TEXAS HOLD&apos;EM
-              </span>
-              <span className="font-arcade text-lg text-white uppercase">
-                HAND {gameState?.handNumber || 1}/{gameState?.maxHands || 10}
-              </span>
-            </div>
-          )}
-
-          <div className="flex items-center gap-3">
+          <div className="flex w-full sm:w-auto items-center justify-end gap-2.5">
             {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) && !isGameOver && !isRoundOver && (
-              <span className="font-arcade rounded-xl border border-white/20 bg-white/[0.08] px-4 py-1.5 text-sm lg:text-base text-white">
+              <span className="font-arcade rounded-xl border border-white/20 bg-white/[0.06] px-3.5 py-1.5 text-sm lg:text-base text-white">
                 {timeLeft} S
               </span>
             )}
             <div className="hidden md:block">
               <ConnectionStatusBadge />
             </div>
-            <span className="font-arcade rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 px-4 py-1.5 text-sm lg:text-base tracking-widest text-[#FDE68A] uppercase">
+            <span className="font-arcade rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 px-3.5 py-1.5 text-sm lg:text-base tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </span>
           </div>
@@ -205,8 +194,8 @@ export function TvGameView({
 
         {/* 2. TV-BÜHNE */}
         {isDrawAndGuess ? (
-          <main className="flex flex-1 min-h-0 flex-col lg:flex-row items-stretch lg:items-center justify-between gap-5 py-4 w-full">
-            <div className="w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-4 backdrop-blur-xl">
+          <main className="flex flex-1 min-h-0 flex-col lg:flex-row items-stretch lg:items-center justify-center gap-6 lg:gap-10 py-4 w-full max-w-6xl mx-auto">
+            <div className="w-full lg:w-64 shrink-0">
               <div className="mb-3 border-b-2 border-[#F59E0B] inline-block pb-0.5">
                 <span className="font-arcade text-sm tracking-wider text-white uppercase">
                   SPIELER
@@ -241,9 +230,9 @@ export function TvGameView({
               </div>
             </div>
 
-            <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl mx-auto w-full">
+            <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl w-full">
               {!isRoundOver && !isGameOver && (
-                <div className="font-arcade mb-3 shrink-0 rounded-xl border border-white/15 bg-white/[0.06] px-5 py-2 text-sm text-white uppercase flex items-center gap-2.5">
+                <div className="font-arcade mb-3 shrink-0 px-2 py-1 text-sm text-white uppercase flex items-center gap-2.5">
                   <Wifi className="h-4 w-4 text-[#F472B6] animate-pulse shrink-0" />
                   <span className="truncate">
                     {currentTurnPlayer?.name || 'SPIELER'}{' '}
@@ -268,37 +257,6 @@ export function TvGameView({
                     disabled={true}
                     isTvMode={true}
                   />
-                )}
-              </div>
-            </div>
-
-            <div className="w-full lg:w-72 shrink-0 rounded-2xl border border-white/15 bg-[#0F172A]/75 p-4 backdrop-blur-xl">
-              <div className="mb-3 border-b-2 border-[#10B981] inline-block pb-0.5">
-                <span className="font-arcade text-sm tracking-wider text-white uppercase">
-                  LIVE TIPPS
-                </span>
-              </div>
-              <div className="flex flex-col gap-2 max-h-[55vh] overflow-y-auto no-scrollbar">
-                {gameState?.guesses && gameState.guesses.length > 0 ? (
-                  gameState.guesses.map((g: any) => (
-                    <div
-                      key={g.id}
-                      className={`font-arcade w-full rounded-xl border text-sm p-2.5 flex items-center justify-between uppercase ${
-                        g.isCorrect
-                          ? 'bg-[#10B981]/20 border-[#34D399]/50 text-[#6EE7B7]'
-                          : 'bg-white/[0.04] border-white/12 text-white/85'
-                      }`}
-                    >
-                      <span className="truncate pr-2">
-                        {g.playerName}: {g.text}
-                      </span>
-                      <span>{g.isCorrect ? '✓' : '×'}</span>
-                    </div>
-                  ))
-                ) : (
-                  <div className="font-arcade text-sm text-[#94A3B8] text-center py-8 uppercase">
-                    WARTE AUF TIPPS...
-                  </div>
                 )}
               </div>
             </div>
@@ -338,7 +296,7 @@ export function TvGameView({
             aria-label="Spielende"
             className="fixed inset-0 z-50 bg-[#0F172A]/88 backdrop-blur-md flex items-center justify-center p-6 animate-fade-in"
           >
-            <div className="flex w-full max-w-md flex-col items-center gap-6 text-center rounded-3xl border border-white/15 bg-[#1B2B40]/95 p-7 shadow-2xl">
+            <div className="flex w-full max-w-md flex-col items-center gap-6 text-center">
               <div className="border-b-2 border-[#F59E0B] px-4 pb-1.5">
                 <span className="font-arcade text-2xl sm:text-4xl tracking-wider text-white uppercase">
                   {winner ? `${winner.name} GEWINNT!` : 'UNENTSCHIEDEN!'}
