@@ -1506,7 +1506,7 @@ export function RouletteBoard({
             </div>
 
             {/* Phasen-Bezeichnung mittig oberhalb des Spielbretts */}
-            <div className="flex items-center justify-center gap-2.5 text-center">
+            <div className="flex items-center justify-center text-center">
               <span className="font-arcade text-sm lg:text-base tracking-wider text-[#FDE68A] uppercase">
                 {phase === 'betting'
                   ? 'EINSÄTZE PLATZIEREN'
@@ -1516,16 +1516,6 @@ export function RouletteBoard({
                       ? `GEWINNZAHL: ${winningNumber}`
                       : 'ERGEBNIS'}
               </span>
-              {phase === 'betting' && (
-                <span
-                  className={`font-arcade inline-flex items-center gap-1 text-sm lg:text-base ${
-                    timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-[#FDE68A]'
-                  }`}
-                >
-                  <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
-                  {timeLeft}S
-                </span>
-              )}
             </div>
 
             <div className={isTvPortrait ? 'h-[min(320px,44dvh)] w-full' : ''}>

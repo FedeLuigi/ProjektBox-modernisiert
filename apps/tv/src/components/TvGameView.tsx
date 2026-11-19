@@ -171,11 +171,14 @@ export function TvGameView({
           </div>
 
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-end gap-2.5">
-            {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) && !isGameOver && !isRoundOver && (
-              <span className="font-arcade shrink-0 rounded-xl border border-white/20 bg-white/[0.06] px-3.5 py-1.5 text-sm lg:text-base text-white">
-                {timeLeft} S
-              </span>
-            )}
+            {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) &&
+              !isGameOver &&
+              !isRoundOver &&
+              (!isRoulette || gameState?.phase === 'betting') && (
+                <span className="font-arcade shrink-0 rounded-xl border border-white/20 bg-white/[0.06] px-3.5 py-1.5 text-sm lg:text-base text-white">
+                  {timeLeft} S
+                </span>
+              )}
             <HeaderStatusOverlay
               lobby={lobby}
               showWhenConnected
