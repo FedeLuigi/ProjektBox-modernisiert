@@ -1,4 +1,5 @@
 import { io, Socket } from 'socket.io-client';
+import { normalizeBackendBaseUrl } from '@projektbox/shared/utils';
 import type { ClientRole, Lobby, LobbySummary } from '../types/multiplayer';
 import {
   getUserProfile,
@@ -40,8 +41,7 @@ const RECONNECTED_BANNER_MS = 3_000;
 const SESSION_TOKEN_STORAGE_KEY = 'projektbox_session_token';
 
 function normalizeBaseUrl(raw?: string | null): string {
-  if (!raw) return '';
-  return raw.trim().replace(/\/+$/, '');
+  return normalizeBackendBaseUrl(raw);
 }
 
 function generateActionId(): string {

@@ -1,21 +1,30 @@
 import QRCode from 'qrcode';
+import { normalizeBackendBaseUrl } from '@projektbox/shared/utils';
 import { STORAGE_KEYS } from './userProfile';
 
 let cachedRenderUrl: string | null = null;
 let cachedLocalLanOrigin: string | null = null;
 let cachedSmartphoneUrl: string | null = null;
+const serverInfoListeners = new Set<() => void>();
+
+export function subscribeServerInfoReady(listener: () => void): () => void {
+  serverInfoListeners.add(listener);
+  return () => {
+    serverInfoListeners.delete(listener);
+  };
+}
 
 function resolveServerInfoBaseUrl(): string {
   if (typeof window === 'undefined') return '';
   try {
     const custom = localStorage.getItem(STORAGE_KEYS.SOCKET_URL);
-    if (custom && custom.trim()) return custom.trim().replace(/\/+$/, '');
+    if (custom && custom.trim()) return normalizeBackendBaseUrl(custom);
   } catch {
     // ignore storage failures
   }
   const envApi = import.meta.env.VITE_API_URL || import.meta.env.VITE_SOCKET_URL;
   if (envApi && typeof envApi === 'string' && envApi.trim()) {
-    return envApi.trim().replace(/\/+$/, '');
+    return normalizeBackendBaseUrl(envApi);
   }
   return '';
 }
@@ -44,6 +53,9 @@ if (typeof window !== 'undefined') {
         const mappedPort = mapLocalPortToSmartphonePort(window.location.port || '');
         const portSuffix = mappedPort ? `:${mappedPort}` : '';
         cachedLocalLanOrigin = `http://${data.localIps[0]}${portSuffix}`;
+      }
+      for (const listener of serverInfoListeners) {
+        listener();
       }
     })
     .catch(() => {

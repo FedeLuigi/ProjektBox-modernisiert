@@ -11,6 +11,7 @@ import {
   getLobbyJoinUrl,
   renderQrCodeToCanvas,
   socketService,
+  subscribeServerInfoReady,
   useUserProfile,
   type Game,
 } from '@projektbox/ui';
@@ -41,6 +42,7 @@ export function TvLobbyScreen({
     socketService.isActionBlocked()
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [, setServerInfoTick] = useState(0);
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hasAutoCreatedRef = useRef(false);
@@ -131,6 +133,10 @@ export function TvLobbyScreen({
     const t = setTimeout(() => setErrorMsg(null), 4000);
     return () => clearTimeout(t);
   }, [errorMsg]);
+
+  useEffect(() => {
+    return subscribeServerInfoReady(() => setServerInfoTick((n) => n + 1));
+  }, []);
 
   const joinUrl = currentLobby ? getLobbyJoinUrl(currentLobby.code) : '';
 
@@ -249,9 +255,9 @@ export function TvLobbyScreen({
         </header>
 
         {/* Hauptbühne */}
-        <main className="flex flex-1 min-h-0 w-full flex-col items-center justify-center py-6 overflow-y-auto">
+        <main className="flex flex-1 min-h-0 w-full flex-col items-center py-4 lg:py-6 overflow-y-auto">
           {!currentLobby ? (
-            <div className="flex flex-col items-center gap-4 text-center">
+            <div className="my-auto flex flex-col items-center gap-4 text-center">
               {isCreating ? (
                 <>
                   <Loader2 className="h-12 w-12 animate-spin text-[#FBBF24]" />
@@ -277,16 +283,21 @@ export function TvLobbyScreen({
               )}
             </div>
           ) : (
-            <div className="grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-12">
+            <div className="my-auto grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-6 lg:gap-12">
               {/* Links: QR-Code zur Smartphone-App + Raumcode */}
-              <div className="flex flex-col items-center gap-5 rounded-3xl border border-white/15 bg-[#0F172A]/65 p-6 lg:p-8 text-center backdrop-blur-xl">
+              <div className="flex flex-col items-center gap-4 lg:gap-5 rounded-3xl border border-white/15 bg-[#0F172A]/65 p-5 lg:p-8 text-center backdrop-blur-xl">
                 <div className="inline-flex items-center gap-2 font-arcade text-sm lg:text-base tracking-wider text-[#BAE6FD] uppercase">
                   <Smartphone className="h-5 w-5 text-[#38BDF8]" />
                   <span>MIT SMARTPHONE BEITRETEN</span>
                 </div>
 
-                <div className="rounded-3xl border-2 border-white/25 bg-white p-4 shadow-[0_22px_50px_rgba(0,0,0,0.5)]">
-                  <canvas ref={qrCanvasRef} className="h-60 w-60 lg:h-72 lg:w-72 block" />
+                <div className="rounded-3xl border-2 border-white/25 bg-white p-3.5 lg:p-4 shadow-[0_22px_50px_rgba(0,0,0,0.5)]">
+                  <canvas
+                    ref={qrCanvasRef}
+                    data-join-url={joinUrl}
+                    aria-label={`QR-Code zum Beitreten: ${joinUrl}`}
+                    className="h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64 block"
+                  />
                 </div>
 
                 <div className="flex flex-col items-center gap-2">
@@ -296,6 +307,11 @@ export function TvLobbyScreen({
                   <span className="font-arcade rounded-2xl border-2 border-[#F59E0B]/70 bg-[#F59E0B]/15 px-7 py-2 text-3xl lg:text-4xl tracking-[0.28em] pl-[calc(1.75rem+0.28em)] text-[#FDE68A] uppercase">
                     {currentLobby.code}
                   </span>
+                  {joinUrl && (
+                    <span className="max-w-full truncate text-xs text-[#94A3B8] select-all" title={joinUrl}>
+                      {joinUrl}
+                    </span>
+                  )}
                 </div>
               </div>
 

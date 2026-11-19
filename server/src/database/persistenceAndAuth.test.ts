@@ -15,6 +15,7 @@ import { registerSocketHandlers } from '../sockets/socketHandlers.js';
 import { GamePhaseScheduler } from '../games/phaseScheduler.js';
 import { HybridPersistenceStore } from './persistenceStore.js';
 import { SOCKET_EVENTS } from '@projektbox/shared/events';
+import { normalizeBackendBaseUrl } from '@projektbox/shared/utils';
 
 test('HybridPersistenceStore fällt ohne DATABASE_URL nahtlos auf JSON-StateStore zurück', async () => {
   const prevDbUrl = process.env.DATABASE_URL;
@@ -343,4 +344,12 @@ test('E2E TV + 2 Smartphones: Live-Synchronisation bei Roulette (Setzen, Verschi
     await new Promise<void>((resolve) => server.close(() => resolve()));
     manager.clearAllTimers();
   }
+});
+
+test('normalizeBackendBaseUrl entfernt doppelte /api-Suffixe und abschließende Slashes zuverlässig', () => {
+  assert.equal(normalizeBackendBaseUrl('https://projektbox-backend.onrender.com/api'), 'https://projektbox-backend.onrender.com');
+  assert.equal(normalizeBackendBaseUrl('https://projektbox-backend.onrender.com/api/'), 'https://projektbox-backend.onrender.com');
+  assert.equal(normalizeBackendBaseUrl('https://projektbox-backend.onrender.com/'), 'https://projektbox-backend.onrender.com');
+  assert.equal(normalizeBackendBaseUrl('http://localhost:5001'), 'http://localhost:5001');
+  assert.equal(normalizeBackendBaseUrl(''), '');
 });
