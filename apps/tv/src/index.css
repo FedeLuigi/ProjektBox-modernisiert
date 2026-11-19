@@ -9,17 +9,22 @@
 [data-tv-app="true"] input:focus-visible,
 [data-tv-app="true"] a:focus-visible,
 [data-tv-app="true"] [data-tv-focused="true"] {
-  outline: 3px solid #FBBF24 !important;
-  outline-offset: 3px !important;
+  outline: 2px solid transparent !important;
+  outline-offset: 0 !important;
   box-shadow:
-    0 0 0 6px rgba(245, 158, 11, 0.28),
-    0 12px 28px rgba(0, 0, 0, 0.45) !important;
+    0 0 0 2px #0F172A,
+    0 0 0 4.5px #FBBF24,
+    0 8px 22px rgba(245, 158, 11, 0.32) !important;
   position: relative;
   z-index: 20;
 }
 
 [data-tv-app="true"] [data-tv-card="true"]:focus-visible,
 [data-tv-app="true"] [data-tv-card="true"][data-tv-focused="true"] {
-  transform: translateY(-4px) scale(1.02);
+  transform: translateY(-3px) scale(1.015);
   border-color: #FBBF24 !important;
+  box-shadow:
+    0 0 0 3px #FBBF24,
+    0 0 0 7px rgba(245, 158, 11, 0.28),
+    0 14px 30px rgba(0, 0, 0, 0.5) !important;
 }

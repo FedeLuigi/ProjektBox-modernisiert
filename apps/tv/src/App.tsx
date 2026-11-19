@@ -23,7 +23,6 @@ import {
 import { TvHeader } from './components/TvHeader';
 import { TvGalleryLayout } from './components/TvGalleryLayout';
 import { TvLobbyScreen } from './components/TvLobbyScreen';
-import { TvRemoteHintBar } from './components/TvRemoteHintBar';
 import { useTvRemoteNavigation } from './utils/tvNavigation';
 
 export function App() {
@@ -312,8 +311,6 @@ export function App() {
               onSearchChange={setSearchQuery}
             />
           </main>
-
-          <TvRemoteHintBar />
         </div>
       )}
 

@@ -31,7 +31,7 @@ export function TvGalleryLayout({
   onSearchChange,
 }: TvGalleryLayoutProps) {
   return (
-    <div className="mx-auto flex w-full max-w-[1600px] flex-1 min-h-0 flex-col gap-5 px-6 lg:px-10 pt-5 pb-3">
+    <div className="mx-auto flex w-full max-w-[1600px] flex-1 min-h-0 flex-col gap-5 px-6 lg:px-10 pt-5 pb-6">
       {/* Filter-Tabs + TV-Suchleiste */}
       <div className="flex w-full shrink-0 flex-wrap items-center justify-between gap-4">
         <div className="flex flex-wrap items-center gap-5 lg:gap-7">
@@ -98,8 +98,8 @@ export function TvGalleryLayout({
           </button>
         </div>
       ) : (
-        <div className="no-scrollbar flex-1 min-h-0 overflow-y-auto py-2 px-1">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-7 pb-6">
+        <div className="no-scrollbar -mx-5 flex-1 min-h-0 overflow-y-auto px-5 pt-4 pb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 lg:gap-7 pb-4">
             {games.map((game, idx) => {
               const isFav = favoriteIds.includes(game.id);
               const palette = ACCENT_PALETTES[game.accent];
@@ -118,16 +118,18 @@ export function TvGalleryLayout({
                       variant="card"
                       className="h-full w-full object-cover"
                     />
-                    <span
-                      style={{ backgroundColor: palette.bg }}
-                      className="font-arcade absolute bottom-3 left-3 rounded-full px-3 py-1 text-xs text-white uppercase shadow"
-                    >
-                      {game.players} • {game.duration}
-                    </span>
-                    <span className="font-arcade absolute bottom-3 right-3 inline-flex items-center gap-1.5 rounded-lg border border-white/25 bg-[#0F172A]/80 px-2.5 py-1 text-xs text-[#FDE68A] uppercase backdrop-blur-xs">
-                      <Tv className="h-3.5 w-3.5" />
-                      <span>RAUM ÖFFNEN</span>
-                    </span>
+                    <div className="pointer-events-none absolute inset-x-2.5 bottom-2.5 flex items-center justify-between gap-1.5">
+                      <span
+                        style={{ backgroundColor: palette.bg }}
+                        className="font-arcade min-w-0 truncate rounded-full px-2.5 py-1 text-[10px] xl:text-xs text-white uppercase shadow"
+                      >
+                        {game.players} • {game.duration}
+                      </span>
+                      <span className="font-arcade shrink-0 inline-flex items-center gap-1 rounded-lg border border-white/25 bg-[#0F172A]/85 px-2 py-1 text-[10px] xl:text-xs text-[#FDE68A] uppercase backdrop-blur-xs">
+                        <Tv className="h-3 w-3 xl:h-3.5 xl:w-3.5" />
+                        <span>RAUM ÖFFNEN</span>
+                      </span>
+                    </div>
                   </button>
 
                   <div className="flex items-start justify-between gap-2 px-1">

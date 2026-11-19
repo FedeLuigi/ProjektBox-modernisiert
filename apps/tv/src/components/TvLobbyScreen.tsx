@@ -255,7 +255,7 @@ export function TvLobbyScreen({
         </header>
 
         {/* Hauptbühne */}
-        <main className="flex flex-1 min-h-0 w-full flex-col items-center py-4 lg:py-6 overflow-y-auto">
+        <main className="-mx-4 flex flex-1 min-h-0 w-[calc(100%+2rem)] flex-col items-center px-4 py-4 lg:py-6 overflow-y-auto">
           {!currentLobby ? (
             <div className="my-auto flex flex-col items-center gap-4 text-center">
               {isCreating ? (
