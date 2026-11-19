@@ -703,9 +703,17 @@ const SplashProgressBar = memo(function SplashProgressBar({
   const dotTrackRef = useRef<HTMLDivElement | null>(null);
   const lastPctRef = useRef(0);
   const preparedRef = useRef(false);
+  const completedRef = useRef(false);
+  const fadingOutRef = useRef(isFadingOut);
+  const onPrepareExitRef = useRef(onPrepareExit);
+  const onCompleteRef = useRef(onComplete);
+
+  fadingOutRef.current = isFadingOut;
+  onPrepareExitRef.current = onPrepareExit;
+  onCompleteRef.current = onComplete;
 
   useEffect(() => {
-    if (!isStageReady || isFadingOut) return;
+    if (!isStageReady || fadingOutRef.current || completedRef.current) return;
 
     const totalDuration = prefersReducedMotion ? SPLASH_REDUCED_MS : SPLASH_DURATION_MS;
     const fillDuration = Math.max(400, totalDuration - 260);
@@ -714,6 +722,7 @@ const SplashProgressBar = memo(function SplashProgressBar({
     let rafId: number | null = null;
 
     const tick = (now: number) => {
+      if (fadingOutRef.current || completedRef.current) return;
       const elapsed = now - startTime;
       const ratio = Math.min(1, elapsed / fillDuration);
       const eased = 1 - Math.pow(1 - ratio, 2.2);
@@ -727,11 +736,11 @@ const SplashProgressBar = memo(function SplashProgressBar({
 
       if (!preparedRef.current && elapsed >= prepareAtMs) {
         preparedRef.current = true;
-        onPrepareExit?.();
+        onPrepareExitRef.current?.();
       }
 
       const nextPct = Math.min(100, Math.round(eased * 100));
-      if (nextPct !== lastPctRef.current) {
+      if (nextPct > lastPctRef.current) {
         lastPctRef.current = nextPct;
         setProgressPct(nextPct);
       }
@@ -743,18 +752,20 @@ const SplashProgressBar = memo(function SplashProgressBar({
 
     rafId = requestAnimationFrame(tick);
     const doneTimer = setTimeout(() => {
+      if (completedRef.current) return;
+      completedRef.current = true;
       if (!preparedRef.current) {
         preparedRef.current = true;
-        onPrepareExit?.();
+        onPrepareExitRef.current?.();
       }
-      onComplete();
+      onCompleteRef.current();
     }, totalDuration);
 
     return () => {
       if (rafId !== null) cancelAnimationFrame(rafId);
       clearTimeout(doneTimer);
     };
-  }, [isStageReady, isFadingOut, prefersReducedMotion, onPrepareExit, onComplete]);
+  }, [isStageReady, prefersReducedMotion]);
 
   const displayPct = isFadingOut ? 100 : progressPct;
   const isReadyState = displayPct >= 88;
@@ -798,6 +809,11 @@ export function SplashScreen({ onFinish, onPrepareExit }: SplashScreenProps) {
 
   const finishedRef = useRef(false);
   const fadeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const onFinishRef = useRef(onFinish);
+  const onPrepareExitRef = useRef(onPrepareExit);
+
+  onFinishRef.current = onFinish;
+  onPrepareExitRef.current = onPrepareExit;
 
   // Startet nach kurzer Font-Prüfung (mit festem Timeout, ohne Endlos-Warten auf window.load)
   useEffect(() => {
@@ -867,15 +883,15 @@ export function SplashScreen({ onFinish, onPrepareExit }: SplashScreenProps) {
   const triggerFadeOut = useCallback(() => {
     if (finishedRef.current) return;
     finishedRef.current = true;
-    onPrepareExit?.();
+    onPrepareExitRef.current?.();
     setIsFadingOut(true);
 
     if (fadeTimerRef.current) clearTimeout(fadeTimerRef.current);
     fadeTimerRef.current = setTimeout(() => {
       setIsDone(true);
-      onFinish?.();
+      onFinishRef.current?.();
     }, FADE_OUT_MS);
-  }, [onFinish, onPrepareExit]);
+  }, []);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {

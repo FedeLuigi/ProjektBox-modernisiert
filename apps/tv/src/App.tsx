@@ -256,6 +256,15 @@ export function App() {
     [favoriteIds.length, recentEntries.length]
   );
 
+  const handleSplashPrepareExit = useCallback(() => {
+    setIsMenuPrepared(true);
+  }, []);
+
+  const handleSplashFinish = useCallback(() => {
+    setIsMenuPrepared(true);
+    setShowSplash(false);
+  }, []);
+
   return (
     <div
       data-tv-app="true"
@@ -263,11 +272,8 @@ export function App() {
     >
       {showSplash && (
         <SplashScreen
-          onPrepareExit={() => setIsMenuPrepared(true)}
-          onFinish={() => {
-            setIsMenuPrepared(true);
-            setShowSplash(false);
-          }}
+          onPrepareExit={handleSplashPrepareExit}
+          onFinish={handleSplashFinish}
         />
       )}
 
