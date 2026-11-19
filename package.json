@@ -1,17 +1,28 @@
 {
   "name": "projektbox",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "description": "ProjektBox - Modernisierte Web- und Mobile Games Plattform mit Echtzeit-Multiplayer",
+  "description": "ProjektBox - Monorepo für ProjektBox TV, ProjektBox Smartphone & Backend Server (Neon PostgreSQL)",
+  "workspaces": [
+    "packages/*",
+    "apps/*",
+    "server"
+  ],
   "scripts": {
-    "build": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install --include=dev && npm --prefix server run build",
-    "install:all": "npm install --include=dev && npm --prefix client install --include=dev && npm --prefix server install --include=dev",
-    "postinstall": "npm --prefix client install --include=dev && npm --prefix client run build && npm --prefix server install --include=dev && npm --prefix server run build",
-    "dev": "concurrently -n \"SERVER,CLIENT\" -c \"green.bold,cyan.bold\" \"npm run dev:server\" \"npm run dev:client\"",
-    "dev:client": "npm --prefix client run dev",
+    "build:shared": "npm run build --workspace=@projektbox/shared",
+    "build:tv": "npm run build:shared && npm --prefix apps/tv run build",
+    "build:smartphone": "npm run build:shared && npm --prefix apps/smartphone run build",
+    "build:server": "npm run build:shared && npm --prefix server run build",
+    "build": "npm run build:shared && npm --prefix apps/tv run build && npm --prefix apps/smartphone run build && npm --prefix server run build",
+    "install:all": "npm install --include=dev",
+    "dev": "npm run build:shared && concurrently -n \"SERVER,PHONE,TV\" -c \"green.bold,cyan.bold,yellow.bold\" \"npm run dev:server\" \"npm run dev:smartphone\" \"npm run dev:tv\"",
+    "dev:tv": "npm --prefix apps/tv run dev",
+    "dev:smartphone": "npm --prefix apps/smartphone run dev",
     "dev:server": "npm --prefix server run dev",
-    "build:client": "npm --prefix client run build",
-    "build:server": "npm --prefix server run build",
+    "lint": "npm --prefix apps/tv run lint && npm --prefix apps/smartphone run lint",
+    "test": "npm run build:shared && npm --prefix server test",
+    "prisma:migrate:deploy": "npm --prefix server run prisma:migrate:deploy",
+    "prisma:migrate:status": "npm --prefix server run prisma:migrate:status",
     "start": "node server/dist/index.js"
   },
   "devDependencies": {

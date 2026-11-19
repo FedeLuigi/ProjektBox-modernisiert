@@ -1,0 +1,25 @@
+@import "tailwindcss";
+@source "../src";
+@source "../../../packages/ui/src";
+@import "@projektbox/ui/styles.css";
+
+/* ─── TV-SPEZIFISCHE FOKUSMARKIERUNGEN & WOHNZIMMER-ERGONOMIE ─── */
+[data-tv-app="true"] button:focus-visible,
+[data-tv-app="true"] [role="button"]:focus-visible,
+[data-tv-app="true"] input:focus-visible,
+[data-tv-app="true"] a:focus-visible,
+[data-tv-app="true"] [data-tv-focused="true"] {
+  outline: 3px solid #FBBF24 !important;
+  outline-offset: 3px !important;
+  box-shadow:
+    0 0 0 6px rgba(245, 158, 11, 0.28),
+    0 12px 28px rgba(0, 0, 0, 0.45) !important;
+  position: relative;
+  z-index: 20;
+}
+
+[data-tv-app="true"] [data-tv-card="true"]:focus-visible,
+[data-tv-app="true"] [data-tv-card="true"][data-tv-focused="true"] {
+  transform: translateY(-4px) scale(1.02);
+  border-color: #FBBF24 !important;
+}

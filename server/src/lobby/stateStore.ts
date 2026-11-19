@@ -2,7 +2,8 @@ import fs from 'node:fs';
 import fsPromises from 'node:fs/promises';
 import path from 'node:path';
 import type { GameResultRecord, Lobby } from '../types/multiplayer.js';
-import type { PersistedSessionRecord } from '../session/sessionManager.js';
+import type { PersistedSessionRecord } from '../auth/sessionManager.js';
+import type { CompletedResultMetadata, PersistenceStore } from '../database/persistenceStore.js';
 
 export interface PersistedSnapshot {
   version: 1;
@@ -32,7 +33,7 @@ interface MinimalRedisClient {
  * Schreibt im Einzelinstanz-Betrieb atomar in eine JSON-Datei und nutzt optional Redis (REDIS_URL).
  * Vermeidet Schreiblast bei hochfrequenten Echtzeit-Events (z. B. Zeichenstriche).
  */
-export class StatePersistenceStore {
+export class StatePersistenceStore implements PersistenceStore {
   private readonly filePath: string | null;
   private readonly redisUrl: string | undefined;
   private readonly redisKey: string;
@@ -82,7 +83,7 @@ export class StatePersistenceStore {
     return [...this.completedResults];
   }
 
-  public recordCompletedResult(result: GameResultRecord): void {
+  public recordCompletedResult(result: GameResultRecord, _meta?: CompletedResultMetadata): void {
     // Duplikat-Schutz über gameId + startedAt + finishedAt
     const duplicate = this.completedResults.some(
       (r) =>

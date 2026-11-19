@@ -6,12 +6,16 @@ dist/
 dist-ssr/
 dev-dist/
 *.local
+*.tsbuildinfo
 server/data/
 *.tmp
 
 # Environment Variables
 .env
+.env.*
 !.env.example
+server/.env
+apps/*/.env
 
 # Logs
 npm-debug.log*

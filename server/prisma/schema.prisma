@@ -1,0 +1,151 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+  schemas   = ["projektbox"]
+}
+
+model Player {
+  id           String   @id
+  name         String
+  avatar       Json     @default("{}")
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  lastSeenAt   DateTime @default(now())
+
+  stats        PlayerStats[]
+  sessions     Session[]
+  participants LobbyParticipant[]
+
+  @@index([lastSeenAt])
+  @@schema("projektbox")
+}
+
+model PlayerStats {
+  id          String   @id @default(cuid())
+  playerId    String
+  gameId      String
+  gamesPlayed Int      @default(0)
+  wins        Int      @default(0)
+  draws       Int      @default(0)
+  totalScore  Int      @default(0)
+  bestScore   Int      @default(0)
+  updatedAt   DateTime @updatedAt
+
+  player Player @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([playerId, gameId])
+  @@index([gameId, wins, totalScore])
+  @@schema("projektbox")
+}
+
+model Session {
+  sessionId                   String   @id @map("id")
+  tokenHash                   String   @unique
+  reconnectTokenHash          String?
+  revokedReconnectTokenHashes Json     @default("[]")
+  playerId                    String
+  registeredPlayerId          String?
+  lobbyId                     String?
+  lobbyCode                   String?
+  createdAt                   DateTime
+  lastSeenAt                  DateTime
+  expiresAt                   DateTime
+  revoked                     Boolean  @default(false)
+  revokedReason               String?
+
+  player Player? @relation(fields: [registeredPlayerId], references: [id], onDelete: SetNull)
+
+  @@index([playerId])
+  @@index([expiresAt])
+  @@schema("projektbox")
+}
+
+model Lobby {
+  id                     String    @id
+  code                   String    @unique
+  name                   String
+  gameId                 String
+  hostId                 String
+  isPrivate              Boolean   @default(true)
+  minPlayers             Int       @default(2)
+  maxPlayers             Int       @default(8)
+  status                 String
+  stateVersion           Int       @default(0)
+  isTvMode               Boolean   @default(false)
+  isSimulated            Boolean   @default(false)
+  settings               Json      @default("{}")
+  gameState              Json?
+  rematchVotes           Json      @default("[]")
+  finishedResults        Json      @default("[]")
+  processedActionIds     Json      @default("[]")
+  pausedReason           String?
+  pausedAt               DateTime?
+  hostDisconnectDeadline DateTime?
+  lastActivityAt         DateTime
+  expiresAt              DateTime
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
+
+  participants LobbyParticipant[]
+  results      GameResult[]
+
+  @@index([status, gameId])
+  @@index([expiresAt])
+  @@schema("projektbox")
+}
+
+model LobbyParticipant {
+  id                 String    @id @default(cuid())
+  lobbyId            String
+  playerId           String
+  registeredPlayerId String?
+  name               String
+  avatar             Json      @default("{}")
+  isReady            Boolean   @default(false)
+  isHost             Boolean   @default(false)
+  isTvScreen         Boolean   @default(false)
+  isBot              Boolean   @default(false)
+  eliminated         Boolean   @default(false)
+  connectionState    String    @default("connected")
+  sessionId          String?
+  color              String?
+  symbol             String?
+  meta               Json?
+  disconnectedAt     DateTime?
+  reconnectDeadline  DateTime?
+  seatOrder          Int       @default(0)
+
+  lobby  Lobby   @relation(fields: [lobbyId], references: [id], onDelete: Cascade)
+  player Player? @relation(fields: [registeredPlayerId], references: [id], onDelete: SetNull)
+
+  @@unique([lobbyId, playerId])
+  @@index([playerId])
+  @@schema("projektbox")
+}
+
+model GameResult {
+  id          String   @id @default(cuid())
+  lobbyId     String?
+  lobbyCode   String?
+  gameId      String
+  isTvMode    Boolean  @default(false)
+  status      String
+  winnerId    String?
+  winnerName  String?
+  scores      Json     @default("{}")
+  playersJson Json     @default("[]")
+  startedAt   DateTime
+  finishedAt  DateTime
+  createdAt   DateTime @default(now())
+
+  lobby Lobby? @relation(fields: [lobbyId], references: [id], onDelete: SetNull)
+
+  @@unique([gameId, startedAt, finishedAt])
+  @@index([gameId, finishedAt])
+  @@schema("projektbox")
+}

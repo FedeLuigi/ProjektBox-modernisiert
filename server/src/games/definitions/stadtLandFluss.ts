@@ -1,105 +1,33 @@
-import { BaseGameState, MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
-
-export type StadtLandFlussPreset = 'klassisch' | 'party' | 'bunt';
-
-export const STADT_LAND_FLUSS_PRESETS: Record<
+import type {
+  EvaluatedAnswer,
+  StadtLandFlussMove,
   StadtLandFlussPreset,
-  { label: string; categories: string[] }
-> = {
-  klassisch: {
-    label: 'KLASSISCH',
-    categories: ['Stadt', 'Land', 'Fluss', 'Tier', 'Name'],
-  },
-  party: {
-    label: 'PARTY-MIX',
-    categories: ['Stadt', 'Land', 'Tier', 'Beruf', 'Essen & Trinken'],
-  },
-  bunt: {
-    label: 'BUNT GEMISCHT',
-    categories: ['Stadt', 'Tier', 'Film & Serie', 'Marke', 'Gegenstand'],
-  },
+  StadtLandFlussState,
+} from '@projektbox/shared/types';
+import {
+  getPresetCategories,
+  normalizeSlfAnswerText as normalizeAnswerText,
+  normalizeSlfComparisonKey as normalizeComparisonKey,
+  PLAYABLE_SLF_LETTERS as PLAYABLE_LETTERS,
+  REVIEW_DURATION_SEC,
+  STADT_LAND_FLUSS_PRESETS,
+  startsWithLetter,
+} from '@projektbox/shared/utils';
+import { MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
+
+export {
+  STADT_LAND_FLUSS_PRESETS,
+  type StadtLandFlussPreset,
+  type EvaluatedAnswer,
+  type StadtLandFlussState,
+  type StadtLandFlussMove,
 };
-
-// Gut spielbare deutsche Anfangsbuchstaben (ohne Q, X, Y)
-const PLAYABLE_LETTERS = [
-  'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L',
-  'M', 'N', 'O', 'P', 'R', 'S', 'T', 'U', 'V', 'W', 'Z',
-];
-
-const REVIEW_DURATION_SEC = 45;
-
-export interface EvaluatedAnswer {
-  text: string;
-  valid: boolean;
-  rejected: boolean;
-  points: number;
-  reason?: string;
-}
-
-export interface StadtLandFlussState extends BaseGameState {
-  gameId: 'stadt-land-fluss';
-  round: number;
-  maxRounds: number;
-  roundDuration: number;
-  stopButtonEnabled: boolean;
-  categoryPreset: StadtLandFlussPreset;
-  categories: string[];
-  letter: string;
-  usedLetters: string[];
-  phase: 'writing' | 'review' | 'round_over' | 'game_over';
-  phaseEndsAt: number;
-  answers: Record<string, Record<string, string>>; // playerId -> category -> text
-  filledCounts: Record<string, number>; // Live-Fortschritt je Spieler (ohne Wörter zu zeigen)
-  submittedPlayerIds: string[];
-  stoppedByPlayerName?: string;
-  rejectVotes: Record<string, Record<string, string[]>>; // category -> targetPlayerId -> voterIds
-  evaluated: Record<string, Record<string, EvaluatedAnswer>>; // category -> playerId -> evaluation
-  roundScores: Record<string, number>;
-  reviewReadyIds: string[];
-  scores: Record<string, number>;
-}
-
-export type StadtLandFlussMove =
-  | { type: 'save_draft'; answers: Record<string, string> }
-  | { type: 'submit_round'; answers: Record<string, string>; triggerStop?: boolean }
-  | { type: 'time_up' }
-  | { type: 'toggle_vote'; targetPlayerId: string; category: string }
-  | { type: 'review_ready' }
-  | { type: 'next_round' };
 
 function pickNextLetter(usedLetters: string[]): string {
   const usedSet = new Set(usedLetters);
   const available = PLAYABLE_LETTERS.filter((l) => !usedSet.has(l));
   const pool = available.length > 0 ? available : PLAYABLE_LETTERS;
   return pool[Math.floor(Math.random() * pool.length)];
-}
-
-function getPresetCategories(preset?: string): {
-  presetKey: StadtLandFlussPreset;
-  categories: string[];
-} {
-  if (preset === 'party' || preset === 'bunt' || preset === 'klassisch') {
-    return { presetKey: preset, categories: STADT_LAND_FLUSS_PRESETS[preset].categories };
-  }
-  return {
-    presetKey: 'klassisch',
-    categories: STADT_LAND_FLUSS_PRESETS.klassisch.categories,
-  };
-}
-
-function normalizeAnswerText(raw: unknown): string {
-  if (typeof raw !== 'string') return '';
-  return raw.trim().replace(/\s+/g, ' ').slice(0, 40);
-}
-
-function normalizeComparisonKey(text: string): string {
-  return text
-    .trim()
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .replace(/ß/g, 'ss')
-    .replace(/[^a-z0-9]/g, '');
 }
 
 function sanitizeAnswersForPlayer(
@@ -112,16 +40,6 @@ function sanitizeAnswersForPlayer(
     out[cat] = normalizeAnswerText(source[cat]);
   }
   return out;
-}
-
-function startsWithLetter(text: string, letter: string): boolean {
-  const trimmed = text.trim();
-  if (!trimmed) return false;
-  const first = trimmed[0]
-    .toUpperCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-  return first === letter.toUpperCase();
 }
 
 function countFilledAnswers(answers: Record<string, string>, categories: string[]): number {

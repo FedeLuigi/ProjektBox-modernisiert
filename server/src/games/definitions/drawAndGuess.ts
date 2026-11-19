@@ -1,55 +1,12 @@
-import { BaseGameState, MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
+import type {
+  DrawAndGuessGuess,
+  DrawAndGuessMove,
+  DrawAndGuessState,
+  StrokeSegment,
+} from '@projektbox/shared/types';
+import { MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
 
-export interface StrokeSegment {
-  x0: number; // 0..1 normalisierte Koordinaten für perfekte Skalierung (Handy -> 4K TV)
-  y0: number;
-  x1: number;
-  y1: number;
-  color: string;
-  size: number;
-  strokeId?: number;
-}
-
-export interface DrawAndGuessGuess {
-  id: string;
-  playerId: string;
-  playerName: string;
-  text: string;
-  isCorrect: boolean;
-  timestamp: number;
-}
-
-export interface DrawAndGuessState extends BaseGameState {
-  gameId: 'draw-and-guess';
-  currentDrawerId: string;
-  secretWord: string;
-  wordLength: number;
-  categoryName: string;
-  categoryFilter?: string;
-  customWordsEnabled: boolean;
-  usedWords?: string[];
-  round: number;
-  maxRounds: number;
-  roundDuration: number; // Dauer einer Runde in Sekunden (z. B. 60)
-  roundEndsAt: number; // Timestamp wann aktuelle Phase (Wortwahl oder Zeichnen) abläuft
-  chooseWordEndsAt?: number;
-  strokes: StrokeSegment[];
-  guesses: DrawAndGuessGuess[];
-  scores: Record<string, number>;
-  correctGuesserIds: string[];
-  roundStatus: 'choosing_word' | 'drawing' | 'round_over' | 'game_over';
-  roundWinnerName?: string;
-  roundEndReason?: 'guessed' | 'time_up';
-}
-
-export type DrawAndGuessMove =
-  | { type: 'stroke'; stroke: StrokeSegment }
-  | { type: 'undo' }
-  | { type: 'clear' }
-  | { type: 'set_word'; word: string }
-  | { type: 'guess'; text: string }
-  | { type: 'time_up' }
-  | { type: 'next_round' };
+export type { StrokeSegment, DrawAndGuessGuess, DrawAndGuessState, DrawAndGuessMove };
 
 const CHOOSE_WORD_DURATION_SEC = 30;
 

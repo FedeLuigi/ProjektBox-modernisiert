@@ -1,215 +1,42 @@
-import crypto from 'crypto';
-import { BaseGameState, MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
+import crypto from 'node:crypto';
+import type {
+  RouletteColor,
+  RouletteMove,
+  RouletteSpinOutcome,
+  RouletteState,
+} from '@projektbox/shared/types';
+import {
+  doesBetWin,
+  getBetPayoutMultiplier,
+  getInsideBetNumbers,
+  getRouletteColor,
+  isValidBetKey,
+  MIN_RESCUE_THRESHOLD,
+  RED_NUMBERS,
+  RESCUE_BONUS_AMOUNT,
+  RESULT_DURATION_MS,
+  ROULETTE_WHEEL_NUMBERS,
+  SPIN_DURATION_MS,
+} from '@projektbox/shared/utils';
+import { MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
 
-// Originale europäische Roulette-Reihenfolge im Uhrzeigersinn (37 Fächer: 0-36)
-export const ROULETTE_WHEEL_NUMBERS = [
-  0, 32, 15, 19, 4, 21, 2, 25, 17, 34, 6, 27, 13, 36, 11, 30, 8, 23, 10, 5, 24, 16, 33, 1, 20, 14,
-  31, 9, 22, 18, 29, 7, 28, 12, 35, 3, 26,
-] as const;
-
-export const RED_NUMBERS = new Set<number>([
-  1, 3, 5, 7, 9, 12, 14, 16, 18, 19, 21, 23, 25, 27, 30, 32, 34, 36,
-]);
-
-export type RouletteColor = 'green' | 'red' | 'black';
-
-export const SPIN_DURATION_MS = 4800;
-export const RESULT_DURATION_MS = 8500;
-export const MIN_RESCUE_THRESHOLD = 5;
-export const RESCUE_BONUS_AMOUNT = 50;
-
-export function getRouletteColor(num: number): RouletteColor {
-  if (num === 0) return 'green';
-  return RED_NUMBERS.has(num) ? 'red' : 'black';
-}
-
-function parseCanonicalNumbers(raw: string, expectedCount: number): number[] | null {
-  const parts = raw.split('-');
-  if (parts.length !== expectedCount) return null;
-  const nums: number[] = [];
-  for (let i = 0; i < parts.length; i++) {
-    const part = parts[i];
-    if (!/^(0|[1-9]\d*)$/.test(part)) return null;
-    const n = Number(part);
-    if (!Number.isInteger(n) || n < 0 || n > 36) return null;
-    if (i > 0 && n <= nums[i - 1]) return null;
-    nums.push(n);
-  }
-  return nums;
-}
-
-/**
- * Liefert bei gültigen Innenwetten (Einzelzahl, 2er-Split, 3er-Straße/Trio, 4er-Carré/First-Four, 6er-Linie)
- * alle abgedeckten Gewinnzahlen; sonst null.
- */
-export function getInsideBetNumbers(betKey: string): number[] | null {
-  if (typeof betKey !== 'string') return null;
-
-  if (betKey.startsWith('number:')) {
-    return parseCanonicalNumbers(betKey.slice('number:'.length), 1);
-  }
-
-  if (betKey.startsWith('split:')) {
-    const nums = parseCanonicalNumbers(betKey.slice('split:'.length), 2);
-    if (!nums) return null;
-    const [a, b] = nums;
-    if (a === 0 && (b === 1 || b === 2 || b === 3)) return nums;
-    if (a >= 1 && b === a + 1 && a % 3 !== 0) return nums;
-    if (a >= 1 && b === a + 3 && b <= 36) return nums;
-    return null;
-  }
-
-  if (betKey.startsWith('street:')) {
-    const nums = parseCanonicalNumbers(betKey.slice('street:'.length), 3);
-    if (!nums) return null;
-    const [a, b, c] = nums;
-    if (a === 0 && b === 1 && c === 2) return nums;
-    if (a === 0 && b === 2 && c === 3) return nums;
-    if (a >= 1 && a % 3 === 1 && b === a + 1 && c === a + 2 && c <= 36) return nums;
-    return null;
-  }
-
-  if (betKey.startsWith('corner:')) {
-    const nums = parseCanonicalNumbers(betKey.slice('corner:'.length), 4);
-    if (!nums) return null;
-    const [a, b, c, d] = nums;
-    if (a === 0 && b === 1 && c === 2 && d === 3) return nums;
-    if (a >= 1 && a % 3 !== 0 && b === a + 1 && c === a + 3 && d === a + 4 && d <= 36) {
-      return nums;
-    }
-    return null;
-  }
-
-  if (betKey.startsWith('line:')) {
-    const nums = parseCanonicalNumbers(betKey.slice('line:'.length), 2);
-    if (!nums) return null;
-    const [a, b] = nums;
-    if (a >= 1 && a % 3 === 1 && b === a + 5 && b <= 36) {
-      return [a, a + 1, a + 2, a + 3, a + 4, a + 5];
-    }
-    return null;
-  }
-
-  return null;
-}
-
-export function isValidBetKey(betKey: string): boolean {
-  if (typeof betKey !== 'string') return false;
-  if (getInsideBetNumbers(betKey) !== null) return true;
-  return (
-    betKey === 'dozen:1' ||
-    betKey === 'dozen:2' ||
-    betKey === 'dozen:3' ||
-    betKey === 'column:1' ||
-    betKey === 'column:2' ||
-    betKey === 'column:3' ||
-    betKey === 'color:red' ||
-    betKey === 'color:black' ||
-    betKey === 'parity:even' ||
-    betKey === 'parity:odd' ||
-    betKey === 'range:low' ||
-    betKey === 'range:high'
-  );
-}
-
-/**
- * Gesamtrückzahlung (Einsatz + Gewinn) als Multiplikator auf den Einsatz.
- */
-export function getBetPayoutMultiplier(betKey: string): number {
-  const insideNums = getInsideBetNumbers(betKey);
-  if (insideNums) {
-    // 36/1=36 (35:1), 36/2=18 (17:1), 36/3=12 (11:1), 36/4=9 (8:1), 36/6=6 (5:1)
-    return 36 / insideNums.length;
-  }
-  if (betKey.startsWith('dozen:') || betKey.startsWith('column:')) return 3; // 2:1 + Einsatz
-  return 2; // 1:1 + Einsatz (Rot/Schwarz, Gerade/Ungerade, 1-18/19-36)
-}
-
-export function doesBetWin(betKey: string, winningNumber: number): boolean {
-  const insideNums = getInsideBetNumbers(betKey);
-  if (insideNums) {
-    return insideNums.includes(winningNumber);
-  }
-
-  // Bei der 0 verlieren alle Außenwetten nach Casino-Regel
-  if (winningNumber === 0) return false;
-
-  switch (betKey) {
-    case 'dozen:1':
-      return winningNumber >= 1 && winningNumber <= 12;
-    case 'dozen:2':
-      return winningNumber >= 13 && winningNumber <= 24;
-    case 'dozen:3':
-      return winningNumber >= 25 && winningNumber <= 36;
-    case 'column:1':
-      return winningNumber % 3 === 1;
-    case 'column:2':
-      return winningNumber % 3 === 2;
-    case 'column:3':
-      return winningNumber % 3 === 0;
-    case 'color:red':
-      return RED_NUMBERS.has(winningNumber);
-    case 'color:black':
-      return !RED_NUMBERS.has(winningNumber);
-    case 'parity:even':
-      return winningNumber % 2 === 0;
-    case 'parity:odd':
-      return winningNumber % 2 === 1;
-    case 'range:low':
-      return winningNumber >= 1 && winningNumber <= 18;
-    case 'range:high':
-      return winningNumber >= 19 && winningNumber <= 36;
-    default:
-      return false;
-  }
-}
-
-export interface RouletteSpinOutcome {
-  round: number;
-  winningNumber: number;
-  winningColor: RouletteColor;
-  settledBets: Record<string, Record<string, number>>;
-  totalWagered: Record<string, number>;
-  totalPayout: Record<string, number>;
-  netProfit: Record<string, number>;
-  balancesAfter: Record<string, number>;
-}
-
-export interface RouletteState extends BaseGameState {
-  gameId: 'roulette';
-  round: number;
-  maxRounds: number;
-  betDuration: number;
-  startingBalance: number;
-  phase: 'betting' | 'spinning' | 'result' | 'game_over';
-  phaseEndsAt: number;
-  spinStartedAt?: number;
-  balances: Record<string, number>;
-  rebuyBonuses: Record<string, number>;
-  bets: Record<string, Record<string, number>>;
-  betOrder: Record<string, Array<{ betKey: string; amount: number }>>;
-  lastRoundBets: Record<string, Record<string, number>>;
-  lockedPlayerIds: string[];
-  nextReadyIds: string[];
-  winningNumber: number | null;
-  winningColor: RouletteColor | null;
-  history: Array<{ round: number; number: number; color: RouletteColor }>;
-  lastOutcome?: RouletteSpinOutcome;
-  scores: Record<string, number>;
-}
-
-export type RouletteMove =
-  | { type: 'place_bet'; betKey: string; amount: number }
-  | { type: 'remove_bet'; betKey: string; amount?: number }
-  | { type: 'move_bet'; fromBetKey: string; toBetKey: string; amount?: number }
-  | { type: 'undo_bet' }
-  | { type: 'clear_bets' }
-  | { type: 'rebet' }
-  | { type: 'double_bets' }
-  | { type: 'lock_bets' }
-  | { type: 'finish_spin' }
-  | { type: 'next_round' }
-  | { type: 'time_up' };
+export {
+  ROULETTE_WHEEL_NUMBERS,
+  RED_NUMBERS,
+  SPIN_DURATION_MS,
+  RESULT_DURATION_MS,
+  MIN_RESCUE_THRESHOLD,
+  RESCUE_BONUS_AMOUNT,
+  getRouletteColor,
+  getInsideBetNumbers,
+  isValidBetKey,
+  getBetPayoutMultiplier,
+  doesBetWin,
+  type RouletteColor,
+  type RouletteSpinOutcome,
+  type RouletteState,
+  type RouletteMove,
+};
 
 function deductFromBetOrder(
   stack: Array<{ betKey: string; amount: number }>,

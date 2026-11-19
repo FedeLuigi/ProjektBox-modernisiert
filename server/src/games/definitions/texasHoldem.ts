@@ -1,74 +1,28 @@
-import { BaseGameState, MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
+import type {
+  PokerActionType,
+  PokerPhase,
+  PokerShowdownPlayerResult,
+  PokerShowdownSummary,
+  TexasHoldemMove,
+  TexasHoldemState,
+} from '@projektbox/shared/types';
+import { SHOWDOWN_DURATION_MS } from '@projektbox/shared/utils';
+import { MultiplayerGameDefinition, Player } from '../../types/multiplayer.js';
 import {
   createShuffledDeck,
   evaluateBestPokerHand,
   type PokerCard,
 } from './pokerEvaluator.js';
 
-export type PokerPhase = 'preflop' | 'flop' | 'turn' | 'river' | 'showdown' | 'game_over';
-
-export type PokerActionType = 'fold' | 'check' | 'call' | 'raise' | 'all_in';
-
-export const SHOWDOWN_DURATION_MS = 9000;
-
-export interface PokerShowdownPlayerResult {
-  playerId: string;
-  handName: string;
-  wonAmount: number;
-  netProfit: number;
-  bestCards: PokerCard[];
-  isWinner: boolean;
-  folded: boolean;
-}
-
-export interface PokerShowdownSummary {
-  handNumber: number;
-  potTotal: number;
-  wonByFold: boolean;
-  winnerIds: string[];
-  results: Record<string, PokerShowdownPlayerResult>;
-}
-
-export interface TexasHoldemState extends BaseGameState {
-  gameId: 'texas-holdem';
-  handNumber: number;
-  maxHands: number;
-  turnDuration: number;
-  startingBalance: number;
-  smallBlind: number;
-  bigBlind: number;
-  phase: PokerPhase;
-  phaseEndsAt: number;
-  seatOrder: string[];
-  activeHandIds: string[];
-  dealerId: string;
-  smallBlindId: string;
-  bigBlindId: string;
-  pot: number;
-  currentBet: number;
-  minRaiseDelta: number;
-  balances: Record<string, number>;
-  streetBets: Record<string, number>;
-  handContributions: Record<string, number>;
-  handStartBalances: Record<string, number>;
-  holeCards: Record<string, PokerCard[]>;
-  communityCards: PokerCard[];
-  deck?: PokerCard[]; // Streng serverseitig, wird für Clients entfernt
-  foldedIds: string[];
-  allInIds: string[];
-  actedIds: string[];
-  revealedPlayerIds: string[];
-  nextReadyIds: string[];
-  lastActions: Record<string, string>;
-  lastActionText?: string;
-  showdown?: PokerShowdownSummary;
-  scores: Record<string, number>;
-}
-
-export type TexasHoldemMove =
-  | { type: 'poker_action'; action: PokerActionType; targetBet?: number }
-  | { type: 'next_round' }
-  | { type: 'time_up' };
+export {
+  SHOWDOWN_DURATION_MS,
+  type PokerPhase,
+  type PokerActionType,
+  type PokerShowdownPlayerResult,
+  type PokerShowdownSummary,
+  type TexasHoldemState,
+  type TexasHoldemMove,
+};
 
 function getNextSeatInList(
   orderedIds: string[],

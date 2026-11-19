@@ -1,6 +1,10 @@
 import crypto from 'node:crypto';
 import path from 'node:path';
 import {
+  getDefaultGameSettings as getDefaultSettings,
+  LOBBY_CODE_ALPHABET as CODE_CHARS,
+} from '@projektbox/shared/utils';
+import {
   BaseGameState,
   GameResultRecord,
   Lobby,
@@ -9,11 +13,13 @@ import {
   Player,
 } from '../types/multiplayer.js';
 import { gameRegistry } from '../games/registry.js';
-import { SessionManager } from '../session/sessionManager.js';
+import { SessionManager } from '../auth/sessionManager.js';
+import {
+  createDefaultPersistenceStore,
+  type PersistenceStore,
+} from '../database/persistenceStore.js';
 import { StatePersistenceStore } from './stateStore.js';
 
-// Zufälliger 5-stelliger Großbuchstaben/Zahlen-Code (ohne verwechselbare Zeichen)
-const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ';
 const DEFAULT_LOBBY_EXPIRE_MS = 2 * 60 * 60 * 1000; // 2 Stunden Gültigkeit
 const DEFAULT_RECONNECT_GRACE_MS = 60_000; // 60 Sekunden Reconnect-Frist
 const DEFAULT_HOST_TRANSFER_GRACE_MS = 20_000; // 20 Sekunden Host-Ausfall-Frist
@@ -63,7 +69,7 @@ const SIMULATION_BOT_PRESETS = [
 
 export interface LobbyManagerOptions {
   sessionManager?: SessionManager;
-  stateStore?: StatePersistenceStore;
+  stateStore?: PersistenceStore;
   reconnectGraceMs?: number;
   hostTransferGraceMs?: number;
   emptyLobbyExpireMs?: number;
@@ -83,40 +89,7 @@ export interface LobbyManagerCallbacks {
   onLobbyRemoved?: (lobbyId: string) => void;
 }
 
-export function getDefaultSettings(gameId: string): Record<string, any> {
-  if (gameId === 'draw-and-guess') {
-    return {
-      rounds: 3,
-      roundDuration: 60,
-      category: 'Alle',
-      customWordsEnabled: false,
-    };
-  }
-  if (gameId === 'stadt-land-fluss') {
-    return {
-      rounds: 3,
-      roundDuration: 60,
-      stopButtonEnabled: true,
-      categoryPreset: 'klassisch',
-    };
-  }
-  if (gameId === 'roulette') {
-    return {
-      rounds: 5,
-      roundDuration: 30,
-      startingBalance: 1000,
-    };
-  }
-  if (gameId === 'texas-holdem') {
-    return {
-      rounds: 10,
-      roundDuration: 30,
-      startingBalance: 1000,
-      smallBlind: 10,
-    };
-  }
-  return {};
-}
+export { getDefaultSettings };
 
 export function sanitizeLobbyForClient(lobby: Lobby, viewerPlayerId?: string): Lobby {
   let safeGameState = lobby.gameState;
@@ -162,7 +135,7 @@ function getDefaultStateFilePath(): string {
 
 export class LobbyManager {
   public readonly sessionManager: SessionManager;
-  public readonly stateStore: StatePersistenceStore;
+  public readonly stateStore: PersistenceStore;
   public readonly reconnectGraceMs: number;
   public readonly hostTransferGraceMs: number;
   public readonly emptyLobbyExpireMs: number;
@@ -1198,11 +1171,14 @@ export class LobbyManager {
     const activePlayers = lobby.players.filter(
       (p) => !p.isTvScreen && p.connectionState === 'connected' && p.connected
     );
-    if (!activePlayers.some((p) => p.id === playerId)) {
+    const requester = lobby.players.find((p) => p.id === playerId);
+    const isTvHostSim = Boolean(lobby.isSimulated && lobby.isTvMode && requester?.isTvScreen);
+
+    if (!activePlayers.some((p) => p.id === playerId) && !isTvHostSim) {
       return { success: false, error: 'Nicht berechtigt für Rematch.' };
     }
 
-    if (!lobby.rematchVotes.includes(playerId)) {
+    if (!isTvHostSim && !lobby.rematchVotes.includes(playerId)) {
       lobby.rematchVotes.push(playerId);
     }
 
@@ -1875,7 +1851,11 @@ export class LobbyManager {
 
     lobby.finishedResults.push(record);
     if (!lobby.isSimulated) {
-      this.stateStore.recordCompletedResult(record);
+      this.stateStore.recordCompletedResult(record, {
+        lobbyId: lobby.id,
+        lobbyCode: lobby.code,
+        isTvMode: Boolean(lobby.isTvMode),
+      });
     }
   }
 
@@ -1907,7 +1887,7 @@ export class LobbyManager {
 }
 
 export const lobbyManager = new LobbyManager({
-  stateStore: new StatePersistenceStore({
+  stateStore: createDefaultPersistenceStore({
     filePath: getDefaultStateFilePath(),
     redisUrl: process.env.REDIS_URL,
   }),

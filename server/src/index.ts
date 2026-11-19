@@ -1,15 +1,16 @@
 import express from 'express';
-import cors from 'cors';
+import cors, { type CorsOptions } from 'cors';
 import dotenv from 'dotenv';
-import path from 'path';
-import fs from 'fs';
-import http from 'http';
-import https from 'https';
-import { fileURLToPath } from 'url';
+import path from 'node:path';
+import fs from 'node:fs';
+import http from 'node:http';
+import https from 'node:https';
+import { fileURLToPath } from 'node:url';
 import { Server as SocketIOServer } from 'socket.io';
-import { apiRouter } from './routes/api.js';
-import { registerSocketHandlers } from './lobby/socketHandlers.js';
+import { apiRouter } from './api/apiRouter.js';
+import { registerSocketHandlers } from './sockets/socketHandlers.js';
 import { lobbyManager } from './lobby/lobbyManager.js';
+import { closeDatabaseClient } from './database/prismaClient.js';
 import { configureOptionalRedisAdapter } from './utils/redisAdapter.js';
 
 dotenv.config();
@@ -21,16 +22,61 @@ const PORT = Number(process.env.PORT) || 5001;
 const SSL_KEY = process.env.SSL_KEY_PATH;
 const SSL_CERT = process.env.SSL_CERT_PATH;
 
+function parseConfiguredCorsOrigins(): string[] {
+  const candidates = [
+    process.env.CORS_ORIGINS || '',
+    process.env.TV_ORIGIN || '',
+    process.env.SMARTPHONE_ORIGIN || '',
+    process.env.CLIENT_ORIGIN || '',
+  ]
+    .flatMap((entry) => entry.split(','))
+    .map((entry) => entry.trim().replace(/\/+$/, ''))
+    .filter(Boolean);
+
+  return Array.from(new Set(candidates));
+}
+
+const allowedOrigins = parseConfiguredCorsOrigins();
+
+function isCorsOriginAllowed(origin: string | undefined): boolean {
+  if (!origin) return true;
+  const cleanOrigin = origin.trim().replace(/\/+$/, '');
+  if (allowedOrigins.length === 0) {
+    // Keine explizite Produktionsliste gesetzt -> Entwicklungs-/LAN-Modus erlauben
+    return true;
+  }
+  if (allowedOrigins.includes('*') || allowedOrigins.includes(cleanOrigin)) {
+    return true;
+  }
+  // Lokalhost/LAN-Tests automatisch zulassen solange nicht deaktiviert
+  if (
+    process.env.STRICT_CORS !== 'true' &&
+    /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d+\.\d+|10\.\d+\.\d+\.\d+)(:\d+)?$/i.test(
+      cleanOrigin
+    )
+  ) {
+    return true;
+  }
+  return false;
+}
+
+const corsOptions: CorsOptions = {
+  origin(origin, callback) {
+    if (isCorsOriginAllowed(origin)) {
+      callback(null, true);
+      return;
+    }
+    callback(new Error(`CORS blockiert Herkunft: ${origin}`));
+  },
+  credentials: true,
+  exposedHeaders: ['X-Session-Token'],
+};
+
 const app = express();
 
 app.set('trust proxy', 1);
-app.use(
-  cors({
-    origin: true,
-    credentials: true,
-  })
-);
-app.use(express.json());
+app.use(cors(corsOptions));
+app.use(express.json({ limit: '128kb' }));
 
 // Healthcheck für Cloud Provider (z. B. Render.com)
 app.get('/healthz', (_req, res) => {
@@ -40,18 +86,16 @@ app.get('/healthz', (_req, res) => {
 // REST API Routen
 app.use('/api', apiRouter);
 
-// Statische Bereitstellung des Frontends (PWA) mit robustem Pfad-Fallback
+// Optionales Fallback-Hosting (nur falls lokal zusammengebaut, in Produktion getrennte Render Static Sites)
 const possibleClientPaths = [
-  path.resolve(__dirname, '../../client/dist'),
-  path.resolve(__dirname, '../client/dist'),
-  path.resolve(process.cwd(), 'client/dist'),
-  path.resolve(process.cwd(), 'dist'),
+  path.resolve(__dirname, '../../apps/smartphone/dist'),
+  path.resolve(__dirname, '../../apps/tv/dist'),
 ];
 
-const clientDistPath = possibleClientPaths.find((p) => fs.existsSync(p)) || possibleClientPaths[0];
+const clientDistPath = possibleClientPaths.find((p) => fs.existsSync(p));
 
-if (fs.existsSync(clientDistPath)) {
-  console.log(`📦 Statisches Frontend gefunden unter: ${clientDistPath}`);
+if (clientDistPath && process.env.DISABLE_STATIC_FRONTEND !== 'true') {
+  console.log(`📦 Statisches Frontend Fallback gefunden unter: ${clientDistPath}`);
   app.use(
     express.static(clientDistPath, {
       setHeaders: (res, filePath) => {
@@ -83,16 +127,16 @@ if (fs.existsSync(clientDistPath)) {
     next();
   });
 } else {
-  console.warn(`⚠️ client/dist nicht gefunden! Pfade geprüft:`, possibleClientPaths);
   app.get('/', (_req, res) => {
     res.json({
       status: 'ok',
-      message: 'ProjektBox Server aktiv (Frontend-Build client/dist noch nicht erstellt).',
+      service: 'ProjektBox Backend API',
+      tvOriginConfigured: Boolean(process.env.TV_ORIGIN),
+      smartphoneOriginConfigured: Boolean(process.env.SMARTPHONE_ORIGIN),
     });
   });
 }
 
-// HTTP / HTTPS Server erstellen
 let server: http.Server | https.Server;
 
 if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
@@ -106,12 +150,18 @@ if (SSL_KEY && SSL_CERT && fs.existsSync(SSL_KEY) && fs.existsSync(SSL_CERT)) {
   server = http.createServer(app);
 }
 
-// Socket.io Server initialisieren (CORS für beliebige Domains/Render aktiv, Buffer auf 96 KB begrenzt)
 const io = new SocketIOServer(server, {
   cors: {
-    origin: true,
+    origin(origin, callback) {
+      if (isCorsOriginAllowed(origin)) {
+        callback(null, true);
+        return;
+      }
+      callback(new Error('Origin not allowed'));
+    },
     methods: ['GET', 'POST'],
     credentials: true,
+    exposedHeaders: ['X-Session-Token'],
   },
   maxHttpBufferSize: 96 * 1024,
   pingTimeout: 20000,
@@ -124,7 +174,6 @@ const io = new SocketIOServer(server, {
   },
 });
 
-// Multiplayer Socket-Events registrieren
 registerSocketHandlers(io);
 
 async function bootstrap() {
@@ -138,6 +187,9 @@ async function bootstrap() {
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT} (0.0.0.0)`);
+    if (allowedOrigins.length > 0) {
+      console.log(`🛡️ CORS Allowlist aktiv (${allowedOrigins.length} Origins)`);
+    }
     if (process.env.RENDER_EXTERNAL_URL) {
       console.log(`🌐 Render.com URL: ${process.env.RENDER_EXTERNAL_URL}`);
     }
@@ -151,6 +203,7 @@ async function handleShutdown(signal: string) {
   console.log(`[Shutdown] Signal ${signal} empfangen, speichere Spielzustände...`);
   try {
     await lobbyManager.shutdown();
+    await closeDatabaseClient();
   } catch (err) {
     console.error('[Shutdown] Fehler beim Speichern:', err);
   }

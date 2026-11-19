@@ -1,13 +1,69 @@
 services:
+  # 1. ProjektBox Backend (Express + Socket.io + Neon PostgreSQL via Prisma)
   - type: web
-    name: projektbox
-    env: node
+    name: projektbox-backend
+    runtime: node
     plan: free
-    buildCommand: npm run build
-    startCommand: npm start
+    buildCommand: npm install --include=dev && npm run build:server
+    startCommand: npm run start
     healthCheckPath: /healthz
     envVars:
       - key: NODE_ENV
         value: production
       - key: PORT
-        value: 10000
+        value: "10000"
+      - key: CROSS_SITE_COOKIES
+        value: "true"
+      - key: DISABLE_STATIC_FRONTEND
+        value: "true"
+      # Im Render-Dashboard konfigurieren (URLs ohne abschließenden Slash):
+      - key: TV_ORIGIN
+        sync: false
+      - key: SMARTPHONE_ORIGIN
+        sync: false
+      - key: CORS_ORIGINS
+        sync: false
+      # Bereits eingerichtete Neon PostgreSQL Verbindung (NIEMALS im Repo ablegen):
+      - key: DATABASE_URL
+        sync: false
+      - key: DIRECT_URL
+        sync: false
+      # Optional: Redis für Multi-Instanz-Betrieb
+      - key: REDIS_URL
+        sync: false
+
+  # 2. ProjektBox TV (Eigenständige Static Site für Smart-TVs & Beamer)
+  - type: web
+    name: projektbox-tv
+    runtime: static
+    plan: free
+    buildCommand: npm install --include=dev && npm run build:tv
+    staticPublishPath: apps/tv/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false
+      - key: VITE_SMARTPHONE_URL
+        sync: false
+
+  # 3. ProjektBox Smartphone (Eigenständige PWA Static Site für Touch & Mobile)
+  - type: web
+    name: projektbox-smartphone
+    runtime: static
+    plan: free
+    buildCommand: npm install --include=dev && npm run build:smartphone
+    staticPublishPath: apps/smartphone/dist
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
+    envVars:
+      - key: VITE_API_URL
+        sync: false
+      - key: VITE_SOCKET_URL
+        sync: false

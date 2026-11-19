@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="48" height="48">
+  <defs>
+    <linearGradient id="bgFav" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1E1638" />
+      <stop offset="50%" stop-color="#120D24" />
+      <stop offset="100%" stop-color="#090614" />
+    </linearGradient>
+    <radialGradient id="centerGlowFav" cx="50%" cy="45%" r="48%">
+      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.5" />
+      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    </radialGradient>
+    <linearGradient id="boxTopFav" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#6366F1" />
+      <stop offset="100%" stop-color="#A78BFA" />
+    </linearGradient>
+    <linearGradient id="boxLeftFav" x1="50%" y1="0%" x2="50%" y2="100%">
+      <stop offset="0%" stop-color="#4F46E5" />
+      <stop offset="100%" stop-color="#2E1065" />
+    </linearGradient>
+    <linearGradient id="boxRightFav" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FB923C" />
+      <stop offset="100%" stop-color="#EA580C" />
+    </linearGradient>
+  </defs>
+
+  <rect width="512" height="512" rx="112" fill="url(#bgFav)" />
+  <rect width="512" height="512" rx="112" fill="url(#centerGlowFav)" />
+  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="4" />
+
+  <!-- 3D Cube -->
+  <g>
+    <!-- Facetten -->
+    <path d="M256 248 L136 186 V318 L256 380 Z" fill="url(#boxLeftFav)" />
+    <path d="M256 248 L376 186 V318 L256 380 Z" fill="url(#boxRightFav)" />
+    <path d="M256 124 L376 186 L256 248 L136 186 Z" fill="url(#boxTopFav)" />
+
+    <!-- Play Pfeil -->
+    <polygon points="244,172 274,186 244,200" fill="#FFFFFF" />
+
+    <!-- Schwebende Akzente -->
+    <circle cx="125" cy="130" r="14" fill="#38BDF8" />
+    <circle cx="385" cy="140" r="14" fill="#34D399" />
+  </g>
+</svg>

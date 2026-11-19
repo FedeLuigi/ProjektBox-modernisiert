@@ -1,16 +1,22 @@
 {
-  "name": "server",
-  "version": "1.0.0",
-  "description": "ProjektBox - Node.js + Express + Socket.io + TypeScript Backend",
+  "name": "@projektbox/server",
+  "version": "2.0.0",
+  "description": "ProjektBox - Node.js + Express + Socket.io + Prisma Backend",
   "main": "dist/index.js",
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "prisma:generate": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/projektbox?sslmode=require}\" DIRECT_URL=\"${DIRECT_URL:-postgresql://build:build@localhost:5432/projektbox?sslmode=require}\" prisma generate",
+    "prisma:validate": "DATABASE_URL=\"${DATABASE_URL:-postgresql://build:build@localhost:5432/projektbox?sslmode=require}\" DIRECT_URL=\"${DIRECT_URL:-postgresql://build:build@localhost:5432/projektbox?sslmode=require}\" prisma validate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:status": "prisma migrate status",
+    "build": "npm run prisma:generate && tsc",
     "start": "node dist/index.js",
-    "test": "tsx --test src/**/*.test.ts"
+    "test": "tsx --test src/lobby/*.test.ts src/database/*.test.ts"
   },
   "dependencies": {
+    "@prisma/client": "6.19.3",
+    "@projektbox/shared": "*",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
@@ -21,6 +27,8 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^5.0.0",
     "@types/node": "^22.10.2",
+    "prisma": "6.19.3",
+    "socket.io-client": "^4.8.4",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
