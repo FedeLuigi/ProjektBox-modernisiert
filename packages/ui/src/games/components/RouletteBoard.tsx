@@ -170,6 +170,16 @@ function RouletteWheel({
   const rotorRef = useRef<SVGGElement | null>(null);
   const ballRef = useRef<SVGCircleElement | null>(null);
   const lastRestingDegRef = useRef<number>(0);
+  const spinSessionRef = useRef<{
+    key: string;
+    originTime: number;
+    startWheelDeg: number;
+    totalWheelSpin: number;
+    endWheelDeg: number;
+    endBallDeg: number;
+    pocketLocalDeg: number;
+    settled: boolean;
+  } | null>(null);
 
   const sectorCount = ROULETTE_WHEEL_NUMBERS.length;
   const sectorAngle = 360 / sectorCount;
@@ -201,6 +211,8 @@ function RouletteWheel({
     const ball = ballRef.current;
     if (!rotor || !ball) return;
 
+    const normalizeDeg = (deg: number) => ((deg % 360) + 360) % 360;
+
     const applyPosition = (wheelDeg: number, ballWorldDeg: number, ballRadius: number) => {
       rotor.style.transform = `rotate(${wheelDeg.toFixed(2)}deg)`;
       const rad = (ballWorldDeg * Math.PI) / 180;
@@ -211,13 +223,14 @@ function RouletteWheel({
     };
 
     if (phase === 'betting' || winningNumber === null) {
+      spinSessionRef.current = null;
       let rafId = 0;
       const startDeg = lastRestingDegRef.current;
       const idleStart = performance.now();
       const idleLoop = (now: number) => {
         const elapsedSec = (now - idleStart) / 1000;
         const deg = startDeg + elapsedSec * 10;
-        lastRestingDegRef.current = deg % 360;
+        lastRestingDegRef.current = normalizeDeg(deg);
         applyPosition(deg, 0, 144);
         rafId = requestAnimationFrame(idleLoop);
       };
@@ -225,26 +238,49 @@ function RouletteWheel({
       return () => cancelAnimationFrame(rafId);
     }
 
-    const winIdx = ROULETTE_WHEEL_NUMBERS.indexOf(winningNumber as any);
-    const pocketLocalDeg = (winIdx >= 0 ? winIdx : 0) * sectorAngle;
-    const startWheelDeg = lastRestingDegRef.current;
-    const totalWheelSpin = -(360 * 3 + ((round * 137 + winningNumber * 29) % 360));
-    const endWheelDeg = startWheelDeg + totalWheelSpin;
-    const finalPocketWorldDeg = endWheelDeg + pocketLocalDeg;
+    const spinKey = `${round}:${winningNumber}:${spinStartedAt ?? 0}`;
+    if (spinSessionRef.current?.key !== spinKey) {
+      const winIdx = ROULETTE_WHEEL_NUMBERS.indexOf(winningNumber as any);
+      const pocketLocalDeg = (winIdx >= 0 ? winIdx : 0) * sectorAngle;
+      const startWheelDeg = lastRestingDegRef.current;
+      const totalWheelSpin = -(360 * 3 + ((round * 137 + winningNumber * 29) % 360));
+      const endWheelDeg = startWheelDeg + totalWheelSpin;
+      const finalPocketWorldDeg = endWheelDeg + pocketLocalDeg;
+      const rawAlign = normalizeDeg(finalPocketWorldDeg);
+      const endBallDeg = rawAlign + 360 * 6;
+      const originTime =
+        spinStartedAt !== undefined ? Math.min(spinStartedAt, Date.now()) : Date.now();
 
-    // Kugel startet entgegengesetzt im Uhrzeigersinn und landet präzise im Gewinnfach
-    const rawAlign = ((finalPocketWorldDeg % 360) + 360) % 360;
+      spinSessionRef.current = {
+        key: spinKey,
+        originTime,
+        startWheelDeg,
+        totalWheelSpin,
+        endWheelDeg,
+        endBallDeg,
+        pocketLocalDeg,
+        settled: phase !== 'spinning',
+      };
+    }
+
+    const session = spinSessionRef.current;
+    const {
+      originTime,
+      startWheelDeg,
+      totalWheelSpin,
+      endWheelDeg,
+      endBallDeg,
+      pocketLocalDeg,
+    } = session;
     const startBallDeg = 0;
-    const endBallDeg = rawAlign + 360 * 6;
 
-    if (phase !== 'spinning') {
-      lastRestingDegRef.current = endWheelDeg % 360;
+    if (phase !== 'spinning' && session.settled) {
+      lastRestingDegRef.current = normalizeDeg(endWheelDeg);
       applyPosition(endWheelDeg, endWheelDeg + pocketLocalDeg, 78);
       return;
     }
 
     let rafId = 0;
-    const originTime = spinStartedAt ?? Date.now();
 
     const animateSpin = () => {
       const elapsed = Math.max(0, Date.now() - originTime);
@@ -253,7 +289,7 @@ function RouletteWheel({
       // Sanfter Cubic-Ease-Out für Kesselrotor
       const wheelEase = 1 - Math.pow(1 - t, 2.7);
       const wheelDeg = startWheelDeg + totalWheelSpin * wheelEase;
-      lastRestingDegRef.current = wheelDeg % 360;
+      lastRestingDegRef.current = normalizeDeg(wheelDeg);
 
       // Kugel kreist zuerst schnell außen, fällt bei t=0.68..0.90 mit kleinem Hopser ins Fach
       const ballEase = 1 - Math.pow(1 - Math.min(1, t / 0.92), 3.1);
@@ -284,6 +320,8 @@ function RouletteWheel({
 
       if (t < 1) {
         rafId = requestAnimationFrame(animateSpin);
+      } else {
+        session.settled = true;
       }
     };
 
@@ -1483,7 +1521,7 @@ export function RouletteBoard({
           {/* Rechts: Verlauf & Phasen-Hinweis oberhalb vom Spielbrett, Live-Tisch & Kassenstand */}
           <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
             {/* Verlauf der letzten Zahlen (größer, direkt oberhalb des Spielbretts) */}
-            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+            <div className="flex min-h-8 sm:min-h-9 lg:min-h-10 items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-0.5 px-1">
               <span className="font-arcade text-xs lg:text-sm tracking-wider text-[#94A3B8] uppercase shrink-0">
                 VERLAUF
               </span>
