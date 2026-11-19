@@ -111,7 +111,9 @@ export function LobbyGameSettings({
         customWordsEnabled ? 'EIGENE WÖRTER AN' : `EIGENE WÖRTER AUS • ${category}`
       }`
     : isStadtLandFluss
-      ? `${rounds} RUNDEN • ${roundDuration}S • ${stopButtonEnabled ? 'STOPP AN' : 'STOPP AUS'} • ${activePresetLabel}`
+      ? `${rounds} RUNDEN • ${roundDuration}S • ${stopButtonEnabled ? 'STOPP AN' : 'STOPP AUS'} • ${
+          customWordsEnabled ? 'EIGENE WÖRTER AN' : activePresetLabel
+        }`
       : isRoulette
         ? `${rounds} RUNDEN • ${roundDuration}S • START ${startingBalance.toLocaleString('de-DE')} €`
         : isPoker
@@ -305,25 +307,53 @@ export function LobbyGameSettings({
                 </div>
               </div>
 
-              <div className="flex flex-col gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIEN</span>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+                <span className="font-arcade text-xs text-[#94A3B8] uppercase">EIGENE WÖRTER</span>
                 <div className="flex items-center gap-1.5 flex-wrap">
-                  {SLF_PRESETS.map((preset) => (
-                    <OpenButton
-                      key={preset.id}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
-                      onClick={() => handleSetPreset(preset.id)}
-                    >
-                      {preset.label}
-                    </OpenButton>
-                  ))}
+                  <OpenButton
+                    size="sm"
+                    disabled={!isHost}
+                    variant={customWordsEnabled ? 'primary' : 'secondary'}
+                    onClick={() => handleSetCustomWordsEnabled(true)}
+                  >
+                    AN
+                  </OpenButton>
+                  <OpenButton
+                    size="sm"
+                    disabled={!isHost}
+                    variant={!customWordsEnabled ? 'primary' : 'secondary'}
+                    onClick={() => handleSetCustomWordsEnabled(false)}
+                  >
+                    AUS
+                  </OpenButton>
                 </div>
-                <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5">
-                  {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
-                </p>
               </div>
+
+              {customWordsEnabled ? (
+                <p className="font-arcade text-[10px] text-[#6EE7B7] uppercase pt-0.5">
+                  REIHUM WÄHLT VOR JEDER RUNDE EIN SPIELER EIGENE KATEGORIEN
+                </p>
+              ) : (
+                <div className="flex flex-col gap-1.5">
+                  <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIEN</span>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    {SLF_PRESETS.map((preset) => (
+                      <OpenButton
+                        key={preset.id}
+                        size="sm"
+                        disabled={!isHost}
+                        variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
+                        onClick={() => handleSetPreset(preset.id)}
+                      >
+                        {preset.label}
+                      </OpenButton>
+                    ))}
+                  </div>
+                  <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5">
+                    {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
+                  </p>
+                </div>
+              )}
             </>
           ) : isRoulette ? (
             <>

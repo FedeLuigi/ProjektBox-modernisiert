@@ -165,6 +165,11 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
   z.object({ type: z.literal('time_up'), ...ActionMetaFields }),
   z.object({ type: z.literal('next_round'), ...ActionMetaFields }),
   z.object({
+    type: z.literal('set_categories'),
+    categories: z.array(z.string().trim().min(2).max(28)).min(3).max(5),
+    ...ActionMetaFields,
+  }),
+  z.object({
     type: z.literal('save_draft'),
     answers: AnswersRecordSchema,
     ...ActionMetaFields,

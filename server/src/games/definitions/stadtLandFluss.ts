@@ -5,11 +5,14 @@ import type {
   StadtLandFlussState,
 } from '@projektbox/shared/types';
 import {
+  CHOOSE_CATEGORIES_DURATION_SEC,
   getPresetCategories,
   normalizeSlfAnswerText as normalizeAnswerText,
+  normalizeSlfCategories,
   normalizeSlfComparisonKey as normalizeComparisonKey,
   PLAYABLE_SLF_LETTERS as PLAYABLE_LETTERS,
   REVIEW_DURATION_SEC,
+  SLF_MIN_CUSTOM_CATEGORIES,
   STADT_LAND_FLUSS_PRESETS,
   startsWithLetter,
 } from '@projektbox/shared/utils';
@@ -28,6 +31,60 @@ function pickNextLetter(usedLetters: string[]): string {
   const available = PLAYABLE_LETTERS.filter((l) => !usedSet.has(l));
   const pool = available.length > 0 ? available : PLAYABLE_LETTERS;
   return pool[Math.floor(Math.random() * pool.length)];
+}
+
+function resolveCategoryChooser(
+  players: Player[],
+  round: number,
+  starterId?: string,
+  previousChooserId?: string | null
+): Player | null {
+  const active = players.filter(
+    (p) => !p.isTvScreen && !p.eliminated && p.connectionState !== 'offline'
+  );
+  const eligible = active.length > 0 ? active : players.filter((p) => !p.isTvScreen);
+  if (eligible.length === 0) return null;
+
+  if (previousChooserId) {
+    const prevIdx = eligible.findIndex((p) => p.id === previousChooserId);
+    if (prevIdx >= 0) {
+      return eligible[(prevIdx + 1) % eligible.length];
+    }
+  }
+
+  if (starterId) {
+    const startIdx = eligible.findIndex((p) => p.id === starterId);
+    if (startIdx >= 0) {
+      return eligible[(startIdx + Math.max(0, round - 1)) % eligible.length];
+    }
+  }
+
+  return eligible[Math.max(0, round - 1) % eligible.length];
+}
+
+function startWritingPhase(
+  state: StadtLandFlussState,
+  players: Player[],
+  categories: string[]
+): StadtLandFlussState {
+  const nextLetter = pickNextLetter(state.usedLetters);
+  const now = Date.now();
+  return {
+    ...state,
+    categories,
+    letter: nextLetter,
+    usedLetters: [...state.usedLetters, nextLetter],
+    phase: 'writing',
+    phaseEndsAt: now + state.roundDuration * 1000,
+    answers: Object.fromEntries(players.map((p) => [p.id, {}])),
+    filledCounts: Object.fromEntries(players.map((p) => [p.id, 0])),
+    submittedPlayerIds: [],
+    stoppedByPlayerName: undefined,
+    rejectVotes: {},
+    evaluated: {},
+    roundScores: Object.fromEntries(players.map((p) => [p.id, 0])),
+    reviewReadyIds: [],
+  };
 }
 
 function sanitizeAnswersForPlayer(
@@ -249,11 +306,45 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
     const roundDuration =
       typeof settings?.roundDuration === 'number' ? settings.roundDuration : 60;
     const stopButtonEnabled = settings?.stopButtonEnabled !== false;
+    const customWordsEnabled = settings?.customWordsEnabled === true;
     const { presetKey, categories } = getPresetCategories(settings?.categoryPreset);
-    const letter = pickNextLetter([]);
     const now = Date.now();
     const firstTurn =
       starterId && players.some((p) => p.id === starterId) ? starterId : players[0].id;
+
+    if (customWordsEnabled) {
+      const chooser = resolveCategoryChooser(players, 1, firstTurn);
+      return {
+        gameId: 'stadt-land-fluss',
+        currentTurn: chooser?.id || firstTurn,
+        status: 'playing',
+        winnerId: null,
+        startedAt: now,
+        round: 1,
+        maxRounds: rounds,
+        roundDuration,
+        stopButtonEnabled,
+        customWordsEnabled: true,
+        categoryChooserId: chooser?.id || firstTurn,
+        categoryChooserName: chooser?.name || players[0].name,
+        categoryPreset: presetKey,
+        categories,
+        letter: '',
+        usedLetters: [],
+        phase: 'choosing_categories',
+        phaseEndsAt: now + CHOOSE_CATEGORIES_DURATION_SEC * 1000,
+        answers: Object.fromEntries(players.map((p) => [p.id, {}])),
+        filledCounts: Object.fromEntries(players.map((p) => [p.id, 0])),
+        submittedPlayerIds: [],
+        rejectVotes: {},
+        evaluated: {},
+        roundScores: Object.fromEntries(players.map((p) => [p.id, 0])),
+        reviewReadyIds: [],
+        scores: Object.fromEntries(players.map((p) => [p.id, 0])),
+      };
+    }
+
+    const letter = pickNextLetter([]);
 
     return {
       gameId: 'stadt-land-fluss',
@@ -265,6 +356,7 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
       maxRounds: rounds,
       roundDuration,
       stopButtonEnabled,
+      customWordsEnabled: false,
       categoryPreset: presetKey,
       categories,
       letter,
@@ -290,6 +382,30 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
     const player = players.find((p) => p.id === playerId);
     if (!player) {
       return { valid: false, error: 'Spieler ist nicht aktiv.', state };
+    }
+
+    // 0. EIGENE KATEGORIEN FÜR DIE RUNDE FESTLEGEN
+    if (move.type === 'set_categories') {
+      if (state.phase !== 'choosing_categories') {
+        return { valid: true, state };
+      }
+      if (state.categoryChooserId && state.categoryChooserId !== playerId) {
+        return { valid: false, error: 'Gerade wählt ein anderer Spieler die Kategorien.', state };
+      }
+
+      const cleaned = normalizeSlfCategories(move.categories);
+      if (cleaned.length < SLF_MIN_CUSTOM_CATEGORIES) {
+        return {
+          valid: false,
+          error: `Bitte mindestens ${SLF_MIN_CUSTOM_CATEGORIES} eindeutige Kategorien (je 2–28 Zeichen) eingeben.`,
+          state,
+        };
+      }
+
+      return {
+        valid: true,
+        state: startWritingPhase(state, players, cleaned),
+      };
     }
 
     // 1. ZWISCHENSTAND SPEICHERN (während writing, synchronisiert ausgefüllte Felder live)
@@ -368,6 +484,17 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
 
     // 3. ZEIT ABGELAUFEN
     if (move.type === 'time_up') {
+      if (state.phase === 'choosing_categories') {
+        if (Date.now() < state.phaseEndsAt - 1500) {
+          return { valid: true, state };
+        }
+        const fallbackCategories = getPresetCategories(state.categoryPreset).categories;
+        return {
+          valid: true,
+          state: startWritingPhase(state, players, fallbackCategories),
+        };
+      }
+
       if (state.phase === 'writing') {
         if (Date.now() < state.phaseEndsAt - 1500) {
           return { valid: true, state };
@@ -486,27 +613,47 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         };
       }
 
-      const nextLetter = pickNextLetter(state.usedLetters);
-      const now = Date.now();
+      if (state.customWordsEnabled) {
+        const nextChooser = resolveCategoryChooser(
+          players,
+          nextRound,
+          undefined,
+          state.categoryChooserId
+        );
+        const now = Date.now();
+        return {
+          valid: true,
+          state: {
+            ...state,
+            round: nextRound,
+            currentTurn: nextChooser?.id || state.currentTurn,
+            categoryChooserId: nextChooser?.id || state.categoryChooserId,
+            categoryChooserName: nextChooser?.name || state.categoryChooserName,
+            letter: '',
+            phase: 'choosing_categories',
+            phaseEndsAt: now + CHOOSE_CATEGORIES_DURATION_SEC * 1000,
+            answers: Object.fromEntries(players.map((p) => [p.id, {}])),
+            filledCounts: Object.fromEntries(players.map((p) => [p.id, 0])),
+            submittedPlayerIds: [],
+            stoppedByPlayerName: undefined,
+            rejectVotes: {},
+            evaluated: {},
+            roundScores: Object.fromEntries(players.map((p) => [p.id, 0])),
+            reviewReadyIds: [],
+          },
+        };
+      }
 
       return {
         valid: true,
-        state: {
-          ...state,
-          round: nextRound,
-          letter: nextLetter,
-          usedLetters: [...state.usedLetters, nextLetter],
-          phase: 'writing',
-          phaseEndsAt: now + state.roundDuration * 1000,
-          answers: Object.fromEntries(players.map((p) => [p.id, {}])),
-          filledCounts: Object.fromEntries(players.map((p) => [p.id, 0])),
-          submittedPlayerIds: [],
-          stoppedByPlayerName: undefined,
-          rejectVotes: {},
-          evaluated: {},
-          roundScores: Object.fromEntries(players.map((p) => [p.id, 0])),
-          reviewReadyIds: [],
-        },
+        state: startWritingPhase(
+          {
+            ...state,
+            round: nextRound,
+          },
+          players,
+          state.categories
+        ),
       };
     }
 
@@ -530,6 +677,22 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         winnerId,
         phase: 'game_over',
       };
+    }
+
+    if (state.phase === 'choosing_categories') {
+      if (!state.categoryChooserId || state.categoryChooserId === _leavingPlayerId) {
+        const nextChooser = resolveCategoryChooser(activePlayers, state.round);
+        if (nextChooser) {
+          return {
+            ...state,
+            currentTurn: nextChooser.id,
+            categoryChooserId: nextChooser.id,
+            categoryChooserName: nextChooser.name,
+            phaseEndsAt: Date.now() + CHOOSE_CATEGORIES_DURATION_SEC * 1000,
+          };
+        }
+      }
+      return state;
     }
 
     if (state.phase === 'writing') {

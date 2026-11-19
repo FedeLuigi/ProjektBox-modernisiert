@@ -71,11 +71,14 @@ export interface StadtLandFlussState extends BaseGameState {
   maxRounds: number;
   roundDuration: number;
   stopButtonEnabled: boolean;
+  customWordsEnabled?: boolean;
+  categoryChooserId?: string | null;
+  categoryChooserName?: string;
   categoryPreset: StadtLandFlussPreset;
   categories: string[];
   letter: string;
   usedLetters: string[];
-  phase: 'writing' | 'review' | 'round_over' | 'game_over';
+  phase: 'choosing_categories' | 'writing' | 'review' | 'round_over' | 'game_over';
   phaseEndsAt: number;
   answers: Record<string, Record<string, string>>;
   filledCounts: Record<string, number>;
@@ -89,6 +92,7 @@ export interface StadtLandFlussState extends BaseGameState {
 }
 
 export type StadtLandFlussMove =
+  | { type: 'set_categories'; categories: string[] }
   | { type: 'save_draft'; answers: Record<string, string> }
   | { type: 'submit_round'; answers: Record<string, string>; triggerStop?: boolean }
   | { type: 'time_up' }

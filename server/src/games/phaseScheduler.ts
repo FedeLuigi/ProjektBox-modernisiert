@@ -146,7 +146,7 @@ export class GamePhaseScheduler {
     if (lobby.gameId === 'stadt-land-fluss') {
       const phaseEndsAt = typeof gs.phaseEndsAt === 'number' ? gs.phaseEndsAt : 0;
       if (!phaseEndsAt) return null;
-      if (gs.phase === 'writing' || gs.phase === 'review') {
+      if (gs.phase === 'choosing_categories' || gs.phase === 'writing' || gs.phase === 'review') {
         return {
           signature: `slf:${gs.round}:${gs.phase}:${phaseEndsAt}`,
           triggerAt: phaseEndsAt + 200,

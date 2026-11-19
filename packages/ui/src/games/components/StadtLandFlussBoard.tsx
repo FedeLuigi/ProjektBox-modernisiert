@@ -4,22 +4,236 @@ import {
   Check,
   Clock,
   Hand,
+  ListPlus,
   RotateCcw,
   Send,
   Sparkles,
   Trophy,
+  Wand2,
 } from 'lucide-react';
 import type {
   EvaluatedAnswer,
   StadtLandFlussState,
 } from '@projektbox/shared/types';
-import { startsWithLetter } from '@projektbox/shared/utils';
+import {
+  normalizeSlfCategories,
+  normalizeSlfComparisonKey,
+  SLF_CUSTOM_CATEGORY_SUGGESTIONS,
+  SLF_MAX_CUSTOM_CATEGORIES,
+  SLF_MIN_CUSTOM_CATEGORIES,
+  startsWithLetter,
+} from '@projektbox/shared/utils';
 import type { GameRendererProps } from '../types';
 import { Avatar } from '../../components/Avatar';
 import { OpenButton } from '../../components/OpenSubpageUI';
 import { playMoveSound, playWinSound, triggerHapticFeedback } from '../../utils/soundEffects';
 
 export type { EvaluatedAnswer, StadtLandFlussState };
+
+const CATEGORY_PLACEHOLDERS = [
+  'Z. B. AUTOMARKE',
+  'Z. B. FILM ODER SERIE',
+  'Z. B. ESSEN & TRINKEN',
+  'Z. B. BERUF',
+  'Z. B. SCHULFACH',
+];
+
+function CategoryChooserSheet({
+  round,
+  maxRounds,
+  timeLeft,
+  disabled,
+  onConfirm,
+}: {
+  round: number;
+  maxRounds: number;
+  timeLeft: number;
+  disabled?: boolean;
+  onConfirm: (categories: string[]) => void;
+}) {
+  const [inputs, setInputs] = useState<string[]>(() =>
+    Array.from({ length: SLF_MAX_CUSTOM_CATEGORIES }, () => '')
+  );
+  const [error, setError] = useState<string | null>(null);
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  const normalizedCategories = normalizeSlfCategories(inputs);
+  const nonEmptyTrimmed = inputs.map((v) => v.trim()).filter((v) => v.length > 0);
+  const keyCounts = new Map<string, number>();
+  for (const val of nonEmptyTrimmed) {
+    const key = normalizeSlfComparisonKey(val);
+    if (key) keyCounts.set(key, (keyCounts.get(key) || 0) + 1);
+  }
+  const hasDuplicates = Array.from(keyCounts.values()).some((c) => c > 1);
+  const isReady = normalizedCategories.length >= SLF_MIN_CUSTOM_CATEGORIES;
+
+  const applySuggestionSet = () => {
+    const pick =
+      SLF_CUSTOM_CATEGORY_SUGGESTIONS[
+        Math.floor(Math.random() * SLF_CUSTOM_CATEGORY_SUGGESTIONS.length)
+      ];
+    setInputs(
+      Array.from({ length: SLF_MAX_CUSTOM_CATEGORIES }, (_, idx) => pick[idx] || '')
+    );
+    setError(null);
+    playMoveSound();
+  };
+
+  const handleSubmit = (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (disabled) return;
+    if (!isReady) {
+      setError(
+        `Bitte mindestens ${SLF_MIN_CUSTOM_CATEGORIES} eindeutige Kategorien (je 2–28 Zeichen) eingeben.`
+      );
+      return;
+    }
+    setError(null);
+    playMoveSound();
+    triggerHapticFeedback(20);
+    onConfirm(normalizedCategories);
+  };
+
+  return (
+    <div className="my-auto mx-auto flex w-full max-w-2xl flex-1 min-h-0 flex-col justify-between gap-3 py-1 select-none animate-fade-in">
+      <div className="flex flex-wrap items-center justify-between gap-2 shrink-0">
+        <div className="flex items-center gap-2 border-b-2 border-[#F59E0B] pb-0.5">
+          <ListPlus className="h-4 w-4 text-[#FBBF24]" />
+          <span className="font-arcade text-xs uppercase tracking-wider text-[#FDE68A]">
+            RUNDE {round} / {maxRounds} • DU WÄHLST DIE KATEGORIEN
+          </span>
+        </div>
+
+        <div
+          className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs shrink-0 ${
+            timeLeft <= 10
+              ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse'
+              : 'border-white/15 bg-white/[0.06] text-[#FDE68A]'
+          }`}
+        >
+          <Clock className="h-3.5 w-3.5 shrink-0" />
+          <span>{timeLeft} S</span>
+        </div>
+      </div>
+
+      <div className="flex items-end justify-between gap-2 shrink-0">
+        <div>
+          <h2 className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
+            EIGENE KATEGORIEN FESTLEGEN
+          </h2>
+          <p className="font-arcade text-[11px] text-[#94A3B8] uppercase mt-0.5">
+            GIB {SLF_MIN_CUSTOM_CATEGORIES} BIS {SLF_MAX_CUSTOM_CATEGORIES} KATEGORIEN FÜR ALLE SPIELER EIN.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          disabled={disabled}
+          onClick={applySuggestionSet}
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-xl border border-[#22D3EE]/45 bg-[#0891B2]/20 px-3 py-2 font-arcade text-[11px] text-[#67E8F9] uppercase hover:bg-[#0891B2]/35 cursor-pointer"
+        >
+          <Wand2 className="h-3.5 w-3.5" />
+          <span>IDEEN</span>
+        </button>
+      </div>
+
+      <form
+        onSubmit={handleSubmit}
+        className="flex flex-1 min-h-0 flex-col justify-between gap-3 overflow-y-auto pr-0.5"
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 py-0.5">
+          {inputs.map((val, idx) => {
+            const trimmed = val.trim();
+            const isValidEntry = trimmed.length >= 2;
+            const key = trimmed ? normalizeSlfComparisonKey(trimmed) : '';
+            const isDup = Boolean(key && (keyCounts.get(key) || 0) > 1);
+            return (
+              <div
+                key={idx}
+                className={`flex flex-col gap-1 rounded-2xl border p-2.5 backdrop-blur-md transition-colors ${
+                  isDup
+                    ? 'border-[#FDA4AF]/60 bg-[#E11D48]/15'
+                    : isValidEntry
+                      ? 'border-[#34D399]/50 bg-[#10B981]/10'
+                      : 'border-white/15 bg-white/[0.04]'
+                }`}
+              >
+                <div className="flex items-center justify-between">
+                  <label
+                    htmlFor={`slf-custom-cat-${idx}`}
+                    className="font-arcade text-[10px] tracking-wider text-[#FDE68A] uppercase"
+                  >
+                    KATEGORIE {idx + 1} {idx < SLF_MIN_CUSTOM_CATEGORIES ? '*' : '(OPTIONAL)'}
+                  </label>
+                  {isDup ? (
+                    <span className="font-arcade text-[10px] text-[#FECDD3] uppercase">
+                      DOPPELT
+                    </span>
+                  ) : isValidEntry ? (
+                    <Check className="h-3.5 w-3.5 text-[#34D399] stroke-[3]" />
+                  ) : null}
+                </div>
+
+                <input
+                  id={`slf-custom-cat-${idx}`}
+                  ref={(el) => {
+                    inputRefs.current[idx] = el;
+                  }}
+                  type="text"
+                  value={val}
+                  disabled={disabled}
+                  autoFocus={idx === 0}
+                  maxLength={28}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  spellCheck={false}
+                  placeholder={CATEGORY_PLACEHOLDERS[idx] || 'KATEGORIE...'}
+                  onChange={(e) => {
+                    const nextVal = e.target.value;
+                    setInputs((prev) => prev.map((item, i) => (i === idx ? nextVal : item)));
+                    if (error) setError(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      if (idx < inputs.length - 1) {
+                        inputRefs.current[idx + 1]?.focus();
+                      } else if (isReady) {
+                        handleSubmit();
+                      }
+                    }
+                  }}
+                  className="h-10 rounded-xl border border-white/15 bg-[#0F172A]/75 px-3 text-sm font-medium text-white placeholder:text-white/30 focus:border-[#F59E0B] focus:outline-none disabled:opacity-60"
+                />
+              </div>
+            );
+          })}
+        </div>
+
+        {(hasDuplicates || error) && (
+          <div className="rounded-xl border border-[#FDA4AF]/45 bg-[#E11D48]/20 px-3 py-2 font-arcade text-xs text-[#FECDD3] uppercase text-center">
+            {error || 'JEDE KATEGORIE DARF NUR EINMAL VORKOMMEN.'}
+          </div>
+        )}
+
+        <div className="shrink-0 pt-1">
+          <OpenButton
+            type="submit"
+            fullWidth
+            size="lg"
+            variant="primary"
+            disabled={disabled || !isReady}
+          >
+            <Send className="h-4 w-4 shrink-0" />
+            <span>
+              KATEGORIEN STARTEN ({normalizedCategories.length}/{SLF_MAX_CUSTOM_CATEGORIES})
+            </span>
+          </OpenButton>
+        </div>
+      </form>
+    </div>
+  );
+}
 
 interface WritingSheetProps {
   letter: string;
@@ -328,7 +542,11 @@ export function StadtLandFlussBoard({
     const phaseKey = `${round}-${phase}`;
     if (timeoutTriggeredRef.current === phaseKey) return;
 
-    if (phase === 'writing' || phase === 'review') {
+    if (
+      phase === 'choosing_categories' ||
+      phase === 'writing' ||
+      phase === 'review'
+    ) {
       timeoutTriggeredRef.current = phaseKey;
       onMove({ type: 'time_up' });
     } else if (phase === 'round_over') {
@@ -349,6 +567,75 @@ export function StadtLandFlussBoard({
   // A) TV-SCREEN ANSICHT (GROSSFORMAT FÜR WOHNZIMMER-BILDSCHIRM)
   // ───────────────────────────────────────────────────────────────
   if (isTv) {
+    if (phase === 'choosing_categories') {
+      return (
+        <div className="flex w-full flex-col gap-5 select-none animate-fade-in">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-3xl border border-[#F59E0B]/40 bg-[#0F172A]/80 p-5 lg:p-7 backdrop-blur-xl">
+            <div className="flex items-center gap-4 min-w-0">
+              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
+                <ListPlus className="h-8 w-8" />
+              </div>
+              <div className="flex min-w-0 flex-col gap-1 text-left">
+                <span className="font-arcade text-xs tracking-wider text-[#FDE68A] uppercase">
+                  RUNDE {round} VON {maxRounds} • EIGENE KATEGORIEN
+                </span>
+                <h2 className="font-arcade text-xl sm:text-3xl text-white uppercase leading-tight">
+                  {gameState.categoryChooserName || 'SPIELER'} WÄHLT DIE KATEGORIEN...
+                </h2>
+              </div>
+            </div>
+
+            <div
+              className={`flex flex-col items-center justify-center rounded-2xl border px-6 py-3 shrink-0 ${
+                timeLeft <= 10
+                  ? 'border-[#FDA4AF]/70 bg-[#E11D48]/80 text-white animate-pulse'
+                  : 'border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]'
+              }`}
+            >
+              <span className="font-arcade text-[10px] tracking-widest uppercase opacity-80">
+                RESTZEIT
+              </span>
+              <span className="font-arcade text-3xl sm:text-4xl">{timeLeft}S</span>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            {activePlayers.map((p) => {
+              const isChooser = p.id === gameState.categoryChooserId;
+              const totalScore = gameState.scores?.[p.id] || 0;
+              return (
+                <div
+                  key={p.id}
+                  className={`flex items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur-md ${
+                    isChooser
+                      ? 'border-[#F59E0B]/70 bg-[#F59E0B]/15'
+                      : 'border-white/15 bg-[#0F172A]/75'
+                  }`}
+                >
+                  <div className="flex items-center gap-2.5 min-w-0">
+                    <Avatar config={p.avatar} size={36} />
+                    <div className="min-w-0">
+                      <span className="font-arcade block text-sm text-white uppercase truncate">
+                        {p.name}
+                      </span>
+                      {isChooser && (
+                        <span className="font-arcade text-[10px] text-[#FDE68A] uppercase">
+                          WÄHLT KATEGORIEN...
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <span className="font-arcade text-xs text-[#FDE68A] shrink-0">
+                    {totalScore} PKT
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+
     if (phase === 'writing') {
       return (
         <div className="flex w-full flex-col gap-3 sm:gap-5 select-none animate-fade-in">
@@ -419,7 +706,12 @@ export function StadtLandFlussBoard({
                     </span>
                   </div>
 
-                  <div className="grid grid-cols-5 gap-1.5">
+                  <div
+                    className="grid gap-1.5"
+                    style={{
+                      gridTemplateColumns: `repeat(${Math.max(1, categories.length)}, minmax(0, 1fr))`,
+                    }}
+                  >
                     {categories.map((cat, idx) => (
                       <div
                         key={cat}
@@ -475,7 +767,15 @@ export function StadtLandFlussBoard({
           </div>
 
           {/* TV-Übersichtstabelle aller Kategorien & Antworten */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2 sm:gap-3">
+          <div
+            className={`grid grid-cols-1 sm:grid-cols-2 ${
+              categories.length <= 3
+                ? 'lg:grid-cols-3'
+                : categories.length === 4
+                  ? 'lg:grid-cols-4'
+                  : 'lg:grid-cols-5'
+            } gap-2 sm:gap-3`}
+          >
             {categories.map((cat) => (
               <div
                 key={cat}
@@ -571,6 +871,69 @@ export function StadtLandFlussBoard({
             ? `ENDSTAND IN ${timeLeft} S...`
             : `NÄCHSTE RUNDE IN ${timeLeft} S...`}
         </span>
+      </div>
+    );
+  }
+
+  // ───────────────────────────────────────────────────────────────
+  // B0) SPIELER-ANSICHT: PHASE 0 (EIGENE KATEGORIEN WÄHLEN)
+  // ───────────────────────────────────────────────────────────────
+  if (phase === 'choosing_categories') {
+    const isChooser = myPlayer.id === gameState.categoryChooserId;
+    if (isChooser) {
+      return (
+        <CategoryChooserSheet
+          key={`slf-choose-${round}-${myPlayer.id}`}
+          round={round}
+          maxRounds={maxRounds}
+          timeLeft={timeLeft}
+          disabled={disabled}
+          onConfirm={(chosenCategories) =>
+            onMove({ type: 'set_categories', categories: chosenCategories })
+          }
+        />
+      );
+    }
+
+    return (
+      <div className="my-auto mx-auto flex w-full max-w-md flex-1 min-h-0 flex-col items-center justify-center gap-5 px-3 py-4 text-center select-none animate-fade-in">
+        <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 text-[#FDE68A]">
+          <ListPlus className="h-8 w-8 animate-pulse" />
+        </div>
+        <div className="space-y-1.5">
+          <span className="font-arcade text-xs tracking-widest text-[#67E8F9] uppercase">
+            RUNDE {round} / {maxRounds}
+          </span>
+          <h2 className="font-arcade text-xl sm:text-2xl tracking-wider text-white uppercase">
+            {gameState.categoryChooserName || 'MITSPIELER'} WÄHLT KATEGORIEN...
+          </h2>
+          <p className="font-arcade text-xs text-[#94A3B8] uppercase">
+            GLEICH GEHT ES LOS ({timeLeft} S)
+          </p>
+        </div>
+
+        <div className="flex w-full flex-col gap-2">
+          {rankedPlayers.map((p) => (
+            <div
+              key={p.id}
+              className={`flex items-center justify-between rounded-2xl border px-4 py-2.5 ${
+                p.id === gameState.categoryChooserId
+                  ? 'border-[#F59E0B]/60 bg-[#F59E0B]/15'
+                  : 'border-white/15 bg-white/[0.04]'
+              }`}
+            >
+              <div className="flex items-center gap-2.5 min-w-0">
+                <Avatar config={p.avatar} size={28} />
+                <span className="font-arcade text-xs text-white uppercase truncate">
+                  {p.name}
+                </span>
+              </div>
+              <span className="font-arcade text-xs text-[#FDE68A]">
+                {gameState.scores?.[p.id] || 0} PKT
+              </span>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

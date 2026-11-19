@@ -1,4 +1,5 @@
 import crypto from 'node:crypto';
+import { SLF_CUSTOM_CATEGORY_SUGGESTIONS } from '@projektbox/shared/utils';
 import type { Lobby, Player } from '../types/multiplayer.js';
 
 export type BotMoveExecutor = (lobbyId: string, playerId: string, move: any) => void;
@@ -312,7 +313,28 @@ export class SimulationBotRunner {
   private scheduleStadtLandFluss(lobby: Lobby, bots: Player[], hasHumanPlayer: boolean): void {
     const gs = lobby.gameState!;
     const now = Date.now();
-    const phase = gs.phase as 'writing' | 'review' | 'round_over' | 'game_over';
+    const phase = gs.phase as 'choosing_categories' | 'writing' | 'review' | 'round_over' | 'game_over';
+
+    if (phase === 'choosing_categories') {
+      const chooserBot = bots.find((b) => b.id === gs.categoryChooserId);
+      if (chooserBot) {
+        this.scheduleTimer(lobby.id, 1100, () => {
+          const roundIdx = Math.max(0, (Number(gs.round) || 1) - 1);
+          const customCats =
+            SLF_CUSTOM_CATEGORY_SUGGESTIONS[roundIdx % SLF_CUSTOM_CATEGORY_SUGGESTIONS.length];
+          this.executeMove(lobby.id, chooserBot.id, {
+            type: 'set_categories',
+            categories: customCats,
+          });
+        });
+      } else if (!hasHumanPlayer && typeof gs.phaseEndsAt === 'number') {
+        const waitMs = Math.max(250, gs.phaseEndsAt - now + 150);
+        this.scheduleTimer(lobby.id, waitMs, () => {
+          this.executeMove(lobby.id, bots[0].id, { type: 'time_up' });
+        });
+      }
+      return;
+    }
 
     if (phase === 'writing') {
       const submittedIds: string[] = Array.isArray(gs.submittedPlayerIds) ? gs.submittedPlayerIds : [];

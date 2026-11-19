@@ -1119,6 +1119,138 @@ test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abst
   manager.clearAllTimers();
 });
 
+test('Stadt, Land, Fluss: Eigene Wörter Option (An/Aus), reihum Kategorien-Wahl pro Runde, Fallback & TV-Flow', () => {
+  const manager = new LobbyManager();
+  const sTv = manager.sessionManager.createSession('u_slf_tv').session;
+  const sP1 = manager.sessionManager.createSession('u_slf_c1').session;
+  const sP2 = manager.sessionManager.createSession('u_slf_c2').session;
+
+  const created = manager.createLobby({
+    name: 'SLF-Custom-TV',
+    isPrivate: true,
+    gameId: 'stadt-land-fluss',
+    userProfile: { id: 'u_slf_tv', name: 'TV', avatar: {} },
+    socketId: 'slf_c_tv',
+    isTvMode: true,
+    sessionId: sTv.sessionId,
+  });
+  const lobbyId = created.lobby!.id;
+
+  const updated = manager.updateSettings({
+    lobbyId,
+    playerId: 'u_slf_tv',
+    settings: { rounds: 2, roundDuration: 45, customWordsEnabled: true },
+  });
+  assert.equal(updated.success, true);
+  assert.equal(updated.lobby?.settings?.customWordsEnabled, true);
+
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_slf_c1', name: 'Anna', avatar: {} },
+    socketId: 'slf_c_p1',
+    sessionId: sP1.sessionId,
+  });
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_slf_c2', name: 'Ben', avatar: {} },
+    socketId: 'slf_c_p2',
+    sessionId: sP2.sessionId,
+  });
+  manager.toggleReady('slf_c_p1');
+  manager.toggleReady('slf_c_p2');
+
+  const started = manager.startGame('slf_c_tv');
+  assert.equal(started.success, true);
+  const gs1 = started.lobby!.gameState as any;
+  assert.equal(gs1.customWordsEnabled, true);
+  assert.equal(gs1.phase, 'choosing_categories');
+  assert.equal(gs1.letter, '');
+  assert.equal(gs1.categoryChooserId, 'u_slf_c1');
+
+  // Nicht-Wähler (Ben) darf Kategorien nicht festlegen
+  const wrongPlayer = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf_c2',
+    move: { type: 'set_categories', categories: ['Automarke', 'Superheld', 'Schulfach'] },
+  });
+  assert.equal(wrongPlayer.success, false);
+
+  // Zu wenige eindeutige Kategorien (< 3 nach Deduplizierung) werden abgelehnt
+  const tooFew = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf_c1',
+    move: { type: 'set_categories', categories: ['Automarke', 'automarke', 'Hobby'] },
+  });
+  assert.equal(tooFew.success, false);
+
+  // Anna legt 4 eindeutige Kategorien fest -> Buchstabe wird gezogen & 'writing' startet
+  const chosen = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf_c1',
+    move: {
+      type: 'set_categories',
+      categories: ['Automarke', 'Automarke', 'Superheld', 'Hobby', 'Essen'],
+    },
+  });
+  assert.equal(chosen.success, true);
+  const gsWrite = chosen.lobby!.gameState as any;
+  assert.equal(gsWrite.phase, 'writing');
+  assert.deepEqual(gsWrite.categories, ['Automarke', 'Superheld', 'Hobby', 'Essen']);
+  assert.equal(gsWrite.letter.length, 1);
+
+  const L = gsWrite.letter as string;
+  manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf_c1',
+    move: {
+      type: 'submit_round',
+      answers: {
+        Automarke: `${L}auto`,
+        Superheld: `${L}held`,
+        Hobby: `${L}hobby`,
+        Essen: `${L}essen`,
+      },
+      triggerStop: true,
+    },
+  });
+  manager.makeMove({ lobbyId, playerId: 'u_slf_c1', move: { type: 'review_ready' } });
+  const r1Over = manager.makeMove({ lobbyId, playerId: 'u_slf_c2', move: { type: 'review_ready' } });
+  assert.equal((r1Over.lobby?.gameState as any).phase, 'round_over');
+
+  // Runde 2 -> nächster Spieler (Ben) darf Kategorien wählen!
+  const round2 = manager.makeMove({ lobbyId, playerId: 'u_slf_c1', move: { type: 'next_round' } });
+  const gs2 = round2.lobby!.gameState as any;
+  assert.equal(gs2.round, 2);
+  assert.equal(gs2.phase, 'choosing_categories');
+  assert.equal(gs2.categoryChooserId, 'u_slf_c2');
+  assert.equal(gs2.letter, '');
+
+  // Zeitablauf-Fallback in 'choosing_categories' setzt Preset-Kategorien und startet 'writing'
+  gs2.phaseEndsAt = Date.now() - 2000;
+  const afterTimeout = manager.makeMove({
+    lobbyId,
+    playerId: 'u_slf_c1',
+    move: { type: 'time_up' },
+  });
+  const gs2Write = afterTimeout.lobby!.gameState as any;
+  assert.equal(gs2Write.phase, 'writing');
+  assert.equal(gs2Write.letter.length, 1);
+  assert.equal(gs2Write.categories.length, 5);
+
+  // Verlässt der aktuelle Wähler während 'choosing_categories', übernimmt der nächste aktive Spieler
+  const threePlayers: Player[] = [
+    ...mockPlayers,
+    { id: 'p3', socketId: 'sock_3', name: 'Clara', avatar: {}, isReady: true, isHost: false, connected: true },
+  ];
+  const sCustom = stadtLandFlussGame.initGameState(threePlayers, 'p1', { customWordsEnabled: true });
+  assert.equal(sCustom.categoryChooserId, 'p1');
+  const rotatedOnLeave = stadtLandFlussGame.onPlayerLeave!(sCustom, 'p1', threePlayers.slice(1));
+  assert.equal(rotatedOnLeave.phase, 'choosing_categories');
+  assert.equal(rotatedOnLeave.categoryChooserId, 'p2');
+
+  manager.clearAllTimers();
+});
+
 test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1:1), Rettungsbonus & TV/Solo-Flow', () => {
   // 1) Auszahlungs- & Casino-Regelwerk prüfen (inkl. 0 verliert Außenwetten)
   assert.equal(getBetPayoutMultiplier('number:17'), 36);
