@@ -309,6 +309,7 @@ export function TvLobbyScreen({
                   settings={currentLobby.settings}
                   isHost={true}
                   frameless={true}
+                  hideRoleBadge={true}
                   onUpdate={(s) => void handleUpdateSettings(s)}
                 />
 

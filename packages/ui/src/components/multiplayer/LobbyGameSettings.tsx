@@ -18,6 +18,7 @@ interface LobbyGameSettingsProps {
   settings?: Record<string, any>;
   isHost: boolean;
   frameless?: boolean;
+  hideRoleBadge?: boolean;
   onUpdate: (newSettings: Record<string, any>) => void;
 }
 
@@ -31,6 +32,7 @@ export function LobbyGameSettings({
   settings,
   isHost,
   frameless = false,
+  hideRoleBadge = false,
   onUpdate,
 }: LobbyGameSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -139,17 +141,18 @@ export function LobbyGameSettings({
             <span className="font-arcade text-sm tracking-wider text-white uppercase">
               OPTIONEN
             </span>
-            {isHost ? (
-              <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] text-[#FDE68A]">
-                <Crown className="h-2.5 w-2.5 fill-current" />
-                <span>HOST</span>
-              </span>
-            ) : (
-              <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-[#94A3B8]">
-                <Lock className="h-2.5 w-2.5" />
-                <span>NUR HOST</span>
-              </span>
-            )}
+            {!hideRoleBadge &&
+              (isHost ? (
+                <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] text-[#FDE68A]">
+                  <Crown className="h-2.5 w-2.5 fill-current" />
+                  <span>HOST</span>
+                </span>
+              ) : (
+                <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-[#94A3B8]">
+                  <Lock className="h-2.5 w-2.5" />
+                  <span>NUR HOST</span>
+                </span>
+              ))}
           </div>
           {!isOpen && (
             <p className="font-arcade text-[11px] sm:text-xs text-[#94A3B8] leading-snug mt-0.5 uppercase">
