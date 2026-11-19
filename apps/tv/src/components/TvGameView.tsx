@@ -120,7 +120,7 @@ export function TvGameView({
 
       <div className="safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3">
         {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL */}
-        <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 border-b border-white/15 pb-2.5">
+        <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 pb-2.5">
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
             <OpenButton size="md" variant="secondary" onClick={onLeave}>
               <ArrowLeft className="h-4 w-4" />
@@ -277,12 +277,6 @@ export function TvGameView({
             </div>
           </main>
         )}
-
-        <footer className="font-arcade shrink-0 text-center text-xs lg:text-sm tracking-wider text-[#94A3B8] uppercase pb-1">
-          {lobby.isSimulated
-            ? 'TV-SIMULATION • BOTS SPIELEN AUTOMATISCH • EXIT / ESCAPE ZUM BEENDEN'
-            : 'STEUERUNG ÜBER VERBUNDENE SMARTPHONES • ESCAPE / ZURÜCK FÜR HAUPTMENÜ'}
-        </footer>
 
         {/* GEWINNER-OVERLAY */}
         {isGameOver && (

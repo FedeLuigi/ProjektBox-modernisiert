@@ -212,7 +212,7 @@ export function TvLobbyScreen({
 
       <div className="safe-screen relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1600px] flex-col justify-between px-6 lg:px-10 py-4">
         {/* Kopfzeile mit mittig zentriertem Spieltitel */}
-        <header className="relative grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-white/15 pb-3">
+        <header className="relative grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 pb-3">
           <div className="flex min-w-0 items-center justify-start gap-3">
             <button
               type="button"

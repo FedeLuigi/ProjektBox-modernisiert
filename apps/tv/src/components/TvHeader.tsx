@@ -24,7 +24,7 @@ export function TvHeader({
 }: TvHeaderProps) {
   return (
     <div className="mx-auto w-full max-w-[1600px] shrink-0 px-3 sm:px-6 lg:px-10">
-      <header className="relative z-30 flex w-full flex-wrap items-center justify-between gap-2.5 sm:gap-4 border-b border-white/15 py-2.5 sm:py-3">
+      <header className="relative z-30 flex w-full flex-wrap items-center justify-between gap-2.5 sm:gap-4 py-2.5 sm:py-3">
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
           <div className="shrink-0 rounded-full ring-2 ring-white/25 shadow-[0_4px_14px_rgba(0,0,0,0.4)]">
             <PlayerAvatarButton avatar={avatar} onClick={onOpenProfile} />
