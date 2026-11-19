@@ -112,7 +112,7 @@ export function ConnectionStatusBadge() {
           ? `Verbunden (${meta.latencyMs} ms)`
           : 'Verbunden mit Multiplayer-Server'
       }
-      className="flex items-center gap-1.5 rounded-full border border-[#34D399]/40 bg-[#0F172A]/80 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.35)] backdrop-blur-xl"
+      className="flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-[#34D399]/40 bg-[#0F172A]/80 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.35)] backdrop-blur-xl"
     >
       <Wifi className="h-3.5 w-3.5 shrink-0" />
       <span>VERBUNDEN</span>
@@ -271,7 +271,7 @@ export function HeaderStatusOverlay({
   return (
     <div
       aria-live="polite"
-      className="flex items-center justify-end min-w-0 max-w-full"
+      className="flex items-center justify-end min-w-0 max-w-full overflow-hidden shrink"
     >
       {pillContent}
     </div>

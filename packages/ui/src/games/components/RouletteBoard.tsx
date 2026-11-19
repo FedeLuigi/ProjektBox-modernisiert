@@ -821,27 +821,27 @@ function BettingTable({
           {/* Rechte Dutzend-Wetten (je 4 Zahlenreihen hoch, vertikal ausgerichtet) */}
           {renderOutsideCell(
             'dozen:1',
-            verticalLabel('1. 12'),
+            verticalLabel('1-12'),
             'border-white/25 bg-[#047857]/60 text-white',
             'h-full w-full px-0! py-0.5!',
             { gridColumn: '5 / 6', gridRow: '2 / 6' },
-            '1. Dutzend (1 bis 12)'
+            '1 bis 12'
           )}
           {renderOutsideCell(
             'dozen:2',
-            verticalLabel('2. 12'),
+            verticalLabel('13-24'),
             'border-white/25 bg-[#047857]/60 text-white',
             'h-full w-full px-0! py-0.5!',
             { gridColumn: '5 / 6', gridRow: '6 / 10' },
-            '2. Dutzend (13 bis 24)'
+            '13 bis 24'
           )}
           {renderOutsideCell(
             'dozen:3',
-            verticalLabel('3. 12'),
+            verticalLabel('25-36'),
             'border-white/25 bg-[#047857]/60 text-white',
             'h-full w-full px-0! py-0.5!',
             { gridColumn: '5 / 6', gridRow: '10 / 14' },
-            '3. Dutzend (25 bis 36)'
+            '25 bis 36'
           )}
 
           {/* Untere 2:1 Spaltenwetten */}
@@ -939,9 +939,9 @@ function BettingTable({
         {/* Dutzende */}
         <div className="grid grid-cols-[32px_repeat(3,minmax(0,1fr))_34px] md:grid-cols-[40px_repeat(3,minmax(0,1fr))_42px] gap-1">
           <div aria-hidden="true" />
-          {renderOutsideCell('dozen:1', '1. 12 (1–12)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
-          {renderOutsideCell('dozen:2', '2. 12 (13–24)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
-          {renderOutsideCell('dozen:3', '3. 12 (25–36)', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('dozen:1', '1–12', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('dozen:2', '13–24', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
+          {renderOutsideCell('dozen:3', '25–36', 'border-white/25 bg-[#047857]/55 text-white', 'h-7.5')}
           <div aria-hidden="true" />
         </div>
 
@@ -1454,55 +1454,8 @@ export function RouletteBoard({
   // ─── TV-ANSICHT: GROSSE CASINO-BÜHNE FÜR DAS WOHNZIMMER ───
   if (isTvScreen) {
     return (
-      <div className="flex w-full flex-1 min-h-0 flex-col gap-3 justify-between">
-        {/* Obere History-Leiste der letzten Zahlen */}
-        <div className="flex flex-wrap items-center justify-between gap-2 px-1 py-0.5">
-          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-            <span className="font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase shrink-0">
-              VERLAUF
-            </span>
-            {history.length === 0 ? (
-              <span className="font-arcade text-[11px] text-white/45 uppercase">
-                NOCH KEINE ZIEHUNG
-              </span>
-            ) : (
-              history.slice(0, 12).map((item, idx) => (
-                <span
-                  key={`${item.round}-${idx}`}
-                  className={`inline-flex h-6 min-w-6 items-center justify-center rounded-md border px-1.5 font-arcade text-xs ${getColorClasses(
-                    item.color
-                  )} ${idx === 0 ? 'ring-2 ring-[#FDE047]' : 'opacity-85'}`}
-                >
-                  {item.number}
-                </span>
-              ))
-            )}
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <span className="font-arcade text-xs text-[#FDE68A] uppercase">
-              {phase === 'betting'
-                ? 'EINSÄTZE PLATZIEREN'
-                : phase === 'spinning'
-                  ? 'NICHTS GEHT MEHR!'
-                  : winningNumber !== null
-                    ? `GEWINNZAHL: ${winningNumber}`
-                    : 'ERGEBNIS'}
-            </span>
-            {phase === 'betting' && (
-              <span
-                className={`font-arcade inline-flex items-center gap-1 text-xs ${
-                  timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-[#FDE68A]'
-                }`}
-              >
-                <Clock className="h-3 w-3" />
-                {timeLeft}S
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Hauptbereich: Kessel links, Live-Tisch & Spieler-Guthaben rechts */}
+      <div className="flex w-full flex-1 min-h-0 flex-col justify-center">
+        {/* Hauptbereich: Kessel links, Verlauf + Status + Live-Tisch & Spieler-Guthaben rechts */}
         <div className="grid grid-cols-1 min-[600px]:grid-cols-[auto_minmax(0,1fr)] items-center gap-2.5 sm:gap-4 lg:gap-7 flex-1 min-h-0">
           {/* Links: Roulette-Kessel */}
           <div className="flex flex-col items-center justify-center gap-1.5 sm:gap-3 p-0.5 sm:p-1 lg:min-w-[260px]">
@@ -1527,8 +1480,54 @@ export function RouletteBoard({
             </div>
           </div>
 
-          {/* Rechts: Live-Tisch mit allen Spieler-Chips + Kassenstand */}
+          {/* Rechts: Verlauf & Phasen-Hinweis oberhalb vom Spielbrett, Live-Tisch & Kassenstand */}
           <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
+            {/* Verlauf der letzten Zahlen (größer, direkt oberhalb des Spielbretts) */}
+            <div className="flex items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+              <span className="font-arcade text-xs lg:text-sm tracking-wider text-[#94A3B8] uppercase shrink-0">
+                VERLAUF
+              </span>
+              {history.length === 0 ? (
+                <span className="font-arcade text-xs lg:text-sm text-white/45 uppercase">
+                  NOCH KEINE ZIEHUNG
+                </span>
+              ) : (
+                history.slice(0, 12).map((item, idx) => (
+                  <span
+                    key={`${item.round}-${idx}`}
+                    className={`inline-flex h-7 min-w-7 sm:h-8 sm:min-w-8 lg:h-9 lg:min-w-9 shrink-0 items-center justify-center rounded-lg border px-1.5 font-arcade text-xs sm:text-sm lg:text-base ${getColorClasses(
+                      item.color
+                    )} ${idx === 0 ? 'ring-2 ring-[#FDE047]' : 'opacity-90'}`}
+                  >
+                    {item.number}
+                  </span>
+                ))
+              )}
+            </div>
+
+            {/* Phasen-Bezeichnung mittig oberhalb des Spielbretts */}
+            <div className="flex items-center justify-center gap-2.5 text-center">
+              <span className="font-arcade text-sm lg:text-base tracking-wider text-[#FDE68A] uppercase">
+                {phase === 'betting'
+                  ? 'EINSÄTZE PLATZIEREN'
+                  : phase === 'spinning'
+                    ? 'NICHTS GEHT MEHR!'
+                    : winningNumber !== null
+                      ? `GEWINNZAHL: ${winningNumber}`
+                      : 'ERGEBNIS'}
+              </span>
+              {phase === 'betting' && (
+                <span
+                  className={`font-arcade inline-flex items-center gap-1 text-sm lg:text-base ${
+                    timeLeft <= 5 ? 'text-[#FDA4AF] animate-pulse' : 'text-[#FDE68A]'
+                  }`}
+                >
+                  <Clock className="h-3.5 w-3.5 lg:h-4 lg:w-4" />
+                  {timeLeft}S
+                </span>
+              )}
+            </div>
+
             <div className={isTvPortrait ? 'h-[min(320px,44dvh)] w-full' : ''}>
               <BettingTable
                 allBets={activeTableBets}

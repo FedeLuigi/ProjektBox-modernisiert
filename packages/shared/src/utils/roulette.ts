@@ -195,11 +195,11 @@ export function formatBetLabel(betKey: string | null | undefined): string | null
   }
   switch (betKey) {
     case 'dozen:1':
-      return '1. 12 (2:1)';
+      return '1–12 (2:1)';
     case 'dozen:2':
-      return '2. 12 (2:1)';
+      return '13–24 (2:1)';
     case 'dozen:3':
-      return '3. 12 (2:1)';
+      return '25–36 (2:1)';
     case 'column:1':
     case 'column:2':
     case 'column:3':

@@ -179,7 +179,7 @@ export function TvGameView({
             <HeaderStatusOverlay
               lobby={lobby}
               showWhenConnected
-              connectedClassName="hidden md:block"
+              connectedClassName="hidden lg:block shrink-0"
               onExitExpired={onLeave}
             />
             <span className="font-arcade shrink-0 rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 px-3.5 py-1.5 text-sm lg:text-base tracking-widest text-[#FDE68A] uppercase">
