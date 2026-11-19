@@ -1333,6 +1333,63 @@ test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1
   assert.equal(state2p.bets.p1['number:17'], 100);
   assert.equal(state2p.balances.p1, 3900);
 
+  // Alice und Bob platzieren parallel, verschieben (move_bet) und ziehen eigene Chips zurück (remove_bet),
+  // ohne die Chips des jeweils anderen verändern oder entfernen zu können
+  const bobsAttemptOnAliceField = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'remove_bet', betKey: 'number:17' },
+  });
+  assert.equal(bobsAttemptOnAliceField.valid, false);
+  assert.equal(state2p.bets.p1['number:17'], 100);
+
+  // Alice verschiebt ihren 100€ Chip von number:17 auf color:black und nimmt einen 25€ Teilbetrag zurück
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'move_bet', fromBetKey: 'number:17', toBetKey: 'color:black' },
+  }).state;
+  assert.equal(state2p.bets.p1['number:17'], undefined);
+  assert.equal(state2p.bets.p1['color:black'], 100);
+  assert.equal(state2p.balances.p1, 3900);
+
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'remove_bet', betKey: 'color:black', amount: 25 },
+  }).state;
+  assert.equal(state2p.bets.p1['color:black'], 75);
+  assert.equal(state2p.balances.p1, 3925);
+
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p1',
+    move: { type: 'remove_bet', betKey: 'color:black' },
+  }).state;
+  assert.equal(state2p.bets.p1['color:black'], undefined);
+  assert.equal(state2p.balances.p1, 4000);
+
+  // Bob platziert parallel auf demselben Feld, zieht zurück & setzt dann seine Corner/Split-Wetten
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'place_bet', betKey: 'color:red', amount: 25 },
+  }).state;
+  assert.equal(state2p.bets.p2['color:red'], 25);
+  state2p = rouletteGame.validateAndApplyMove({
+    state: state2p,
+    players: mockPlayers,
+    playerId: 'p2',
+    move: { type: 'remove_bet', betKey: 'color:red' },
+  }).state;
+  assert.equal(state2p.bets.p2['color:red'], undefined);
+  assert.equal(state2p.balances.p2, 50);
+
   // Bob platziert in Runde 2 sowohl eine 4er-Wette (Corner 14-15-17-18) als auch einen 2er-Split (14-17)
   state2p = rouletteGame.validateAndApplyMove({
     state: state2p,
@@ -1396,6 +1453,79 @@ test('Casino Roulette: Startguthaben, Chip-Wetten, Auszahlungsquoten (35:1/2:1/1
   assert.equal(state2p.phase, 'game_over');
   assert.equal(state2p.status, 'won');
   assert.equal(state2p.winnerId, 'p1');
+
+  // 4) Paralleles Multiplayer-Roulette über LobbyManager (gleichzeitige Züge trotz identischer stateVersion + synchrone Sichtbarkeit)
+  const sMultiA = manager.sessionManager.createSession('u_r_a').session;
+  const sMultiB = manager.sessionManager.createSession('u_r_b').session;
+  const multiLobby = manager.createLobby({
+    name: 'Casino Sync',
+    isPrivate: true,
+    gameId: 'roulette',
+    userProfile: { id: 'u_r_a', name: 'Alice', avatar: {} },
+    socketId: 'r_a_sock',
+    isTvMode: false,
+    sessionId: sMultiA.sessionId,
+  });
+  const mLobbyId = multiLobby.lobby!.id;
+  manager.joinLobby({
+    lobbyIdOrCode: multiLobby.lobby!.code,
+    userProfile: { id: 'u_r_b', name: 'Bob', avatar: {} },
+    socketId: 'r_b_sock',
+    sessionId: sMultiB.sessionId,
+  });
+  manager.toggleReady('r_b_sock');
+  const startedMulti = manager.startGame('r_a_sock');
+  assert.equal(startedMulti.success, true);
+
+  // Beide Spieler senden gleichzeitig auf Basis derselben initialen stateVersion
+  const staleSharedVersion = startedMulti.lobby!.stateVersion;
+  const moveA1 = manager.makeMove({
+    lobbyId: mLobbyId,
+    playerId: 'u_r_a',
+    move: { type: 'place_bet', betKey: 'number:17', amount: 100 },
+    expectedVersion: staleSharedVersion,
+  });
+  const moveB1 = manager.makeMove({
+    lobbyId: mLobbyId,
+    playerId: 'u_r_b',
+    move: { type: 'place_bet', betKey: 'color:red', amount: 25 },
+    expectedVersion: staleSharedVersion,
+  });
+  assert.equal(moveA1.success, true);
+  assert.equal(moveB1.success, true);
+
+  // Alice verschiebt & zieht zurück, Bob sieht jederzeit denselben Zustand
+  const moveA2 = manager.makeMove({
+    lobbyId: mLobbyId,
+    playerId: 'u_r_a',
+    move: { type: 'move_bet', fromBetKey: 'number:17', toBetKey: 'split:14-17' },
+    expectedVersion: staleSharedVersion,
+  });
+  assert.equal(moveA2.success, true);
+
+  // Bob darf Alices Chip nicht entfernen
+  const bobSteals = manager.makeMove({
+    lobbyId: mLobbyId,
+    playerId: 'u_r_b',
+    move: { type: 'remove_bet', betKey: 'split:14-17' },
+  });
+  assert.equal(bobSteals.success, false);
+
+  const moveA3 = manager.makeMove({
+    lobbyId: mLobbyId,
+    playerId: 'u_r_a',
+    move: { type: 'remove_bet', betKey: 'split:14-17' },
+  });
+  assert.equal(moveA3.success, true);
+
+  const viewForA = sanitizeLobbyForClient(manager.getLobbyById(mLobbyId)!, 'u_r_a')
+    .gameState as RouletteState;
+  const viewForB = sanitizeLobbyForClient(manager.getLobbyById(mLobbyId)!, 'u_r_b')
+    .gameState as RouletteState;
+  assert.deepEqual(viewForA.bets, viewForB.bets);
+  assert.equal(viewForA.bets.u_r_a['split:14-17'], undefined);
+  assert.equal(viewForA.balances.u_r_a, 1000);
+  assert.equal(viewForA.bets.u_r_b['color:red'], 25);
 
   manager.clearAllTimers();
 });

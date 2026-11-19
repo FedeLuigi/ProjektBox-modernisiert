@@ -200,6 +200,8 @@ export interface RouletteState extends BaseGameState {
 
 export type RouletteMove =
   | { type: 'place_bet'; betKey: string; amount: number }
+  | { type: 'remove_bet'; betKey: string; amount?: number }
+  | { type: 'move_bet'; fromBetKey: string; toBetKey: string; amount?: number }
   | { type: 'undo_bet' }
   | { type: 'clear_bets' }
   | { type: 'rebet' }
@@ -208,6 +210,29 @@ export type RouletteMove =
   | { type: 'finish_spin' }
   | { type: 'next_round' }
   | { type: 'time_up' };
+
+function deductFromBetOrder(
+  stack: Array<{ betKey: string; amount: number }>,
+  betKey: string,
+  amountToDeduct: number
+): Array<{ betKey: string; amount: number }> {
+  let remaining = amountToDeduct;
+  const reversed: Array<{ betKey: string; amount: number }> = [];
+  for (let i = stack.length - 1; i >= 0; i--) {
+    const entry = stack[i];
+    if (remaining > 0 && entry.betKey === betKey) {
+      if (entry.amount <= remaining) {
+        remaining -= entry.amount;
+        continue;
+      }
+      reversed.push({ betKey: entry.betKey, amount: entry.amount - remaining });
+      remaining = 0;
+      continue;
+    }
+    reversed.push(entry);
+  }
+  return reversed.reverse();
+}
 
 function sumPlayerBets(playerBets: Record<string, number> | undefined): number {
   if (!playerBets) return 0;
@@ -497,6 +522,124 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
           bets: nextBets,
           betOrder: nextOrder,
           scores: computeScores(nextBalances, nextBets),
+        },
+      };
+    }
+
+    // 1b. EIGENEN EINSATZ VOM FELD ZURÜCKZIEHEN (REMOVE)
+    if (move.type === 'remove_bet') {
+      if (state.phase !== 'betting') {
+        return { valid: false, error: 'Einsätze können nur in der Setzphase zurückgenommen werden.', state };
+      }
+      if (state.lockedPlayerIds.includes(playerId)) {
+        return { valid: false, error: 'Dein Einsatz ist bereits für diesen Spin bestätigt.', state };
+      }
+      if (!isValidBetKey(move.betKey)) {
+        return { valid: false, error: 'Ungültiges Wettfeld.', state };
+      }
+
+      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const existing = currentPlayerBets[move.betKey] || 0;
+      if (existing <= 0) {
+        return { valid: false, error: 'Kein eigener Einsatz auf diesem Feld.', state };
+      }
+
+      const requested =
+        typeof move.amount === 'number' && Number.isFinite(move.amount)
+          ? Math.floor(move.amount)
+          : existing;
+      if (requested < 1) {
+        return { valid: false, error: 'Ungültiger Rücknahmebetrag.', state };
+      }
+
+      const refund = Math.min(existing, requested);
+      const remainingOnField = existing - refund;
+      if (remainingOnField <= 0) {
+        delete currentPlayerBets[move.betKey];
+      } else {
+        currentPlayerBets[move.betKey] = remainingOnField;
+      }
+
+      const nextBalances = {
+        ...state.balances,
+        [playerId]: (state.balances[playerId] ?? 0) + refund,
+      };
+      const nextBets = { ...state.bets, [playerId]: currentPlayerBets };
+      const nextStack = deductFromBetOrder(state.betOrder[playerId] || [], move.betKey, refund);
+
+      return {
+        valid: true,
+        state: {
+          ...state,
+          balances: nextBalances,
+          bets: nextBets,
+          betOrder: { ...state.betOrder, [playerId]: nextStack },
+          scores: computeScores(nextBalances, nextBets),
+        },
+      };
+    }
+
+    // 1c. EIGENEN EINSATZ PER DRAG-AND-DROP VERSCHIEBEN (MOVE)
+    if (move.type === 'move_bet') {
+      if (state.phase !== 'betting') {
+        return { valid: false, error: 'Einsätze können nur in der Setzphase verschoben werden.', state };
+      }
+      if (state.lockedPlayerIds.includes(playerId)) {
+        return { valid: false, error: 'Dein Einsatz ist bereits für diesen Spin bestätigt.', state };
+      }
+      if (!isValidBetKey(move.fromBetKey) || !isValidBetKey(move.toBetKey)) {
+        return { valid: false, error: 'Ungültiges Wettfeld.', state };
+      }
+
+      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const existing = currentPlayerBets[move.fromBetKey] || 0;
+      if (existing <= 0) {
+        return { valid: false, error: 'Kein eigener Einsatz auf dem Ausgangsfeld.', state };
+      }
+      if (move.fromBetKey === move.toBetKey) {
+        return { valid: true, state };
+      }
+
+      const requested =
+        typeof move.amount === 'number' && Number.isFinite(move.amount)
+          ? Math.floor(move.amount)
+          : existing;
+      if (requested < 1) {
+        return { valid: false, error: 'Ungültiger Verschiebebetrag.', state };
+      }
+
+      const moveAmount = Math.min(existing, requested);
+      const remainingOnSource = existing - moveAmount;
+      const nextFieldCount =
+        Object.keys(currentPlayerBets).length -
+        (remainingOnSource <= 0 ? 1 : 0) +
+        (!(move.toBetKey in currentPlayerBets) ? 1 : 0);
+      if (nextFieldCount > 160) {
+        return { valid: false, error: 'Maximale Anzahl Wettfelder erreicht.', state };
+      }
+
+      if (remainingOnSource <= 0) {
+        delete currentPlayerBets[move.fromBetKey];
+      } else {
+        currentPlayerBets[move.fromBetKey] = remainingOnSource;
+      }
+      currentPlayerBets[move.toBetKey] = (currentPlayerBets[move.toBetKey] || 0) + moveAmount;
+
+      const nextBets = { ...state.bets, [playerId]: currentPlayerBets };
+      const strippedStack = deductFromBetOrder(
+        state.betOrder[playerId] || [],
+        move.fromBetKey,
+        moveAmount
+      );
+      const nextStack = [...strippedStack, { betKey: move.toBetKey, amount: moveAmount }];
+
+      return {
+        valid: true,
+        state: {
+          ...state,
+          bets: nextBets,
+          betOrder: { ...state.betOrder, [playerId]: nextStack },
+          scores: computeScores(state.balances, nextBets),
         },
       };
     }

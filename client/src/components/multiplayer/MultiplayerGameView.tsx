@@ -131,6 +131,8 @@ export function MultiplayerGameView({
       moveData?.type === 'save_draft' ||
       (isRoulette &&
         (moveData?.type === 'place_bet' ||
+          moveData?.type === 'remove_bet' ||
+          moveData?.type === 'move_bet' ||
           moveData?.type === 'undo_bet' ||
           moveData?.type === 'clear_bets' ||
           moveData?.type === 'rebet' ||
