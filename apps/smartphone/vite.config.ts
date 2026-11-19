@@ -11,7 +11,14 @@ export default defineConfig({
     tailwindcss(),
     VitePWA({
       registerType: 'prompt',
-      includeAssets: ['favicon.svg', 'apple-touch-icon.png', 'pwa-192x192.png', 'pwa-512x512.png'],
+      includeAssets: [
+        'favicon.svg',
+        'favicon-32x32.png',
+        'apple-touch-icon.png',
+        'pwa-192x192.png',
+        'pwa-512x512.png',
+        'pwa-maskable-512x512.png',
+      ],
       manifest: {
         name: 'ProjektBox Smartphone Controller',
         short_name: 'ProjektBox',
@@ -20,6 +27,7 @@ export default defineConfig({
         background_color: '#1B2B40',
         display: 'standalone',
         orientation: 'any',
+        lang: 'de',
         scope: '/',
         start_url: '/',
         categories: ['games', 'entertainment'],
@@ -34,7 +42,13 @@ export default defineConfig({
             src: '/pwa-512x512.png',
             sizes: '512x512',
             type: 'image/png',
-            purpose: 'any maskable',
+            purpose: 'any',
+          },
+          {
+            src: '/pwa-maskable-512x512.png',
+            sizes: '512x512',
+            type: 'image/png',
+            purpose: 'maskable',
           },
         ],
       },

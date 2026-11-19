@@ -1,44 +1,97 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="48" height="48">
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
-    <linearGradient id="bgFav" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E1638" />
-      <stop offset="50%" stop-color="#120D24" />
-      <stop offset="100%" stop-color="#090614" />
+    <clipPath id="tileClip"><rect width="512" height="512" rx="116"/></clipPath>
+    <linearGradient id="bgNavy" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#223652"/>
+      <stop offset="52%" stop-color="#152336"/>
+      <stop offset="100%" stop-color="#0B1320"/>
     </linearGradient>
-    <radialGradient id="centerGlowFav" cx="50%" cy="45%" r="48%">
-      <stop offset="0%" stop-color="#8B5CF6" stop-opacity="0.5" />
-      <stop offset="100%" stop-color="#000000" stop-opacity="0" />
+    <radialGradient id="amberAura" cx="50%" cy="62%" r="46%">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.34"/>
+      <stop offset="48%" stop-color="#F59E0B" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
     </radialGradient>
-    <linearGradient id="boxTopFav" x1="0%" y1="100%" x2="100%" y2="0%">
-      <stop offset="0%" stop-color="#6366F1" />
-      <stop offset="100%" stop-color="#A78BFA" />
+    <radialGradient id="skyAura" cx="50%" cy="28%" r="44%">
+      <stop offset="0%" stop-color="#38BDF8" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#0F172A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="floorGlowGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#FDE68A" stop-opacity="0.48"/>
+      <stop offset="42%" stop-color="#F59E0B" stop-opacity="0.24"/>
+      <stop offset="78%" stop-color="#F59E0B" stop-opacity="0.06"/>
+      <stop offset="100%" stop-color="#F59E0B" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="beamGrad" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#FBBF24" stop-opacity="0.72"/>
+      <stop offset="55%" stop-color="#38BDF8" stop-opacity="0.24"/>
+      <stop offset="100%" stop-color="#38BDF8" stop-opacity="0"/>
     </linearGradient>
-    <linearGradient id="boxLeftFav" x1="50%" y1="0%" x2="50%" y2="100%">
-      <stop offset="0%" stop-color="#4F46E5" />
-      <stop offset="100%" stop-color="#2E1065" />
+    <linearGradient id="coreGlow" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="55%" stop-color="#FBBF24"/>
+      <stop offset="100%" stop-color="#38BDF8"/>
     </linearGradient>
-    <linearGradient id="boxRightFav" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FB923C" />
-      <stop offset="100%" stop-color="#EA580C" />
+    <linearGradient id="lidTop" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#475569"/>
+      <stop offset="100%" stop-color="#1E293B"/>
     </linearGradient>
   </defs>
 
-  <rect width="512" height="512" rx="112" fill="url(#bgFav)" />
-  <rect width="512" height="512" rx="112" fill="url(#centerGlowFav)" />
-  <rect x="2" y="2" width="508" height="508" rx="110" fill="none" stroke="#FFFFFF" stroke-opacity="0.2" stroke-width="4" />
+  <g clip-path="url(#tileClip)">
+    <!-- Vollflächiger opaker Hintergrund (keine transparenten Ecken bei PNG) -->
+    <rect width="512" height="512" rx="116" fill="url(#bgNavy)"/>
+    <rect width="512" height="512" rx="116" fill="url(#amberAura)"/>
+    <rect width="512" height="512" rx="116" fill="url(#skyAura)"/>
 
-  <!-- 3D Cube -->
-  <g>
-    <!-- Facetten -->
-    <path d="M256 248 L136 186 V318 L256 380 Z" fill="url(#boxLeftFav)" />
-    <path d="M256 248 L376 186 V318 L256 380 Z" fill="url(#boxRightFav)" />
-    <path d="M256 124 L376 186 L256 248 L136 186 Z" fill="url(#boxTopFav)" />
+    <!-- Subtiles diagonales Hintergrund-Facettenmotiv wie im Crystal UI -->
+    <polygon points="0,0 290,0 190,512 0,512" fill="#FFFFFF" fill-opacity="0.025"/>
 
-    <!-- Play Pfeil -->
-    <polygon points="244,172 274,186 244,200" fill="#FFFFFF" />
+    <g transform="translate(25.60, 31.60) scale(0.9000)">
+      <!-- Lichtkegel aus der geöffneten Spielbox -->
+      <polygon points="178,246 334,246 436,44 76,44" fill="url(#beamGrad)"/>
 
-    <!-- Schwebende Akzente -->
-    <circle cx="125" cy="130" r="14" fill="#38BDF8" />
-    <circle cx="385" cy="140" r="14" fill="#34D399" />
+      <!-- Weicher goldener Bodenreflex unter der Box (radial verlaufend ohne harte Kante) -->
+      <ellipse cx="256" cy="414" rx="164" ry="34" fill="url(#floorGlowGrad)"/>
+
+      <!-- Innerer Energiekern -->
+      <polygon points="256,174 374,234 256,294 138,234" fill="url(#coreGlow)" fill-opacity="0.95"/>
+
+      <!-- Linke Boxwand -->
+      <polygon points="124,238 256,304 256,412 124,346" fill="#0F172A" stroke="#F59E0B" stroke-width="6.5" stroke-linejoin="round"/>
+      <polygon points="154,282 224,316 224,338 154,304" fill="#F59E0B" fill-opacity="0.92"/>
+
+      <!-- Rechte Boxwand -->
+      <polygon points="388,238 256,304 256,412 388,346" fill="#1E293B" stroke="#F59E0B" stroke-width="6.5" stroke-linejoin="round"/>
+      <circle cx="326" cy="328" r="19" fill="#10B981"/>
+      <circle cx="320" cy="322" r="5" fill="#6EE7B7"/>
+
+      <!-- Goldener Verschluss vorne -->
+      <rect x="242" y="290" width="28" height="32" rx="7" fill="#FBBF24" stroke="#0F172A" stroke-width="5"/>
+
+      <!-- Geöffneter Deckel schwebend oben -->
+      <g transform="translate(0, -40) rotate(-5 256 170)">
+        <polygon points="256,112 400,182 256,252 112,182" fill="url(#lidTop)" stroke="#F59E0B" stroke-width="6.5" stroke-linejoin="round"/>
+        <polygon points="112,182 256,252 256,272 112,202" fill="#0F172A" stroke="#FBBF24" stroke-width="5.5" stroke-linejoin="round"/>
+        <polygon points="400,182 256,252 256,272 400,202" fill="#1E293B" stroke="#FBBF24" stroke-width="5.5" stroke-linejoin="round"/>
+      </g>
+
+      <!-- Schwebende Crystal/Party-Funken sauber über dem Deckel -->
+      <circle cx="118" cy="96" r="16" fill="#38BDF8"/>
+      <circle cx="113" cy="91" r="5" fill="#E0F2FE"/>
+      <circle cx="394" cy="92" r="14" fill="#10B981"/>
+      <circle cx="256" cy="42" r="15" fill="#FBBF24"/>
+      <polygon points="184,54 190,68 204,74 190,80 184,94 178,80 164,74 178,68" fill="#F472B6"/>
+      <polygon points="334,58 339,69 350,74 339,79 334,90 329,79 318,74 329,69" fill="#FDE68A"/>
+
+      
+        <g transform="translate(284, 340)">
+          <rect x="0" y="0" width="152" height="84" rx="22" fill="#0B1320" stroke="#FBBF24" stroke-width="8" />
+          <rect x="4" y="4" width="144" height="76" rx="18" fill="#132238" />
+          <text x="76" y="57" text-anchor="middle" font-family="Arial Black, Impact, sans-serif" font-weight="900" font-size="47" letter-spacing="3" fill="#FDE68A">TV</text>
+        </g>
+        
+    </g>
+
+    <rect x="4" y="4" width="504" height="504" rx="112" fill="none" stroke="#FBBF24" stroke-opacity="0.28" stroke-width="6"/>
   </g>
 </svg>
