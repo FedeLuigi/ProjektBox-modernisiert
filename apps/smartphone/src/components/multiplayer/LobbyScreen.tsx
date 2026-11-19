@@ -14,7 +14,6 @@ import {
   Avatar,
   AvatarCustomizerModal,
   BackgroundCometCanvas,
-  ConnectionStatusBadge,
   HeaderStatusOverlay,
   LobbyGameSettings,
   OpenButton,
@@ -512,7 +511,7 @@ export function LobbyScreen({
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Kopfzeile: ZURÜCK & VERLASSEN links, schwebender Verbindungs-/Lobby-Status mittig im Header & Spieltitel rechts im Querformat */}
+        {/* Kopfzeile: ZURÜCK & VERLASSEN links, Spieltitel im Querformat mittig & kompakter Status rechtsbündig */}
         <header className="tablet-header relative flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
             <button
@@ -543,16 +542,14 @@ export function LobbyScreen({
             </span>
           </div>
 
-          <HeaderStatusOverlay
-            lobby={currentLobby}
-            currentUserId={currentUser.id}
-            message={errorMsg}
-            showWhenConnected={false}
-            onExitExpired={() => void handleLeaveLobby()}
-          />
-
-          <div className="flex items-center justify-end shrink-0">
-            <ConnectionStatusBadge />
+          <div className="flex min-w-0 items-center justify-end gap-2">
+            <HeaderStatusOverlay
+              lobby={currentLobby}
+              currentUserId={currentUser.id}
+              message={errorMsg}
+              showWhenConnected
+              onExitExpired={() => void handleLeaveLobby()}
+            />
           </div>
         </header>
 

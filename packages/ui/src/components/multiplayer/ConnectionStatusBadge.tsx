@@ -125,19 +125,21 @@ interface HeaderStatusOverlayProps {
   currentUserId?: string;
   message?: string | null;
   showWhenConnected?: boolean;
+  connectedClassName?: string;
   onExitExpired?: () => void;
 }
 
 /**
- * Vom Dokumentfluss vollständig losgelöste Status-Anzeige in der Header-Mitte.
+ * Rechtsbündige, kompakte Status-Anzeige für die Kopfzeile.
  * Zeigt Verbindungsverlust, Wiederverbindung, Countdown, Pausen- & Lobby-Hinweise
- * als schwebendes Overlay an, ohne das Layout zu verschieben.
+ * kurz und bündig auf der rechten Seite an, ohne den mittigen Spieltitel zu überdecken.
  */
 export function HeaderStatusOverlay({
   lobby,
   currentUserId,
   message,
   showWhenConnected = false,
+  connectedClassName,
   onExitExpired,
 }: HeaderStatusOverlayProps) {
   const [meta, setMeta] = useState<ConnectionMeta>(socketService.getConnectionMeta());
@@ -165,11 +167,12 @@ export function HeaderStatusOverlay({
 
   if (meta.status === 'expired') {
     pillContent = (
-      <div className="pointer-events-auto flex items-center gap-2 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl">
+      <div
+        title={meta.errorMessage || 'Sitzung abgelaufen'}
+        className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl min-w-0 max-w-[200px] sm:max-w-[260px]"
+      >
         <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[#FDA4AF]" />
-        <span className="truncate max-w-[200px] sm:max-w-xs">
-          {meta.errorMessage || 'SITZUNG ABGELAUFEN'}
-        </span>
+        <span className="truncate">ABGELAUFEN</span>
         {onExitExpired && (
           <button
             type="button"
@@ -186,12 +189,11 @@ export function HeaderStatusOverlay({
       <button
         type="button"
         onClick={() => socketService.manualReconnect()}
-        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl hover:bg-[#E11D48]/30 cursor-pointer"
+        title="Wiederverbindung fehlgeschlagen – klicken zum erneuten Versuch"
+        className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#E11D48]/30 cursor-pointer shrink-0"
       >
         <RefreshCw className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate max-w-[230px] sm:max-w-sm">
-          WIEDERVERBINDUNG FEHLGESCHLAGEN – NEU VERBINDEN
-        </span>
+        <span>NEU VERBINDEN</span>
       </button>
     );
   } else if (meta.status === 'disconnected' || meta.status === 'reconnecting') {
@@ -199,48 +201,67 @@ export function HeaderStatusOverlay({
       <button
         type="button"
         onClick={() => socketService.manualReconnect()}
-        className="pointer-events-auto flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FDE68A] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.55)] backdrop-blur-xl cursor-pointer"
+        title="Verbindung unterbrochen – klicken zum erneuten Verbinden"
+        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl hover:bg-[#1E293B] cursor-pointer min-w-0 max-w-[165px] sm:max-w-[220px]"
       >
         {meta.status === 'reconnecting' ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
         ) : (
           <WifiOff className="h-3.5 w-3.5 shrink-0" />
         )}
-        <span className="truncate max-w-[220px] sm:max-w-md">
-          {meta.status === 'reconnecting'
-            ? 'VERBINDUNG WIRD WIEDERHERGESTELLT'
-            : 'VERBINDUNG UNTERBROCHEN'}
+        <span className="truncate">
+          {meta.status === 'reconnecting' ? 'VERBINDE...' : 'OFFLINE'}
           {countdown !== null ? ` (${countdown}S)` : ''}
         </span>
       </button>
     );
   } else if (meta.status === 'reconnected') {
     pillContent = (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#6EE7B7] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl">
+      <div className="flex items-center gap-1.5 rounded-full border border-[#34D399]/60 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#6EE7B7] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl shrink-0">
         <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-        <span>WIEDERVERBINDUNG ERFOLGREICH</span>
+        <span>VERBUNDEN</span>
       </div>
     );
   } else if (disconnectedPlayers.length > 0 || isLobbyPaused) {
     const p = disconnectedPlayers[0];
-    const label = p
-      ? `WARTE AUF ${p.name}${countdown !== null ? ` (${countdown} S)` : ''}...`
-      : lobby?.pausedReason || 'SPIEL PAUSIERT – WARTE AUF WIEDERVERBINDUNG...';
     pillContent = (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FDE68A] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-pulse">
+      <div
+        title={
+          p
+            ? `Warte auf ${p.name}${countdown !== null ? ` (${countdown}s)` : ''}`
+            : lobby?.pausedReason || 'Spiel pausiert'
+        }
+        className="flex items-center gap-1.5 rounded-full border border-[#F59E0B]/60 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FDE68A] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl animate-pulse min-w-0 max-w-[175px] sm:max-w-[260px]"
+      >
         <WifiOff className="h-3.5 w-3.5 shrink-0" />
-        <span className="truncate max-w-[220px] sm:max-w-md">{label}</span>
+        {p ? (
+          <>
+            <span className="truncate">WARTE: {p.name}</span>
+            {countdown !== null && <span className="shrink-0">({countdown}S)</span>}
+          </>
+        ) : (
+          <span className="truncate">PAUSIERT</span>
+        )}
       </div>
     );
   } else if (message) {
     pillContent = (
-      <div className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-3 py-1 text-[10px] sm:text-xs font-arcade text-[#FECDD3] uppercase shadow-[0_8px_28px_rgba(0,0,0,0.5)] backdrop-blur-xl animate-fade-in">
+      <div
+        title={message}
+        className="flex items-center gap-1.5 rounded-full border border-[#FDA4AF]/55 bg-[#0F172A]/95 px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-bold tracking-wider text-[#FECDD3] uppercase shadow-[0_6px_22px_rgba(0,0,0,0.45)] backdrop-blur-xl animate-fade-in min-w-0 max-w-[180px] sm:max-w-[260px]"
+      >
         <AlertTriangle className="h-3.5 w-3.5 shrink-0 text-[#FDA4AF]" />
-        <span className="truncate max-w-[230px] sm:max-w-md">{message}</span>
+        <span className="truncate">{message}</span>
       </div>
     );
   } else if (showWhenConnected) {
-    pillContent = <ConnectionStatusBadge />;
+    pillContent = connectedClassName ? (
+      <div className={connectedClassName}>
+        <ConnectionStatusBadge />
+      </div>
+    ) : (
+      <ConnectionStatusBadge />
+    );
   }
 
   if (!pillContent) {
@@ -250,9 +271,9 @@ export function HeaderStatusOverlay({
   return (
     <div
       aria-live="polite"
-      className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 flex justify-center px-2"
+      className="flex items-center justify-end min-w-0 max-w-full"
     >
-      <div className="max-w-[min(92vw,32rem)]">{pillContent}</div>
+      {pillContent}
     </div>
   );
 }

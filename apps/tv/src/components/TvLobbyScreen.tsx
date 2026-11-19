@@ -4,7 +4,6 @@ import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
   BackgroundCometCanvas,
-  ConnectionStatusBadge,
   HeaderStatusOverlay,
   LobbyGameSettings,
   OpenButton,
@@ -248,11 +247,9 @@ export function TvLobbyScreen({
               lobby={currentLobby}
               currentUserId={currentUser.id}
               message={errorMsg}
-              showWhenConnected={false}
+              showWhenConnected
               onExitExpired={() => void handleLeaveLobby()}
             />
-
-            <ConnectionStatusBadge />
           </div>
         </header>
 

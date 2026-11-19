@@ -4,7 +4,6 @@ import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
   BackgroundCometCanvas,
-  ConnectionStatusBadge,
   HeaderStatusOverlay,
   OpenButton,
   clientGameRegistry,
@@ -171,25 +170,22 @@ export function TvGameView({
             </div>
           </div>
 
-          <div className="flex w-full sm:w-auto items-center justify-end gap-2.5">
+          <div className="flex w-full sm:w-auto min-w-0 items-center justify-end gap-2.5">
             {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) && !isGameOver && !isRoundOver && (
-              <span className="font-arcade rounded-xl border border-white/20 bg-white/[0.06] px-3.5 py-1.5 text-sm lg:text-base text-white">
+              <span className="font-arcade shrink-0 rounded-xl border border-white/20 bg-white/[0.06] px-3.5 py-1.5 text-sm lg:text-base text-white">
                 {timeLeft} S
               </span>
             )}
-            <div className="hidden md:block">
-              <ConnectionStatusBadge />
-            </div>
-            <span className="font-arcade rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 px-3.5 py-1.5 text-sm lg:text-base tracking-widest text-[#FDE68A] uppercase">
+            <HeaderStatusOverlay
+              lobby={lobby}
+              showWhenConnected
+              connectedClassName="hidden md:block"
+              onExitExpired={onLeave}
+            />
+            <span className="font-arcade shrink-0 rounded-xl border border-[#F59E0B]/55 bg-[#F59E0B]/15 px-3.5 py-1.5 text-sm lg:text-base tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </span>
           </div>
-
-          <HeaderStatusOverlay
-            lobby={lobby}
-            showWhenConnected={false}
-            onExitExpired={onLeave}
-          />
         </header>
 
         {/* 2. TV-BÜHNE */}

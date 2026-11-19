@@ -4,7 +4,6 @@ import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
   BackgroundCometCanvas,
-  ConnectionStatusBadge,
   HeaderStatusOverlay,
   OpenButton,
   clientGameRegistry,
@@ -223,22 +222,19 @@ export function MultiplayerGameView({
             </div>
           )}
 
-          <div className="justify-self-end flex items-center gap-2">
-            <div className="hidden sm:block">
-              <ConnectionStatusBadge />
-            </div>
-            <div className="rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
+          <div className="justify-self-end flex min-w-0 items-center justify-end gap-2">
+            <HeaderStatusOverlay
+              lobby={lobby}
+              currentUserId={currentUser.id}
+              message={errorMsg}
+              showWhenConnected
+              connectedClassName="hidden sm:block"
+              onExitExpired={onLeave}
+            />
+            <div className="shrink-0 rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3 py-1 font-arcade text-xs tracking-widest text-[#FDE68A] uppercase">
               {lobby.code}
             </div>
           </div>
-
-          <HeaderStatusOverlay
-            lobby={lobby}
-            currentUserId={currentUser.id}
-            message={errorMsg}
-            showWhenConnected={false}
-            onExitExpired={onLeave}
-          />
         </header>
 
         {/* 2. MITTE: OFFENE ERGEBNIS-BÜHNE ODER SPIELFELD */}
