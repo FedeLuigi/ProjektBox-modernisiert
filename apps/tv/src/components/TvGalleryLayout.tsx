@@ -57,7 +57,7 @@ export function TvGalleryLayout({
           })}
         </div>
 
-        <div className="flex w-64 lg:w-80 items-center rounded-xl border border-white/20 bg-white/[0.05] px-3.5 py-2 focus-within:border-[#FBBF24]">
+        <div className="tv-search-box flex w-64 lg:w-80 items-center rounded-xl border-2 border-white/20 bg-white/[0.05] px-3.5 py-2 transition-all">
           <Search className="mr-2.5 h-4 w-4 shrink-0 text-[#94A3B8]" />
           <input
             type="text"
@@ -65,7 +65,8 @@ export function TvGalleryLayout({
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="SPIEL FINDEN..."
             aria-label="Spiele durchsuchen"
-            className="font-arcade w-full min-w-0 bg-transparent text-sm text-white placeholder:text-white/45 uppercase focus:outline-none"
+            data-tv-search-input="true"
+            className="font-arcade w-full min-w-0 border-0 bg-transparent text-sm text-white placeholder:text-white/45 uppercase focus:outline-none"
           />
           {searchQuery.length > 0 && (
             <button
