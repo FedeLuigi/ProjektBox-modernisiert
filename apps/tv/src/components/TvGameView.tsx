@@ -122,8 +122,8 @@ export function TvGameView({
         {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL */}
         <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 pb-2.5">
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
-            <OpenButton size="md" variant="secondary" onClick={onLeave}>
-              <ArrowLeft className="h-4 w-4" />
+            <OpenButton size="md" variant="secondary" onClick={onLeave} className="shrink-0 whitespace-nowrap">
+              <ArrowLeft className="h-4 w-4 shrink-0" />
               <span>EXIT TV</span>
             </OpenButton>
 
@@ -143,7 +143,7 @@ export function TvGameView({
             )}
 
             {isStadtLandFluss && !isGameOver && (
-              <span className="font-arcade hidden md:inline text-xs tracking-wider text-[#67E8F9] uppercase truncate">
+              <span className="font-arcade hidden lg:inline text-xs tracking-wider text-[#67E8F9] uppercase truncate">
                 RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3} •{' '}
                 {gameState?.letter ? `BUCHSTABE ${gameState.letter}` : 'KATEGORIENWAHL'}
               </span>
