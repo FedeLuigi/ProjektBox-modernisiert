@@ -586,11 +586,23 @@ body::-webkit-scrollbar,
 @keyframes boxFloorGlow {
   0% {
     opacity: 0;
-    transform: scale3d(0.4, 0.4, 1);
+    transform: scale3d(0.45, 0.45, 1);
   }
   100% {
     opacity: 1;
     transform: scale3d(1, 1, 1);
+  }
+}
+
+@keyframes boxFloorBreathe {
+  0%,
+  100% {
+    opacity: 0.85;
+    transform: scale3d(1, 1, 1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale3d(1.06, 1.04, 1);
   }
 }
 
@@ -649,6 +661,11 @@ body::-webkit-scrollbar,
 .spielbox-floor {
   will-change: transform, opacity;
   animation: boxFloorGlow 0.75s ease-out 1.55s both;
+}
+
+.spielbox-floor-pulse {
+  will-change: transform, opacity;
+  animation: boxFloorBreathe 2.8s ease-in-out 2.3s infinite;
 }
 
 @keyframes rocketFlameFlicker {

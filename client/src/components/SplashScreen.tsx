@@ -380,20 +380,20 @@ interface FlyingObject {
   render: () => ReactNode;
 }
 
-// Koordinaten skaliert für alle Bildschirmgrößen (alle 5 Symbole überall sichtbar)
+// Koordinaten skaliert für alle Bildschirmgrößen (alle 5 Symbole schweben stets frei über Titel & Box)
 const FLYING_OBJECTS: FlyingObject[] = [
   {
     id: 'palette',
-    tx: 'max(-128px, -27vw)',
-    ty: 'max(-185px, -25vh)',
+    tx: 'clamp(-220px, -27vw, -108px)',
+    ty: 'clamp(-195px, -34vh, -126px)',
     rot: '-14deg',
     delayMs: 2220,
     render: () => <PaintPaletteSvg />,
   },
   {
     id: 'controller',
-    tx: 'min(128px, 27vw)',
-    ty: 'max(-180px, -24vh)',
+    tx: 'clamp(108px, 27vw, 220px)',
+    ty: 'clamp(-190px, -33vh, -124px)',
     rot: '14deg',
     delayMs: 2310,
     render: () => <ControllerSvg />,
@@ -401,14 +401,14 @@ const FLYING_OBJECTS: FlyingObject[] = [
   {
     id: 'crown',
     tx: '0px',
-    ty: 'max(-218px, -30vh)',
+    ty: 'clamp(-224px, -38vh, -138px)',
     rot: '-4deg',
     delayMs: 2400,
     render: () => <CrownSvg />,
   },
   {
     id: 'dice',
-    tx: 'max(-255px, -39vw)',
+    tx: 'max(-255px, -40vw)',
     ty: 'max(-118px, -16vh)',
     rot: '-18deg',
     delayMs: 2480,
@@ -416,7 +416,7 @@ const FLYING_OBJECTS: FlyingObject[] = [
   },
   {
     id: 'star',
-    tx: 'min(255px, 39vw)',
+    tx: 'min(255px, 40vw)',
     ty: 'max(-118px, -16vh)',
     rot: '20deg',
     delayMs: 2560,
@@ -468,38 +468,6 @@ const SplashStage = memo(function SplashStage({
         </div>
       )}
 
-      {/* AKT 4a: Aufsteigender Lichtkegel aus der geöffneten Box (reiner GPU-Vektor ohne Live-Blur) */}
-      <svg
-        viewBox="0 0 240 220"
-        preserveAspectRatio="none"
-        aria-hidden="true"
-        className={`pointer-events-none absolute bottom-[36%] left-1/2 h-[34vh] sm:h-[40vh] w-56 sm:w-80 -translate-x-1/2 ${
-          animateStage ? 'spielbox-beam' : !prefersReducedMotion ? 'opacity-0' : ''
-        }`}
-      >
-        <defs>
-          <linearGradient id="spielboxBeamGrad" x1="0" y1="1" x2="0" y2="0">
-            <stop offset="0%" stopColor="#F59E0B" stopOpacity="0.34" />
-            <stop offset="48%" stopColor="#38BDF8" stopOpacity="0.14" />
-            <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
-          </linearGradient>
-          <linearGradient id="spielboxBeamEdgeMask" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stopColor="white" stopOpacity="0" />
-            <stop offset="28%" stopColor="white" stopOpacity="1" />
-            <stop offset="72%" stopColor="white" stopOpacity="1" />
-            <stop offset="100%" stopColor="white" stopOpacity="0" />
-          </linearGradient>
-          <mask id="spielboxBeamMask">
-            <rect width="240" height="220" fill="url(#spielboxBeamEdgeMask)" />
-          </mask>
-        </defs>
-        <polygon
-          points="76,220 164,220 240,0 0,0"
-          fill="url(#spielboxBeamGrad)"
-          mask="url(#spielboxBeamMask)"
-        />
-      </svg>
-
       {/* AKT 4b: Echte Spiele-Objekte fliegen um den Titel herum aus der Box */}
       <div className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20">
         {FLYING_OBJECTS.map((obj) => (
@@ -537,17 +505,17 @@ const SplashStage = memo(function SplashStage({
 
       {/* AKT 4c: Titel über der offenen Spielbox */}
       <div
-        className={`relative z-20 mb-3 sm:mb-4 flex flex-col items-center text-center ${
+        className={`relative z-20 mb-3 sm:mb-4 landscape:mb-1.5 flex flex-col items-center text-center ${
           animateStage ? 'spielbox-title' : !prefersReducedMotion ? 'opacity-0' : ''
         }`}
       >
-        <span className="font-arcade mb-1 text-[10px] sm:text-xs tracking-[0.26em] text-[#FDE68A]/85 uppercase">
+        <span className="font-arcade mb-1 text-[10px] sm:text-xs landscape:text-[9px] tracking-[0.26em] text-[#FDE68A]/85 uppercase">
           PARTY &amp; MULTIPLAYER
         </span>
-        <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
+        <h1 className="font-arcade text-4xl xs:text-5xl sm:text-6xl md:text-7xl landscape:text-4xl leading-none tracking-[0.08em] text-white uppercase drop-shadow-[0_10px_28px_rgba(0,0,0,0.65)]">
           PROJEKT <span className="text-[#FBBF24]">BOX</span>
         </h1>
-        <div className="mt-2.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
+        <div className="mt-2.5 landscape:mt-1.5 h-[3px] w-40 sm:w-64 rounded-full bg-gradient-to-r from-transparent via-[#F59E0B] to-transparent shadow-[0_0_16px_#F59E0B]" />
       </div>
 
       {/* AKT 3: Isometrische 3D-Spielbox erscheint aus der Explosion & öffnet sich */}
@@ -556,11 +524,51 @@ const SplashStage = memo(function SplashStage({
           animateStage ? 'spielbox-drop' : !prefersReducedMotion ? 'opacity-0' : ''
         }`}
       >
+        {/* AKT 4a: Aufsteigender Lichtkegel direkt aus dem Box-Inneren (verankert an der Box für alle Seitenverhältnisse) */}
+        <svg
+          viewBox="0 0 240 220"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+          className={`pointer-events-none absolute bottom-[46%] left-1/2 h-[32vh] sm:h-[38vh] landscape:h-[40vh] w-56 sm:w-80 landscape:w-60 -translate-x-1/2 ${
+            animateStage ? 'spielbox-beam' : !prefersReducedMotion ? 'opacity-0' : ''
+          }`}
+        >
+          <defs>
+            <linearGradient id="spielboxBeamGrad" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%" stopColor="#F59E0B" stopOpacity="0" />
+              <stop offset="14%" stopColor="#FBBF24" stopOpacity="0.34" />
+              <stop offset="56%" stopColor="#38BDF8" stopOpacity="0.12" />
+              <stop offset="100%" stopColor="#38BDF8" stopOpacity="0" />
+            </linearGradient>
+            <linearGradient id="spielboxBeamEdgeMask" x1="0" y1="0" x2="1" y2="0">
+              <stop offset="0%" stopColor="white" stopOpacity="0" />
+              <stop offset="28%" stopColor="white" stopOpacity="1" />
+              <stop offset="72%" stopColor="white" stopOpacity="1" />
+              <stop offset="100%" stopColor="white" stopOpacity="0" />
+            </linearGradient>
+            <mask id="spielboxBeamMask">
+              <rect width="240" height="220" fill="url(#spielboxBeamEdgeMask)" />
+            </mask>
+          </defs>
+          <polygon
+            points="82,220 158,220 240,0 0,0"
+            fill="url(#spielboxBeamGrad)"
+            mask="url(#spielboxBeamMask)"
+          />
+        </svg>
+
+        {/* Nahtloser, weich auslaufender Boden-Glow unter der Box (ohne harte Oval-Kante) */}
         <div
-          className={`pointer-events-none absolute -bottom-3 left-1/2 h-7 w-40 sm:w-48 -translate-x-1/2 rounded-full bg-[radial-gradient(ellipse_at_center,rgba(245,158,11,0.42)_0%,rgba(245,158,11,0.12)_52%,transparent_75%)] ${
+          aria-hidden="true"
+          className={`pointer-events-none absolute -bottom-11 sm:-bottom-14 landscape:-bottom-7 left-1/2 flex h-32 w-80 sm:h-36 sm:w-[26rem] landscape:h-20 landscape:w-64 -translate-x-1/2 items-center justify-center ${
             animateStage ? 'spielbox-floor' : !prefersReducedMotion ? 'opacity-0' : ''
           }`}
-        />
+        >
+          {/* Weite, samtig verlaufende Studio-Aura (läuft weit vor dem Rand auf 0% Transparenz) */}
+          <div className="spielbox-floor-pulse absolute inset-0 bg-[radial-gradient(ellipse_62%_48%_at_50%_46%,rgba(251,191,36,0.30)_0%,rgba(245,158,11,0.16)_32%,rgba(245,158,11,0.05)_54%,transparent_72%)]" />
+          {/* Konzentrierter goldener Bodenreflex direkt unter dem Sockel */}
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_36%_24%_at_50%_42%,rgba(255,251,235,0.52)_0%,rgba(253,224,71,0.32)_36%,rgba(245,158,11,0.10)_58%,transparent_72%)]" />
+        </div>
 
         <svg
           viewBox="0 0 220 200"
@@ -645,15 +653,22 @@ const ProgressTrack = memo(function ProgressTrack({
   isFadingOut: boolean;
 }) {
   return (
-    <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/10">
-      <div
-        ref={fillRef}
-        style={{
-          transform: isFadingOut ? 'scaleX(1)' : 'scaleX(0)',
-          background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 55%, #10B981 100%)',
-        }}
-        className="h-full w-full origin-left rounded-full will-change-transform shadow-[0_0_16px_rgba(245,158,11,0.75)]"
-      />
+    <div className="relative h-3 sm:h-3.5 landscape:h-2.5 w-full rounded-full border border-white/25 bg-[#09111F]/90 p-[2px] shadow-[0_6px_22px_rgba(0,0,0,0.6),0_0_24px_rgba(245,158,11,0.18),inset_0_1px_2px_rgba(0,0,0,0.7)]">
+      <div className="relative h-full w-full overflow-hidden rounded-full bg-white/[0.07]">
+        <div
+          ref={fillRef}
+          style={{
+            transform: isFadingOut ? 'scaleX(1)' : 'scaleX(0)',
+            background: 'linear-gradient(90deg, #F59E0B 0%, #FBBF24 46%, #34D399 84%, #10B981 100%)',
+          }}
+          className="relative h-full w-full origin-left rounded-full will-change-transform shadow-[0_0_18px_rgba(251,191,36,0.85)]"
+        >
+          <span
+            aria-hidden="true"
+            className="pointer-events-none absolute inset-x-0 top-0 h-1/2 rounded-t-full bg-white/30"
+          />
+        </div>
+      </div>
       <div
         ref={dotTrackRef}
         style={{
@@ -661,7 +676,7 @@ const ProgressTrack = memo(function ProgressTrack({
         }}
         className="pointer-events-none absolute inset-0 will-change-transform"
       >
-        <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-white shadow-[0_0_10px_#FFFFFF]" />
+        <span className="absolute right-0 top-1/2 h-4 w-4 sm:h-[18px] sm:w-[18px] landscape:h-3 landscape:w-3 translate-x-1/2 -translate-y-1/2 rounded-full border border-[#FDE68A] bg-white shadow-[0_0_14px_#FDE68A,0_0_6px_#FFFFFF]" />
       </div>
     </div>
   );
@@ -753,16 +768,16 @@ const SplashProgressBar = memo(function SplashProgressBar({
           : 'BEREIT ZUM SPIELEN!';
 
   return (
-    <div className="relative z-20 mx-auto flex w-full max-w-[1440px] flex-col gap-2">
+    <div className="relative z-20 mx-auto mb-2 sm:mb-6 landscape:mb-1 flex w-full max-w-[min(100%,24rem)] sm:max-w-[28rem] md:max-w-[32rem] flex-col gap-2.5 sm:gap-3 px-2 sm:px-4">
       <div className="flex items-center justify-between gap-3">
         <span
-          className={`font-arcade text-[11px] sm:text-xs tracking-[0.16em] uppercase transition-colors duration-200 ${
-            isReadyState ? 'text-[#6EE7B7]' : 'text-[#CBD5E1]'
+          className={`font-arcade text-xs sm:text-[13px] landscape:text-[11px] tracking-[0.14em] uppercase drop-shadow-[0_2px_6px_rgba(0,0,0,0.75)] transition-colors duration-200 ${
+            isReadyState ? 'text-[#6EE7B7]' : 'text-[#E2E8F0]'
           }`}
         >
           {statusText}
         </span>
-        <span className="font-arcade text-xs sm:text-sm tracking-widest text-[#FDE68A]">
+        <span className="font-arcade text-xs sm:text-sm landscape:text-[11px] tracking-widest text-[#FDE68A] drop-shadow-[0_2px_6px_rgba(0,0,0,0.75)] shrink-0">
           {displayPct}%
         </span>
       </div>
@@ -877,7 +892,7 @@ export function SplashScreen({ onFinish, onPrepareExit }: SplashScreenProps) {
   return (
     <div
       aria-label="ProjektBox wird gestartet"
-      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#101928] text-white select-none transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(20px,env(safe-area-inset-left,0px))] pr-[max(20px,env(safe-area-inset-right,0px))] ${
+      className={`fixed inset-0 z-50 flex flex-col justify-between overflow-hidden bg-[#101928] text-white select-none transition-[opacity,transform] duration-350 ease-out pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(24px+env(safe-area-inset-bottom,0px))] sm:pb-[calc(34px+env(safe-area-inset-bottom,0px))] landscape:pb-[calc(16px+env(safe-area-inset-bottom,0px))] pl-[max(24px,env(safe-area-inset-left,0px))] pr-[max(24px,env(safe-area-inset-right,0px))] ${
         isFadingOut ? 'opacity-0 scale-[1.03] pointer-events-none' : 'opacity-100 scale-100'
       }`}
     >
