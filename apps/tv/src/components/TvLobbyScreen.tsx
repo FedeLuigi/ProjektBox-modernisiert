@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Crown, Loader2, LogOut, RefreshCw, Smartphone, Tv } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Loader2, LogOut, RefreshCw, Tv } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -212,13 +212,13 @@ export function TvLobbyScreen({
       <BackgroundCometCanvas opacity={0.85} />
 
       <div className="safe-screen relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1600px] flex-col justify-between px-6 lg:px-10 py-4">
-        {/* Kopfzeile */}
-        <header className="relative flex w-full items-center justify-between gap-4 border-b border-white/15 pb-3">
-          <div className="flex items-center gap-3">
+        {/* Kopfzeile mit mittig zentriertem Spieltitel */}
+        <header className="relative grid w-full grid-cols-[1fr_auto_1fr] items-center gap-4 border-b border-white/15 pb-3">
+          <div className="flex min-w-0 items-center justify-start gap-3">
             <button
               type="button"
               onClick={handleBack}
-              className="font-arcade inline-flex h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-4 text-sm tracking-wider text-white uppercase hover:bg-white/15 cursor-pointer"
+              className="font-arcade inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-4 text-sm tracking-wider text-white uppercase hover:bg-white/15 cursor-pointer"
             >
               <ArrowLeft className="h-4 w-4" />
               <span>ZURÜCK</span>
@@ -228,30 +228,32 @@ export function TvLobbyScreen({
               <button
                 type="button"
                 onClick={() => void handleLeaveLobby()}
-                className="font-arcade inline-flex h-11 items-center gap-2 rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-4 text-sm tracking-wider text-[#FECDD3] uppercase hover:bg-[#E11D48]/35 cursor-pointer"
+                className="font-arcade inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-[#FDA4AF]/40 bg-[#E11D48]/20 px-4 text-sm tracking-wider text-[#FECDD3] uppercase hover:bg-[#E11D48]/35 cursor-pointer"
               >
                 <LogOut className="h-4 w-4" />
-                <span>RAUM SCHLIESSEN</span>
+                <span className="hidden sm:inline">RAUM SCHLIESSEN</span>
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <Tv className="h-5 w-5 text-[#FBBF24]" />
-            <span className="font-arcade text-lg lg:text-2xl tracking-wider text-white uppercase">
+          <div className="flex items-center justify-center gap-2.5 px-2 text-center">
+            <Tv className="h-5 w-5 shrink-0 text-[#FBBF24]" />
+            <span className="font-arcade whitespace-nowrap text-lg lg:text-2xl tracking-wider text-white uppercase">
               {game.title}
             </span>
           </div>
 
-          <HeaderStatusOverlay
-            lobby={currentLobby}
-            currentUserId={currentUser.id}
-            message={errorMsg}
-            showWhenConnected={false}
-            onExitExpired={() => void handleLeaveLobby()}
-          />
+          <div className="flex min-w-0 items-center justify-end gap-3">
+            <HeaderStatusOverlay
+              lobby={currentLobby}
+              currentUserId={currentUser.id}
+              message={errorMsg}
+              showWhenConnected={false}
+              onExitExpired={() => void handleLeaveLobby()}
+            />
 
-          <ConnectionStatusBadge />
+            <ConnectionStatusBadge />
+          </div>
         </header>
 
         {/* Hauptbühne */}
@@ -283,15 +285,10 @@ export function TvLobbyScreen({
               )}
             </div>
           ) : (
-            <div className="my-auto grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-6 lg:gap-12">
-              {/* Links: QR-Code zur Smartphone-App + Raumcode */}
-              <div className="flex flex-col items-center gap-4 lg:gap-5 rounded-3xl border border-white/15 bg-[#0F172A]/65 p-5 lg:p-8 text-center backdrop-blur-xl">
-                <div className="inline-flex items-center gap-2 font-arcade text-sm lg:text-base tracking-wider text-[#BAE6FD] uppercase">
-                  <Smartphone className="h-5 w-5 text-[#38BDF8]" />
-                  <span>MIT SMARTPHONE BEITRETEN</span>
-                </div>
-
-                <div className="rounded-3xl border-2 border-white/25 bg-white p-3.5 lg:p-4 shadow-[0_22px_50px_rgba(0,0,0,0.5)]">
+            <div className="my-auto grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-14">
+              {/* Links: Freistehender QR-Code + Raumcode ohne dunkle Box oder Beschreibungstexte */}
+              <div className="flex flex-col items-center gap-5 text-center">
+                <div className="rounded-3xl border-2 border-white/25 bg-white p-3.5 lg:p-4 shadow-[0_22px_50px_rgba(0,0,0,0.45)]">
                   <canvas
                     ref={qrCanvasRef}
                     data-join-url={joinUrl}
@@ -300,32 +297,23 @@ export function TvLobbyScreen({
                   />
                 </div>
 
-                <div className="flex flex-col items-center gap-2">
-                  <span className="font-arcade text-xs tracking-widest text-[#94A3B8] uppercase">
-                    RAUM-CODE
-                  </span>
-                  <span className="font-arcade rounded-2xl border-2 border-[#F59E0B]/70 bg-[#F59E0B]/15 px-7 py-2 text-3xl lg:text-4xl tracking-[0.28em] pl-[calc(1.75rem+0.28em)] text-[#FDE68A] uppercase">
-                    {currentLobby.code}
-                  </span>
-                  {joinUrl && (
-                    <span className="max-w-full truncate text-xs text-[#94A3B8] select-all" title={joinUrl}>
-                      {joinUrl}
-                    </span>
-                  )}
-                </div>
+                <span className="font-arcade rounded-2xl border-2 border-[#F59E0B]/70 bg-[#F59E0B]/15 px-7 py-2 text-3xl lg:text-4xl tracking-[0.22em] text-[#FDE68A] uppercase">
+                  {currentLobby.code}
+                </span>
               </div>
 
-              {/* Rechts: Spiel-Optionen, Spielerliste & Start-Button */}
-              <div className="flex flex-col gap-5">
+              {/* Rechts: Spiel-Optionen, Spielerliste & Start-Button ohne dunkle Container-Boxen */}
+              <div className="flex flex-col gap-6">
                 <LobbyGameSettings
                   gameId={game.id}
                   settings={currentLobby.settings}
                   isHost={true}
+                  frameless={true}
                   onUpdate={(s) => void handleUpdateSettings(s)}
                 />
 
-                <div className="flex flex-col gap-3 rounded-2xl border border-white/15 bg-[#0F172A]/65 p-5 backdrop-blur-xl">
-                  <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between border-b border-white/12 pb-2">
                     <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
                       VERBUNDENE SPIELER ({activePlayers.length}/{maxPlayers})
                     </span>
@@ -335,8 +323,8 @@ export function TvLobbyScreen({
                   </div>
 
                   {activePlayers.length === 0 ? (
-                    <div className="rounded-xl border border-dashed border-white/15 py-8 text-center font-arcade text-sm text-[#94A3B8] uppercase">
-                      SCANNEN &amp; CODE EINGEBEN UM BEIZUTRETEN...
+                    <div className="py-5 text-center font-arcade text-sm text-[#94A3B8] uppercase">
+                      WARTE AUF SPIELER...
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto no-scrollbar">

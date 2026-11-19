@@ -17,6 +17,7 @@ interface LobbyGameSettingsProps {
   gameId: string;
   settings?: Record<string, any>;
   isHost: boolean;
+  frameless?: boolean;
   onUpdate: (newSettings: Record<string, any>) => void;
 }
 
@@ -29,6 +30,7 @@ export function LobbyGameSettings({
   gameId,
   settings,
   isHost,
+  frameless = false,
   onUpdate,
 }: LobbyGameSettingsProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -115,11 +117,21 @@ export function LobbyGameSettings({
           : `${rounds === 1 ? '1 RUNDE' : `BEST OF ${rounds}`}`;
 
   return (
-    <div className="w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden">
+    <div
+      className={
+        frameless
+          ? 'w-full border-b border-white/15 overflow-visible'
+          : 'w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden'
+      }
+    >
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between px-4 py-2.5 hover:bg-white/[0.05] transition-colors cursor-pointer select-none text-left"
+        className={`w-full flex items-center justify-between transition-colors cursor-pointer select-none text-left ${
+          frameless
+            ? 'rounded-lg px-2 py-2.5 hover:bg-white/[0.05]'
+            : 'px-4 py-2.5 hover:bg-white/[0.05]'
+        }`}
         aria-expanded={isOpen}
       >
         <div className="min-w-0">
