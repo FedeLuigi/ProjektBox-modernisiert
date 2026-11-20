@@ -2030,21 +2030,9 @@ export function RouletteBoard({
           </div>
         </div>
 
-        {/* Mittlere 3-Spalten-Bühne: Links (Drehrad + Aktionen) | Mitte (Hochformat-Tisch) | Rechts (Chips) */}
-        <div className="grid w-full flex-1 min-h-0 grid-cols-[auto_minmax(0,1fr)_auto] items-stretch gap-1.5 min-[390px]:gap-2 sm:gap-4 px-0.5">
-          {/* Linke Leiste: Klickbares Mini-Drehrad oben + Aktions-Buttons vertikal darunter */}
-          <div className="flex shrink-0 flex-col items-center justify-between gap-2 py-0.5">
-            {renderWheelControl(
-              'h-12 w-12 min-[390px]:h-14 min-[390px]:w-14 sm:h-16 sm:w-16',
-              true
-            )}
-
-            <div className="mt-auto flex flex-col items-center gap-1.5 sm:gap-2">
-              {renderActionButtons('portrait')}
-            </div>
-          </div>
-
-          {/* Mitte: Vertikales Roulette-Tableau */}
+        {/* Mittlere 2-Spalten-Bühne: Links (Hochformat-Tisch) | Rechts (Drehrad + Chips + Aktionen) */}
+        <div className="grid w-full flex-1 min-h-0 grid-cols-[minmax(0,1fr)_auto] items-stretch gap-1.5 min-[390px]:gap-2.5 sm:gap-4 px-0.5">
+          {/* Links: Vertikales Roulette-Tableau */}
           <div className="my-auto flex h-full max-h-[min(100%,640px)] min-h-0 min-w-0 flex-col justify-center">
             <BettingTable
               allBets={displayedTableBets}
@@ -2064,9 +2052,20 @@ export function RouletteBoard({
             />
           </div>
 
-          {/* Rechte Leiste: Vertikale Poker-Chips (per Drag-and-Drop oder Tap) */}
-          <div className="flex shrink-0 flex-col items-center justify-center gap-2 sm:gap-2.5 py-0.5 touch-none select-none">
-            {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'portrait'))}
+          {/* Rechts: Drehrad oben, vertikale Poker-Chips in der Mitte & Aktions-Buttons unten */}
+          <div className="flex shrink-0 flex-col items-center justify-between gap-1.5 min-[390px]:gap-2 py-0.5">
+            {renderWheelControl(
+              'h-12 w-12 min-[390px]:h-14 min-[390px]:w-14 sm:h-16 sm:w-16',
+              true
+            )}
+
+            <div className="flex flex-col items-center gap-1.5 min-[390px]:gap-2 sm:gap-2.5 touch-none select-none">
+              {CHIP_DENOMINATIONS.map((chip) => renderChipButton(chip, 'portrait'))}
+            </div>
+
+            <div className="flex flex-col items-center gap-1.5 sm:gap-2">
+              {renderActionButtons('portrait')}
+            </div>
           </div>
         </div>
 
