@@ -604,7 +604,7 @@ export function TexasHoldemBoard({
         </div>
 
         {/* 2. Pokertisch-Mitte: Pot + 5 Community Cards + kompaktes Ergebnis */}
-        <div className="poker-landscape-table flex flex-1 min-h-0 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] p-2.5 sm:p-3.5 ring-1 ring-[#F59E0B]/30">
+        <div className="poker-landscape-table my-auto flex w-full md:flex-1 min-h-0 flex-col items-center justify-center gap-2.5 rounded-2xl border-2 border-[#78350F] bg-gradient-to-br from-[#064E3B] via-[#065F46] to-[#022C22] px-3 py-6 sm:px-4 sm:py-7 md:p-3.5 ring-1 ring-[#F59E0B]/30">
           <div className="flex flex-wrap items-center justify-center gap-2">
             <div className="flex items-center gap-1.5 px-1">
               <Coins className="h-3.5 w-3.5 text-[#FBBF24]" />
