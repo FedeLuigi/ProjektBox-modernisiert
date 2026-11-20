@@ -150,15 +150,9 @@ function CategoryChooserSheet({
             return (
               <div
                 key={idx}
-                className={`flex flex-col gap-1 rounded-2xl border p-2.5 backdrop-blur-md transition-colors ${
-                  isDup
-                    ? 'border-[#FDA4AF]/60 bg-[#E11D48]/15'
-                    : isValidEntry
-                      ? 'border-[#34D399]/50 bg-[#10B981]/10'
-                      : 'border-white/15 bg-white/[0.04]'
-                }`}
+                className="flex flex-col gap-1"
               >
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between px-0.5">
                   <label
                     htmlFor={`slf-custom-cat-${idx}`}
                     className="font-arcade text-[10px] tracking-wider text-[#FDE68A] uppercase"
@@ -203,7 +197,13 @@ function CategoryChooserSheet({
                       }
                     }
                   }}
-                  className="h-10 rounded-xl border border-white/15 bg-[#0F172A]/75 px-3 text-sm font-medium text-white placeholder:text-white/30 focus:border-[#F59E0B] focus:outline-none disabled:opacity-60"
+                  className={`h-10 rounded-xl border px-3 text-sm font-medium text-white placeholder:text-white/30 focus:border-[#F59E0B] focus:outline-none disabled:opacity-60 transition-colors ${
+                    isDup
+                      ? 'border-[#FDA4AF]/65 bg-[#E11D48]/15'
+                      : isValidEntry
+                        ? 'border-[#34D399]/60 bg-[#10B981]/15'
+                        : 'border-white/15 bg-[#0F172A]/75'
+                  }`}
                 />
               </div>
             );
@@ -392,15 +392,9 @@ function WritingSheet({
             return (
               <div
                 key={cat}
-                className={`flex flex-col gap-1 rounded-2xl border p-2.5 sm:p-3 transition-colors backdrop-blur-md ${
-                  !matchesLetter
-                    ? 'border-[#FDA4AF]/50 bg-[#E11D48]/10'
-                    : isReadyField
-                      ? 'border-[#34D399]/45 bg-[#10B981]/10'
-                      : 'border-white/15 bg-white/[0.04]'
-                }`}
+                className="flex flex-col gap-1.5"
               >
-                <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center justify-between gap-2 px-0.5">
                   <label
                     htmlFor={`slf-cat-${idx}`}
                     className="font-arcade text-[11px] sm:text-xs tracking-wider text-[#FDE68A] uppercase"
@@ -446,7 +440,13 @@ function WritingSheet({
                   autoCorrect="off"
                   spellCheck={false}
                   placeholder={`Mit ${letter}...`}
-                  className="h-10 rounded-xl border border-white/15 bg-[#0F172A]/70 px-3 text-sm font-medium text-white placeholder:text-white/30 focus:border-[#22D3EE] focus:outline-none disabled:opacity-60"
+                  className={`h-10 rounded-xl border px-3 text-sm font-medium text-white placeholder:text-white/30 focus:border-[#22D3EE] focus:outline-none disabled:opacity-60 transition-colors ${
+                    !matchesLetter
+                      ? 'border-[#FDA4AF]/65 bg-[#E11D48]/15'
+                      : isReadyField
+                        ? 'border-[#34D399]/60 bg-[#10B981]/15'
+                        : 'border-white/15 bg-[#0F172A]/70'
+                  }`}
                 />
               </div>
             );
