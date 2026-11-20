@@ -925,13 +925,39 @@ export function DrawAndGuessBoard({
 
     return (
       <div className="game-drawer-layout flex flex-col w-full h-full min-h-0 justify-between gap-2 sm:gap-3 md:grid md:grid-cols-[minmax(0,1fr)_19rem] lg:grid-cols-[minmax(0,1fr)_21rem] md:items-center md:gap-6 lg:gap-8 select-none">
-        {/* Linke Spalte: Im Hochformat Wort+Timer über Leinwand; im Quermodus nur große 4:3 Zeichenfläche */}
+        {/* Linke Spalte: Im Hochformat Label+Timer oben, Wort mittig & groß direkt über Leinwand; im Quermodus nur große 4:3 Zeichenfläche */}
         <div className="flex flex-1 flex-col min-h-0 min-w-0 w-full h-full justify-between gap-2 sm:gap-3">
-          <div className="md:hidden landscape:hidden">{drawerStatusBar}</div>
+          <div className="md:hidden landscape:hidden flex flex-col gap-2 shrink-0 px-1">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5 shrink-0">
+                <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
+                <span className="text-[11px] font-arcade uppercase tracking-wider text-[#FDE68A]">
+                  ZEICHNE
+                </span>
+              </div>
+
+              <div
+                className={`flex items-center gap-1.5 rounded-xl border px-3 py-1 font-arcade text-xs shrink-0 transition-colors ${
+                  timeLeft <= 10
+                    ? 'border-[#FDA4AF]/60 bg-[#E11D48] text-white animate-pulse shadow-[0_0_16px_rgba(225,29,72,0.45)]'
+                    : 'border-white/15 bg-white/[0.06] text-[#FDE68A] backdrop-blur-md'
+                }`}
+              >
+                <Clock className="h-3.5 w-3.5 shrink-0" />
+                <span>{timeLeft} S</span>
+              </div>
+            </div>
+
+            <div className="w-full text-center px-2 pt-1">
+              <span className="font-arcade block text-2xl min-[390px]:text-3xl tracking-wider text-white uppercase leading-tight break-words drop-shadow-[0_2px_12px_rgba(0,0,0,0.45)]">
+                {gameState?.secretWord}
+              </span>
+            </div>
+          </div>
 
           <div
             ref={canvasStageRef}
-            className="relative flex-1 min-h-0 min-w-0 w-full flex items-center justify-center"
+            className="relative flex-1 min-h-0 min-w-0 w-full flex items-start pt-1 md:items-center md:pt-0 landscape:items-center landscape:pt-0 justify-center"
           >
             <div
               style={
