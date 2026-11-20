@@ -950,6 +950,64 @@ export class LobbyManager {
     return { success: true, lobby };
   }
 
+  public switchLobbyGame(params: {
+    lobbyId: string;
+    playerId: string;
+    gameId: string;
+    actionId?: string;
+    expectedVersion?: number;
+  }): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
+    const lobby = this.lobbies.get(params.lobbyId);
+    if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
+    if (lobby.hostId !== params.playerId) {
+      return { success: false, error: 'Nur der aktuelle Host darf das Spiel wechseln.' };
+    }
+    if (lobby.status !== 'waiting') {
+      return { success: false, error: 'Spielwechsel ist nur vor Spielstart möglich.' };
+    }
+    if (lobby.isSimulated) {
+      return { success: false, error: 'In einer Simulation kann das Spiel nicht gewechselt werden.' };
+    }
+
+    const game = gameRegistry.get(params.gameId);
+    if (!game) {
+      return { success: false, error: `Spiel "${params.gameId}" nicht gefunden.` };
+    }
+
+    if (params.actionId && this.isDuplicateAction(lobby, params.actionId)) {
+      return { success: true, duplicate: true, lobby };
+    }
+    if (params.expectedVersion !== undefined && params.expectedVersion !== lobby.stateVersion) {
+      return { success: false, error: 'Veraltete Aktion: Lobby-Zustand hat sich geändert.' };
+    }
+
+    if (lobby.gameId === params.gameId) {
+      return { success: true, duplicate: true, lobby };
+    }
+
+    const activeGuests = lobby.players.filter(
+      (p) => !p.isTvScreen && p.connectionState !== 'offline'
+    );
+    if (activeGuests.length > game.maxPlayers) {
+      return {
+        success: false,
+        error: `Dieses Spiel unterstützt maximal ${game.maxPlayers} Spieler.`,
+      };
+    }
+
+    lobby.gameId = params.gameId;
+    lobby.minPlayers = game.minPlayers;
+    lobby.maxPlayers = game.maxPlayers;
+    lobby.settings = getDefaultSettings(params.gameId);
+
+    this.recordActionId(lobby, params.actionId);
+    lobby.stateVersion += 1;
+    lobby.lastActivityAt = Date.now();
+    this.persistSnapshot();
+
+    return { success: true, lobby };
+  }
+
   public startGame(
     socketIdOrParams:
       | string

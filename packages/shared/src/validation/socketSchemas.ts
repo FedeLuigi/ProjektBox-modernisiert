@@ -21,6 +21,7 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   [SOCKET_EVENTS.LOBBY_UPDATE_SETTINGS]: 4096,
   [SOCKET_EVENTS.LOBBY_RECONNECT]: 2048,
   [SOCKET_EVENTS.LOBBY_SWITCH_MODE]: 512,
+  [SOCKET_EVENTS.LOBBY_SWITCH_GAME]: 512,
   [SOCKET_EVENTS.GAME_MOVE]: 4096,
   [SOCKET_EVENTS.GAME_REMATCH]: 512,
   [SOCKET_EVENTS.DRAW_STROKES]: 24 * 1024,
@@ -105,6 +106,11 @@ export const GameRematchSchema = z.object({
 
 export const LobbySwitchModeSchema = z.object({
   isTvMode: z.boolean(),
+  ...ActionMetaFields,
+});
+
+export const LobbySwitchGameSchema = z.object({
+  gameId: z.string().trim().min(1).max(64),
   ...ActionMetaFields,
 });
 

@@ -185,7 +185,7 @@ export function App() {
   );
 
   const handleLaunchGame = useCallback(
-    (game: Game, _tvMode = false) => {
+    async (game: Game, _tvMode = false) => {
       if (!game) return;
       triggerHaptic();
       setRecentEntries(recordGamePlayed(game.id));
@@ -196,6 +196,23 @@ export function App() {
         return;
       }
 
+      if (
+        activeLobby &&
+        !activeLobby.isSimulated &&
+        activeLobby.status === 'waiting' &&
+        activeLobby.hostId === userProfile.id
+      ) {
+        try {
+          const switched = await socketService.switchLobbyGame(game.id);
+          setActiveLobby(switched);
+          setDeepLinkLobby(switched);
+          setMultiplayerGame(game);
+          return;
+        } catch (err) {
+          console.warn('Spielwechsel in bestehender Lobby fehlgeschlagen:', err);
+        }
+      }
+
       if (activeLobby) {
         void socketService.leaveLobby();
         setActiveLobby(null);
@@ -203,7 +220,7 @@ export function App() {
       setDeepLinkLobby(null);
       setMultiplayerGame(game);
     },
-    [triggerHaptic, activeLobby]
+    [triggerHaptic, activeLobby, userProfile.id]
   );
 
   const handleOpenActiveLobby = useCallback(() => {

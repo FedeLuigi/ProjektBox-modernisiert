@@ -15,6 +15,7 @@ export const SOCKET_EVENTS = {
   LOBBY_READY: 'lobby:ready',
   LOBBY_UPDATE_SETTINGS: 'lobby:update-settings',
   LOBBY_SWITCH_MODE: 'lobby:switch-mode',
+  LOBBY_SWITCH_GAME: 'lobby:switch-game',
   LOBBY_UPDATE_PROFILE: 'lobby:update-profile',
   LOBBY_START: 'lobby:start',
   LOBBY_LEAVE: 'lobby:leave',

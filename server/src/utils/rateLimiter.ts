@@ -21,6 +21,7 @@ export type RateLimitedEvent =
   | 'lobby:leave'
   | 'lobby:reconnect'
   | 'lobby:switch-mode'
+  | 'lobby:switch-game'
   | 'game:move'
   | 'game:rematch'
   | 'draw:strokes'
@@ -42,6 +43,7 @@ export const EVENT_RATE_LIMITS: Record<RateLimitedEvent, RateLimitRule> = {
   'lobby:leave': { capacity: 10, refillRatePerSec: 2 },
   'lobby:reconnect': { capacity: 8, refillRatePerSec: 2 },
   'lobby:switch-mode': { capacity: 15, refillRatePerSec: 3 },
+  'lobby:switch-game': { capacity: 15, refillRatePerSec: 3 },
   'game:move': { capacity: 18, refillRatePerSec: 12 },
   'game:rematch': { capacity: 4, refillRatePerSec: 1 },
   'draw:strokes': { capacity: 45, refillRatePerSec: 30 },

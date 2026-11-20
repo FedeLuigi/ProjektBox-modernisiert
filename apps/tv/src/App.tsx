@@ -151,12 +151,28 @@ export function App() {
   }, []);
 
   const handleLaunchTvGame = useCallback(
-    (game: Game) => {
+    async (game: Game) => {
       setRecentEntries(recordGamePlayed(game.id));
       if (activeLobby && !activeLobby.isSimulated && activeLobby.gameId === game.id) {
         setRestoredLobby(activeLobby);
         setTvGame(game);
         return;
+      }
+      if (
+        activeLobby &&
+        !activeLobby.isSimulated &&
+        activeLobby.status === 'waiting' &&
+        activeLobby.hostId === userProfile.id
+      ) {
+        try {
+          const switched = await socketService.switchLobbyGame(game.id);
+          setActiveLobby(switched);
+          setRestoredLobby(switched);
+          setTvGame(game);
+          return;
+        } catch (err) {
+          console.warn('Spielwechsel in bestehender TV-Lobby fehlgeschlagen:', err);
+        }
       }
       if (activeLobby) {
         void socketService.leaveLobby();
@@ -165,7 +181,7 @@ export function App() {
       setRestoredLobby(null);
       setTvGame(game);
     },
-    [activeLobby]
+    [activeLobby, userProfile.id]
   );
 
   const handleStartSimulation = useCallback(

@@ -14,6 +14,7 @@ import {
   Avatar,
   AvatarCustomizerModal,
   BackgroundCometCanvas,
+  GAMES,
   HeaderStatusOverlay,
   LobbyGameSettings,
   OpenButton,
@@ -65,6 +66,8 @@ export function LobbyScreen({
 
   const currentUser = useUserProfile();
   const gameId = game.id;
+  const activeGame =
+    (currentLobby?.gameId && GAMES.find((g) => g.id === currentLobby.gameId)) || game;
 
   const createFreshLobby = useCallback(
     async () => {
@@ -262,7 +265,7 @@ export function LobbyScreen({
     return (
       <MultiplayerGameView
         lobby={currentLobby}
-        gameTitle={game.title}
+        gameTitle={activeGame.title}
         onLeave={handleLeaveGame}
       />
     );
@@ -356,7 +359,7 @@ export function LobbyScreen({
     >
       <div className="border-b-2 border-[#F59E0B] px-1 pb-1">
         <h2 className="lobby-landscape-title font-arcade text-2xl sm:text-4xl lg:text-[42px] leading-tight tracking-wider text-white uppercase drop-shadow-[0_4px_16px_rgba(0,0,0,0.45)]">
-          {game.title}
+          {activeGame.title}
         </h2>
       </div>
     </div>
@@ -499,7 +502,7 @@ export function LobbyScreen({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${game.title} Lobby`}
+      aria-label={`${activeGame.title} Lobby`}
       className="fixed inset-0 z-50 flex w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none animate-fade-in"
     >
       <BackgroundCometCanvas opacity={0.85} />
@@ -538,7 +541,7 @@ export function LobbyScreen({
 
           <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
             <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
-              {game.title}
+              {activeGame.title}
             </span>
           </div>
 

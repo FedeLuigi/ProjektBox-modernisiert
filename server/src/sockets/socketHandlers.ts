@@ -14,6 +14,7 @@ import {
   LobbyReconnectSchema,
   LobbySimulateSchema,
   LobbyStartSchema,
+  LobbySwitchGameSchema,
   LobbySwitchModeSchema,
   LobbyUpdateProfileSchema,
   LobbyUpdateSettingsSchema,
@@ -658,6 +659,61 @@ export function registerSocketHandlers(
           callback?.({ success: true, lobby: safeLobby });
         } catch (err: any) {
           callback?.({ success: false, error: err.message });
+        }
+      }
+    );
+
+    // 4b-2. Spiel in bestehender Lobby wechseln (Host nimmt alle Spieler mit)
+    socket.on(
+      SOCKET_EVENTS.LOBBY_SWITCH_GAME,
+      async (
+        data: unknown,
+        callback?: (res: { success: boolean; lobby?: any; error?: string }) => void
+      ) => {
+        if (socket.data.superseded) {
+          return callback?.({ success: false, error: 'Veraltete Sitzung.' });
+        }
+        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.LOBBY_SWITCH_GAME))) {
+          return callback?.({ success: false, error: 'Zu viele Spielwechsel. Bitte kurz warten.' });
+        }
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.LOBBY_SWITCH_GAME])) {
+          return callback?.({ success: false, error: 'Anfrage zu groß.' });
+        }
+        const parsed = LobbySwitchGameSchema.safeParse(data);
+        if (!parsed.success) {
+          return callback?.({ success: false, error: 'Ungültige Spiel-ID.' });
+        }
+        try {
+          const currentLobby = manager.getLobbyBySocket(socket.id);
+          const currentPlayer = manager.getPlayerBySocket(socket.id);
+          if (!currentLobby || !currentPlayer) {
+            return callback?.({ success: false, error: 'Nicht in einer Lobby.' });
+          }
+
+          const { lobby, duplicate, error } = manager.switchLobbyGame({
+            lobbyId: currentLobby.id,
+            playerId: currentPlayer.id,
+            gameId: parsed.data.gameId,
+            actionId: parsed.data.actionId,
+            expectedVersion: parsed.data.expectedVersion,
+          });
+          if (error || !lobby) {
+            return callback?.({
+              success: false,
+              error: error || 'Spiel konnte nicht gewechselt werden.',
+            });
+          }
+
+          const safeLobby = sanitizeLobbyForClient(lobby);
+          if (!duplicate) {
+            emitLobbyEventPerViewer(lobby, SOCKET_EVENTS.LOBBY_UPDATED, (scopedLobby) => ({
+              lobby: scopedLobby,
+            }));
+            io.emit(SOCKET_EVENTS.LOBBY_LIST_UPDATED, { gameId: lobby.gameId });
+          }
+          callback?.({ success: true, lobby: safeLobby });
+        } catch (err: any) {
+          callback?.({ success: false, error: err?.message || 'Fehler beim Spielwechsel.' });
         }
       }
     );

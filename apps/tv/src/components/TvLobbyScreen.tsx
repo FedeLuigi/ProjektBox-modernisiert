@@ -4,6 +4,7 @@ import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
   BackgroundCometCanvas,
+  GAMES,
   HeaderStatusOverlay,
   LobbyGameSettings,
   OpenButton,
@@ -181,11 +182,14 @@ export function TvLobbyScreen({
     }
   };
 
+  const activeGame =
+    (currentLobby?.gameId && GAMES.find((g) => g.id === currentLobby.gameId)) || game;
+
   if (isInGame && currentLobby) {
     return (
       <TvGameView
         lobby={currentLobby}
-        gameTitle={game.title}
+        gameTitle={activeGame.title}
         onLeave={handleLeaveLobby}
       />
     );
@@ -194,8 +198,8 @@ export function TvLobbyScreen({
   const activePlayers = currentLobby
     ? currentLobby.players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline')
     : [];
-  const minPlayers = currentLobby?.minPlayers ?? game.minPlayers;
-  const maxPlayers = currentLobby?.maxPlayers ?? game.maxPlayers;
+  const minPlayers = currentLobby?.minPlayers ?? activeGame.minPlayers;
+  const maxPlayers = currentLobby?.maxPlayers ?? activeGame.maxPlayers;
   const readyCount = activePlayers.filter((p) => p.isReady).length;
   const allReady =
     Boolean(currentLobby) &&
@@ -238,7 +242,7 @@ export function TvLobbyScreen({
           <div className="flex items-center justify-center gap-2.5 px-2 text-center">
             <Tv className="h-5 w-5 shrink-0 text-[#FBBF24]" />
             <span className="font-arcade whitespace-nowrap text-lg lg:text-2xl tracking-wider text-white uppercase">
-              {game.title}
+              {activeGame.title}
             </span>
           </div>
 
@@ -302,7 +306,7 @@ export function TvLobbyScreen({
               {/* Rechts: Spiel-Optionen, Spielerliste & Start-Button ohne dunkle Container-Boxen */}
               <div className="flex flex-col gap-6">
                 <LobbyGameSettings
-                  gameId={game.id}
+                  gameId={activeGame.id}
                   settings={currentLobby.settings}
                   isHost={true}
                   frameless={true}

@@ -1942,3 +1942,80 @@ test('Spiel-Simulation: Sofortstart mit Bots ohne zweite Lobby-Person, TV-Sim & 
   botRunner.clearAll();
   simManager.clearAllTimers();
 });
+
+test('Spielwechsel in bestehender Lobby behält Raumcode und alle verbundenen Mitspieler', () => {
+  const manager = new LobbyManager();
+
+  const created = manager.createLobby({
+    gameId: 'draw-and-guess',
+    isPrivate: true,
+    isTvMode: true,
+    userProfile: { id: 'u_tv_host', name: 'WohnzimmerTV', avatar: {} },
+    socketId: 'sock_tv_host',
+  });
+  assert.equal(created.success, true);
+  assert.ok(created.lobby);
+  const lobbyId = created.lobby!.id;
+  const lobbyCode = created.lobby!.code;
+
+  const joined = manager.joinLobby({
+    lobbyIdOrCode: lobbyCode,
+    userProfile: { id: 'u_guest_1', name: 'Alice', avatar: {} },
+    socketId: 'sock_guest_1',
+  });
+  assert.equal(joined.success, true);
+  assert.equal(joined.lobby?.players.length, 2);
+
+  // Gast darf das Spiel nicht wechseln
+  const guestAttempt = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_guest_1',
+    gameId: 'roulette',
+  });
+  assert.equal(guestAttempt.success, false);
+
+  // Host wechselt Spiel -> Lobby bleibt mit demselben Code und allen Spielern bestehen
+  const switched = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_tv_host',
+    gameId: 'roulette',
+    actionId: 'act_switch_roulette',
+  });
+  assert.equal(switched.success, true);
+  assert.equal(switched.lobby?.id, lobbyId);
+  assert.equal(switched.lobby?.code, lobbyCode);
+  assert.equal(switched.lobby?.gameId, 'roulette');
+  assert.equal(switched.lobby?.minPlayers, 1);
+  assert.equal(switched.lobby?.players.length, 2);
+  assert.equal(
+    switched.lobby?.players.some((p) => p.id === 'u_guest_1'),
+    true
+  );
+
+  // Idempotenz bei doppelter Action-ID
+  const duplicateSwitch = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_tv_host',
+    gameId: 'texas-holdem',
+    actionId: 'act_switch_roulette',
+  });
+  assert.equal(duplicateSwitch.success, true);
+  assert.equal(duplicateSwitch.duplicate, true);
+  assert.equal(duplicateSwitch.lobby?.gameId, 'roulette');
+
+  // Spielstart funktioniert mit dem mitgenommenen Spieler im neuen Spiel
+  manager.toggleReady('sock_guest_1');
+  const started = manager.startGame({ lobbyId, playerId: 'u_tv_host' });
+  assert.equal(started.success, true);
+  assert.equal(started.lobby?.gameId, 'roulette');
+
+  // Im laufenden Spiel ist ein Spielwechsel blockiert
+  const whilePlaying = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_tv_host',
+    gameId: 'stadt-land-fluss',
+  });
+  assert.equal(whilePlaying.success, false);
+
+  manager.clearAllTimers();
+});
