@@ -570,7 +570,7 @@ export function StadtLandFlussBoard({
     if (phase === 'choosing_categories') {
       return (
         <div className="flex w-full flex-col gap-5 select-none animate-fade-in">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 rounded-3xl border border-[#F59E0B]/40 bg-[#0F172A]/80 p-5 lg:p-7 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-1 py-1">
             <div className="flex items-center gap-4 min-w-0">
               <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
                 <ListPlus className="h-8 w-8" />
@@ -606,10 +606,10 @@ export function StadtLandFlussBoard({
               return (
                 <div
                   key={p.id}
-                  className={`flex items-center justify-between gap-3 rounded-2xl border p-4 backdrop-blur-md ${
+                  className={`flex items-center justify-between gap-3 rounded-2xl border p-4 ${
                     isChooser
                       ? 'border-[#F59E0B]/70 bg-[#F59E0B]/15'
-                      : 'border-white/15 bg-[#0F172A]/75'
+                      : 'border-white/15 bg-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-2.5 min-w-0">
@@ -640,7 +640,7 @@ export function StadtLandFlussBoard({
       return (
         <div className="flex w-full flex-col gap-3 sm:gap-5 select-none animate-fade-in">
           {/* Große Buchstaben-Bühne */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-5 rounded-2xl sm:rounded-3xl border border-[#22D3EE]/35 bg-[#0F172A]/80 p-3 sm:p-5 lg:p-6 backdrop-blur-xl">
+          <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-5 px-1 py-1">
             <div className="flex items-center gap-3 sm:gap-5 min-w-0">
               <span className="font-arcade text-4xl sm:text-6xl lg:text-7xl leading-none text-[#FDE68A] drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] shrink-0 px-1 sm:px-2">
                 {gameState.letter}
@@ -688,10 +688,10 @@ export function StadtLandFlussBoard({
               return (
                 <div
                   key={p.id}
-                  className={`flex flex-col gap-3 rounded-2xl border p-4 transition-all backdrop-blur-md ${
+                  className={`flex flex-col gap-3 rounded-2xl border p-4 transition-all ${
                     isDone
                       ? 'border-[#34D399]/60 bg-[#10B981]/15'
-                      : 'border-white/15 bg-[#0F172A]/75'
+                      : 'border-white/15 bg-transparent'
                   }`}
                 >
                   <div className="flex items-center justify-between gap-2">
@@ -744,7 +744,7 @@ export function StadtLandFlussBoard({
     if (phase === 'review') {
       return (
         <div className="flex w-full flex-col gap-2.5 sm:gap-4 select-none animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 rounded-2xl border border-white/15 bg-[#0F172A]/85 px-3.5 sm:px-5 py-2 sm:py-3 backdrop-blur-xl">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-1 py-1">
             <div className="flex items-center gap-3">
               <span className="rounded-xl border border-[#22D3EE]/50 bg-[#164E63]/70 px-3 py-1 font-arcade text-base text-[#FDE68A]">
                 {gameState.letter}
@@ -779,7 +779,7 @@ export function StadtLandFlussBoard({
             {categories.map((cat) => (
               <div
                 key={cat}
-                className="flex flex-col gap-2 rounded-2xl border border-white/15 bg-[#0F172A]/80 p-3 backdrop-blur-xl"
+                className="flex flex-col gap-2 p-1"
               >
                 <div className="border-b border-[#22D3EE]/40 pb-1.5 font-arcade text-xs tracking-wider text-[#67E8F9] uppercase">
                   {cat}
@@ -831,7 +831,7 @@ export function StadtLandFlussBoard({
 
     // TV Round-Over
     return (
-      <div className="flex w-full max-w-2xl mx-auto flex-col items-center gap-5 rounded-3xl border border-white/15 bg-[#0F172A]/85 p-6 text-center backdrop-blur-xl animate-fade-in">
+      <div className="flex w-full max-w-2xl mx-auto flex-col items-center gap-5 p-4 text-center animate-fade-in">
         <div className="flex items-center gap-2 border-b-2 border-[#F59E0B] px-3 pb-1">
           <Trophy className="h-5 w-5 text-[#FBBF24]" />
           <h2 className="font-arcade text-2xl text-white uppercase">
