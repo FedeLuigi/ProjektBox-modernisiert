@@ -1521,7 +1521,7 @@ export function RouletteBoard({
           {/* Rechts: Verlauf & Phasen-Hinweis oberhalb vom Spielbrett, Live-Tisch & Kassenstand */}
           <div className="flex flex-col gap-2 sm:gap-3 min-w-0">
             {/* Verlauf der letzten Zahlen (größer, direkt oberhalb des Spielbretts) */}
-            <div className="flex min-h-8 sm:min-h-9 lg:min-h-10 items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-0.5 px-1">
+            <div className="flex min-h-8 sm:min-h-9 lg:min-h-10 items-center gap-2 sm:gap-2.5 overflow-x-auto no-scrollbar py-1 px-1">
               <span className="font-arcade text-xs lg:text-sm tracking-wider text-[#94A3B8] uppercase shrink-0">
                 VERLAUF
               </span>
@@ -1945,7 +1945,7 @@ export function RouletteBoard({
         {/* Obere kompakte Verlaufs-, Runden- & Statuszeile (ohne dunkle Container-Box) */}
         <div className="flex shrink-0 flex-col gap-0.5 px-1">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex min-w-0 items-center gap-1 overflow-x-auto no-scrollbar">
+            <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar p-0.5">
               {history.length === 0 ? (
                 <span className="font-arcade text-[10px] text-white/50 uppercase whitespace-nowrap">
                   NOCH KEINE ZIEHUNG
@@ -2078,7 +2078,7 @@ export function RouletteBoard({
         {/* 1. OBERE INFO-LEISTE OBERHALB DES SPIELFELDS: GEZOGENE ZAHLEN · EINSATZ · RUNDE & ZEIT */}
         <div className="roulette-landscape-topbar grid min-h-[24px] w-full shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 sm:gap-4 px-1">
           {/* Links: Gezogene Zahlen (Verlauf) */}
-          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar justify-self-start">
+          <div className="flex min-w-0 items-center gap-1.5 overflow-x-auto no-scrollbar p-0.5 justify-self-start">
             <span className="hidden md:inline font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase shrink-0">
               VERLAUF
             </span>
