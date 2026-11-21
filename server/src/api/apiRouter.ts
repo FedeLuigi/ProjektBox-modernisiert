@@ -16,6 +16,7 @@ import {
   upsertPersistentPlayerProfile,
 } from '../database/playerRepository.js';
 import { isDatabaseConfigured, isDatabaseConnected } from '../database/prismaClient.js';
+import { getDashboardData } from '../routes/dashboard.js';
 
 export const apiRouter = Router();
 
@@ -244,6 +245,10 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
       connected: isDatabaseConnected(),
     },
   });
+});
+
+apiRouter.get('/dashboard', (_req: Request, res: Response) => {
+  res.json(getDashboardData());
 });
 
 apiRouter.get('/server-info', (req: Request, res: Response) => {

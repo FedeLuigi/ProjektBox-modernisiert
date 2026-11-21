@@ -1,23 +1,15 @@
 import { Bot, Settings, Tv } from 'lucide-react';
-import {
-  ConnectionStatusBadge,
-  PlayerAvatarButton,
-  type AvatarConfig,
-} from '@projektbox/ui';
+import { ConnectionStatusBadge } from '@projektbox/ui';
 
 export interface TvHeaderProps {
-  avatar?: AvatarConfig;
   hasActiveLobby?: boolean;
-  onOpenProfile: () => void;
   onOpenSimulation: () => void;
   onOpenActiveLobby?: () => void;
   onOpenSettings: () => void;
 }
 
 export function TvHeader({
-  avatar,
   hasActiveLobby = false,
-  onOpenProfile,
   onOpenSimulation,
   onOpenActiveLobby,
   onOpenSettings,
@@ -26,10 +18,6 @@ export function TvHeader({
     <div className="mx-auto w-full max-w-[1600px] shrink-0 px-3 sm:px-6 lg:px-10">
       <header className="relative z-30 flex w-full flex-wrap items-center justify-between gap-2.5 sm:gap-4 py-2.5 sm:py-3">
         <div className="flex min-w-0 items-center gap-2.5 sm:gap-3.5">
-          <div className="shrink-0 rounded-full ring-2 ring-white/25 shadow-[0_4px_14px_rgba(0,0,0,0.4)]">
-            <PlayerAvatarButton avatar={avatar} onClick={onOpenProfile} />
-          </div>
-
           <div className="flex items-center gap-2 sm:gap-3 min-w-0">
             <div className="border-b-2 border-[#F59E0B] px-1 pb-0.5 select-none">
               <span className="font-arcade block truncate text-lg sm:text-xl lg:text-3xl tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">

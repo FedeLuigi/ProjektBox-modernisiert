@@ -1,7 +1,6 @@
 import { useCallback, useMemo, useState, useEffect, useRef } from 'react';
 import type { Lobby, NavSection } from '@projektbox/shared/types';
 import {
-  AvatarCustomizerModal,
   GAMES,
   IslandBackground,
   SettingsSheet,
@@ -13,7 +12,6 @@ import {
   installGlobalAudioHandlers,
   recordGamePlayed,
   saveFavoriteGameIds,
-  saveUserProfile,
   socketService,
   syncBackgroundMusic,
   useUserProfile,
@@ -45,7 +43,6 @@ export function App() {
   const [restoredLobby, setRestoredLobby] = useState<Lobby | null>(null);
   const [activeLobby, setActiveLobby] = useState<Lobby | null>(null);
   const [showSettings, setShowSettings] = useState(false);
-  const [showAvatarModal, setShowAvatarModal] = useState(false);
 
   const [soundEnabled, setSoundEnabled] = useState(() => {
     try {
@@ -213,10 +210,6 @@ export function App() {
       setShowSplash(false);
       return;
     }
-    if (showAvatarModal) {
-      setShowAvatarModal(false);
-      return;
-    }
     if (showSettings) {
       setShowSettings(false);
       return;
@@ -239,7 +232,6 @@ export function App() {
   }, [
     activeLobby,
     isStartingSimulation,
-    showAvatarModal,
     showSettings,
     showSimulationModal,
     showSplash,
@@ -248,15 +240,13 @@ export function App() {
 
   const activeScopeKey = showSplash
     ? 'splash'
-    : showAvatarModal
-      ? 'avatar'
-      : showSettings
-        ? 'settings'
-        : showSimulationModal
-          ? 'simulation'
-          : tvGame
-            ? `game:${tvGame.id}:${activeLobby?.status || 'lobby'}`
-            : `gallery:${activeSection}`;
+    : showSettings
+      ? 'settings'
+      : showSimulationModal
+        ? 'simulation'
+        : tvGame
+          ? `game:${tvGame.id}:${activeLobby?.status || 'lobby'}`
+          : `gallery:${activeSection}`;
 
   useTvRemoteNavigation({
     enabled: true,
@@ -265,7 +255,7 @@ export function App() {
   });
 
   const hasActiveOverlay =
-    showSplash || Boolean(tvGame) || showSimulationModal || showSettings || showAvatarModal;
+    showSplash || Boolean(tvGame) || showSimulationModal || showSettings;
 
   const filterCounts = useMemo<Partial<Record<NavSection, number>>>(
     () => ({ favorites: favoriteIds.length, recent: recentEntries.length }),
@@ -304,9 +294,7 @@ export function App() {
           }`}
         >
           <TvHeader
-            avatar={userProfile.avatar}
             hasActiveLobby={Boolean(activeLobby)}
-            onOpenProfile={() => setShowAvatarModal(true)}
             onOpenSimulation={() => {
               setSimulationError(null);
               setShowSimulationModal(true);
@@ -385,17 +373,6 @@ export function App() {
         vibrationEnabled={vibrationEnabled}
         onToggleVibration={(enabled) => setVibrationEnabled(enabled)}
       />
-
-      {showAvatarModal && (
-        <AvatarCustomizerModal
-          onClose={() => setShowAvatarModal(false)}
-          config={userProfile.avatar}
-          name={userProfile.name}
-          onSave={({ avatar, name }) => {
-            saveUserProfile({ avatar, name });
-          }}
-        />
-      )}
     </div>
   );
 }

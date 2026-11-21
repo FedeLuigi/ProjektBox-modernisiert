@@ -415,6 +415,18 @@ export class LobbyManager {
     return this.lobbies.get(lobbyId);
   }
 
+  public getAllLobbies(): Lobby[] {
+    return Array.from(this.lobbies.values());
+  }
+
+  public closeLobby(lobbyId: string): boolean {
+    const lobby = this.lobbies.get(lobbyId);
+    if (!lobby) return false;
+    this.removeLobbyIndexes(lobby);
+    this.persistSnapshot();
+    return true;
+  }
+
   public createLobby(params: {
     name?: string;
     isPrivate: boolean;

@@ -8,6 +8,11 @@ import https from 'node:https';
 import { fileURLToPath } from 'node:url';
 import { Server as SocketIOServer } from 'socket.io';
 import { apiRouter } from './api/apiRouter.js';
+import {
+  dashboardRouter,
+  handleDashboardPage,
+  setDashboardSocketIO,
+} from './routes/dashboard.js';
 import { registerSocketHandlers } from './sockets/socketHandlers.js';
 import { lobbyManager } from './lobby/lobbyManager.js';
 import { closeDatabaseClient } from './database/prismaClient.js';
@@ -86,6 +91,11 @@ app.get('/healthz', (_req, res) => {
 // REST API Routen
 app.use('/api', apiRouter);
 
+// Backend Server Dashboard (direkt unter / und /dashboard)
+app.use('/dashboard', dashboardRouter);
+app.get('/admin', (_req, res) => res.redirect('/dashboard'));
+app.get('/', handleDashboardPage);
+
 // Optionales Fallback-Hosting (nur falls lokal zusammengebaut, in Produktion getrennte Render Static Sites)
 const possibleClientPaths = [
   path.resolve(__dirname, '../../apps/smartphone/dist'),
@@ -114,6 +124,8 @@ if (clientDistPath && process.env.DISABLE_STATIC_FRONTEND !== 'true') {
   app.get('*', (req, res, next) => {
     if (
       req.path.startsWith('/api') ||
+      req.path.startsWith('/dashboard') ||
+      req.path.startsWith('/admin') ||
       req.path.startsWith('/socket.io') ||
       req.path.startsWith('/healthz')
     ) {
@@ -125,15 +137,6 @@ if (clientDistPath && process.env.DISABLE_STATIC_FRONTEND !== 'true') {
       return res.sendFile(indexPath);
     }
     next();
-  });
-} else {
-  app.get('/', (_req, res) => {
-    res.json({
-      status: 'ok',
-      service: 'ProjektBox Backend API',
-      tvOriginConfigured: Boolean(process.env.TV_ORIGIN),
-      smartphoneOriginConfigured: Boolean(process.env.SMARTPHONE_ORIGIN),
-    });
   });
 }
 
@@ -175,6 +178,7 @@ const io = new SocketIOServer(server, {
 });
 
 registerSocketHandlers(io);
+setDashboardSocketIO(io);
 
 async function bootstrap() {
   const restored = await lobbyManager.init();
@@ -187,6 +191,7 @@ async function bootstrap() {
 
   server.listen(PORT, '0.0.0.0', () => {
     console.log(`⚡ ProjektBox Server & Socket.io läuft auf Port ${PORT} (0.0.0.0)`);
+    console.log(`📊 Backend Dashboard verfügbar unter: http://localhost:${PORT}/dashboard`);
     if (allowedOrigins.length > 0) {
       console.log(`🛡️ CORS Allowlist aktiv (${allowedOrigins.length} Origins)`);
     }
