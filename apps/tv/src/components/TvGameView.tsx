@@ -216,11 +216,6 @@ export function TvGameView({
                       <div className="flex items-center gap-2.5 min-w-0">
                         <Avatar config={p.avatar} size={36} />
                         <span className="font-arcade text-sm uppercase truncate">{p.name}</span>
-                        {p.connectionState === 'disconnected' && !p.connected && (
-                          <span className="rounded border border-[#F59E0B]/50 bg-[#F59E0B]/20 px-1.5 py-0.5 font-arcade text-[10px] text-[#FDE68A] uppercase">
-                            GETRENNT
-                          </span>
-                        )}
                       </div>
                       <span className="font-arcade text-sm text-[#FDE68A] uppercase">{score}</span>
                     </div>

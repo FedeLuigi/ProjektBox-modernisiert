@@ -456,14 +456,6 @@ export function LobbyScreen({
                       <Crown className="h-3 w-3 fill-current" />
                     </span>
                   )}
-                  {p.connectionState === 'disconnected' && !p.connected && (
-                    <span
-                      title="Verbindung unterbrochen – Wiederverbindung läuft"
-                      className="inline-flex items-center rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-1.5 py-0.5 font-arcade text-[10px] text-[#FDE68A] uppercase animate-pulse shrink-0"
-                    >
-                      GETRENNT
-                    </span>
-                  )}
                 </div>
               </div>
 

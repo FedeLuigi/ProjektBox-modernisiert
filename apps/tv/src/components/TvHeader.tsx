@@ -1,5 +1,4 @@
 import { Bot, Settings, Tv } from 'lucide-react';
-import { ConnectionStatusBadge } from '@projektbox/ui';
 
 export interface TvHeaderProps {
   hasActiveLobby?: boolean;
@@ -32,10 +31,6 @@ export function TvHeader({
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2 sm:gap-3">
-          <div className="hidden lg:block">
-            <ConnectionStatusBadge />
-          </div>
-
           {hasActiveLobby && onOpenActiveLobby && (
             <button
               type="button"
