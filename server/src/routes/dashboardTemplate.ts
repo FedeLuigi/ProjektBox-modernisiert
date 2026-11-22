@@ -1016,6 +1016,12 @@ export function renderDashboardHtml(initialData: unknown): string {
     pushHistory(currentData);
     renderData(currentData);
     schedulePoll();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then((regs) => {
+        regs.forEach((r) => r.unregister());
+      }).catch(() => {});
+    }
   </script>
 </body>
 </html>`;

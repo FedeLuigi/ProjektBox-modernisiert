@@ -212,6 +212,7 @@ export function handleDashboardPage(_req: Request, res: Response): void {
   const data = getDashboardData();
   const html = renderDashboardHtml(data);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.send(html);
 }
 
