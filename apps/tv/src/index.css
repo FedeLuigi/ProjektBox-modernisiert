@@ -4,6 +4,11 @@
 @import "@projektbox/ui/styles.css";
 
 /* ─── TV-SPEZIFISCHE FOKUSMARKIERUNGEN & WOHNZIMMER-ERGONOMIE ─── */
+[data-tv-app="true"] {
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 [data-tv-app="true"] button:focus-visible,
 [data-tv-app="true"] [role="button"]:focus-visible,
 [data-tv-app="true"] input:not([data-tv-search-input="true"]):focus-visible,
@@ -28,6 +33,8 @@
   border: none !important;
 }
 
+[data-tv-app="true"] .tv-search-box:focus-within,
+[data-tv-app="true"] .tv-search-box:hover,
 [data-tv-app="true"] .tv-search-box:has(> input:focus-visible),
 [data-tv-app="true"] .tv-search-box:has(> input[data-tv-focused="true"]) {
   border-color: #FBBF24 !important;
@@ -39,6 +46,7 @@
 }
 
 [data-tv-app="true"] [data-tv-card="true"]:focus-visible,
+[data-tv-app="true"] [data-tv-card="true"]:hover,
 [data-tv-app="true"] [data-tv-card="true"][data-tv-focused="true"] {
   transform: translateY(-3px) scale(1.015);
   border-color: #FBBF24 !important;

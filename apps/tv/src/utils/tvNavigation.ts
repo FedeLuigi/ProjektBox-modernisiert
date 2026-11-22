@@ -116,12 +116,13 @@ function isBackKey(e: KeyboardEvent): boolean {
     e.key === 'Escape' ||
     e.key === 'GoBack' ||
     e.key === 'BrowserBack' ||
+    e.keyCode === 27 ||
     e.keyCode === 10009 || // Samsung Tizen Return
     e.keyCode === 461 // LG webOS Back
   ) {
     return true;
   }
-  if (e.key === 'Backspace') {
+  if (e.key === 'Backspace' || e.keyCode === 8) {
     const active = document.activeElement;
     return !(active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement);
   }
@@ -131,12 +132,33 @@ function isBackKey(e: KeyboardEvent): boolean {
 function getArrowDirection(e: KeyboardEvent): Direction | null {
   switch (e.key) {
     case 'ArrowUp':
+    case 'Up':
       return 'up';
     case 'ArrowDown':
+    case 'Down':
       return 'down';
     case 'ArrowLeft':
+    case 'Left':
       return 'left';
     case 'ArrowRight':
+    case 'Right':
+      return 'right';
+    default:
+      break;
+  }
+
+  switch (e.keyCode) {
+    case 38:
+    case 19: // Android TV DPAD_UP
+      return 'up';
+    case 40:
+    case 20: // Android TV DPAD_DOWN
+      return 'down';
+    case 37:
+    case 21: // Android TV DPAD_LEFT
+      return 'left';
+    case 39:
+    case 22: // Android TV DPAD_RIGHT
       return 'right';
     default:
       return null;
@@ -149,6 +171,7 @@ function isSelectKey(e: KeyboardEvent): boolean {
     e.key === 'Select' ||
     e.key === 'Accept' ||
     e.key === 'MediaSelect' ||
+    e.keyCode === 13 ||
     e.keyCode === 23 // Android TV DPAD_CENTER
   );
 }
@@ -195,13 +218,22 @@ export function useTvRemoteNavigation(options: {
       }
     };
 
+    const handleMouseOver = (e: MouseEvent) => {
+      if (!(e.target instanceof Element)) return;
+      const scope = getTopActiveScope();
+      const target = e.target.closest<HTMLElement>(FOCUSABLE_SELECTOR);
+      if (target && scope.contains(target) && isElementVisiblyFocusable(target)) {
+        syncTvFocusAttribute(target);
+      }
+    };
+
     const handleKeyDown = (e: KeyboardEvent) => {
       const active = document.activeElement as HTMLElement | null;
       const isTextInput =
         active instanceof HTMLInputElement || active instanceof HTMLTextAreaElement;
 
       if (isBackKey(e)) {
-        if (isTextInput && e.key === 'Escape') {
+        if (isTextInput && (e.key === 'Escape' || e.keyCode === 27)) {
           active.blur();
           return;
         }
@@ -221,14 +253,19 @@ export function useTvRemoteNavigation(options: {
         const candidates = getFocusableElements(scope);
         if (candidates.length === 0) return;
 
-        if (!active || !candidates.includes(active)) {
+        const currentFocused =
+          active && candidates.includes(active)
+            ? active
+            : candidates.find((el) => el.dataset.tvFocused === 'true') || null;
+
+        if (!currentFocused) {
           focusElement(
             candidates.find((el) => el.dataset.tvAutofocus === 'true') || candidates[0]
           );
           return;
         }
 
-        const next = pickSpatialNext(active, candidates, dir);
+        const next = pickSpatialNext(currentFocused, candidates, dir);
         if (next) {
           focusElement(next);
         }
@@ -237,12 +274,12 @@ export function useTvRemoteNavigation(options: {
 
       if (isSelectKey(e) && active) {
         if (isTextInput) {
-          if (e.key === 'Enter') return;
+          if (e.key === 'Enter' || e.keyCode === 13) return;
         }
         // Native buttons/links klicken bei Enter selbst; bei D-Pad Select oder Custom-Cards manuell auslösen
         const isNativeClickable =
           active.tagName === 'BUTTON' || active.tagName === 'A';
-        if (!isNativeClickable || e.key !== 'Enter') {
+        if (!isNativeClickable || (e.key !== 'Enter' && e.keyCode !== 13)) {
           e.preventDefault();
           active.click();
         }
@@ -250,9 +287,11 @@ export function useTvRemoteNavigation(options: {
     };
 
     document.addEventListener('focusin', handleFocusIn);
+    document.addEventListener('mouseover', handleMouseOver, { passive: true });
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       document.removeEventListener('focusin', handleFocusIn);
+      document.removeEventListener('mouseover', handleMouseOver);
       window.removeEventListener('keydown', handleKeyDown);
     };
   }, [enabled, onBack]);
