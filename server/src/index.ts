@@ -96,6 +96,26 @@ app.use('/dashboard', dashboardRouter);
 app.get('/admin', (_req, res) => res.redirect('/dashboard'));
 app.get('/', handleDashboardPage);
 
+// Verhindert, dass ein älterer PWA-Service-Worker auf der Backend-Domain weiterhin /dashboard abfängt
+if (process.env.DISABLE_STATIC_FRONTEND === 'true') {
+  app.get('/sw.js', (_req, res) => {
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(`
+      self.addEventListener('install', () => self.skipWaiting());
+      self.addEventListener('activate', (event) => {
+        event.waitUntil((async () => {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+          await self.registration.unregister();
+          const clients = await self.clients.matchAll({ type: 'window' });
+          clients.forEach((client) => client.navigate(client.url));
+        })());
+      });
+    `);
+  });
+}
+
 // Optionales Fallback-Hosting (nur falls lokal zusammengebaut, in Produktion getrennte Render Static Sites)
 const possibleClientPaths = [
   path.resolve(__dirname, '../../apps/smartphone/dist'),
