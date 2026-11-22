@@ -1,11 +1,9 @@
 import express from 'express';
 import cors, { type CorsOptions } from 'cors';
 import dotenv from 'dotenv';
-import path from 'node:path';
 import fs from 'node:fs';
 import http from 'node:http';
 import https from 'node:https';
-import { fileURLToPath } from 'node:url';
 import { Server as SocketIOServer } from 'socket.io';
 import { apiRouter } from './api/apiRouter.js';
 import {
@@ -19,9 +17,6 @@ import { closeDatabaseClient } from './database/prismaClient.js';
 import { configureOptionalRedisAdapter } from './utils/redisAdapter.js';
 
 dotenv.config();
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const PORT = Number(process.env.PORT) || 5001;
 const SSL_KEY = process.env.SSL_KEY_PATH;
@@ -91,74 +86,41 @@ app.get('/healthz', (_req, res) => {
 // REST API Routen
 app.use('/api', apiRouter);
 
-// Backend Server Dashboard (direkt unter / und /dashboard)
+// Backend Server Dashboard (direkt unter / und /dashboard; keine Spielplattform auf dem Backend)
 app.use('/dashboard', dashboardRouter);
 app.get('/admin', (_req, res) => res.redirect('/dashboard'));
 app.get('/', handleDashboardPage);
 
-// Verhindert, dass ein älterer PWA-Service-Worker auf der Backend-Domain weiterhin /dashboard abfängt
-if (process.env.DISABLE_STATIC_FRONTEND === 'true') {
-  app.get('/sw.js', (_req, res) => {
-    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.send(`
-      self.addEventListener('install', () => self.skipWaiting());
-      self.addEventListener('activate', (event) => {
-        event.waitUntil((async () => {
-          const keys = await caches.keys();
-          await Promise.all(keys.map((k) => caches.delete(k)));
-          await self.registration.unregister();
-          const clients = await self.clients.matchAll({ type: 'window' });
-          clients.forEach((client) => client.navigate(client.url));
-        })());
-      });
-    `);
-  });
-}
+// Verhindert, dass ein älterer PWA-Service-Worker auf der Backend-Domain weiterhin / oder /dashboard abfängt
+app.get('/sw.js', (_req, res) => {
+  res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.send(`
+    self.addEventListener('install', () => self.skipWaiting());
+    self.addEventListener('activate', (event) => {
+      event.waitUntil((async () => {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+        await self.registration.unregister();
+        const clients = await self.clients.matchAll({ type: 'window' });
+        clients.forEach((client) => client.navigate(client.url));
+      })());
+    });
+  `);
+});
 
-// Optionales Fallback-Hosting (nur falls lokal zusammengebaut, in Produktion getrennte Render Static Sites)
-const possibleClientPaths = [
-  path.resolve(__dirname, '../../apps/smartphone/dist'),
-  path.resolve(__dirname, '../../apps/tv/dist'),
-];
-
-const clientDistPath = possibleClientPaths.find((p) => fs.existsSync(p));
-
-if (clientDistPath && process.env.DISABLE_STATIC_FRONTEND !== 'true') {
-  console.log(`📦 Statisches Frontend Fallback gefunden unter: ${clientDistPath}`);
-  app.use(
-    express.static(clientDistPath, {
-      setHeaders: (res, filePath) => {
-        const baseName = path.basename(filePath);
-        if (baseName === 'sw.js' || baseName === 'index.html' || baseName === 'manifest.webmanifest') {
-          res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-          return;
-        }
-        if (filePath.includes(`${path.sep}assets${path.sep}`)) {
-          res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
-        }
-      },
-    })
-  );
-
-  app.get('*', (req, res, next) => {
-    if (
-      req.path.startsWith('/api') ||
-      req.path.startsWith('/dashboard') ||
-      req.path.startsWith('/admin') ||
-      req.path.startsWith('/socket.io') ||
-      req.path.startsWith('/healthz')
-    ) {
-      return next();
-    }
-    const indexPath = path.join(clientDistPath, 'index.html');
-    if (fs.existsSync(indexPath)) {
-      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-      return res.sendFile(indexPath);
-    }
-    next();
-  });
-}
+app.get('*', (req, res, next) => {
+  if (
+    req.path.startsWith('/api') ||
+    req.path.startsWith('/dashboard') ||
+    req.path.startsWith('/socket.io') ||
+    req.path.startsWith('/healthz') ||
+    req.path === '/sw.js'
+  ) {
+    return next();
+  }
+  res.redirect('/dashboard');
+});
 
 let server: http.Server | https.Server;
 
