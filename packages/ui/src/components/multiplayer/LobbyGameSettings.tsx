@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { ChevronDown, ChevronUp, Crown, Lock } from 'lucide-react';
 import {
   CASINO_BALANCE_OPTIONS,
@@ -19,7 +19,53 @@ interface LobbyGameSettingsProps {
   isHost: boolean;
   frameless?: boolean;
   hideRoleBadge?: boolean;
+  defaultOpen?: boolean;
   onUpdate: (newSettings: Record<string, any>) => void;
+}
+
+function SettingRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-[136px_1fr] items-start sm:items-center gap-2">
+      <span className="font-arcade text-xs text-[#94A3B8] uppercase">{label}</span>
+      <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">{children}</div>
+    </div>
+  );
+}
+
+function OnOffButtons({
+  enabled,
+  disabled,
+  onChange,
+}: {
+  enabled: boolean;
+  disabled: boolean;
+  onChange: (next: boolean) => void;
+}) {
+  return (
+    <>
+      <OpenButton
+        size="sm"
+        disabled={disabled}
+        variant={enabled ? 'primary' : 'secondary'}
+        onClick={() => onChange(true)}
+      >
+        AN
+      </OpenButton>
+      <OpenButton
+        size="sm"
+        disabled={disabled}
+        variant="secondary"
+        className={
+          !enabled
+            ? '!border-slate-300/60 !bg-slate-600/85 !text-white shadow-[0_4px_12px_rgba(15,23,42,0.35)]'
+            : '!text-white/60'
+        }
+        onClick={() => onChange(false)}
+      >
+        AUS
+      </OpenButton>
+    </>
+  );
 }
 
 const SLF_PRESETS = (['klassisch', 'party', 'bunt'] as const).map((id) => ({
@@ -33,9 +79,10 @@ export function LobbyGameSettings({
   isHost,
   frameless = false,
   hideRoleBadge = false,
+  defaultOpen = false,
   onUpdate,
 }: LobbyGameSettingsProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(defaultOpen);
 
   const isDrawAndGuess = gameId === 'draw-and-guess';
   const isStadtLandFluss = gameId === 'stadt-land-fluss';
@@ -163,180 +210,123 @@ export function LobbyGameSettings({
           )}
         </div>
 
-        <div className="text-white/75 pl-2 shrink-0">
+        <div className="font-arcade inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[11px] text-white/85 uppercase shrink-0">
+          <span>{isOpen ? 'ZUKLAPPEN' : 'ANPASSEN'}</span>
           {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
         </div>
       </button>
 
       {isOpen && (
-        <div className="px-3 sm:px-4 pb-3 pt-2 space-y-2.5 border-t border-white/12 animate-fade-in">
+        <div className="px-3 sm:px-4 pb-3 pt-2.5 space-y-2.5 border-t border-white/12 animate-fade-in">
           {isDrawAndGuess ? (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">RUNDEN</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {ROUND_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={rounds === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetRounds(opt)}
-                    >
-                      {opt}
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">ZEIT</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {DURATION_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={roundDuration === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetDuration(opt)}
-                    >
-                      {opt}S
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">EIGENE WÖRTER</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
+              <SettingRow label="RUNDEN">
+                {ROUND_OPTIONS.map((opt) => (
                   <OpenButton
+                    key={opt}
                     size="sm"
                     disabled={!isHost}
-                    variant={customWordsEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetCustomWordsEnabled(true)}
+                    variant={rounds === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetRounds(opt)}
                   >
-                    AN
+                    {opt}
                   </OpenButton>
+                ))}
+              </SettingRow>
+
+              <SettingRow label="ZEIT">
+                {DURATION_OPTIONS.map((opt) => (
                   <OpenButton
+                    key={opt}
                     size="sm"
                     disabled={!isHost}
-                    variant={!customWordsEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetCustomWordsEnabled(false)}
+                    variant={roundDuration === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetDuration(opt)}
                   >
-                    AUS
+                    {opt}S
                   </OpenButton>
-                </div>
-              </div>
+                ))}
+              </SettingRow>
+
+              <SettingRow label="EIGENE WÖRTER">
+                <OnOffButtons
+                  enabled={customWordsEnabled}
+                  disabled={!isHost}
+                  onChange={handleSetCustomWordsEnabled}
+                />
+              </SettingRow>
 
               {!customWordsEnabled && (
-                <div className="flex flex-col gap-1.5">
-                  <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIE</span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    {CATEGORIES.map((cat) => (
-                      <OpenButton
-                        key={cat}
-                        size="sm"
-                        disabled={!isHost}
-                        variant={
-                          category.toLowerCase() === cat.toLowerCase() ? 'amber' : 'secondary'
-                        }
-                        onClick={() => handleSetCategory(cat)}
-                      >
-                        {cat}
-                      </OpenButton>
-                    ))}
-                  </div>
-                </div>
+                <SettingRow label="KATEGORIE">
+                  {CATEGORIES.map((cat) => (
+                    <OpenButton
+                      key={cat}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={
+                        category.toLowerCase() === cat.toLowerCase() ? 'amber' : 'secondary'
+                      }
+                      onClick={() => handleSetCategory(cat)}
+                    >
+                      {cat}
+                    </OpenButton>
+                  ))}
+                </SettingRow>
               )}
             </>
           ) : isStadtLandFluss ? (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">RUNDEN</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {ROUND_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={rounds === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetRounds(opt)}
-                    >
-                      {opt}
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
+              <SettingRow label="RUNDEN">
+                {ROUND_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={rounds === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetRounds(opt)}
+                  >
+                    {opt}
+                  </OpenButton>
+                ))}
+              </SettingRow>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">ZEIT</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {DURATION_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={roundDuration === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetDuration(opt)}
-                    >
-                      {opt}S
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
+              <SettingRow label="ZEIT">
+                {DURATION_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={roundDuration === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetDuration(opt)}
+                  >
+                    {opt}S
+                  </OpenButton>
+                ))}
+              </SettingRow>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STOPP-KNOPF</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <OpenButton
-                    size="sm"
-                    disabled={!isHost}
-                    variant={stopButtonEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetStopButton(true)}
-                  >
-                    AN
-                  </OpenButton>
-                  <OpenButton
-                    size="sm"
-                    disabled={!isHost}
-                    variant={!stopButtonEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetStopButton(false)}
-                  >
-                    AUS
-                  </OpenButton>
-                </div>
-              </div>
+              <SettingRow label="STOPP-KNOPF">
+                <OnOffButtons
+                  enabled={stopButtonEnabled}
+                  disabled={!isHost}
+                  onChange={handleSetStopButton}
+                />
+              </SettingRow>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">EIGENE WÖRTER</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <OpenButton
-                    size="sm"
-                    disabled={!isHost}
-                    variant={customWordsEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetCustomWordsEnabled(true)}
-                  >
-                    AN
-                  </OpenButton>
-                  <OpenButton
-                    size="sm"
-                    disabled={!isHost}
-                    variant={!customWordsEnabled ? 'primary' : 'secondary'}
-                    onClick={() => handleSetCustomWordsEnabled(false)}
-                  >
-                    AUS
-                  </OpenButton>
-                </div>
-              </div>
+              <SettingRow label="EIGENE WÖRTER">
+                <OnOffButtons
+                  enabled={customWordsEnabled}
+                  disabled={!isHost}
+                  onChange={handleSetCustomWordsEnabled}
+                />
+              </SettingRow>
 
               {customWordsEnabled ? (
-                <p className="font-arcade text-[10px] text-[#6EE7B7] uppercase pt-0.5">
+                <p className="font-arcade text-[10px] text-[#6EE7B7] uppercase pt-0.5 sm:text-right">
                   REIHUM WÄHLT VOR JEDER RUNDE EIN SPIELER EIGENE KATEGORIEN
                 </p>
               ) : (
                 <div className="flex flex-col gap-1.5">
-                  <span className="font-arcade text-xs text-[#94A3B8] uppercase">KATEGORIEN</span>
-                  <div className="flex items-center gap-1.5 flex-wrap">
+                  <SettingRow label="KATEGORIEN">
                     {SLF_PRESETS.map((preset) => (
                       <OpenButton
                         key={preset.id}
@@ -348,8 +338,8 @@ export function LobbyGameSettings({
                         {preset.label}
                       </OpenButton>
                     ))}
-                  </div>
-                  <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5">
+                  </SettingRow>
+                  <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5 sm:text-right">
                     {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
                   </p>
                 </div>
@@ -357,148 +347,124 @@ export function LobbyGameSettings({
             </>
           ) : isRoulette ? (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">RUNDEN</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {ROULETTE_ROUND_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={rounds === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetRounds(opt)}
-                    >
-                      {opt}
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
+              <SettingRow label="RUNDEN">
+                {ROULETTE_ROUND_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={rounds === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetRounds(opt)}
+                  >
+                    {opt}
+                  </OpenButton>
+                ))}
+              </SettingRow>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">SETZZEIT</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {CASINO_DURATION_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={roundDuration === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetDuration(opt)}
-                    >
-                      {opt}S
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
+              <SettingRow label="SETZZEIT">
+                {CASINO_DURATION_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={roundDuration === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetDuration(opt)}
+                  >
+                    {opt}S
+                  </OpenButton>
+                ))}
+              </SettingRow>
 
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STARTGUTHABEN</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {CASINO_BALANCE_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={startingBalance === opt ? 'primary' : 'secondary'}
-                      onClick={() => handleSetStartingBalance(opt)}
-                    >
-                      {opt.toLocaleString('de-DE')} €
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
+              <SettingRow label="STARTGUTHABEN">
+                {CASINO_BALANCE_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={startingBalance === opt ? 'primary' : 'secondary'}
+                    onClick={() => handleSetStartingBalance(opt)}
+                  >
+                    {opt.toLocaleString('de-DE')} €
+                  </OpenButton>
+                ))}
+              </SettingRow>
             </>
           ) : isPoker ? (
             <>
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">MAX HÄNDE</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {POKER_HAND_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={rounds === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetRounds(opt)}
-                    >
-                      {opt}
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">ZUGZEIT</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {CASINO_DURATION_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={roundDuration === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetDuration(opt)}
-                    >
-                      {opt}S
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">BLINDS</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {POKER_BLIND_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={smallBlind === opt ? 'amber' : 'secondary'}
-                      onClick={() => handleSetSmallBlind(opt)}
-                    >
-                      {opt}/{opt * 2} €
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
-                <span className="font-arcade text-xs text-[#94A3B8] uppercase">STARTGUTHABEN</span>
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  {CASINO_BALANCE_OPTIONS.map((opt) => (
-                    <OpenButton
-                      key={opt}
-                      size="sm"
-                      disabled={!isHost}
-                      variant={startingBalance === opt ? 'primary' : 'secondary'}
-                      onClick={() => handleSetStartingBalance(opt)}
-                    >
-                      {opt.toLocaleString('de-DE')} €
-                    </OpenButton>
-                  ))}
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-              <span className="font-arcade text-xs text-[#94A3B8] uppercase">MODUS / RUNDEN</span>
-              <div className="flex items-center gap-1.5 flex-wrap">
-                {[
-                  { val: 1, label: '1 RUNDE' },
-                  { val: 3, label: 'BEST OF 3' },
-                  { val: 5, label: 'BEST OF 5' },
-                ].map(({ val, label }) => (
+              <SettingRow label="MAX HÄNDE">
+                {POKER_HAND_OPTIONS.map((opt) => (
                   <OpenButton
-                    key={val}
+                    key={opt}
                     size="sm"
                     disabled={!isHost}
-                    variant={rounds === val ? 'primary' : 'secondary'}
-                    onClick={() => handleSetRounds(val)}
+                    variant={rounds === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetRounds(opt)}
                   >
-                    {label}
+                    {opt}
                   </OpenButton>
                 ))}
-              </div>
-            </div>
+              </SettingRow>
+
+              <SettingRow label="ZUGZEIT">
+                {CASINO_DURATION_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={roundDuration === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetDuration(opt)}
+                  >
+                    {opt}S
+                  </OpenButton>
+                ))}
+              </SettingRow>
+
+              <SettingRow label="BLINDS">
+                {POKER_BLIND_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={smallBlind === opt ? 'amber' : 'secondary'}
+                    onClick={() => handleSetSmallBlind(opt)}
+                  >
+                    {opt}/{opt * 2} €
+                  </OpenButton>
+                ))}
+              </SettingRow>
+
+              <SettingRow label="STARTGUTHABEN">
+                {CASINO_BALANCE_OPTIONS.map((opt) => (
+                  <OpenButton
+                    key={opt}
+                    size="sm"
+                    disabled={!isHost}
+                    variant={startingBalance === opt ? 'primary' : 'secondary'}
+                    onClick={() => handleSetStartingBalance(opt)}
+                  >
+                    {opt.toLocaleString('de-DE')} €
+                  </OpenButton>
+                ))}
+              </SettingRow>
+            </>
+          ) : (
+            <SettingRow label="MODUS / RUNDEN">
+              {[
+                { val: 1, label: '1 RUNDE' },
+                { val: 3, label: 'BEST OF 3' },
+                { val: 5, label: 'BEST OF 5' },
+              ].map(({ val, label }) => (
+                <OpenButton
+                  key={val}
+                  size="sm"
+                  disabled={!isHost}
+                  variant={rounds === val ? 'primary' : 'secondary'}
+                  onClick={() => handleSetRounds(val)}
+                >
+                  {label}
+                </OpenButton>
+              ))}
+            </SettingRow>
           )}
         </div>
       )}
