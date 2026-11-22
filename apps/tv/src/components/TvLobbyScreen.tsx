@@ -142,7 +142,7 @@ export function TvLobbyScreen({
 
   useEffect(() => {
     if (qrCanvasRef.current && joinUrl) {
-      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 520).catch(console.error);
+      renderQrCodeToCanvas(qrCanvasRef.current, joinUrl, 720).catch(console.error);
     }
   }, [joinUrl, currentLobby?.code]);
 
@@ -288,13 +288,13 @@ export function TvLobbyScreen({
           ) : (
             <div className="my-auto grid w-full max-w-6xl grid-cols-1 lg:grid-cols-2 items-center gap-8 lg:gap-14">
               {/* Links: Freistehender QR-Code + Raumcode ohne dunkle Box oder Beschreibungstexte */}
-              <div className="flex flex-col items-center gap-5 text-center">
-                <div className="rounded-3xl border-2 border-white/25 bg-white p-3.5 lg:p-4 shadow-[0_22px_50px_rgba(0,0,0,0.45)]">
+              <div className="flex flex-col items-center gap-4 text-center">
+                <div className="rounded-3xl border-2 border-white/25 bg-white p-4 lg:p-5 shadow-[0_22px_50px_rgba(0,0,0,0.45)]">
                   <canvas
                     ref={qrCanvasRef}
                     data-join-url={joinUrl}
                     aria-label={`QR-Code zum Beitreten: ${joinUrl}`}
-                    className="h-48 w-48 sm:h-56 sm:w-56 lg:h-64 lg:w-64 block"
+                    className="h-64 w-64 sm:h-80 sm:w-80 lg:h-[360px] lg:w-[360px] xl:h-[420px] xl:w-[420px] block"
                   />
                 </div>
 
