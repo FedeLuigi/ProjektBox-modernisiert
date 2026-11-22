@@ -7,6 +7,7 @@ import {
   LogOut,
   RefreshCw,
   Share2,
+  SlidersHorizontal,
   Tv,
 } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
@@ -16,7 +17,7 @@ import {
   BackgroundCometCanvas,
   GAMES,
   HeaderStatusOverlay,
-  LobbyGameSettings,
+  LobbyOptionsModal,
   OpenButton,
   generateSimpleLobbyName,
   getLobbyJoinUrl,
@@ -60,6 +61,7 @@ export function LobbyScreen({
   const [copiedCode, setCopiedCode] = useState(false);
   const [copiedLink, setCopiedLink] = useState(false);
   const [isAvatarModalOpen, setIsAvatarModalOpen] = useState(false);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
   const hasAutoCreatedRef = useRef(false);
@@ -481,15 +483,6 @@ export function LobbyScreen({
     </div>
   ) : null;
 
-  const settingsBlock = currentLobby ? (
-    <LobbyGameSettings
-      gameId={currentLobby.gameId}
-      settings={currentLobby.settings}
-      isHost={canEditSettings}
-      onUpdate={handleUpdateSettings}
-    />
-  ) : null;
-
   return (
     <div
       role="dialog"
@@ -545,6 +538,16 @@ export function LobbyScreen({
               showWhenConnected
               onExitExpired={() => void handleLeaveLobby()}
             />
+            {currentLobby && (
+              <button
+                type="button"
+                onClick={() => setIsOptionsOpen(true)}
+                className="font-arcade inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs tracking-wider text-white uppercase hover:bg-white/12 cursor-pointer active:scale-95"
+              >
+                <SlidersHorizontal className="h-3.5 w-3.5 text-[#FBBF24]" />
+                <span>OPTIONEN</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -583,7 +586,6 @@ export function LobbyScreen({
                 </div>
 
                 <div className="lobby-landscape-right flex flex-col gap-4">
-                  {settingsBlock}
                   {playersBlock}
                 </div>
               </div>
@@ -606,6 +608,18 @@ export function LobbyScreen({
           onSave={({ avatar, name }) => {
             saveUserProfile({ avatar, name });
           }}
+        />
+      )}
+
+      {currentLobby && (
+        <LobbyOptionsModal
+          isOpen={isOptionsOpen}
+          gameTitle={activeGame.title}
+          gameId={currentLobby.gameId}
+          settings={currentLobby.settings}
+          isHost={canEditSettings}
+          onUpdate={handleUpdateSettings}
+          onClose={() => setIsOptionsOpen(false)}
         />
       )}
     </div>

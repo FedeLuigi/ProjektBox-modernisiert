@@ -1,5 +1,5 @@
 import { type ReactNode, useState } from 'react';
-import { ChevronDown, ChevronUp, Crown, Lock } from 'lucide-react';
+import { ArrowLeft, ChevronDown, ChevronUp, Crown, Lock } from 'lucide-react';
 import {
   CASINO_BALANCE_OPTIONS,
   CASINO_DURATION_OPTIONS,
@@ -20,6 +20,7 @@ interface LobbyGameSettingsProps {
   frameless?: boolean;
   hideRoleBadge?: boolean;
   defaultOpen?: boolean;
+  alwaysOpen?: boolean;
   onUpdate: (newSettings: Record<string, any>) => void;
 }
 
@@ -80,9 +81,11 @@ export function LobbyGameSettings({
   frameless = false,
   hideRoleBadge = false,
   defaultOpen = false,
+  alwaysOpen = false,
   onUpdate,
 }: LobbyGameSettingsProps) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+  const [isOpenState, setIsOpenState] = useState(defaultOpen);
+  const isOpen = alwaysOpen || isOpenState;
 
   const isDrawAndGuess = gameId === 'draw-and-guess';
   const isStadtLandFluss = gameId === 'stadt-land-fluss';
@@ -171,53 +174,63 @@ export function LobbyGameSettings({
     <div
       className={
         frameless
-          ? 'w-full border-b border-white/15 overflow-visible'
+          ? alwaysOpen
+            ? 'w-full overflow-visible'
+            : 'w-full border-b border-white/15 overflow-visible'
           : 'w-full rounded-xl border border-white/15 bg-white/[0.04] overflow-hidden'
       }
     >
-      <button
-        type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
-        className={`w-full flex items-center justify-between transition-colors cursor-pointer select-none text-left ${
-          frameless
-            ? 'rounded-lg px-2 py-2.5 hover:bg-white/[0.05]'
-            : 'px-4 py-2.5 hover:bg-white/[0.05]'
-        }`}
-        aria-expanded={isOpen}
-      >
-        <div className="min-w-0">
-          <div className="flex items-center gap-2">
-            <span className="font-arcade text-sm tracking-wider text-white uppercase">
-              OPTIONEN
-            </span>
-            {!hideRoleBadge &&
-              (isHost ? (
-                <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] text-[#FDE68A]">
-                  <Crown className="h-2.5 w-2.5 fill-current" />
-                  <span>HOST</span>
-                </span>
-              ) : (
-                <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-[#94A3B8]">
-                  <Lock className="h-2.5 w-2.5" />
-                  <span>NUR HOST</span>
-                </span>
-              ))}
+      {!alwaysOpen && (
+        <button
+          type="button"
+          onClick={() => setIsOpenState((prev) => !prev)}
+          className={`w-full flex items-center justify-between transition-colors cursor-pointer select-none text-left ${
+            frameless
+              ? 'rounded-lg px-2 py-2.5 hover:bg-white/[0.05]'
+              : 'px-4 py-2.5 hover:bg-white/[0.05]'
+          }`}
+          aria-expanded={isOpen}
+        >
+          <div className="min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-arcade text-sm tracking-wider text-white uppercase">
+                OPTIONEN
+              </span>
+              {!hideRoleBadge &&
+                (isHost ? (
+                  <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-2 py-0.5 text-[10px] text-[#FDE68A]">
+                    <Crown className="h-2.5 w-2.5 fill-current" />
+                    <span>HOST</span>
+                  </span>
+                ) : (
+                  <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] text-[#94A3B8]">
+                    <Lock className="h-2.5 w-2.5" />
+                    <span>NUR HOST</span>
+                  </span>
+                ))}
+            </div>
+            {!isOpen && (
+              <p className="font-arcade text-[11px] sm:text-xs text-[#94A3B8] leading-snug mt-0.5 uppercase">
+                {summaryText}
+              </p>
+            )}
           </div>
-          {!isOpen && (
-            <p className="font-arcade text-[11px] sm:text-xs text-[#94A3B8] leading-snug mt-0.5 uppercase">
-              {summaryText}
-            </p>
-          )}
-        </div>
 
-        <div className="font-arcade inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[11px] text-white/85 uppercase shrink-0">
-          <span>{isOpen ? 'ZUKLAPPEN' : 'ANPASSEN'}</span>
-          {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-        </div>
-      </button>
+          <div className="font-arcade inline-flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.06] px-3 py-1.5 text-[11px] text-white/85 uppercase shrink-0">
+            <span>{isOpen ? 'ZUKLAPPEN' : 'ANPASSEN'}</span>
+            {isOpen ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+          </div>
+        </button>
+      )}
 
       {isOpen && (
-        <div className="px-3 sm:px-4 pb-3 pt-2.5 space-y-2.5 border-t border-white/12 animate-fade-in">
+        <div
+          className={
+            alwaysOpen
+              ? 'space-y-3 animate-fade-in'
+              : 'px-3 sm:px-4 pb-3 pt-2.5 space-y-2.5 border-t border-white/12 animate-fade-in'
+          }
+        >
           {isDrawAndGuess ? (
             <>
               <SettingRow label="RUNDEN">
@@ -468,6 +481,98 @@ export function LobbyGameSettings({
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+interface LobbyOptionsModalProps {
+  isOpen: boolean;
+  gameTitle?: string;
+  gameId: string;
+  settings?: Record<string, any>;
+  isHost: boolean;
+  onUpdate: (newSettings: Record<string, any>) => void;
+  onClose: () => void;
+}
+
+/**
+ * Vollbild-Menü für Spieloptionen im einheitlichen Design der App-Modals.
+ */
+export function LobbyOptionsModal({
+  isOpen,
+  gameTitle,
+  gameId,
+  settings,
+  isHost,
+  onUpdate,
+  onClose,
+}: LobbyOptionsModalProps) {
+  if (!isOpen) return null;
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Spieloptionen"
+      data-tv-scope="modal"
+      onClick={onClose}
+      className="fixed inset-0 z-50 flex w-full flex-col items-center justify-between overflow-y-auto overflow-x-hidden overscroll-contain bg-[#0F172A]/88 pt-[calc(14px+env(safe-area-inset-top,0px))] pb-[calc(14px+env(safe-area-inset-bottom,0px))] pl-[max(16px,env(safe-area-inset-left,0px))] pr-[max(16px,env(safe-area-inset-right,0px))] sm:pt-[calc(28px+env(safe-area-inset-top,0px))] sm:pb-[calc(28px+env(safe-area-inset-bottom,0px))] sm:pl-[max(32px,env(safe-area-inset-left,0px))] sm:pr-[max(32px,env(safe-area-inset-right,0px))] backdrop-blur-md select-none animate-fade-in"
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="flex flex-1 min-h-0 w-full max-w-2xl flex-col justify-between"
+      >
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            data-tv-autofocus="true"
+            onClick={onClose}
+            className="font-arcade inline-flex h-9 sm:h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs tracking-wider text-white uppercase hover:bg-white/12 cursor-pointer active:scale-95"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            <span>ZURÜCK</span>
+          </button>
+
+          {!isHost && (
+            <span className="font-arcade inline-flex items-center gap-1 rounded-md border border-white/15 bg-white/5 px-2.5 py-1 text-[10px] text-[#94A3B8] uppercase">
+              <Lock className="h-3 w-3" />
+              <span>NUR HOST</span>
+            </span>
+          )}
+        </div>
+
+        <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 px-2 sm:px-6 py-4">
+          <div className="flex flex-col items-center gap-1.5 text-center">
+            <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+              <h2 className="font-arcade text-xl sm:text-3xl tracking-wider text-white uppercase">
+                SPIEL<span className="text-[#FBBF24]">OPTIONEN</span>
+              </h2>
+            </div>
+            {gameTitle && (
+              <p className="font-arcade text-xs sm:text-sm tracking-wider text-[#94A3B8] uppercase">
+                {gameTitle}
+              </p>
+            )}
+          </div>
+
+          <LobbyGameSettings
+            gameId={gameId}
+            settings={settings}
+            isHost={isHost}
+            frameless={true}
+            alwaysOpen={true}
+            onUpdate={onUpdate}
+          />
+
+          <div className="pt-2 w-full sm:w-56">
+            <OpenButton fullWidth size="md" variant="primary" onClick={onClose}>
+              FERTIG
+            </OpenButton>
+          </div>
+        </div>
+
+        <div className="h-4" />
+      </div>
     </div>
   );
 }

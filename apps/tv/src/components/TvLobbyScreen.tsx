@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Crown, Loader2, LogOut, RefreshCw, Tv } from 'lucide-react';
+import { ArrowLeft, Check, Crown, Loader2, LogOut, RefreshCw, SlidersHorizontal, Tv } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
   BackgroundCometCanvas,
   GAMES,
   HeaderStatusOverlay,
-  LobbyGameSettings,
+  LobbyOptionsModal,
   OpenButton,
   getLobbyJoinUrl,
   renderQrCodeToCanvas,
@@ -42,6 +42,7 @@ export function TvLobbyScreen({
     socketService.isActionBlocked()
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
   const [, setServerInfoTick] = useState(0);
 
   const qrCanvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -254,6 +255,16 @@ export function TvLobbyScreen({
               showWhenConnected
               onExitExpired={() => void handleLeaveLobby()}
             />
+            {currentLobby && (
+              <button
+                type="button"
+                onClick={() => setIsOptionsOpen(true)}
+                className="font-arcade inline-flex h-11 shrink-0 items-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-4 text-sm tracking-wider text-white uppercase hover:bg-white/15 cursor-pointer"
+              >
+                <SlidersHorizontal className="h-4 w-4 text-[#FBBF24]" />
+                <span>OPTIONEN</span>
+              </button>
+            )}
           </div>
         </header>
 
@@ -303,18 +314,8 @@ export function TvLobbyScreen({
                 </span>
               </div>
 
-              {/* Rechts: Spiel-Optionen, Spielerliste & Start-Button ohne dunkle Container-Boxen */}
+              {/* Rechts: Spielerliste & Start-Button ohne dunkle Container-Boxen */}
               <div className="flex flex-col gap-6">
-                <LobbyGameSettings
-                  gameId={activeGame.id}
-                  settings={currentLobby.settings}
-                  isHost={true}
-                  frameless={true}
-                  hideRoleBadge={true}
-                  defaultOpen={true}
-                  onUpdate={(s) => void handleUpdateSettings(s)}
-                />
-
                 <div className="flex flex-col gap-3">
                   <div className="flex items-center justify-between border-b border-white/12 pb-2">
                     <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
@@ -389,6 +390,18 @@ export function TvLobbyScreen({
           )}
         </main>
       </div>
+
+      {currentLobby && (
+        <LobbyOptionsModal
+          isOpen={isOptionsOpen}
+          gameTitle={activeGame.title}
+          gameId={activeGame.id}
+          settings={currentLobby.settings}
+          isHost={true}
+          onUpdate={(s) => void handleUpdateSettings(s)}
+          onClose={() => setIsOptionsOpen(false)}
+        />
+      )}
     </div>
   );
 }
