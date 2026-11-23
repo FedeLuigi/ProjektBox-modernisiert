@@ -951,7 +951,7 @@ body::-webkit-scrollbar,
   .lobby-landscape-footer {
     flex-direction: row !important;
     align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: flex-end !important;
     padding-top: 2px !important;
     gap: 8px !important;
   }
