@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ArrowLeft,
   Check,
-  Crown,
   Loader2,
   LogOut,
   RefreshCw,
@@ -12,12 +11,12 @@ import {
 } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
-  Avatar,
   AvatarCustomizerModal,
   BackgroundCometCanvas,
   GAMES,
   HeaderStatusOverlay,
   LobbyOptionsModal,
+  LobbyPlayersGrid,
   OpenButton,
   generateSimpleLobbyName,
   getLobbyJoinUrl,
@@ -287,8 +286,6 @@ export function LobbyScreen({
   const minPlayers = currentLobby?.minPlayers ?? 2;
   const maxPlayers = currentLobby?.maxPlayers ?? 8;
   const readyCount = activePlayers.filter((p) => p.isReady).length;
-  const targetReadyTotal = Math.max(minPlayers, activePlayers.length);
-  const missingPlayersCount = Math.max(0, minPlayers - activePlayers.length);
 
   const allReady =
     Boolean(currentLobby) &&
@@ -411,71 +408,17 @@ export function LobbyScreen({
     ) : null;
 
   const playersBlock = currentLobby ? (
-    <div className="flex w-full flex-col gap-2">
-      <div className="flex items-center justify-between px-1">
-        <span className="font-arcade text-xs text-[#94A3B8] uppercase">
-          SPIELER ({activePlayers.length}/{maxPlayers})
-        </span>
-        <span className="font-arcade text-xs text-[#34D399] uppercase">
-          {readyCount}/{targetReadyTotal} BEREIT
-        </span>
-      </div>
-
-      <div className="lobby-landscape-players flex w-full flex-col gap-2 max-h-56 overflow-y-auto no-scrollbar">
-        {activePlayers.map((p, idx) => {
-          const isMe = p.id === currentUser.id;
-          return (
-            <div
-              key={p.id || idx}
-              onClick={isMe ? () => setIsAvatarModalOpen(true) : undefined}
-              title={isMe ? 'Klicken, um Name und Avatar anzupassen' : undefined}
-              className={`flex w-full items-center justify-between gap-2.5 rounded-xl border px-3 py-2 transition-colors ${
-                isMe ? 'cursor-pointer hover:border-[#F59E0B]/70 ' : ''
-              }${
-                p.isReady
-                  ? 'bg-[#10B981]/20 border-[#34D399]/50 text-white'
-                  : 'bg-white/[0.04] border-white/15 text-white/90'
-              }`}
-            >
-              <div className="flex items-center gap-2.5 min-w-0 flex-1">
-                <div className="shrink-0">
-                  <Avatar config={p.avatar} size={28} />
-                </div>
-                <div className="flex flex-wrap items-center gap-1.5 min-w-0">
-                  <span className="font-arcade text-xs sm:text-sm uppercase break-all">
-                    {p.name}
-                    {isMe ? ' (DU)' : ''}
-                  </span>
-                  {p.isHost && (
-                    <span
-                      title="Host dieser Lobby"
-                      className="inline-flex items-center gap-1 rounded-md border border-[#F59E0B]/50 bg-[#F59E0B] px-1.5 py-0.5 font-arcade text-[10px] text-[#0F172A] shrink-0"
-                    >
-                      <Crown className="h-3 w-3 fill-current" />
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {p.isReady && <Check className="h-4 w-4 shrink-0 text-[#34D399] stroke-[3]" />}
-            </div>
-          );
-        })}
-
-        {Array.from({ length: missingPlayersCount }).map((_, slotIdx) => (
-          <div
-            key={`open-slot-${slotIdx}`}
-            className="flex w-full items-center gap-2.5 rounded-xl border border-dashed border-white/20 bg-white/[0.02] px-3 py-2 text-[#94A3B8]"
-          >
-            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-dashed border-white/25 bg-white/5">
-              <Loader2 className="h-3.5 w-3.5 animate-spin text-[#94A3B8]" />
-            </div>
-            <span className="font-arcade text-xs tracking-wide uppercase">
-              Warte auf Mitspieler...
-            </span>
-          </div>
-        ))}
-      </div>
+    <div className="w-full max-w-md mx-auto">
+      <LobbyPlayersGrid
+        players={activePlayers}
+        maxPlayers={maxPlayers}
+        minPlayers={minPlayers}
+        readyCount={readyCount}
+        currentUserId={currentUser.id}
+        avatarSize={56}
+        showWaitingSlots={!currentLobby.isTvMode}
+        onEditMe={() => setIsAvatarModalOpen(true)}
+      />
     </div>
   ) : null;
 

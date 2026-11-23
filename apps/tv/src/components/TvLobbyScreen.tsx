@@ -1,12 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { ArrowLeft, Check, Crown, Loader2, LogOut, RefreshCw, SlidersHorizontal, Tv } from 'lucide-react';
+import { ArrowLeft, Loader2, LogOut, RefreshCw, SlidersHorizontal, Tv } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
-  Avatar,
   BackgroundCometCanvas,
   GAMES,
   HeaderStatusOverlay,
   LobbyOptionsModal,
+  LobbyPlayersGrid,
   OpenButton,
   getLobbyJoinUrl,
   renderQrCodeToCanvas,
@@ -314,61 +314,15 @@ export function TvLobbyScreen({
                 </span>
               </div>
 
-              {/* Rechts: Spielerliste & Start-Button ohne dunkle Container-Boxen */}
-              <div className="flex flex-col gap-6">
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between border-b border-white/12 pb-2">
-                    <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
-                      VERBUNDENE SPIELER ({activePlayers.length}/{maxPlayers})
-                    </span>
-                    <span className="font-arcade text-sm text-[#34D399] uppercase">
-                      {readyCount}/{Math.max(minPlayers, activePlayers.length)} BEREIT
-                    </span>
-                  </div>
-
-                  {activePlayers.length === 0 ? (
-                    <div className="py-5 text-center font-arcade text-sm text-[#94A3B8] uppercase">
-                      WARTE AUF SPIELER...
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-60 overflow-y-auto no-scrollbar">
-                      {activePlayers.map((p, idx) => (
-                        <div
-                          key={p.id || idx}
-                          className={`flex items-center justify-between gap-2 rounded-xl border px-3.5 py-2.5 ${
-                            p.isReady
-                              ? 'border-[#34D399]/55 bg-[#10B981]/15'
-                              : 'border-white/15 bg-white/[0.04]'
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Avatar config={p.avatar} size={34} />
-                            <div className="min-w-0">
-                              <span className="font-arcade block text-sm text-white uppercase truncate">
-                                {p.name}
-                              </span>
-                              {p.isHost && (
-                                <span className="font-arcade inline-flex items-center gap-1 text-[10px] text-[#FDE68A] uppercase">
-                                  <Crown className="h-3 w-3" />
-                                  HOST
-                                </span>
-                              )}
-                            </div>
-                          </div>
-                          {p.isReady ? (
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#10B981] text-white">
-                              <Check className="h-4 w-4 stroke-[3]" />
-                            </span>
-                          ) : (
-                            <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-                              WARTET
-                            </span>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              {/* Rechts: Offenes Spieler-Raster & Start-Button ohne dunkle Container-Boxen */}
+              <div className="flex flex-col gap-8">
+                <LobbyPlayersGrid
+                  players={activePlayers}
+                  maxPlayers={maxPlayers}
+                  minPlayers={minPlayers}
+                  readyCount={readyCount}
+                  avatarSize={64}
+                />
 
                 <OpenButton
                   fullWidth

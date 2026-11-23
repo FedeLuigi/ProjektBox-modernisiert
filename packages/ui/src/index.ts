@@ -21,6 +21,7 @@ export * from './components/ArcadeHudElements';
 export * from './components/SettingsSheet';
 export * from './components/multiplayer/ConnectionStatusBadge';
 export * from './components/multiplayer/LobbyGameSettings';
+export * from './components/multiplayer/LobbyPlayersGrid';
 export * from './components/multiplayer/SimulationModal';
 export * from './games/components/DrawAndGuessBoard';
 export * from './games/components/StadtLandFlussBoard';
