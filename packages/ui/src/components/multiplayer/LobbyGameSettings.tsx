@@ -84,22 +84,9 @@ function SettingToggleRow({
   onToggle: (next: boolean) => void;
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={enabled}
-      disabled={disabled}
-      onClick={() => onToggle(!enabled)}
-      className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-3 text-left transition-colors hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]"
-    >
+    <div className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-3">
       <div className="flex items-center gap-3 min-w-0">
-        <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
-            enabled
-              ? 'border-[#F59E0B]/60 bg-[#F59E0B]/15 text-[#FDE68A]'
-              : 'border-white/15 bg-white/5 text-[#94A3B8]'
-          }`}
-        >
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
           {icon}
         </div>
         <div className="min-w-0">
@@ -110,8 +97,14 @@ function SettingToggleRow({
         </div>
       </div>
 
-      <span
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${
+      <button
+        type="button"
+        role="switch"
+        aria-label={label}
+        aria-checked={enabled}
+        disabled={disabled}
+        onClick={() => onToggle(!enabled)}
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           enabled ? 'border-[#F59E0B] bg-[#F59E0B]' : 'border-white/20 bg-white/10'
         }`}
       >
@@ -120,8 +113,8 @@ function SettingToggleRow({
             enabled ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
-      </span>
-    </button>
+      </button>
+    </div>
   );
 }
 
