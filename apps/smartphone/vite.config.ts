@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       includeAssets: [
         'favicon.svg',
         'favicon-32x32.png',
@@ -54,8 +54,8 @@ export default defineConfig({
       },
       workbox: {
         cleanupOutdatedCaches: true,
-        skipWaiting: false,
-        clientsClaim: false,
+        skipWaiting: true,
+        clientsClaim: true,
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
         runtimeCaching: [
           {

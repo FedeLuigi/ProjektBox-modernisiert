@@ -7,7 +7,6 @@ const RELOAD_COOLDOWN_MS = 15_000;
 let initialized = false;
 let hasUpdateAvailable = false;
 let updateRunner: ((reloadPage?: boolean) => Promise<void>) | null = null;
-let reloadRequestedByUser = false;
 let hasReloadedThisLoad = false;
 
 const listeners = new Set<() => void>();
@@ -70,14 +69,17 @@ export function initPwaRegistration(): void {
   initialized = true;
 
   updateRunner = registerSW({
-    immediate: false,
+    immediate: true,
     onNeedRefresh() {
       hasUpdateAvailable = true;
       notifyListeners();
+      if (canReloadSafelyNow()) {
+        markReloadTimestamp();
+        void updateRunner?.(true);
+      }
     },
     onNeedReload() {
-      // Niemals ungefragt während Boot/Splash oder mehrfach direkt hintereinander neu laden
-      if (!reloadRequestedByUser || !canReloadSafelyNow()) return;
+      if (!canReloadSafelyNow()) return;
       markReloadTimestamp();
       window.location.reload();
     },
@@ -89,11 +91,10 @@ export function initPwaRegistration(): void {
  */
 export async function applyPwaUpdate(): Promise<void> {
   if (!updateRunner) return;
-  reloadRequestedByUser = true;
   try {
     await updateRunner(true);
   } catch {
-    reloadRequestedByUser = false;
+    // ignore
   }
 }
 
