@@ -88,6 +88,14 @@ interface PlayerEntity {
   downedUntil: number;
   reviveProgress: number;
   reviveRing: THREE.Mesh;
+  updateOverheadPlate: (
+    hp: number,
+    maxHp: number,
+    downed: boolean,
+    reviveProgress: number,
+    downedSec: number
+  ) => void;
+  plateTex: THREE.CanvasTexture;
   skillPoints: number;
   skills: ZombiePlayerSkills;
   overdriveUntil: number;
@@ -479,7 +487,70 @@ export function Zombie3DArena({
       reviveRing.position.y = 0.06;
       reviveRing.visible = false;
 
-      group.add(modelHolder, ring, reviveRing, weaponGroup, muzzleFlash);
+      // Overhead Nameplate + HP/Revive Bar Sprite
+      const plateCanvas = document.createElement('canvas');
+      plateCanvas.width = 256;
+      plateCanvas.height = 64;
+      const plateCtx = plateCanvas.getContext('2d');
+      const plateTex = new THREE.CanvasTexture(plateCanvas);
+      const plateSprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: plateTex,
+          transparent: true,
+          depthTest: false,
+          depthWrite: false,
+        })
+      );
+      plateSprite.position.set(0, 2.55, 0);
+      plateSprite.scale.set(2.4, 0.6, 1);
+      plateSprite.renderOrder = 20;
+
+      let lastPlateSig = '';
+      const updateOverheadPlate = (
+        hpVal: number,
+        maxHpVal: number,
+        isDowned: boolean,
+        revProg: number,
+        downedSec: number
+      ) => {
+        if (!plateCtx) return;
+        const pct = Math.max(0, Math.min(1, hpVal / Math.max(1, maxHpVal)));
+        const sig = `${Math.round(pct * 100)}|${isDowned ? 1 : 0}|${Math.round(revProg * 20)}|${downedSec}`;
+        if (sig === lastPlateSig) return;
+        lastPlateSig = sig;
+
+        plateCtx.clearRect(0, 0, 256, 64);
+        plateCtx.fillStyle = 'rgba(7, 11, 18, 0.78)';
+        plateCtx.fillRect(16, 6, 224, 50);
+        plateCtx.strokeStyle = isDowned ? '#EF4444' : colorHex;
+        plateCtx.lineWidth = 3;
+        plateCtx.strokeRect(16, 6, 224, 50);
+
+        plateCtx.fillStyle = isDowned ? '#FCA5A5' : '#F8FAFC';
+        plateCtx.font = 'bold 20px sans-serif';
+        plateCtx.textAlign = 'center';
+        plateCtx.textBaseline = 'middle';
+        const label = isDowned
+          ? revProg > 0
+            ? `RETTUNG ${Math.round(revProg * 100)}%`
+            : `AM BODEN (${downedSec}s)`
+          : p.name.toUpperCase().slice(0, 12);
+        plateCtx.fillText(label, 128, 22);
+
+        plateCtx.fillStyle = 'rgba(255,255,255,0.16)';
+        plateCtx.fillRect(28, 38, 200, 10);
+        if (isDowned) {
+          plateCtx.fillStyle = revProg > 0 ? '#22C55E' : '#EF4444';
+          plateCtx.fillRect(28, 38, 200 * Math.max(0.05, revProg), 10);
+        } else {
+          plateCtx.fillStyle = pct <= 0.3 ? '#EF4444' : pct <= 0.6 ? '#F59E0B' : '#22C55E';
+          plateCtx.fillRect(28, 38, 200 * pct, 10);
+        }
+        plateTex.needsUpdate = true;
+      };
+      updateOverheadPlate(100, 100, false, 0, 0);
+
+      group.add(modelHolder, ring, reviveRing, plateSprite, weaponGroup, muzzleFlash);
       scene.add(group);
 
       const starterWeapon = getWeaponForLevel(1);
@@ -519,6 +590,8 @@ export function Zombie3DArena({
         downedUntil: 0,
         reviveProgress: 0,
         reviveRing,
+        updateOverheadPlate,
+        plateTex,
         skillPoints: 0,
         skills: { hp: 0, damage: 0, speed: 0, ammo: 0 },
         overdriveUntil: 0,
@@ -1746,11 +1819,31 @@ export function Zombie3DArena({
             const shouldHoldForSpit = z.kind === 'spitter' && len > 6.5 && len < 13.0;
             const moveSpd = shouldHoldForSpit ? z.speed * 0.25 : z.speed * waveSpeedRamp;
 
+            // Zombie-to-Zombie separation so hordes spread naturally instead of stacking
+            let sepX = 0;
+            let sepZ = 0;
+            for (let oi = 0; oi < zombies.length; oi++) {
+              if (oi === zi) continue;
+              const other = zombies[oi];
+              const sdx = z.x - other.x;
+              const sdz = z.z - other.z;
+              const sDist = Math.hypot(sdx, sdz);
+              const minSep = z.radius + other.radius + 0.28;
+              if (sDist > 0.0001 && sDist < minSep) {
+                const push = ((minSep - sDist) / minSep) * 1.45;
+                sepX += (sdx / sDist) * push;
+                sepZ += (sdz / sDist) * push;
+              }
+            }
+            const steerX = dx / len + sepX;
+            const steerZ = dz / len + sepZ;
+            const steerLen = Math.max(0.001, Math.hypot(steerX, steerZ));
+
             const prevZX = z.x;
             const prevZZ = z.z;
             const nextPos = resolveObstaclePush(
-              z.x + (dx / len) * moveSpd * dt,
-              z.z + (dz / len) * moveSpd * dt,
+              z.x + (steerX / steerLen) * moveSpd * dt,
+              z.z + (steerZ / steerLen) * moveSpd * dt,
               z.radius,
               obstacles,
               false
@@ -2013,6 +2106,10 @@ export function Zombie3DArena({
           const hudPlayers: Record<string, ZombiePlayerHudState> = {};
           const list: ZombiePlayerHudState[] = [];
           for (const p of playerEntities.values()) {
+            const downedSec = p.downed ? Math.max(0, Math.ceil((p.downedUntil - now) / 1000)) : 0;
+            if (p.alive) {
+              p.updateOverheadPlate(p.hp, p.maxHp, p.downed, p.reviveProgress, downedSec);
+            }
             const entry: ZombiePlayerHudState = {
               playerId: p.id,
               hp: Math.round(p.hp),
@@ -2026,6 +2123,9 @@ export function Zombie3DArena({
               kills: p.kills,
               score: p.score,
               alive: p.alive,
+              downed: p.downed,
+              downedRemainingSec: downedSec,
+              reviveProgress: p.downed ? Number(p.reviveProgress.toFixed(2)) : 0,
               dashReadyAt: p.dashReadyAt,
               skillPoints: p.skillPoints,
               skills: { ...p.skills },
@@ -2073,6 +2173,9 @@ export function Zombie3DArena({
       resizeObserver?.disconnect();
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
       loadedTextures.forEach((tex) => tex.dispose());
+      for (const p of playerEntities.values()) {
+        p.plateTex.dispose();
+      }
       composer.dispose();
       renderer.dispose();
     };

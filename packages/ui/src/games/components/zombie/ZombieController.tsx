@@ -70,7 +70,11 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
   const [autoFire, setAutoFire] = useState(false);
   const [showCharMenu, setShowCharMenu] = useState(false);
   const [levelUpBanner, setLevelUpBanner] = useState<string | null>(null);
+  const [damageFlash, setDamageFlash] = useState(false);
+  const [teammateDowned, setTeammateDowned] = useState(false);
   const prevLevelRef = useRef(1);
+  const prevHpRef = useRef(100);
+  const damageTimerRef = useRef<number | null>(null);
 
   const [leftStick, setLeftStick] = useState<StickState>({
     active: false,
@@ -103,8 +107,20 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
     const unsub = socketService.onZombieState((payload: ZombieHudStatePayload) => {
       setWave(payload.wave);
       setZombiesRemaining(payload.zombiesRemaining);
+      const anyOtherDowned = Object.values(payload.players || {}).some(
+        (pl) => pl.playerId !== myPlayerId && pl.alive && pl.downed
+      );
+      setTeammateDowned(anyOtherDowned);
+
       const mine = payload.players?.[myPlayerId];
       if (mine) {
+        if (mine.hp < prevHpRef.current && mine.alive) {
+          setDamageFlash(true);
+          triggerHapticFeedback(35);
+          if (damageTimerRef.current) window.clearTimeout(damageTimerRef.current);
+          damageTimerRef.current = window.setTimeout(() => setDamageFlash(false), 240);
+        }
+        prevHpRef.current = mine.hp;
         setHud(mine);
         if (mine.level > prevLevelRef.current) {
           prevLevelRef.current = mine.level;
@@ -116,7 +132,10 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
         }
       }
     });
-    return () => unsub();
+    return () => {
+      unsub();
+      if (damageTimerRef.current) window.clearTimeout(damageTimerRef.current);
+    };
   }, [myPlayerId]);
 
   // Stream controller input to TV/Host (~25Hz), including optional keyboard fallback
@@ -256,6 +275,14 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
     >
       <ZombieSvgFilters />
       <GrungeDetailsOverlay className="opacity-85" />
+
+      {/* Red Edge Hit-Flash Overlay */}
+      {damageFlash && (
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 z-30 shadow-[inset_0_0_55px_rgba(239,68,68,0.85)] bg-[#EF4444]/10 transition-opacity"
+        />
+      )}
 
       {/* Compact Top Industrial HUD Row */}
       <div className="relative z-10 flex shrink-0 items-center justify-between gap-2 pr-20">
@@ -656,6 +683,16 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
         </div>
       )}
 
+      {/* Teammate Downed Warning */}
+      {teammateDowned && hud.alive && !hud.downed && (
+        <div className="relative z-20 flex items-center justify-center gap-2 border-y-2 border-[#EF4444] bg-[#450A0A]/90 px-4 py-1 text-center shadow-lg animate-pulse">
+          <GiHealthNormal className="h-3.5 w-3.5 text-[#FCA5A5]" />
+          <span className="font-shooter-display text-[11px] tracking-[0.16em] text-[#FCA5A5] uppercase">
+            KAMERAD AM BODEN — IN DIE NÄHE LAUFEN ZUM RETTEN!
+          </span>
+        </div>
+      )}
+
       {/* Tactical Level-Up Alert */}
       {levelUpBanner && (
         <div className="relative z-20 flex items-center justify-center gap-2 border-y-2 border-[#D97706] bg-[#070B12]/92 px-4 py-1 text-center shadow-lg">
@@ -666,7 +703,7 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
         </div>
       )}
 
-      {/* Dead Notice or Dual-Stick Industrial Control Deck */}
+      {/* Dead / Downed Notice or Dual-Stick Industrial Control Deck */}
       {!hud.alive ? (
         <div className="clip-armor-plate relative z-10 flex flex-1 flex-col items-center justify-center gap-2 border-2 border-[#EF4444]/60 bg-[#070B12]/88 p-6 text-center shadow-xl">
           <GiSkullCrossedBones className="h-12 w-12 text-[#EF4444]" />
@@ -675,6 +712,27 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
           </span>
           <span className="text-xs font-bold tracking-wider text-[#94A3B8] uppercase">
             WARTE AUF DEIN TEAM ODER DIE ENDWERTUNG AM TV
+          </span>
+        </div>
+      ) : hud.downed ? (
+        <div className="clip-armor-plate relative z-10 flex flex-1 flex-col items-center justify-center gap-2.5 border-2 border-[#EF4444] bg-[#280707]/90 p-5 text-center shadow-xl">
+          <GiHealthNormal className="h-10 w-10 text-[#EF4444] animate-pulse" />
+          <span className="font-shooter-display text-base tracking-[0.18em] text-[#FCA5A5] uppercase">
+            AM BODEN • RETTUNG ERFORDERLICH ({hud.downedRemainingSec ?? 0}s)
+          </span>
+          <div className="w-full max-w-xs bg-black/75 p-1 border border-white/20">
+            <div
+              className="h-2.5 transition-all duration-100"
+              style={{
+                width: `${Math.round((hud.reviveProgress ?? 0) * 100)}%`,
+                backgroundColor: (hud.reviveProgress ?? 0) > 0 ? '#22C55E' : '#EF4444',
+              }}
+            />
+          </div>
+          <span className="text-xs font-bold tracking-wider text-[#CBD5E1] uppercase">
+            {(hud.reviveProgress ?? 0) > 0
+              ? `WIEDERBELEBUNG LÄUFT (${Math.round((hud.reviveProgress ?? 0) * 100)}%)...`
+              : 'EIN TEAMKOLLEGE MUSS NEBEN DIR STEHEN!'}
           </span>
         </div>
       ) : (

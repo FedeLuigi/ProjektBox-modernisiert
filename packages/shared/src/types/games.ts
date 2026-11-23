@@ -251,6 +251,9 @@ export interface ZombiePlayerHudState {
   kills: number;
   score: number;
   alive: boolean;
+  downed?: boolean;
+  downedRemainingSec?: number;
+  reviveProgress?: number;
   dashReadyAt?: number;
   skillPoints?: number;
   skills?: ZombiePlayerSkills;
