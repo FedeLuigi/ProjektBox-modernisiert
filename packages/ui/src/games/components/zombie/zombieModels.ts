@@ -8,6 +8,103 @@ export interface ZombieAssetPack {
   barrier: THREE.Group | null;
   medkit: THREE.Group | null;
   ammoBox: THREE.Group | null;
+  weapons: Record<string, THREE.Group>;
+}
+
+const WEAPON_TARGET_LENGTH: Record<string, number> = {
+  pistol: 0.42,
+  smg: 0.64,
+  shotgun: 0.96,
+  rifle: 0.96,
+  plasma: 0.92,
+  rocket: 1.15,
+};
+
+function prepareWeaponTemplate(weaponId: string, rawScene: THREE.Group): THREE.Group {
+  const pivot = new THREE.Group();
+  const model = rawScene.clone(true);
+
+  if (weaponId !== 'rocket') {
+    // q-guns50 models face +X; rotate -90 deg around Y to aim along +Z
+    model.rotation.y = -Math.PI / 2;
+  }
+
+  model.traverse((obj) => {
+    if (!(obj as THREE.Mesh).isMesh) return;
+    const mesh = obj as THREE.Mesh;
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+    const srcMat = mesh.material as THREE.MeshStandardMaterial | undefined;
+    if (!srcMat) return;
+    const mat = srcMat.clone();
+
+    if (weaponId === 'rocket') {
+      const matName = (srcMat.name || '').toLowerCase();
+      if (matName.includes('green')) {
+        mat.color.setHex(0x4b5320); // Tactical olive-drab warhead
+        mat.metalness = 0.45;
+        mat.roughness = 0.48;
+      } else if (matName.includes('wood')) {
+        mat.color.setHex(0x5c3a21); // Dark walnut heatshield / grip
+        mat.metalness = 0.1;
+        mat.roughness = 0.72;
+      } else if (matName.includes('greydark')) {
+        mat.color.setHex(0x1e293b);
+        mat.metalness = 0.78;
+        mat.roughness = 0.34;
+      } else if (matName.includes('grey')) {
+        mat.color.setHex(0x334155);
+        mat.metalness = 0.72;
+        mat.roughness = 0.38;
+      } else {
+        mat.color.setHex(0x0f172a);
+        mat.metalness = 0.75;
+        mat.roughness = 0.35;
+      }
+    } else {
+      // Enhance dark tactical PBR response on q-guns50 firearms
+      mat.metalness = Math.max(mat.metalness ?? 0.5, 0.7);
+      mat.roughness = Math.min(mat.roughness ?? 0.5, 0.36);
+    }
+    mesh.material = mat;
+  });
+
+  pivot.add(model);
+  pivot.updateMatrixWorld(true);
+
+  const rawBox = new THREE.Box3().setFromObject(pivot);
+  const rawSize = new THREE.Vector3();
+  rawBox.getSize(rawSize);
+  const targetLen = WEAPON_TARGET_LENGTH[weaponId] ?? 0.85;
+  const scale = targetLen / Math.max(0.01, rawSize.z);
+  model.scale.multiplyScalar(scale);
+  pivot.updateMatrixWorld(true);
+
+  const scaledBox = new THREE.Box3().setFromObject(pivot);
+  const center = new THREE.Vector3();
+  const size = new THREE.Vector3();
+  scaledBox.getCenter(center);
+  scaledBox.getSize(size);
+
+  // Align grip/stock cleanly at the hand and extend barrel toward +Z
+  const backEmbed = weaponId === 'pistol' ? 0.04 : size.z * 0.22;
+  model.position.set(-center.x, -center.y + size.y * 0.04, -scaledBox.min.z - backEmbed);
+
+  if (weaponId === 'plasma') {
+    const coreMat = new THREE.MeshStandardMaterial({
+      color: 0x22d3ee,
+      emissive: 0x06b6d4,
+      emissiveIntensity: 1.55,
+      metalness: 0.4,
+      roughness: 0.2,
+    });
+    const energyCell = new THREE.Mesh(new THREE.BoxGeometry(0.055, 0.035, 0.34), coreMat);
+    energyCell.position.set(0, 0.035, size.z * 0.28);
+    pivot.add(energyCell);
+  }
+
+  return pivot;
 }
 
 const loader = new GLTFLoader();
@@ -31,16 +128,35 @@ function enableShadows(root: THREE.Object3D): void {
 }
 
 let cachedAssetsPromise: Promise<ZombieAssetPack> | null = null;
+let cachedAssetsSync: ZombieAssetPack | null = null;
 
 export function loadZombieAssets(): Promise<ZombieAssetPack> {
   if (cachedAssetsPromise) return cachedAssetsPromise;
   cachedAssetsPromise = (async () => {
-    const [soldier, barrelGltf, barrierGltf, medkitGltf, ammoGltf] = await Promise.all([
+    const [
+      soldier,
+      barrelGltf,
+      barrierGltf,
+      medkitGltf,
+      ammoGltf,
+      pistolGltf,
+      smgGltf,
+      shotgunGltf,
+      rifleGltf,
+      plasmaGltf,
+      rocketGltf,
+    ] = await Promise.all([
       loadGltfSafe('/models/zombie/Soldier.glb'),
       loadGltfSafe('/models/zombie/barrel_03/barrel_03_1k.gltf'),
       loadGltfSafe('/models/zombie/concrete_road_barrier/concrete_road_barrier_1k.gltf'),
       loadGltfSafe('/models/zombie/medical_box/medical_box_1k.gltf'),
       loadGltfSafe('/models/zombie/ammo_box/ammo_box_1k.gltf'),
+      loadGltfSafe('/models/zombie/weapons/pistol.glb'),
+      loadGltfSafe('/models/zombie/weapons/smg.glb'),
+      loadGltfSafe('/models/zombie/weapons/shotgun.glb'),
+      loadGltfSafe('/models/zombie/weapons/rifle.glb'),
+      loadGltfSafe('/models/zombie/weapons/plasma.glb'),
+      loadGltfSafe('/models/zombie/weapons/rocket.glb'),
     ]);
 
     if (soldier) enableShadows(soldier.scene);
@@ -49,13 +165,31 @@ export function loadZombieAssets(): Promise<ZombieAssetPack> {
     if (medkitGltf) enableShadows(medkitGltf.scene);
     if (ammoGltf) enableShadows(ammoGltf.scene);
 
-    return {
+    const weapons: Record<string, THREE.Group> = {};
+    const weaponPairs: Array<[string, GLTF | null]> = [
+      ['pistol', pistolGltf],
+      ['smg', smgGltf],
+      ['shotgun', shotgunGltf],
+      ['rifle', rifleGltf],
+      ['plasma', plasmaGltf],
+      ['rocket', rocketGltf],
+    ];
+    for (const [id, gltf] of weaponPairs) {
+      if (gltf) {
+        weapons[id] = prepareWeaponTemplate(id, gltf.scene);
+      }
+    }
+
+    const pack: ZombieAssetPack = {
       soldier,
       barrel: barrelGltf ? barrelGltf.scene : null,
       barrier: barrierGltf ? barrierGltf.scene : null,
       medkit: medkitGltf ? medkitGltf.scene : null,
       ammoBox: ammoGltf ? ammoGltf.scene : null,
+      weapons,
     };
+    cachedAssetsSync = pack;
+    return pack;
   })();
   return cachedAssetsPromise;
 }
@@ -112,6 +246,11 @@ export function cloneAnimatedCharacter(
 }
 
 export function createDetailedWeaponMesh(weaponId: string): THREE.Group {
+  const cachedTemplate = cachedAssetsSync?.weapons[weaponId];
+  if (cachedTemplate) {
+    return cachedTemplate.clone(true);
+  }
+
   const group = new THREE.Group();
   const gunMetal = new THREE.MeshStandardMaterial({
     color: 0x334155,

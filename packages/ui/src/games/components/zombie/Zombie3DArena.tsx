@@ -529,6 +529,8 @@ export function Zombie3DArena({
             idle.play();
             p.activeAnim = 'idle';
           }
+          p.weaponGroup.clear();
+          p.weaponGroup.add(createDetailedWeaponMesh(p.weaponId));
           pIdx += 1;
         }
       }
