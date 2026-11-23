@@ -567,65 +567,101 @@ export function StadtLandFlussBoard({
   // A) TV-SCREEN ANSICHT (GROSSFORMAT FÜR WOHNZIMMER-BILDSCHIRM)
   // ───────────────────────────────────────────────────────────────
   if (isTv) {
+    const renderTvTimerPill = () => (
+      <span
+        className={`font-arcade shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-sm sm:text-base ${
+          timeLeft <= 10
+            ? 'border-[#F87171]/60 bg-[#EF4444]/20 text-[#FCA5A5] animate-pulse'
+            : 'border-white/20 bg-white/[0.06] text-white'
+        }`}
+      >
+        <Clock className="h-4 w-4 shrink-0" />
+        <span>{timeLeft} S</span>
+      </span>
+    );
+
     if (phase === 'choosing_categories') {
       return (
-        <div className="flex w-full flex-col gap-5 select-none animate-fade-in">
-          <div className="flex flex-col md:flex-row items-center justify-between gap-4 px-1 py-1">
-            <div className="flex items-center gap-4 min-w-0">
-              <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
-                <ListPlus className="h-8 w-8" />
-              </div>
-              <div className="flex min-w-0 flex-col gap-1 text-left">
-                <span className="font-arcade text-xs tracking-wider text-[#FDE68A] uppercase">
-                  RUNDE {round} VON {maxRounds} • EIGENE KATEGORIEN
-                </span>
-                <h2 className="font-arcade text-xl sm:text-3xl text-white uppercase leading-tight">
-                  {gameState.categoryChooserName || 'SPIELER'} WÄHLT DIE KATEGORIEN...
-                </h2>
-              </div>
-            </div>
-
-            <div
-              className={`flex flex-col items-center justify-center rounded-2xl border px-6 py-3 shrink-0 ${
-                timeLeft <= 10
-                  ? 'border-[#FDA4AF]/70 bg-[#E11D48]/80 text-white animate-pulse'
-                  : 'border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]'
-              }`}
-            >
-              <span className="font-arcade text-[10px] tracking-widest uppercase opacity-80">
-                RESTZEIT
+        <div className="flex w-full max-w-6xl mx-auto flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-16 xl:gap-20 py-4 select-none animate-fade-in">
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="mb-5 text-center">
+              <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
+                SPIELER
               </span>
-              <span className="font-arcade text-3xl sm:text-4xl">{timeLeft}S</span>
+            </div>
+            <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-5 gap-y-6 max-h-[55vh] overflow-y-auto no-scrollbar p-3">
+              {activePlayers.map((p) => {
+                const isChooser = p.id === gameState.categoryChooserId;
+                const totalScore = gameState.scores?.[p.id] || 0;
+                return (
+                  <div
+                    key={p.id}
+                    className={`flex flex-col items-center gap-2 text-center min-w-0 transition-all duration-300 ${
+                      isChooser ? 'scale-110' : 'opacity-55 scale-95'
+                    }`}
+                  >
+                    <div className="relative">
+                      {isChooser && (
+                        <span
+                          aria-hidden="true"
+                          className="pointer-events-none absolute -inset-1.5 rounded-full bg-[#F59E0B]/30 blur-md animate-pulse"
+                        />
+                      )}
+                      <div
+                        className={`relative rounded-full transition-all ${
+                          isChooser
+                            ? 'ring-4 ring-[#F59E0B] shadow-[0_0_24px_rgba(245,158,11,0.65)]'
+                            : 'ring-2 ring-white/15'
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={isChooser ? 64 : 56} />
+                      </div>
+                      {isChooser && (
+                        <span
+                          title="Wählt Kategorien"
+                          className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#F59E0B] text-[#0F172A] ring-2 ring-[#0F172A] shadow-md"
+                        >
+                          <ListPlus className="h-3.5 w-3.5" />
+                        </span>
+                      )}
+                    </div>
+                    <span
+                      className={`font-arcade w-full truncate text-xs uppercase ${
+                        isChooser ? 'text-white' : 'text-[#CBD5E1]'
+                      }`}
+                    >
+                      {p.name}
+                    </span>
+                    <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                      {isChooser ? 'WÄHLT...' : `${totalScore} PKT`}
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
-            {activePlayers.map((p) => {
-              const isChooser = p.id === gameState.categoryChooserId;
-              const totalScore = gameState.scores?.[p.id] || 0;
-              return (
-                <div
-                  key={p.id}
-                  className="flex flex-col items-center gap-2 text-center min-w-0"
-                >
-                  <div
-                    className={`relative rounded-full transition-all ${
-                      isChooser
-                        ? 'ring-[3px] ring-[#F59E0B] shadow-[0_0_16px_rgba(245,158,11,0.4)]'
-                        : 'ring-2 ring-white/15 opacity-70'
-                    }`}
-                  >
-                    <Avatar config={p.avatar} size={60} />
-                  </div>
-                  <span className="font-arcade w-full truncate text-sm text-white uppercase">
-                    {p.name}
-                  </span>
-                  <span className="font-arcade text-xs text-[#FDE68A]">
-                    {isChooser ? 'WÄHLT...' : `${totalScore} PKT`}
-                  </span>
-                </div>
-              );
-            })}
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl w-full">
+            <div className="mb-6 lg:mb-7 shrink-0 px-2 py-1 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              <div className="flex items-center justify-center gap-3">
+                <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
+                  RUNDE {round}/{maxRounds}
+                </span>
+                <span className="font-arcade text-base sm:text-xl tracking-wider text-white uppercase">
+                  EIGENE KATEGORIEN
+                </span>
+              </div>
+              {renderTvTimerPill()}
+            </div>
+
+            <div className="w-full rounded-3xl border border-white/15 bg-white/[0.04] px-6 py-12 sm:py-16 flex flex-col items-center justify-center gap-5 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
+                <ListPlus className="h-10 w-10" />
+              </div>
+              <h2 className="font-arcade text-xl sm:text-3xl text-white uppercase leading-tight max-w-lg">
+                {gameState.categoryChooserName || 'SPIELER'} WÄHLT DIE KATEGORIEN...
+              </h2>
+            </div>
           </div>
         </div>
       );
@@ -633,100 +669,101 @@ export function StadtLandFlussBoard({
 
     if (phase === 'writing') {
       return (
-        <div className="flex w-full flex-col gap-3 sm:gap-5 select-none animate-fade-in">
-          {/* Große Buchstaben-Bühne */}
-          <div className="flex flex-col md:flex-row items-center justify-between gap-3 sm:gap-5 px-1 py-1">
-            <div className="flex items-center gap-3 sm:gap-5 min-w-0">
-              <span className="font-arcade text-4xl sm:text-6xl lg:text-7xl leading-none text-[#FDE68A] drop-shadow-[0_4px_20px_rgba(34,211,238,0.3)] shrink-0 px-1 sm:px-2">
-                {gameState.letter}
+        <div className="flex w-full max-w-6xl mx-auto flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-16 xl:gap-20 py-4 select-none animate-fade-in">
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="mb-5 text-center">
+              <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
+                SPIELER
               </span>
-              <div className="flex min-w-0 flex-col gap-1 text-left">
-                <span className="font-arcade text-[10px] sm:text-xs tracking-wider text-[#67E8F9] uppercase">
-                  RUNDE {round} VON {maxRounds} • EINGABE LÄUFT
-                </span>
-                <h2 className="font-arcade text-base sm:text-2xl lg:text-3xl text-white uppercase leading-tight">
-                  STADT, LAND, FLUSS MIT {gameState.letter}
-                </h2>
-                <div className="flex flex-wrap gap-1 sm:gap-1.5 pt-0.5">
-                  {categories.map((cat) => (
-                    <span
-                      key={cat}
-                      className="rounded-lg border border-white/15 bg-white/[0.06] px-2 py-0.5 sm:px-2.5 sm:py-1 font-arcade text-[10px] sm:text-xs text-[#CBD5E1] uppercase"
-                    >
-                      {cat}
-                    </span>
-                  ))}
-                </div>
-              </div>
             </div>
-
-            <div
-              className={`flex flex-col items-center justify-center rounded-xl sm:rounded-2xl border px-4 py-1.5 sm:px-6 sm:py-3 shrink-0 ${
-                timeLeft <= 10
-                  ? 'border-[#FDA4AF]/70 bg-[#E11D48]/80 text-white animate-pulse'
-                  : 'border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]'
-              }`}
-            >
-              <span className="font-arcade text-[10px] tracking-widest uppercase opacity-80">
-                RESTZEIT
-              </span>
-              <span className="font-arcade text-3xl sm:text-4xl">{timeLeft}S</span>
+            <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-5 gap-y-6 max-h-[55vh] overflow-y-auto no-scrollbar p-3">
+              {activePlayers.map((p) => {
+                const filled = gameState.filledCounts?.[p.id] || 0;
+                const isDone = gameState.submittedPlayerIds?.includes(p.id);
+                const totalScore = gameState.scores?.[p.id] || 0;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex flex-col items-center gap-2 text-center min-w-0"
+                  >
+                    <div className="relative">
+                      <div
+                        className={`relative rounded-full transition-all ${
+                          isDone
+                            ? 'ring-4 ring-[#34D399] shadow-[0_0_20px_rgba(52,211,153,0.5)]'
+                            : 'ring-2 ring-white/20'
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={56} />
+                      </div>
+                      {isDone && (
+                        <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#10B981] text-white ring-2 ring-[#0F172A] shadow-md">
+                          <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-arcade w-full truncate text-xs text-white uppercase">
+                      {p.name}
+                    </span>
+                    <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                      {totalScore} PKT
+                    </span>
+                    <div
+                      className="grid w-full max-w-[100px] gap-1"
+                      style={{
+                        gridTemplateColumns: `repeat(${Math.max(1, categories.length)}, minmax(0, 1fr))`,
+                      }}
+                    >
+                      {categories.map((cat, idx) => (
+                        <div
+                          key={cat}
+                          className={`h-1.5 rounded-full transition-all ${
+                            idx < filled
+                              ? isDone
+                                ? 'bg-[#34D399]'
+                                : 'bg-[#22D3EE]'
+                              : 'bg-white/15'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* Live-Fortschritt aller Spieler ohne Kartenboxen */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
-            {activePlayers.map((p) => {
-              const filled = gameState.filledCounts?.[p.id] || 0;
-              const isDone = gameState.submittedPlayerIds?.includes(p.id);
-              const totalScore = gameState.scores?.[p.id] || 0;
-              return (
-                <div
-                  key={p.id}
-                  className="flex flex-col items-center gap-2 text-center min-w-0"
-                >
-                  <div
-                    className={`relative rounded-full transition-all ${
-                      isDone
-                        ? 'ring-[3px] ring-[#34D399] shadow-[0_0_16px_rgba(52,211,153,0.4)]'
-                        : 'ring-2 ring-white/15 opacity-80'
-                    }`}
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl w-full">
+            <div className="mb-6 lg:mb-7 shrink-0 px-2 py-1 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              <div className="flex items-center justify-center gap-3">
+                <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
+                  RUNDE {round}/{maxRounds}
+                </span>
+                <span className="font-arcade text-base sm:text-xl tracking-wider text-white uppercase">
+                  EINGABE LÄUFT
+                </span>
+              </div>
+              {renderTvTimerPill()}
+            </div>
+
+            <div className="w-full rounded-3xl border border-white/15 bg-white/[0.04] px-6 py-10 sm:py-14 flex flex-col items-center justify-center gap-6 text-center">
+              <span className="font-arcade text-6xl sm:text-8xl leading-none text-[#FDE68A] drop-shadow-[0_6px_28px_rgba(34,211,238,0.35)]">
+                {gameState.letter}
+              </span>
+              <h2 className="font-arcade text-lg sm:text-2xl text-white uppercase leading-tight">
+                STADT, LAND, FLUSS MIT {gameState.letter}
+              </h2>
+              <div className="flex flex-wrap justify-center gap-2 max-w-lg">
+                {categories.map((cat) => (
+                  <span
+                    key={cat}
+                    className="rounded-xl border border-white/15 bg-white/[0.07] px-3 py-1.5 font-arcade text-xs sm:text-sm text-[#E2E8F0] uppercase"
                   >
-                    <Avatar config={p.avatar} size={58} />
-                    {isDone && (
-                      <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#10B981] text-white ring-2 ring-[#1B2B40]">
-                        <Check className="h-3 w-3 stroke-[3]" />
-                      </span>
-                    )}
-                  </div>
-                  <span className="font-arcade w-full truncate text-xs sm:text-sm text-white uppercase">
-                    {p.name}
+                    {cat}
                   </span>
-                  <span className="font-arcade text-[11px] text-[#FDE68A]">
-                    {totalScore} PKT
-                  </span>
-                  <div
-                    className="grid w-full max-w-[120px] gap-1"
-                    style={{
-                      gridTemplateColumns: `repeat(${Math.max(1, categories.length)}, minmax(0, 1fr))`,
-                    }}
-                  >
-                    {categories.map((cat, idx) => (
-                      <div
-                        key={cat}
-                        className={`h-1.5 rounded-full transition-all ${
-                          idx < filled
-                            ? isDone
-                              ? 'bg-[#34D399]'
-                              : 'bg-[#22D3EE]'
-                            : 'bg-white/15'
-                        }`}
-                      />
-                    ))}
-                  </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       );
@@ -734,87 +771,127 @@ export function StadtLandFlussBoard({
 
     if (phase === 'review') {
       return (
-        <div className="flex w-full flex-col gap-2.5 sm:gap-4 select-none animate-fade-in">
-          <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-1 py-1">
-            <div className="flex items-center gap-3">
-              <span className="rounded-xl border border-[#22D3EE]/50 bg-[#164E63]/70 px-3 py-1 font-arcade text-base text-[#FDE68A]">
-                {gameState.letter}
-              </span>
-              <span className="font-arcade text-sm sm:text-lg text-white uppercase">
-                {gameState.stoppedByPlayerName
-                  ? `STOPP DURCH ${gameState.stoppedByPlayerName}!`
-                  : 'GEMEINSAME AUSWERTUNG'}
+        <div className="flex w-full max-w-6xl mx-auto flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-12 xl:gap-16 py-4 select-none animate-fade-in">
+          <div className="w-full lg:w-64 shrink-0">
+            <div className="mb-5 text-center">
+              <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
+                SPIELER
               </span>
             </div>
-
-            <div className="flex items-center gap-3">
-              <span className="rounded-xl border border-[#34D399]/40 bg-[#10B981]/15 px-3 py-1 font-arcade text-xs text-[#6EE7B7] uppercase">
-                BEREIT: {gameState.reviewReadyIds?.length || 0} / {activePlayers.length}
-              </span>
-              <span className="rounded-xl border border-white/20 bg-white/[0.06] px-3 py-1 font-arcade text-xs text-[#FDE68A]">
-                {timeLeft} S
-              </span>
+            <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-5 gap-y-6 max-h-[55vh] overflow-y-auto no-scrollbar p-3">
+              {activePlayers.map((p) => {
+                const isReady = gameState.reviewReadyIds?.includes(p.id);
+                const totalScore = gameState.scores?.[p.id] || 0;
+                return (
+                  <div
+                    key={p.id}
+                    className="flex flex-col items-center gap-2 text-center min-w-0"
+                  >
+                    <div className="relative">
+                      <div
+                        className={`relative rounded-full transition-all ${
+                          isReady
+                            ? 'ring-4 ring-[#34D399] shadow-[0_0_20px_rgba(52,211,153,0.5)]'
+                            : 'ring-2 ring-white/15 opacity-75'
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={56} />
+                      </div>
+                      {isReady && (
+                        <span className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#10B981] text-white ring-2 ring-[#0F172A] shadow-md">
+                          <Check className="h-3.5 w-3.5 stroke-[3]" />
+                        </span>
+                      )}
+                    </div>
+                    <span className="font-arcade w-full truncate text-xs text-white uppercase">
+                      {p.name}
+                    </span>
+                    <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                      {totalScore} PKT
+                    </span>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
-          {/* TV-Übersichtstabelle aller Kategorien & Antworten */}
-          <div
-            className={`grid grid-cols-1 sm:grid-cols-2 ${
-              categories.length <= 3
-                ? 'lg:grid-cols-3'
-                : categories.length === 4
-                  ? 'lg:grid-cols-4'
-                  : 'lg:grid-cols-5'
-            } gap-2 sm:gap-3`}
-          >
-            {categories.map((cat) => (
-              <div
-                key={cat}
-                className="flex flex-col gap-2 p-1"
-              >
-                <div className="border-b border-[#22D3EE]/40 pb-1.5 font-arcade text-xs tracking-wider text-[#67E8F9] uppercase">
-                  {cat}
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  {activePlayers.map((p) => {
-                    const entry = gameState.evaluated?.[cat]?.[p.id];
-                    const votes = gameState.rejectVotes?.[cat]?.[p.id]?.length || 0;
-                    const text = entry?.text || '—';
-                    return (
-                      <div
-                        key={p.id}
-                        className={`flex flex-col rounded-xl border px-2.5 py-2 ${
-                          entry?.valid
-                            ? 'border-[#34D399]/40 bg-[#10B981]/15'
-                            : entry?.rejected
-                              ? 'border-[#FDA4AF]/45 bg-[#E11D48]/15 line-through opacity-75'
-                              : 'border-white/10 bg-white/[0.03] opacity-70'
-                        }`}
-                      >
-                        <div className="flex items-center justify-between gap-1 text-[10px] font-arcade text-[#94A3B8] uppercase">
-                          <span className="truncate">{p.name}</span>
-                          <span
-                            className={
-                              entry?.points ? 'text-[#FDE68A]' : 'text-[#FECDD3]'
-                            }
-                          >
-                            +{entry?.points || 0}
-                          </span>
-                        </div>
-                        <span className="font-arcade text-xs sm:text-sm text-white uppercase truncate mt-0.5">
-                          {text}
-                        </span>
-                        {votes > 0 && (
-                          <span className="font-arcade text-[9px] text-[#FDA4AF] uppercase mt-0.5">
-                            VETO: {votes}
-                          </span>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
+          <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-3xl w-full">
+            <div className="mb-6 lg:mb-7 shrink-0 px-2 py-1 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+              <div className="flex items-center justify-center gap-3">
+                <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
+                  BUCHSTABE {gameState.letter}
+                </span>
+                <span className="font-arcade text-base sm:text-xl tracking-wider text-white uppercase">
+                  {gameState.stoppedByPlayerName
+                    ? `STOPP DURCH ${gameState.stoppedByPlayerName}!`
+                    : 'AUSWERTUNG'}
+                </span>
               </div>
-            ))}
+              <span className="rounded-xl border border-[#34D399]/40 bg-[#10B981]/15 px-3 py-1.5 font-arcade text-xs sm:text-sm text-[#6EE7B7] uppercase">
+                BEREIT: {gameState.reviewReadyIds?.length || 0}/{activePlayers.length}
+              </span>
+              {renderTvTimerPill()}
+            </div>
+
+            {/* TV-Übersichtstabelle aller Kategorien & Antworten */}
+            <div
+              className={`w-full grid grid-cols-1 sm:grid-cols-2 ${
+                categories.length <= 3
+                  ? 'lg:grid-cols-3'
+                  : categories.length === 4
+                    ? 'lg:grid-cols-4'
+                    : 'lg:grid-cols-5'
+              } gap-2.5 sm:gap-3`}
+            >
+              {categories.map((cat) => (
+                <div
+                  key={cat}
+                  className="flex flex-col gap-2 p-1"
+                >
+                  <div className="border-b border-[#22D3EE]/40 pb-1.5 font-arcade text-xs tracking-wider text-[#67E8F9] uppercase">
+                    {cat}
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    {activePlayers.map((p) => {
+                      const entry = gameState.evaluated?.[cat]?.[p.id];
+                      const votes = gameState.rejectVotes?.[cat]?.[p.id]?.length || 0;
+                      const text = entry?.text || '—';
+                      return (
+                        <div
+                          key={p.id}
+                          className={`flex flex-col rounded-xl border px-2.5 py-2 ${
+                            entry?.valid
+                              ? 'border-[#34D399]/40 bg-[#10B981]/15'
+                              : entry?.rejected
+                                ? 'border-[#FDA4AF]/45 bg-[#E11D48]/15 line-through opacity-75'
+                                : 'border-white/10 bg-white/[0.03] opacity-70'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-1 text-[10px] font-arcade text-[#94A3B8] uppercase">
+                            <span className="truncate">{p.name}</span>
+                            <span
+                              className={
+                                entry?.points ? 'text-[#FDE68A]' : 'text-[#FECDD3]'
+                              }
+                            >
+                              +{entry?.points || 0}
+                            </span>
+                          </div>
+                          <span className="font-arcade text-xs sm:text-sm text-white uppercase truncate mt-0.5">
+                            {text}
+                          </span>
+                          {votes > 0 && (
+                            <span className="font-arcade text-[9px] text-[#FDA4AF] uppercase mt-0.5">
+                              VETO: {votes}
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       );
