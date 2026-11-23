@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Clock, Pencil, RotateCcw } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -155,7 +155,7 @@ export function TvGameView({
           </div>
 
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-end gap-2.5">
-            {(isDrawAndGuess || isStadtLandFluss || isMoneyGame) &&
+            {(isStadtLandFluss || isMoneyGame) &&
               !isGameOver &&
               !isRoundOver &&
               (!isRoulette || gameState?.phase === 'betting') && (
@@ -184,25 +184,47 @@ export function TvGameView({
                   SPIELER
                 </span>
               </div>
-              <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-4 gap-y-5 max-h-[55vh] overflow-y-auto no-scrollbar py-1">
+              <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-5 gap-y-6 max-h-[55vh] overflow-y-auto no-scrollbar p-3">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
                   const score = gameState?.scores?.[p.id] || 0;
                   return (
                     <div
                       key={p.id || idx}
-                      className="flex flex-col items-center gap-2 text-center min-w-0"
+                      className={`flex flex-col items-center gap-2 text-center min-w-0 transition-all duration-300 ${
+                        isCurrentDrawer ? 'scale-110' : 'opacity-55 scale-95'
+                      }`}
                     >
-                      <div
-                        className={`relative rounded-full transition-all ${
-                          isCurrentDrawer
-                            ? 'ring-[3px] ring-[#F472B6] shadow-[0_0_14px_rgba(244,114,182,0.45)]'
-                            : 'ring-2 ring-white/15 opacity-85'
+                      <div className="relative">
+                        {isCurrentDrawer && (
+                          <span
+                            aria-hidden="true"
+                            className="pointer-events-none absolute -inset-1.5 rounded-full bg-[#F472B6]/30 blur-md animate-pulse"
+                          />
+                        )}
+                        <div
+                          className={`relative rounded-full transition-all ${
+                            isCurrentDrawer
+                              ? 'ring-4 ring-[#F472B6] shadow-[0_0_24px_rgba(244,114,182,0.7)]'
+                              : 'ring-2 ring-white/15'
+                          }`}
+                        >
+                          <Avatar config={p.avatar} size={isCurrentDrawer ? 64 : 56} />
+                        </div>
+                        {isCurrentDrawer && (
+                          <span
+                            title="Zeichnet gerade"
+                            className="absolute -bottom-1 -right-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#F472B6] text-white ring-2 ring-[#0F172A] shadow-md"
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </span>
+                        )}
+                      </div>
+                      <span
+                        className={`font-arcade w-full truncate text-xs uppercase ${
+                          isCurrentDrawer ? 'text-white' : 'text-[#CBD5E1]'
                         }`}
                       >
-                        <Avatar config={p.avatar} size={56} />
-                      </div>
-                      <span className="font-arcade w-full truncate text-xs text-white uppercase">
                         {p.name}
                       </span>
                       <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
@@ -216,16 +238,28 @@ export function TvGameView({
 
             <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl w-full">
               {!isRoundOver && !isGameOver && (
-                <div className="mb-3 shrink-0 px-2 py-1 flex items-center justify-center gap-3">
-                  <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
-                    {gameState?.categoryName || 'WORT'}
-                  </span>
-                  <span className="font-arcade text-base sm:text-xl tracking-[0.22em] text-white uppercase truncate">
-                    {gameState?.roundStatus === 'choosing_word'
-                      ? 'WORTWAHL...'
-                      : gameState?.wordLength
-                        ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
-                        : '_ _ _ _'}
+                <div className="mb-6 lg:mb-7 shrink-0 px-2 py-1 flex flex-wrap items-center justify-center gap-4 sm:gap-6">
+                  <div className="flex items-center justify-center gap-3">
+                    <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
+                      {gameState?.categoryName || 'WORT'}
+                    </span>
+                    <span className="font-arcade text-base sm:text-xl tracking-[0.22em] text-white uppercase truncate">
+                      {gameState?.roundStatus === 'choosing_word'
+                        ? 'WORTWAHL...'
+                        : gameState?.wordLength
+                          ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
+                          : '_ _ _ _'}
+                    </span>
+                  </div>
+                  <span
+                    className={`font-arcade shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-3.5 py-1.5 text-sm sm:text-base ${
+                      timeLeft <= 10
+                        ? 'border-[#F87171]/60 bg-[#EF4444]/20 text-[#FCA5A5]'
+                        : 'border-white/20 bg-white/[0.06] text-white'
+                    }`}
+                  >
+                    <Clock className="h-4 w-4 shrink-0" />
+                    <span>{timeLeft} S</span>
                   </span>
                 </div>
               )}
