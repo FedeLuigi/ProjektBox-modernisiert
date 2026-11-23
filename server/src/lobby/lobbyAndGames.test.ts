@@ -2019,3 +2019,80 @@ test('Spielwechsel in bestehender Lobby behält Raumcode und alle verbundenen Mi
 
   manager.clearAllTimers();
 });
+
+test('TV-Lobby Controller-Sperre: Smartphones dürfen weder Optionen ändern, Spiel wechseln noch starten', () => {
+  const manager = new LobbyManager();
+  const created = manager.createLobby({
+    gameId: 'draw-and-guess',
+    isPrivate: false,
+    userProfile: { id: 'u_tv_ctrl', name: 'TV Host', avatar: {} },
+    socketId: 'sock_tv_ctrl',
+    isTvMode: true,
+  });
+  assert.equal(created.success, true);
+  const lobbyId = created.lobby!.id;
+  const code = created.lobby!.code;
+
+  const p1 = manager.joinLobby({
+    lobbyIdOrCode: code,
+    userProfile: { id: 'u_phone_1', name: 'Phone 1', avatar: {} },
+    socketId: 'sock_phone_1',
+  });
+  const p2 = manager.joinLobby({
+    lobbyIdOrCode: code,
+    userProfile: { id: 'u_phone_2', name: 'Phone 2', avatar: {} },
+    socketId: 'sock_phone_2',
+  });
+  assert.equal(p1.success, true);
+  assert.equal(p2.success, true);
+
+  manager.toggleReady('sock_phone_1');
+  manager.toggleReady('sock_phone_2');
+
+  // Smartphone-Spieler darf in TV-Lobby keine Optionen ändern, kein Spiel wechseln und nicht starten
+  const phoneSettings = manager.updateSettings({
+    lobbyId,
+    playerId: 'u_phone_1',
+    settings: { rounds: 8 },
+  });
+  assert.equal(phoneSettings.success, false);
+
+  const phoneSwitch = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_phone_1',
+    gameId: 'roulette',
+  });
+  assert.equal(phoneSwitch.success, false);
+
+  const phoneStart = manager.startGame({
+    lobbyId,
+    playerId: 'u_phone_1',
+  });
+  assert.equal(phoneStart.success, false);
+
+  // TV-Screen darf alles davon
+  const tvSettings = manager.updateSettings({
+    lobbyId,
+    playerId: 'u_tv_ctrl',
+    settings: { rounds: 5 },
+  });
+  assert.equal(tvSettings.success, true);
+  assert.equal(tvSettings.lobby?.settings?.rounds, 5);
+
+  const tvSwitch = manager.switchLobbyGame({
+    lobbyId,
+    playerId: 'u_tv_ctrl',
+    gameId: 'roulette',
+  });
+  assert.equal(tvSwitch.success, true);
+  assert.equal(tvSwitch.lobby?.gameId, 'roulette');
+
+  const tvStart = manager.startGame({
+    lobbyId,
+    playerId: 'u_tv_ctrl',
+  });
+  assert.equal(tvStart.success, true);
+  assert.equal(tvStart.lobby?.status, 'in_progress');
+
+  manager.clearAllTimers();
+});

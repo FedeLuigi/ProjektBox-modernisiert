@@ -281,9 +281,7 @@ export function LobbyScreen({
     activePlayers.find((p) => p.id === currentUser.id) || myRawPlayer;
 
   const isHost = myPlayer?.isHost ?? false;
-  const isRoomLeader = currentLobby?.isTvMode
-    ? activePlayers[0]?.id === currentUser.id || isTvScreenHost
-    : isHost;
+  const isTvControlledGuest = Boolean(currentLobby?.isTvMode && !isTvScreenHost);
   const isReady = myPlayer?.isReady ?? false;
 
   const minPlayers = currentLobby?.minPlayers ?? 2;
@@ -298,10 +296,8 @@ export function LobbyScreen({
     activePlayers.length <= maxPlayers &&
     activePlayers.every((p) => p.isReady);
 
-  const canStartGame = currentLobby?.isTvMode
-    ? isTvScreenHost || isRoomLeader || allReady
-    : isHost;
-  const canEditSettings = isRoomLeader;
+  const canStartGame = currentLobby?.isTvMode ? isTvScreenHost : isHost;
+  const canEditSettings = currentLobby?.isTvMode ? isTvScreenHost : isHost;
 
   const actionButton = !isReady ? (
     <OpenButton
@@ -502,24 +498,26 @@ export function LobbyScreen({
         {/* Kopfzeile: ZURÜCK & VERLASSEN links, Spieltitel im Querformat mittig & kompakter Status rechtsbündig */}
         <header className="tablet-header relative flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 shrink-0">
-            <button
-              type="button"
-              onClick={handleBack}
-              className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-2 sm:px-3 text-[11px] sm:text-xs tracking-wider text-white/90 uppercase transition-all hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
-            >
-              <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
-              <span>ZURÜCK</span>
-            </button>
+            {!isTvControlledGuest && (
+              <button
+                type="button"
+                onClick={handleBack}
+                className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1 sm:gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-2 sm:px-3 text-[11px] sm:text-xs tracking-wider text-white/90 uppercase transition-all hover:bg-white/12 hover:text-white cursor-pointer active:scale-95"
+              >
+                <ArrowLeft className="h-3.5 w-3.5 shrink-0" />
+                <span>ZURÜCK</span>
+              </button>
+            )}
 
             {currentLobby && (
               <button
                 type="button"
                 onClick={() => void handleLeaveLobby()}
                 title="Lobby endgültig verlassen"
-                className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-2 sm:px-3 text-[11px] sm:text-xs tracking-wider text-[#FECDD3] uppercase transition-all hover:bg-[#E11D48]/30 hover:text-white cursor-pointer active:scale-95"
+                className="font-arcade inline-flex h-8 sm:h-9 shrink-0 items-center gap-1.5 rounded-lg border border-[#FDA4AF]/35 bg-[#E11D48]/15 px-2.5 sm:px-3 text-[11px] sm:text-xs tracking-wider text-[#FECDD3] uppercase transition-all hover:bg-[#E11D48]/30 hover:text-white cursor-pointer active:scale-95"
               >
                 <LogOut className="h-3.5 w-3.5 shrink-0" />
-                <span className="hidden xs:inline">VERLASSEN</span>
+                <span className={isTvControlledGuest ? 'inline' : 'hidden xs:inline'}>VERLASSEN</span>
               </button>
             )}
           </div>
@@ -538,7 +536,7 @@ export function LobbyScreen({
               showWhenConnected
               onExitExpired={() => void handleLeaveLobby()}
             />
-            {currentLobby && (
+            {currentLobby && !isTvControlledGuest && (
               <button
                 type="button"
                 onClick={() => setIsOptionsOpen(true)}
@@ -611,7 +609,7 @@ export function LobbyScreen({
         />
       )}
 
-      {currentLobby && (
+      {currentLobby && !isTvControlledGuest && (
         <LobbyOptionsModal
           isOpen={isOptionsOpen}
           gameTitle={activeGame.title}

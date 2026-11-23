@@ -866,6 +866,15 @@ export class LobbyManager {
     return { success: true, lobby };
   }
 
+  private isAuthorizedLobbyController(lobby: Lobby, playerId: string): boolean {
+    if (lobby.hostId !== playerId) return false;
+    if (lobby.isTvMode) {
+      const controller = lobby.players.find((p) => p.id === playerId);
+      return Boolean(controller?.isTvScreen);
+    }
+    return true;
+  }
+
   public updateSettings(
     socketIdOrParams:
       | string
@@ -888,8 +897,13 @@ export class LobbyManager {
 
     const lobby = this.lobbies.get(lobbyId);
     if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
-    if (lobby.hostId !== playerId) {
-      return { success: false, error: 'Nur der aktuelle Host darf Einstellungen ändern.' };
+    if (!this.isAuthorizedLobbyController(lobby, playerId)) {
+      return {
+        success: false,
+        error: lobby.isTvMode
+          ? 'In einer TV-Lobby darf nur der TV-Screen Einstellungen ändern.'
+          : 'Nur der aktuelle Host darf Einstellungen ändern.',
+      };
     }
     if (lobby.status !== 'waiting' && lobby.status !== 'finished') {
       return { success: false, error: 'Einstellungen können während des Spiels nicht geändert werden.' };
@@ -971,8 +985,13 @@ export class LobbyManager {
   }): { success: boolean; lobby?: Lobby; duplicate?: boolean; error?: string } {
     const lobby = this.lobbies.get(params.lobbyId);
     if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
-    if (lobby.hostId !== params.playerId) {
-      return { success: false, error: 'Nur der aktuelle Host darf das Spiel wechseln.' };
+    if (!this.isAuthorizedLobbyController(lobby, params.playerId)) {
+      return {
+        success: false,
+        error: lobby.isTvMode
+          ? 'In einer TV-Lobby darf nur der TV-Screen das Spiel wechseln.'
+          : 'Nur der aktuelle Host darf das Spiel wechseln.',
+      };
     }
     if (lobby.status !== 'waiting') {
       return { success: false, error: 'Spielwechsel ist nur vor Spielstart möglich.' };
@@ -1031,8 +1050,13 @@ export class LobbyManager {
 
     const lobby = this.lobbies.get(lobbyId);
     if (!lobby) return { success: false, error: 'Lobby nicht gefunden.' };
-    if (lobby.hostId !== playerId) {
-      return { success: false, error: 'Nur der Host darf das Spiel starten.' };
+    if (!this.isAuthorizedLobbyController(lobby, playerId)) {
+      return {
+        success: false,
+        error: lobby.isTvMode
+          ? 'In einer TV-Lobby darf nur der TV-Screen das Spiel starten.'
+          : 'Nur der Host darf das Spiel starten.',
+      };
     }
 
     if (actionId && this.isDuplicateAction(lobby, actionId)) {
