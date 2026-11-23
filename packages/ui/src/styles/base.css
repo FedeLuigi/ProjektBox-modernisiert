@@ -926,12 +926,12 @@ body::-webkit-scrollbar,
   }
 
   .lobby-landscape-qr-box {
-    padding: 6px !important;
+    padding: 8px !important;
   }
 
   .lobby-landscape-qr-canvas {
-    width: clamp(104px, 32dvh, 176px) !important;
-    height: clamp(104px, 32dvh, 176px) !important;
+    width: clamp(148px, 50dvh, 236px) !important;
+    height: clamp(148px, 50dvh, 236px) !important;
   }
 
   .lobby-landscape-code-btn {

@@ -7,7 +7,6 @@ import {
   RefreshCw,
   Share2,
   SlidersHorizontal,
-  Tv,
 } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
@@ -43,13 +42,11 @@ export function LobbyScreen({
   onMinimize,
   onLobbyChange,
   initialLobby,
-  initialTvMode = false,
 }: LobbyScreenProps) {
   const [currentLobby, setCurrentLobby] = useState<Lobby | null>(initialLobby || null);
   const [isInGame, setIsInGame] = useState(
     Boolean(initialLobby?.status === 'in_progress' || initialLobby?.status === 'paused')
   );
-  const [isTvMode, setIsTvMode] = useState(initialLobby?.isTvMode ?? initialTvMode);
   const [isCreating, setIsCreating] = useState(!initialLobby);
   const [isStarting, setIsStarting] = useState(false);
   const [isConnectionBlocked, setIsConnectionBlocked] = useState(() =>
@@ -82,7 +79,6 @@ export function LobbyScreen({
           false
         );
         setCurrentLobby(created);
-        setIsTvMode(Boolean(created.isTvMode));
       } catch (err: any) {
         setErrorMsg(err.message || 'Lobby konnte nicht erstellt werden.');
       } finally {
@@ -96,7 +92,6 @@ export function LobbyScreen({
   useEffect(() => {
     if (initialLobby) {
       setCurrentLobby(initialLobby);
-      setIsTvMode(Boolean(initialLobby.isTvMode));
       setIsCreating(false);
       if (initialLobby.status === 'in_progress' || initialLobby.status === 'paused') {
         setIsInGame(true);
@@ -127,7 +122,6 @@ export function LobbyScreen({
 
     const unsubUpdated = socketService.onLobbyUpdated(({ lobby: updatedLobby, message }) => {
       setCurrentLobby((prev) => (prev ? { ...prev, ...updatedLobby } : updatedLobby));
-      setIsTvMode(Boolean(updatedLobby.isTvMode));
       if (updatedLobby.status === 'in_progress' || updatedLobby.status === 'paused') {
         setIsInGame(true);
       }
@@ -335,17 +329,6 @@ export function LobbyScreen({
     </OpenButton>
   );
 
-  const roomModeBadge = (
-    <div className="flex shrink-0 items-center gap-2 font-arcade text-xs uppercase tracking-wider text-[#94A3B8]">
-      {isTvMode ? (
-        <span className="inline-flex items-center gap-1.5 rounded-lg border border-[#F59E0B]/45 bg-[#F59E0B]/15 px-3 py-1 text-[#FDE68A]">
-          <Tv className="h-3.5 w-3.5" />
-          <span>VERBUNDEN MIT TV-LOBBY</span>
-        </span>
-      ) : null}
-    </div>
-  );
-
   const titleBlock = (alignLeft = false) => (
     <div
       className={`lobby-landscape-hide-title flex flex-col ${
@@ -438,9 +421,9 @@ export function LobbyScreen({
           isAvatarModalOpen ? 'pointer-events-none' : ''
         }`}
       >
-        {/* Kopfzeile: ZURÜCK & VERLASSEN links, Spieltitel im Querformat mittig & kompakter Status rechtsbündig */}
-        <header className="tablet-header relative flex w-full shrink-0 flex-nowrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2 shrink-0">
+        {/* Kopfzeile: ZURÜCK & VERLASSEN links, Spieltitel im Querformat exakt mittig & Optionen rechtsbündig */}
+        <header className="tablet-header relative grid w-full shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-3">
+          <div className="justify-self-start flex items-center gap-2 shrink-0">
             {!isTvControlledGuest && (
               <button
                 type="button"
@@ -465,13 +448,13 @@ export function LobbyScreen({
             )}
           </div>
 
-          <div className="lobby-landscape-header-title hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
+          <div className="lobby-landscape-header-title justify-self-center hidden min-w-0 border-b-2 border-[#F59E0B] px-1.5 pb-0.5 select-none">
             <span className="font-arcade block truncate text-sm sm:text-base tracking-wider text-white uppercase drop-shadow-[0_2px_10px_rgba(15,23,42,0.75)]">
               {activeGame.title}
             </span>
           </div>
 
-          <div className="flex min-w-0 items-center justify-end gap-2">
+          <div className="justify-self-end flex min-w-0 items-center justify-end gap-2">
             <HeaderStatusOverlay
               lobby={currentLobby}
               currentUserId={currentUser.id}
@@ -531,8 +514,7 @@ export function LobbyScreen({
                 </div>
               </div>
 
-              <div className="lobby-landscape-footer flex w-full flex-col sm:flex-row items-center justify-between gap-4 pt-2">
-                {roomModeBadge}
+              <div className="lobby-landscape-footer flex w-full items-center justify-end pt-2">
                 <div className="w-full sm:w-72">{actionButton}</div>
               </div>
             </div>
