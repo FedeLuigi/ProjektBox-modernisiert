@@ -210,6 +210,10 @@ export function MultiplayerGameView({
                 €
               </span>
             </div>
+          ) : lobby.gameId === 'zombie-survival' ? (
+            <div className="justify-self-center flex items-center rounded-xl border border-[#F43F5E]/40 bg-[#0F172A]/70 px-3 py-1 backdrop-blur-md font-arcade text-xs text-[#FDA4AF] uppercase">
+              <span>ZOMBIE 3D</span>
+            </div>
           ) : (
             <div
               className={`justify-self-center rounded-lg border px-3 py-1 font-arcade text-xs tracking-wider uppercase ${
@@ -342,7 +346,11 @@ export function MultiplayerGameView({
             </div>
           </main>
         ) : (
-          <main className="game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col items-center overflow-hidden py-1.5 sm:py-3">
+          <main
+            className={`game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden ${
+              lobby.gameId === 'zombie-survival' ? 'py-1' : 'items-center py-1.5 sm:py-3'
+            }`}
+          >
             {BoardComponent && myPlayer ? (
               <BoardComponent
                 gameId={lobby.gameId}

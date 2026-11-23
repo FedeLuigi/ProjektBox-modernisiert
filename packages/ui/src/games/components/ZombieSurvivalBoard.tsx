@@ -11,9 +11,9 @@ export function ZombieSurvivalBoard({
   isTvMode,
   onMove,
 }: GameRendererProps<ZombieSurvivalState, ZombieSurvivalMove>) {
-  const isTv = Boolean(isTvMode || myPlayer?.isTvScreen);
+  const isTvDevice = Boolean(myPlayer?.isTvScreen);
 
-  if (isTv) {
+  if (isTvDevice) {
     return (
       <Zombie3DArena
         players={allPlayers}
@@ -29,5 +29,22 @@ export function ZombieSurvivalBoard({
     );
   }
 
-  return <ZombieController myPlayerId={myPlayer.id} />;
+  if (isTvMode) {
+    return <ZombieController myPlayerId={myPlayer.id} />;
+  }
+
+  return (
+    <Zombie3DArena
+      players={allPlayers}
+      difficulty={gameState?.difficulty || 'normal'}
+      isGameOver={isGameOver}
+      localPlayerId={myPlayer.id}
+      onFinish={(payload) => {
+        onMove({
+          type: 'zombie_finish',
+          ...payload,
+        });
+      }}
+    />
+  );
 }

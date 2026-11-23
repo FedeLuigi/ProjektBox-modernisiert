@@ -153,9 +153,9 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
   const hpPct = Math.max(0, (hud.hp / Math.max(1, hud.maxHp)) * 100);
 
   return (
-    <div className="flex h-full min-h-[420px] w-full flex-col justify-between gap-3 select-none touch-none">
+    <div className="flex h-full min-h-0 flex-1 w-full flex-col justify-between gap-2 overflow-hidden select-none touch-none">
       {/* Top Controller HUD */}
-      <div className="flex flex-col gap-2 rounded-2xl border border-white/15 bg-white/[0.04] p-3">
+      <div className="flex shrink-0 flex-col gap-1.5 rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2">
         <div className="flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <span className="rounded-lg bg-[#F59E0B]/20 border border-[#F59E0B]/50 px-2.5 py-1 font-arcade text-xs text-[#FDE68A]">
@@ -254,10 +254,10 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
           </span>
         </div>
       ) : (
-        /* Dual-Stick Controller Surface */
-        <div className="flex flex-1 items-center justify-between gap-2 px-1 py-2">
+        <div className="flex flex-1 min-h-0 items-center justify-between gap-2 px-1 py-1">
+          {/* Dual-Stick Controller Surface */}
           {/* Left Stick: Move */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
             <div
               ref={leftPadRef}
               onPointerDown={(e) => {
@@ -277,12 +277,12 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
               onPointerCancel={() => {
                 setLeftStick({ active: false, pointerId: null, x: 0, y: 0 });
               }}
-              className="relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center rounded-full border-2 border-[#38BDF8]/40 bg-[#0F172A]/70 shadow-inner touch-none"
+              className="relative flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center rounded-full border-2 border-[#38BDF8]/40 bg-[#0F172A]/70 shadow-inner touch-none"
             >
               <div
-                className="h-14 w-14 sm:h-16 sm:w-16 rounded-full bg-[#38BDF8] shadow-[0_0_20px_rgba(56,189,248,0.5)] transition-transform duration-75"
+                className="h-12 w-12 sm:h-14 sm:w-14 rounded-full bg-[#38BDF8] shadow-[0_0_20px_rgba(56,189,248,0.5)] transition-transform duration-75"
                 style={{
-                  transform: `translate(${leftStick.x * 42}px, ${leftStick.y * 42}px)`,
+                  transform: `translate(${leftStick.x * 36}px, ${leftStick.y * 36}px)`,
                 }}
               />
             </div>
@@ -292,16 +292,16 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
           </div>
 
           {/* Center Action Buttons */}
-          <div className="flex flex-col items-center gap-2.5">
+          <div className="flex flex-col items-center gap-2">
             <button
               type="button"
               onClick={() => {
                 reloadQueuedRef.current = true;
                 triggerHapticFeedback(20);
               }}
-              className="flex h-12 w-24 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 font-arcade text-[10px] text-[#FDE68A] active:scale-95"
+              className="flex h-10 w-24 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 font-arcade text-[10px] text-[#FDE68A] active:scale-95"
             >
-              <RotateCw className="h-4 w-4" />
+              <RotateCw className="h-3.5 w-3.5" />
               <span>LADEN</span>
             </button>
 
@@ -311,16 +311,16 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
                 dashQueuedRef.current = true;
                 triggerHapticFeedback(25);
               }}
-              className="flex h-12 w-24 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[#38BDF8]/50 bg-[#38BDF8]/15 font-arcade text-[10px] text-[#7DD3FC] active:scale-95"
+              className="flex h-10 w-24 flex-col items-center justify-center gap-0.5 rounded-2xl border border-[#38BDF8]/50 bg-[#38BDF8]/15 font-arcade text-[10px] text-[#7DD3FC] active:scale-95"
             >
-              <Zap className="h-4 w-4" />
+              <Zap className="h-3.5 w-3.5" />
               <span>DASH</span>
             </button>
 
             <button
               type="button"
               onClick={() => setAutoFire((v) => !v)}
-              className={`flex h-10 w-24 items-center justify-center gap-1 rounded-xl border font-arcade text-[10px] uppercase transition-all ${
+              className={`flex h-9 w-24 items-center justify-center gap-1 rounded-xl border font-arcade text-[10px] uppercase transition-all ${
                 autoFire
                   ? 'border-[#34D399] bg-[#10B981]/25 text-[#6EE7B7]'
                   : 'border-white/15 bg-white/[0.04] text-[#94A3B8]'
@@ -332,7 +332,7 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
           </div>
 
           {/* Right Stick: Aim & Shoot */}
-          <div className="flex flex-col items-center gap-1.5">
+          <div className="flex flex-col items-center gap-1">
             <div
               ref={rightPadRef}
               onPointerDown={(e) => {
@@ -352,15 +352,15 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
               onPointerCancel={() => {
                 setRightStick({ active: false, pointerId: null, x: 0, y: 0 });
               }}
-              className="relative flex h-36 w-36 sm:h-44 sm:w-44 items-center justify-center rounded-full border-2 border-[#F43F5E]/45 bg-[#0F172A]/70 shadow-inner touch-none"
+              className="relative flex h-32 w-32 sm:h-40 sm:w-40 items-center justify-center rounded-full border-2 border-[#F43F5E]/45 bg-[#0F172A]/70 shadow-inner touch-none"
             >
               <div
-                className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full bg-[#F43F5E] text-white shadow-[0_0_20px_rgba(244,63,94,0.55)] transition-transform duration-75"
+                className="flex h-12 w-12 sm:h-14 sm:w-14 items-center justify-center rounded-full bg-[#F43F5E] text-white shadow-[0_0_20px_rgba(244,63,94,0.55)] transition-transform duration-75"
                 style={{
-                  transform: `translate(${rightStick.x * 42}px, ${rightStick.y * 42}px)`,
+                  transform: `translate(${rightStick.x * 36}px, ${rightStick.y * 36}px)`,
                 }}
               >
-                <Crosshair className="h-6 w-6" />
+                <Crosshair className="h-5 w-5" />
               </div>
             </div>
             <span className="font-arcade text-[10px] tracking-wider text-[#94A3B8] uppercase">

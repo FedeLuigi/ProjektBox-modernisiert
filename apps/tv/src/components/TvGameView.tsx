@@ -29,6 +29,7 @@ export function TvGameView({
   const isStadtLandFluss = lobby.gameId === 'stadt-land-fluss';
   const isRoulette = lobby.gameId === 'roulette';
   const isTexasHoldem = lobby.gameId === 'texas-holdem';
+  const isZombieSurvival = lobby.gameId === 'zombie-survival';
   const isMoneyGame = isRoulette || isTexasHoldem;
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const player1 = activePlayers[0];
@@ -282,8 +283,18 @@ export function TvGameView({
             </div>
           </main>
         ) : (
-          <main className="flex flex-1 min-h-0 flex-col items-center overflow-y-auto py-3 w-full">
-            <div className="my-auto flex w-full flex-col items-center">
+          <main
+            className={`flex flex-1 min-h-0 flex-col items-center w-full ${
+              isZombieSurvival ? 'overflow-hidden py-1' : 'overflow-y-auto py-3'
+            }`}
+          >
+            <div
+              className={
+                isZombieSurvival
+                  ? 'flex h-full w-full flex-1 min-h-0 flex-col'
+                  : 'my-auto flex w-full flex-col items-center'
+              }
+            >
               {BoardComponent && (
                 <BoardComponent
                   gameId={lobby.gameId}

@@ -19,6 +19,7 @@ interface Zombie3DArenaProps {
   players: Player[];
   difficulty: ZombieDifficulty;
   isGameOver: boolean;
+  localPlayerId?: string;
   onFinish: (payload: {
     wave: number;
     scores: Record<string, number>;
@@ -239,11 +240,17 @@ export function Zombie3DArena({
   players,
   difficulty,
   isGameOver,
+  localPlayerId,
   onFinish,
 }: Zombie3DArenaProps) {
   const mountRef = useRef<HTMLDivElement | null>(null);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
+  const localInputRef = useRef<ZombieInputPayload | null>(null);
+  const localLeftPadRef = useRef<HTMLDivElement | null>(null);
+  const localRightPadRef = useRef<HTMLDivElement | null>(null);
+  const [localLeftKnob, setLocalLeftKnob] = useState({ x: 0, y: 0, pointerId: null as number | null });
+  const [localRightKnob, setLocalRightKnob] = useState({ x: 0, y: 0, pointerId: null as number | null });
 
   const [hudOverlay, setHudOverlay] = useState<{
     wave: number;
@@ -734,7 +741,14 @@ export function Zombie3DArena({
             p.reloadingUntil = 0;
           }
 
-          let inp = inputs.get(p.id) || { moveX: 0, moveY: 0, aimX: 0, aimY: 0, firing: false };
+          let inp =
+            localPlayerId && p.id === localPlayerId && localInputRef.current
+              ? { ...localInputRef.current }
+              : inputs.get(p.id) || { moveX: 0, moveY: 0, aimX: 0, aimY: 0, firing: false };
+          if (localPlayerId && p.id === localPlayerId && localInputRef.current) {
+            localInputRef.current.reload = false;
+            localInputRef.current.dash = false;
+          }
 
           // Keyboard fallback for the first human player (WASD + Arrows + R + Shift)
           if (firstHuman && p.id === firstHuman.id && keys.size > 0) {
@@ -1142,6 +1156,9 @@ export function Zombie3DArena({
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
     };
+    const resizeObserver =
+      typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+    resizeObserver?.observe(container);
     window.addEventListener('resize', onResize);
 
     return () => {
@@ -1150,49 +1167,86 @@ export function Zombie3DArena({
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
       window.removeEventListener('resize', onResize);
+      resizeObserver?.disconnect();
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
       renderer.dispose();
     };
-  }, [players, difficulty, isGameOver]);
+  }, [players, difficulty, isGameOver, localPlayerId]);
+
+  const computeLocalStick = (
+    el: HTMLDivElement | null,
+    clientX: number,
+    clientY: number
+  ): { x: number; y: number } => {
+    if (!el) return { x: 0, y: 0 };
+    const rect = el.getBoundingClientRect();
+    const cx = rect.left + rect.width / 2;
+    const cy = rect.top + rect.height / 2;
+    const maxR = Math.max(20, rect.width / 2 - 14);
+    let dx = (clientX - cx) / maxR;
+    let dy = (clientY - cy) / maxR;
+    const mag = Math.hypot(dx, dy);
+    if (mag > 1) {
+      dx /= mag;
+      dy /= mag;
+    }
+    return { x: dx, y: dy };
+  };
+
+  const updateLocalInput = (patch: Partial<ZombieInputPayload>) => {
+    const prev = localInputRef.current || {
+      moveX: 0,
+      moveY: 0,
+      aimX: 0,
+      aimY: 0,
+      firing: false,
+    };
+    localInputRef.current = { ...prev, ...patch };
+  };
 
   return (
-    <div className="relative flex w-full flex-col gap-3 select-none">
-      {/* Top Wave & Banner Strip */}
-      <div className="flex flex-wrap items-center justify-between gap-3 px-1">
-        <div className="flex items-center gap-3">
-          <span className="rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 px-3.5 py-1.5 font-arcade text-sm sm:text-base text-[#FDE68A] uppercase">
+    <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden rounded-2xl border border-white/15 bg-[#0B1322] shadow-2xl select-none">
+      {/* Fullscreen 3D WebGL Canvas */}
+      <div ref={mountRef} className="absolute inset-0 h-full w-full" />
+
+      {/* Floating Top-Left Wave & Zombie Count */}
+      <div className="pointer-events-none absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="rounded-xl border border-[#F59E0B]/55 bg-[#0F172A]/80 px-3 py-1 font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase backdrop-blur-md">
             WELLE {hudOverlay.wave}
           </span>
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#F43F5E]/40 bg-[#F43F5E]/15 px-3.5 py-1.5 font-arcade text-xs sm:text-sm text-[#FDA4AF] uppercase">
-            <Skull className="h-4 w-4" />
-            <span>{hudOverlay.zombiesRemaining} ZOMBIES</span>
+          <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#F43F5E]/45 bg-[#0F172A]/80 px-3 py-1 font-arcade text-xs sm:text-sm text-[#FDA4AF] uppercase backdrop-blur-md">
+            <Skull className="h-3.5 w-3.5" />
+            <span>{hudOverlay.zombiesRemaining}</span>
           </span>
         </div>
 
-        <span className="font-arcade hidden md:inline-flex items-center gap-1.5 text-xs text-[#94A3B8] uppercase">
-          <Crosshair className="h-3.5 w-3.5 text-[#38BDF8]" />
-          <span>SMARTPHONE ALS CONTROLLER NUTZEN</span>
-        </span>
-      </div>
-
-      {/* 3D WebGL Canvas */}
-      <div className="relative w-full h-[54vh] min-h-[340px] max-h-[620px] overflow-hidden rounded-3xl border border-white/15 bg-[#0B1322] shadow-2xl">
-        <div ref={mountRef} className="h-full w-full" />
-
-        {bannerText && (
-          <div className="pointer-events-none absolute top-4 left-1/2 -translate-x-1/2 z-20 animate-bounce">
-            <div className="flex items-center gap-2 rounded-2xl border border-[#FBBF24]/70 bg-[#0F172A]/90 px-5 py-2.5 shadow-xl backdrop-blur-md">
-              <Sparkles className="h-5 w-5 text-[#FBBF24]" />
-              <span className="font-arcade text-sm sm:text-lg text-[#FDE68A] uppercase tracking-wider whitespace-nowrap">
-                {bannerText}
-              </span>
-            </div>
-          </div>
+        {!localPlayerId && (
+          <span className="font-arcade hidden md:inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0F172A]/75 px-3 py-1 text-[11px] text-[#94A3B8] uppercase backdrop-blur-md">
+            <Crosshair className="h-3.5 w-3.5 text-[#38BDF8]" />
+            <span>SMARTPHONE ALS CONTROLLER NUTZEN</span>
+          </span>
         )}
       </div>
 
-      {/* Open Player Strip below 3D Arena */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+      {/* Level-Up / Wave Banner */}
+      {bannerText && (
+        <div className="pointer-events-none absolute top-14 left-1/2 -translate-x-1/2 z-30 animate-bounce">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#FBBF24]/70 bg-[#0F172A]/90 px-4 py-2 shadow-xl backdrop-blur-md">
+            <Sparkles className="h-4 w-4 text-[#FBBF24]" />
+            <span className="font-arcade text-xs sm:text-base text-[#FDE68A] uppercase tracking-wider whitespace-nowrap">
+              {bannerText}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Floating Bottom Player Strip */}
+      <div
+        className={`pointer-events-none absolute bottom-2 left-3 right-3 z-20 flex flex-wrap items-end justify-center gap-2 ${
+          localPlayerId ? 'px-32 sm:px-40' : ''
+        }`}
+      >
         {players
           .filter((p) => !p.isTvScreen)
           .map((p, idx) => {
@@ -1211,33 +1265,32 @@ export function Zombie3DArena({
             return (
               <div
                 key={p.id}
-                className={`flex flex-col gap-1.5 rounded-2xl border px-3 py-2.5 transition-all ${
+                className={`flex min-w-[140px] max-w-[200px] flex-1 flex-col gap-1 rounded-xl border px-2.5 py-1.5 backdrop-blur-md transition-all ${
                   hud && !hud.alive
-                    ? 'border-[#EF4444]/35 bg-[#EF4444]/10 opacity-55'
-                    : 'border-white/10 bg-white/[0.04]'
+                    ? 'border-[#EF4444]/40 bg-[#0F172A]/70 opacity-55'
+                    : 'border-white/15 bg-[#0F172A]/78'
                 }`}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2 min-w-0">
+                <div className="flex items-center justify-between gap-1.5">
+                  <div className="flex items-center gap-1.5 min-w-0">
                     <span
-                      className="h-3 w-3 rounded-full shrink-0"
+                      className="h-2.5 w-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: color }}
                     />
-                    <span className="font-arcade truncate text-xs text-white uppercase">
+                    <span className="font-arcade truncate text-[11px] text-white uppercase">
                       {p.name}
                     </span>
                   </div>
-                  <span className="font-arcade shrink-0 rounded-md bg-[#F59E0B]/20 px-1.5 py-0.5 text-[10px] text-[#FDE68A]">
+                  <span className="font-arcade shrink-0 rounded bg-[#F59E0B]/25 px-1.5 py-0.5 text-[9px] text-[#FDE68A]">
                     LVL {level}
                   </span>
                 </div>
 
-                {/* HP Bar */}
                 <div className="flex items-center gap-1.5">
-                  <Heart className="h-3 w-3 shrink-0 text-[#FB7185]" />
-                  <div className="h-2 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <Heart className="h-2.5 w-2.5 shrink-0 text-[#FB7185]" />
+                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
                     <div
-                      className="h-full rounded-full bg-[#10B981] transition-all duration-150"
+                      className="h-full rounded-full transition-all duration-150"
                       style={{
                         width: `${hpPct}%`,
                         backgroundColor: hpPct <= 30 ? '#EF4444' : '#10B981',
@@ -1246,10 +1299,9 @@ export function Zombie3DArena({
                   </div>
                 </div>
 
-                {/* XP Bar */}
                 <div className="flex items-center gap-1.5">
-                  <Zap className="h-3 w-3 shrink-0 text-[#38BDF8]" />
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/10">
+                  <Zap className="h-2.5 w-2.5 shrink-0 text-[#38BDF8]" />
+                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
                     <div
                       className="h-full rounded-full bg-[#38BDF8] transition-all duration-150"
                       style={{ width: `${xpPct}%` }}
@@ -1257,7 +1309,7 @@ export function Zombie3DArena({
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[10px] font-arcade text-[#CBD5E1] uppercase">
+                <div className="flex items-center justify-between text-[9px] font-arcade text-[#CBD5E1] uppercase">
                   <span className="truncate" style={{ color: weapon.color }}>
                     {hud && !hud.alive ? 'BESIEGT' : weapon.shortName}
                   </span>
@@ -1268,10 +1320,89 @@ export function Zombie3DArena({
           })}
       </div>
 
+      {/* Standalone Smartphone Touch Controls (only when played without TV) */}
+      {localPlayerId && (
+        <>
+          <div
+            ref={localLeftPadRef}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              const off = computeLocalStick(localLeftPadRef.current, e.clientX, e.clientY);
+              setLocalLeftKnob({ x: off.x, y: off.y, pointerId: e.pointerId });
+              updateLocalInput({ moveX: off.x, moveY: off.y });
+            }}
+            onPointerMove={(e) => {
+              if (localLeftKnob.pointerId !== e.pointerId) return;
+              const off = computeLocalStick(localLeftPadRef.current, e.clientX, e.clientY);
+              setLocalLeftKnob({ x: off.x, y: off.y, pointerId: e.pointerId });
+              updateLocalInput({ moveX: off.x, moveY: off.y });
+            }}
+            onPointerUp={(e) => {
+              if (localLeftKnob.pointerId !== e.pointerId) return;
+              setLocalLeftKnob({ x: 0, y: 0, pointerId: null });
+              updateLocalInput({ moveX: 0, moveY: 0 });
+            }}
+            onPointerCancel={() => {
+              setLocalLeftKnob({ x: 0, y: 0, pointerId: null });
+              updateLocalInput({ moveX: 0, moveY: 0 });
+            }}
+            className="absolute bottom-3 left-3 z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#38BDF8]/50 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
+          >
+            <div
+              className="h-11 w-11 rounded-full bg-[#38BDF8]/85 shadow-lg"
+              style={{ transform: `translate(${localLeftKnob.x * 30}px, ${localLeftKnob.y * 30}px)` }}
+            />
+          </div>
+
+          <div
+            ref={localRightPadRef}
+            onPointerDown={(e) => {
+              e.currentTarget.setPointerCapture(e.pointerId);
+              const off = computeLocalStick(localRightPadRef.current, e.clientX, e.clientY);
+              setLocalRightKnob({ x: off.x, y: off.y, pointerId: e.pointerId });
+              updateLocalInput({ aimX: off.x, aimY: off.y, firing: Math.hypot(off.x, off.y) > 0.25 });
+            }}
+            onPointerMove={(e) => {
+              if (localRightKnob.pointerId !== e.pointerId) return;
+              const off = computeLocalStick(localRightPadRef.current, e.clientX, e.clientY);
+              setLocalRightKnob({ x: off.x, y: off.y, pointerId: e.pointerId });
+              updateLocalInput({ aimX: off.x, aimY: off.y, firing: Math.hypot(off.x, off.y) > 0.25 });
+            }}
+            onPointerUp={(e) => {
+              if (localRightKnob.pointerId !== e.pointerId) return;
+              setLocalRightKnob({ x: 0, y: 0, pointerId: null });
+              updateLocalInput({ aimX: 0, aimY: 0, firing: false });
+            }}
+            onPointerCancel={() => {
+              setLocalRightKnob({ x: 0, y: 0, pointerId: null });
+              updateLocalInput({ aimX: 0, aimY: 0, firing: false });
+            }}
+            className="absolute bottom-3 right-3 z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#F43F5E]/55 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
+          >
+            <div
+              className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F43F5E]/85 text-white shadow-lg"
+              style={{ transform: `translate(${localRightKnob.x * 30}px, ${localRightKnob.y * 30}px)` }}
+            >
+              <Crosshair className="h-5 w-5" />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => updateLocalInput({ dash: true })}
+            className="absolute bottom-34 right-5 z-30 rounded-xl border border-[#38BDF8]/60 bg-[#0F172A]/75 px-3 py-1.5 font-arcade text-[10px] text-[#7DD3FC] backdrop-blur-sm active:scale-95"
+          >
+            DASH
+          </button>
+        </>
+      )}
+
       {hudOverlay.players.length > 0 && hudOverlay.players.every((p) => !p.alive) && (
-        <div className="flex items-center justify-center gap-2 text-xs font-arcade text-[#FDA4AF] uppercase">
-          <ShieldAlert className="h-4 w-4" />
-          <span>ALLE SPIELER WURDEN ÜBERRANNT...</span>
+        <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center">
+          <div className="flex items-center gap-2 rounded-2xl border border-[#EF4444]/60 bg-[#0F172A]/90 px-5 py-3 font-arcade text-sm text-[#FDA4AF] uppercase backdrop-blur-md">
+            <ShieldAlert className="h-5 w-5" />
+            <span>ALLE SPIELER WURDEN ÜBERRANNT...</span>
+          </div>
         </div>
       )}
     </div>
