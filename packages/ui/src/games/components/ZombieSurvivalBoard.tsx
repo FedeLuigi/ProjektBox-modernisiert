@@ -13,6 +13,7 @@ export function ZombieSurvivalBoard({
 }: GameRendererProps<ZombieSurvivalState, ZombieSurvivalMove>) {
   const isTvDevice = Boolean(myPlayer?.isTvScreen);
 
+  // 1. TV-Bildschirm: Zeigt die 3D-Arena im Vollbild und empfängt Inputs aller Smartphones
   if (isTvDevice) {
     return (
       <Zombie3DArena
@@ -29,10 +30,13 @@ export function ZombieSurvivalBoard({
     );
   }
 
-  if (isTvMode) {
+  // 2. Jeder Smartphone-Teilnehmer in einer TV-Lobby ODER Nicht-Host in einer Smartphone-Lobby
+  //    erhält den vollständigen Dual-Stick-Controller + Live-HUD
+  if (isTvMode || !myPlayer?.isHost) {
     return <ZombieController myPlayerId={myPlayer.id} />;
   }
 
+  // 3. Host in einer reinen Smartphone-Lobby (ohne TV): 3D-Arena + eigene Touch-Steuerung
   return (
     <Zombie3DArena
       players={allPlayers}

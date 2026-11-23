@@ -99,29 +99,54 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
     return () => unsub();
   }, [myPlayerId]);
 
-  // Stream controller input to TV (~25Hz)
+  // Stream controller input to TV/Host (~25Hz), including optional keyboard fallback
   useEffect(() => {
+    const keys = new Set<string>();
+    const onKeyDown = (e: KeyboardEvent) => keys.add(e.key.toLowerCase());
+    const onKeyUp = (e: KeyboardEvent) => keys.delete(e.key.toLowerCase());
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+
     const interval = window.setInterval(() => {
       const l = leftStickRef.current;
       const r = rightStickRef.current;
+      const kx = (keys.has('d') ? 1 : 0) - (keys.has('a') ? 1 : 0);
+      const ky = (keys.has('s') ? 1 : 0) - (keys.has('w') ? 1 : 0);
+      const ax = (keys.has('arrowright') ? 1 : 0) - (keys.has('arrowleft') ? 1 : 0);
+      const ay = (keys.has('arrowdown') ? 1 : 0) - (keys.has('arrowup') ? 1 : 0);
+
+      const moveX = kx !== 0 ? kx : l.x;
+      const moveY = ky !== 0 ? ky : l.y;
+      const aimX = ax !== 0 ? ax : r.x;
+      const aimY = ay !== 0 ? ay : r.y;
+
       const aimMag = Math.hypot(r.x, r.y);
-      const shouldFire = (r.active && aimMag > 0.25) || autoFireRef.current;
+      const shouldFire =
+        (r.active && aimMag > 0.25) ||
+        ax !== 0 ||
+        ay !== 0 ||
+        keys.has(' ') ||
+        autoFireRef.current;
 
       socketService.emitZombieInput({
-        moveX: Number(l.x.toFixed(3)),
-        moveY: Number(l.y.toFixed(3)),
-        aimX: Number(r.x.toFixed(3)),
-        aimY: Number(r.y.toFixed(3)),
+        moveX: Number(moveX.toFixed(3)),
+        moveY: Number(moveY.toFixed(3)),
+        aimX: Number(aimX.toFixed(3)),
+        aimY: Number(aimY.toFixed(3)),
         firing: shouldFire,
-        reload: reloadQueuedRef.current,
-        dash: dashQueuedRef.current,
+        reload: reloadQueuedRef.current || keys.has('r'),
+        dash: dashQueuedRef.current || keys.has('shift'),
       });
 
       reloadQueuedRef.current = false;
       dashQueuedRef.current = false;
     }, 40);
 
-    return () => window.clearInterval(interval);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
   }, []);
 
   const computeStickOffset = (

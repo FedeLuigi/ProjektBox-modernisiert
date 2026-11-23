@@ -1810,13 +1810,22 @@ export function Zombie3DArena({
             </div>
           </div>
 
-          <button
-            type="button"
-            onClick={() => updateLocalInput({ dash: true })}
-            className="absolute bottom-34 right-5 z-30 rounded-xl border border-[#38BDF8]/60 bg-[#0F172A]/75 px-3 py-1.5 font-arcade text-[10px] text-[#7DD3FC] backdrop-blur-sm active:scale-95"
-          >
-            DASH
-          </button>
+          <div className="absolute bottom-34 right-3 z-30 flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => updateLocalInput({ reload: true })}
+              className="border border-[#F59E0B]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#FDE68A] backdrop-blur-sm active:scale-95"
+            >
+              LADEN
+            </button>
+            <button
+              type="button"
+              onClick={() => updateLocalInput({ dash: true })}
+              className="border border-[#38BDF8]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#7DD3FC] backdrop-blur-sm active:scale-95"
+            >
+              DASH
+            </button>
+          </div>
         </>
       )}
 
