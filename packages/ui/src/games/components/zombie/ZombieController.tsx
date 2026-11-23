@@ -219,7 +219,7 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
     <div className="relative flex h-full min-h-0 flex-1 w-full flex-col justify-between gap-2 overflow-hidden select-none touch-none">
       {/* Top Tactical Controller HUD */}
       <div className="flex shrink-0 flex-col gap-1.5 border border-white/12 border-l-2 border-l-[#EF4444] bg-[#070B12]/85 px-3 py-2 backdrop-blur-md">
-        <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center justify-between gap-2 pr-28">
           <div className="flex items-center gap-2.5">
             <span className="bg-[#F59E0B]/20 border border-[#F59E0B]/50 px-2 py-0.5 font-mono text-[11px] font-bold tracking-wider text-[#FDE68A]">
               RANG {String(hud.level).padStart(2, '0')}

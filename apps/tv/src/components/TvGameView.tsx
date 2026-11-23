@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Pencil, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Clock, LogOut, Pencil, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -23,6 +23,7 @@ export function TvGameView({
 }: TvGameViewProps) {
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
   const [rematchRequested, setRematchRequested] = useState(false);
+  const [isZombieMenuOpen, setIsZombieMenuOpen] = useState(false);
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
@@ -118,8 +119,15 @@ export function TvGameView({
     >
       <BackgroundCometCanvas opacity={0.85} />
 
-      <div className="safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3">
-        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL */}
+      <div
+        className={
+          isZombieSurvival
+            ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
+            : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3'
+        }
+      >
+        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL (bei Zombie 3D ausgeblendet für echtes Vollbild) */}
+        {!isZombieSurvival && (
         <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 pb-2.5">
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
             <OpenButton size="md" variant="secondary" onClick={onLeave} className="shrink-0 whitespace-nowrap">
@@ -174,6 +182,63 @@ export function TvGameView({
             </span>
           </div>
         </header>
+        )}
+
+        {/* Schwebender OPTIONEN-Button oben rechts im Vollbild-Zombie-Spiel */}
+        {isZombieSurvival && !isGameOver && (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsZombieMenuOpen(true)}
+              className="fixed top-3 right-3 z-40 inline-flex items-center gap-2 border border-white/15 bg-[#070B12]/85 px-3.5 py-2 font-mono text-xs font-bold tracking-[0.18em] text-white uppercase backdrop-blur-md transition-colors hover:border-[#F59E0B] hover:text-[#FDE68A] cursor-pointer"
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5 text-[#F59E0B]" />
+              <span>OPTIONEN</span>
+            </button>
+
+            {isZombieMenuOpen && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Spielmenü"
+                className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/82 p-6 backdrop-blur-md animate-fade-in"
+              >
+                <div className="flex w-full max-w-sm flex-col gap-5 border border-white/15 border-t-2 border-t-[#EF4444] bg-[#070B12] p-6 text-center shadow-2xl">
+                  <div className="flex flex-col gap-1">
+                    <span className="font-mono text-[10px] tracking-[0.25em] text-[#94A3B8] uppercase">
+                      ZOMBIE ARENA 3D • RAUM {lobby.code}
+                    </span>
+                    <h2 className="font-mono text-xl font-bold tracking-[0.2em] text-white uppercase">
+                      SPIELMENÜ
+                    </h2>
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setIsZombieMenuOpen(false)}
+                      className="inline-flex w-full items-center justify-center gap-2 border border-[#10B981]/60 bg-[#10B981]/20 px-4 py-3 font-mono text-xs font-bold tracking-[0.18em] text-[#6EE7B7] uppercase hover:bg-[#10B981]/30 cursor-pointer"
+                    >
+                      <Play className="h-4 w-4" />
+                      <span>WEITER SPIELEN</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsZombieMenuOpen(false);
+                        onLeave();
+                      }}
+                      className="inline-flex w-full items-center justify-center gap-2 border border-[#EF4444]/60 bg-[#EF4444]/20 px-4 py-3 font-mono text-xs font-bold tracking-[0.18em] text-[#FCA5A5] uppercase hover:bg-[#EF4444]/30 cursor-pointer"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>LOBBY VERLASSEN</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
 
         {/* 2. TV-BÜHNE */}
         {isDrawAndGuess ? (
@@ -285,7 +350,7 @@ export function TvGameView({
         ) : (
           <main
             className={`flex flex-1 min-h-0 flex-col items-center w-full ${
-              isZombieSurvival ? 'overflow-hidden py-1' : 'overflow-y-auto py-3'
+              isZombieSurvival ? 'overflow-hidden p-0' : 'overflow-y-auto py-3'
             }`}
           >
             <div

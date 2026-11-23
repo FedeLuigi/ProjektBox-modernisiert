@@ -1865,7 +1865,7 @@ export function Zombie3DArena({
   };
 
   return (
-    <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden rounded-lg border border-white/10 bg-[#070B12] shadow-2xl select-none">
+    <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden bg-[#070B12] select-none">
       {/* Fullscreen 3D WebGL Canvas */}
       <div ref={mountRef} className="absolute inset-0 h-full w-full" />
 
@@ -1902,13 +1902,6 @@ export function Zombie3DArena({
             </div>
           </div>
         </div>
-
-        {!localPlayerId && (
-          <div className="hidden md:flex items-center gap-2 border border-white/10 bg-[#070B12]/75 px-3 py-1.5 font-mono text-[10px] tracking-[0.18em] text-[#94A3B8] uppercase backdrop-blur-md">
-            <Crosshair className="h-3.5 w-3.5 text-[#38BDF8]" />
-            <span>CONTROLLER: SMARTPHONE</span>
-          </div>
-        )}
       </div>
 
       {/* Tactical Radio / Alert Banner */}
