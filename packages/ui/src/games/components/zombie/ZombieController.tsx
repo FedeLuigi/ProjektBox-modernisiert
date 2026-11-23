@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
+  AlertTriangle,
+  Biohazard,
   Crosshair,
   Heart,
   RotateCw,
   Skull,
-  Sparkles,
   Zap,
 } from 'lucide-react';
 import type {
@@ -154,19 +155,20 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
 
   return (
     <div className="flex h-full min-h-0 flex-1 w-full flex-col justify-between gap-2 overflow-hidden select-none touch-none">
-      {/* Top Controller HUD */}
-      <div className="flex shrink-0 flex-col gap-1.5 rounded-2xl border border-white/15 bg-white/[0.04] px-3 py-2">
+      {/* Top Tactical Controller HUD */}
+      <div className="flex shrink-0 flex-col gap-1.5 border border-white/12 border-l-2 border-l-[#EF4444] bg-[#070B12]/85 px-3 py-2 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <span className="rounded-lg bg-[#F59E0B]/20 border border-[#F59E0B]/50 px-2.5 py-1 font-arcade text-xs text-[#FDE68A]">
-              LVL {hud.level}
+          <div className="flex items-center gap-2.5">
+            <span className="bg-[#F59E0B]/20 border border-[#F59E0B]/50 px-2 py-0.5 font-mono text-[11px] font-bold tracking-wider text-[#FDE68A]">
+              RANG {String(hud.level).padStart(2, '0')}
             </span>
-            <span className="font-arcade text-xs text-[#CBD5E1] uppercase">
-              WELLE {wave}
+            <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold tracking-wider text-[#CBD5E1] uppercase">
+              <Biohazard className="h-3.5 w-3.5 text-[#EF4444]" />
+              WELLE {String(wave).padStart(2, '0')}
             </span>
           </div>
-          <div className="flex items-center gap-3 font-arcade text-xs">
-            <span className="inline-flex items-center gap-1 text-[#FDA4AF]">
+          <div className="flex items-center gap-3 font-mono text-[11px] font-bold tracking-wider">
+            <span className="inline-flex items-center gap-1 text-[#FCA5A5]">
               <Skull className="h-3.5 w-3.5" />
               {hud.kills} KILLS
             </span>
@@ -177,27 +179,27 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
         {/* HP & XP Bars */}
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[10px] font-arcade text-[#CBD5E1]">
-              <span className="inline-flex items-center gap-1 text-[#FB7185]">
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#CBD5E1]">
+              <span className="inline-flex items-center gap-1 text-[#EF4444]">
                 <Heart className="h-3 w-3" /> HP
               </span>
               <span>
                 {hud.hp}/{hud.maxHp}
               </span>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-2 w-full overflow-hidden bg-white/10">
               <div
-                className="h-full rounded-full transition-all duration-150"
+                className="h-full transition-all duration-150"
                 style={{
                   width: `${hpPct}%`,
-                  backgroundColor: hpPct <= 30 ? '#EF4444' : '#10B981',
+                  backgroundColor: hpPct <= 30 ? '#EF4444' : hpPct <= 60 ? '#F59E0B' : '#22C55E',
                 }}
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <div className="flex items-center justify-between text-[10px] font-arcade text-[#CBD5E1]">
+            <div className="flex items-center justify-between text-[10px] font-mono font-bold text-[#CBD5E1]">
               <span className="inline-flex items-center gap-1 text-[#38BDF8]">
                 <Zap className="h-3 w-3" /> XP
               </span>
@@ -205,9 +207,9 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
                 {hud.xp}/{nextLevelXp}
               </span>
             </div>
-            <div className="h-2.5 w-full overflow-hidden rounded-full bg-white/10">
+            <div className="h-2 w-full overflow-hidden bg-white/10">
               <div
-                className="h-full rounded-full bg-[#38BDF8] transition-all duration-150"
+                className="h-full bg-[#38BDF8] transition-all duration-150"
                 style={{ width: `${xpPct}%` }}
               />
             </div>
@@ -215,28 +217,28 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
         </div>
 
         {/* Active Weapon Strip */}
-        <div className="flex items-center justify-between gap-2 rounded-xl border border-white/10 bg-[#0F172A]/60 px-3 py-2">
+        <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-1.5">
           <div className="flex flex-col">
-            <span className="font-arcade text-xs uppercase" style={{ color: weapon.color }}>
+            <span className="font-mono text-xs font-bold tracking-wider uppercase" style={{ color: weapon.color }}>
               {weapon.name}
             </span>
             {nextWeapon && (
-              <span className="font-arcade text-[10px] text-[#94A3B8] uppercase">
-                NÄCHSTE: {nextWeapon.shortName} (LVL {nextWeapon.unlockLevel})
+              <span className="font-mono text-[10px] tracking-wider text-[#94A3B8] uppercase">
+                NÄCHSTES UPGRADE: {nextWeapon.shortName} (RANG {String(nextWeapon.unlockLevel).padStart(2, '0')})
               </span>
             )}
           </div>
-          <span className="font-arcade text-sm text-white">
-            {hud.reloading ? 'LÄDT...' : `${hud.ammo} / ${hud.maxAmmo}`}
+          <span className="font-mono text-sm font-bold tracking-widest text-white">
+            {hud.reloading ? 'NACHLADEN...' : `${hud.ammo} / ${hud.maxAmmo}`}
           </span>
         </div>
       </div>
 
-      {/* Level-Up Celebration */}
+      {/* Tactical Level-Up Alert */}
       {levelUpBanner && (
-        <div className="flex items-center justify-center gap-2 rounded-xl border border-[#FBBF24] bg-[#F59E0B]/20 px-4 py-2 text-center animate-bounce">
-          <Sparkles className="h-4 w-4 text-[#FBBF24]" />
-          <span className="font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase">
+        <div className="flex items-center justify-center gap-2 border-y border-[#F59E0B] bg-[#070B12]/90 px-4 py-1.5 text-center">
+          <AlertTriangle className="h-4 w-4 text-[#F59E0B]" />
+          <span className="font-mono text-xs font-bold tracking-[0.18em] text-[#FDE68A] uppercase">
             {levelUpBanner}
           </span>
         </div>
@@ -244,12 +246,12 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
 
       {/* Dead Notice */}
       {!hud.alive ? (
-        <div className="flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border border-[#EF4444]/40 bg-[#EF4444]/10 p-6 text-center">
-          <Skull className="h-10 w-10 text-[#FDA4AF]" />
-          <span className="font-arcade text-base text-white uppercase">
-            DU WURDEST ÜBERRANNT
+        <div className="flex flex-1 flex-col items-center justify-center gap-2 border border-[#EF4444]/40 bg-[#070B12]/80 p-6 text-center">
+          <Skull className="h-10 w-10 text-[#EF4444]" />
+          <span className="font-mono text-base font-bold tracking-[0.2em] text-white uppercase">
+            K.I.A. • AUSSER GEFECHT
           </span>
-          <span className="font-arcade text-xs text-[#CBD5E1] uppercase">
+          <span className="font-mono text-xs tracking-wider text-[#94A3B8] uppercase">
             WARTE AUF DEIN TEAM ODER DIE ENDWERTUNG AM TV
           </span>
         </div>

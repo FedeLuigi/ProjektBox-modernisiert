@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
-import { Crosshair, Heart, ShieldAlert, Skull, Sparkles, Zap } from 'lucide-react';
+import { AlertTriangle, Biohazard, Crosshair, Heart, ShieldAlert, Skull, Zap } from 'lucide-react';
 import type {
   ZombieDifficulty,
   ZombieInputPayload,
@@ -1327,45 +1327,67 @@ export function Zombie3DArena({
   };
 
   return (
-    <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden rounded-2xl border border-white/15 bg-[#0B1322] shadow-2xl select-none">
+    <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden rounded-lg border border-white/10 bg-[#070B12] shadow-2xl select-none">
       {/* Fullscreen 3D WebGL Canvas */}
       <div ref={mountRef} className="absolute inset-0 h-full w-full" />
 
-      {/* Floating Top-Left Wave & Zombie Count */}
-      <div className="pointer-events-none absolute top-3 left-3 right-3 z-20 flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="rounded-xl border border-[#F59E0B]/55 bg-[#0F172A]/80 px-3 py-1 font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase backdrop-blur-md">
-            WELLE {hudOverlay.wave}
-          </span>
-          <span className="inline-flex items-center gap-1.5 rounded-xl border border-[#F43F5E]/45 bg-[#0F172A]/80 px-3 py-1 font-arcade text-xs sm:text-sm text-[#FDA4AF] uppercase backdrop-blur-md">
-            <Skull className="h-3.5 w-3.5" />
-            <span>{hudOverlay.zombiesRemaining}</span>
-          </span>
+      {/* Subtle atmospheric vignette */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 z-10 bg-[radial-gradient(circle_at_center,transparent_58%,rgba(3,7,18,0.68)_100%)]"
+      />
+
+      {/* Tactical Top Mission HUD */}
+      <div className="pointer-events-none absolute top-3 left-3 right-3 z-20 flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-stretch gap-2">
+          <div className="flex items-center gap-2.5 border-l-2 border-[#EF4444] bg-[#070B12]/80 px-3.5 py-1.5 backdrop-blur-md">
+            <Biohazard className="h-4 w-4 text-[#EF4444]" />
+            <div className="flex flex-col leading-none">
+              <span className="font-mono text-[9px] tracking-[0.22em] text-[#94A3B8] uppercase">
+                SEKTOR-WELLE
+              </span>
+              <span className="font-mono text-sm sm:text-base font-bold tracking-widest text-white">
+                {String(hudOverlay.wave).padStart(2, '0')}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2.5 border-l-2 border-[#F59E0B] bg-[#070B12]/80 px-3.5 py-1.5 backdrop-blur-md">
+            <Skull className="h-4 w-4 text-[#F59E0B]" />
+            <div className="flex flex-col leading-none">
+              <span className="font-mono text-[9px] tracking-[0.22em] text-[#94A3B8] uppercase">
+                INFIZIERTE
+              </span>
+              <span className="font-mono text-sm sm:text-base font-bold tracking-widest text-[#FDE68A]">
+                {String(hudOverlay.zombiesRemaining).padStart(2, '0')}
+              </span>
+            </div>
+          </div>
         </div>
 
         {!localPlayerId && (
-          <span className="font-arcade hidden md:inline-flex items-center gap-1.5 rounded-xl border border-white/10 bg-[#0F172A]/75 px-3 py-1 text-[11px] text-[#94A3B8] uppercase backdrop-blur-md">
+          <div className="hidden md:flex items-center gap-2 border border-white/10 bg-[#070B12]/75 px-3 py-1.5 font-mono text-[10px] tracking-[0.18em] text-[#94A3B8] uppercase backdrop-blur-md">
             <Crosshair className="h-3.5 w-3.5 text-[#38BDF8]" />
-            <span>SMARTPHONE ALS CONTROLLER NUTZEN</span>
-          </span>
+            <span>CONTROLLER: SMARTPHONE</span>
+          </div>
         )}
       </div>
 
-      {/* Level-Up / Wave Banner */}
+      {/* Tactical Radio / Alert Banner */}
       {bannerText && (
-        <div className="pointer-events-none absolute top-14 left-1/2 -translate-x-1/2 z-30 animate-bounce">
-          <div className="flex items-center gap-2 rounded-2xl border border-[#FBBF24]/70 bg-[#0F172A]/90 px-4 py-2 shadow-xl backdrop-blur-md">
-            <Sparkles className="h-4 w-4 text-[#FBBF24]" />
-            <span className="font-arcade text-xs sm:text-base text-[#FDE68A] uppercase tracking-wider whitespace-nowrap">
+        <div className="pointer-events-none absolute top-16 left-1/2 -translate-x-1/2 z-30">
+          <div className="flex items-center gap-2.5 border-y border-[#F59E0B]/70 bg-[#070B12]/88 px-5 py-2 shadow-2xl backdrop-blur-md">
+            <AlertTriangle className="h-4 w-4 text-[#F59E0B] shrink-0" />
+            <span className="font-mono text-xs sm:text-sm font-bold tracking-[0.2em] text-[#F8FAFC] uppercase whitespace-nowrap">
               {bannerText}
             </span>
           </div>
         </div>
       )}
 
-      {/* Floating Bottom Player Strip */}
+      {/* Tactical Squad Status Strip */}
       <div
-        className={`pointer-events-none absolute bottom-2 left-3 right-3 z-20 flex flex-wrap items-end justify-center gap-2 ${
+        className={`pointer-events-none absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-end justify-center gap-2.5 ${
           localPlayerId ? 'px-32 sm:px-40' : ''
         }`}
       >
@@ -1383,59 +1405,58 @@ export function Zombie3DArena({
             );
             const hpPct = hud ? Math.max(0, (hud.hp / Math.max(1, hud.maxHp)) * 100) : 100;
             const color = p.color || PLAYER_COLORS[idx % PLAYER_COLORS.length];
+            const isDown = Boolean(hud && !hud.alive);
 
             return (
               <div
                 key={p.id}
-                className={`flex min-w-[140px] max-w-[200px] flex-1 flex-col gap-1 rounded-xl border px-2.5 py-1.5 backdrop-blur-md transition-all ${
-                  hud && !hud.alive
-                    ? 'border-[#EF4444]/40 bg-[#0F172A]/70 opacity-55'
-                    : 'border-white/15 bg-[#0F172A]/78'
+                className={`flex min-w-[160px] max-w-[225px] flex-1 flex-col gap-1.5 border bg-[#070B12]/84 px-3 py-2 backdrop-blur-md transition-all ${
+                  isDown ? 'border-[#EF4444]/45 opacity-60' : 'border-white/12'
                 }`}
+                style={{ borderLeftWidth: '3px', borderLeftColor: isDown ? '#EF4444' : color }}
               >
-                <div className="flex items-center justify-between gap-1.5">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span
-                      className="h-2.5 w-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: color }}
-                    />
-                    <span className="font-arcade truncate text-[11px] text-white uppercase">
-                      {p.name}
-                    </span>
-                  </div>
-                  <span className="font-arcade shrink-0 rounded bg-[#F59E0B]/25 px-1.5 py-0.5 text-[9px] text-[#FDE68A]">
-                    LVL {level}
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-mono truncate text-xs font-bold tracking-wider text-white uppercase">
+                    {p.name}
+                  </span>
+                  <span className="font-mono shrink-0 bg-white/10 px-1.5 py-0.5 text-[10px] font-bold tracking-wider text-[#FDE68A]">
+                    RANG {String(level).padStart(2, '0')}
                   </span>
                 </div>
 
+                {/* HP Bar */}
                 <div className="flex items-center gap-1.5">
-                  <Heart className="h-2.5 w-2.5 shrink-0 text-[#FB7185]" />
-                  <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-white/15">
+                  <Heart className="h-3 w-3 shrink-0 text-[#EF4444]" />
+                  <div className="h-1.5 flex-1 overflow-hidden bg-white/10">
                     <div
-                      className="h-full rounded-full transition-all duration-150"
+                      className="h-full transition-all duration-150"
                       style={{
                         width: `${hpPct}%`,
-                        backgroundColor: hpPct <= 30 ? '#EF4444' : '#10B981',
+                        backgroundColor: hpPct <= 30 ? '#EF4444' : hpPct <= 60 ? '#F59E0B' : '#22C55E',
                       }}
                     />
                   </div>
+                  <span className="font-mono text-[9px] text-[#CBD5E1] w-7 text-right">
+                    {hud ? hud.hp : 100}
+                  </span>
                 </div>
 
+                {/* XP Bar */}
                 <div className="flex items-center gap-1.5">
-                  <Zap className="h-2.5 w-2.5 shrink-0 text-[#38BDF8]" />
-                  <div className="h-1 flex-1 overflow-hidden rounded-full bg-white/15">
+                  <Zap className="h-3 w-3 shrink-0 text-[#38BDF8]" />
+                  <div className="h-1 flex-1 overflow-hidden bg-white/10">
                     <div
-                      className="h-full rounded-full bg-[#38BDF8] transition-all duration-150"
+                      className="h-full bg-[#38BDF8] transition-all duration-150"
                       style={{ width: `${xpPct}%` }}
                     />
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between text-[9px] font-arcade text-[#CBD5E1] uppercase">
-                  <span className="truncate" style={{ color: weapon.color }}>
-                    {hud && !hud.alive ? 'BESIEGT' : weapon.shortName}
+                <div className="flex items-center justify-between border-t border-white/10 pt-1 font-mono text-[10px] tracking-wider uppercase">
+                  <span className="truncate font-bold" style={{ color: isDown ? '#EF4444' : weapon.color }}>
+                    {isDown ? 'K.I.A. • AM BODEN' : weapon.shortName}
                   </span>
-                  <span className="text-[#FDE68A]">{hud?.kills || 0} KILLS</span>
+                  <span className="text-[#94A3B8]">{hud?.kills || 0} KILLS</span>
                 </div>
               </div>
             );
