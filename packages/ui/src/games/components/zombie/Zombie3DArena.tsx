@@ -23,6 +23,12 @@ import crateNorUrl from '../../../assets/textures/zombie/crate_nor.jpg';
 import wallDiffUrl from '../../../assets/textures/zombie/wall_diff.jpg';
 import wallRoughUrl from '../../../assets/textures/zombie/wall_rough.jpg';
 import wallNorUrl from '../../../assets/textures/zombie/wall_nor.jpg';
+import {
+  cloneAnimatedCharacter,
+  createDetailedWeaponMesh,
+  loadZombieAssets,
+  type ZombieAssetPack,
+} from './zombieModels';
 
 interface Zombie3DArenaProps {
   players: Player[];
@@ -44,7 +50,13 @@ interface PlayerEntity {
   color: string;
   isBot: boolean;
   mesh: THREE.Group;
+  modelHolder: THREE.Group;
   weaponGroup: THREE.Group;
+  muzzleFlash: THREE.Mesh;
+  muzzleFlashUntil: number;
+  mixer?: THREE.AnimationMixer;
+  actions?: Record<string, THREE.AnimationAction>;
+  activeAnim?: string;
   currentWeaponMeshId: string;
   x: number;
   z: number;
@@ -73,7 +85,8 @@ interface ZombieEntity {
   id: number;
   kind: 'shambler' | 'runner' | 'brute';
   mesh: THREE.Group;
-  bodyMesh: THREE.Mesh;
+  flashMeshes: THREE.Mesh[];
+  mixer?: THREE.AnimationMixer;
   baseColor: number;
   x: number;
   z: number;
@@ -429,21 +442,29 @@ export function Zombie3DArena({
       emissive: 0xb45309,
       emissiveIntensity: 0.35,
     });
+    const obstacleMeshes: THREE.Object3D[] = [];
     for (const box of obstacles) {
+      const holder = new THREE.Group();
+      holder.position.set(box.x, 0, box.z);
       const mesh = new THREE.Mesh(
         new THREE.BoxGeometry(box.halfW * 2, 1.4, box.halfD * 2),
         crateMat
       );
-      mesh.position.set(box.x, 0.7, box.z);
+      mesh.position.y = 0.7;
       mesh.castShadow = true;
       mesh.receiveShadow = true;
       const trim = new THREE.Mesh(
         new THREE.BoxGeometry(box.halfW * 2 + 0.06, 0.14, box.halfD * 2 + 0.06),
         crateTrimMat
       );
-      trim.position.set(box.x, 1.32, box.z);
-      scene.add(mesh, trim);
+      trim.position.y = 1.32;
+      holder.add(mesh, trim);
+      scene.add(holder);
+      obstacleMeshes.push(holder);
     }
+
+    let loadedAssets: ZombieAssetPack | null = null;
+    let isDisposed = false;
 
     // ─── PLAYERS ───
     const playerEntities = new Map<string, PlayerEntity>();
@@ -460,6 +481,7 @@ export function Zombie3DArena({
       const group = new THREE.Group();
       group.position.set(sx, 0, sz);
 
+      const modelHolder = new THREE.Group();
       const body = new THREE.Mesh(
         new THREE.BoxGeometry(0.85, 1.05, 0.6),
         new THREE.MeshStandardMaterial({ color: colorNum, roughness: 0.45 })
@@ -483,24 +505,32 @@ export function Zombie3DArena({
         })
       );
       visor.position.set(0, 1.64, 0.28);
+      modelHolder.add(body, head, visor);
 
       const ring = new THREE.Mesh(
-        new THREE.RingGeometry(0.62, 0.76, 24),
+        new THREE.RingGeometry(0.65, 0.82, 28),
         new THREE.MeshBasicMaterial({
           color: colorNum,
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.85,
+          opacity: 0.9,
         })
       );
       ring.rotation.x = -Math.PI / 2;
       ring.position.y = 0.04;
 
       const weaponGroup = new THREE.Group();
-      weaponGroup.position.set(0.45, 0.92, 0.15);
-      weaponGroup.add(createWeaponMesh('pistol'));
+      weaponGroup.position.set(0.38, 1.08, 0.22);
+      weaponGroup.add(createDetailedWeaponMesh('pistol'));
 
-      group.add(body, head, visor, ring, weaponGroup);
+      const muzzleFlash = new THREE.Mesh(
+        new THREE.SphereGeometry(0.24, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xfde047 })
+      );
+      muzzleFlash.position.set(0.38, 1.12, 1.05);
+      muzzleFlash.visible = false;
+
+      group.add(modelHolder, ring, weaponGroup, muzzleFlash);
       scene.add(group);
 
       const starterWeapon = getWeaponForLevel(1);
@@ -510,7 +540,10 @@ export function Zombie3DArena({
         color: colorHex,
         isBot: Boolean(p.isBot),
         mesh: group,
+        modelHolder,
         weaponGroup,
+        muzzleFlash,
+        muzzleFlashUntil: 0,
         currentWeaponMeshId: starterWeapon.id,
         x: sx,
         z: sz,
@@ -542,6 +575,68 @@ export function Zombie3DArena({
         aimY: 0,
         firing: false,
       });
+    });
+
+    // Load real Poly Haven 3D models & animated Soldier GLB asynchronously
+    loadZombieAssets().then((assets) => {
+      if (isDisposed) return;
+      loadedAssets = assets;
+
+      // Upgrade obstacle cover boxes with real Poly Haven concrete road barriers & barrels
+      if (assets.barrier) {
+        obstacles.forEach((box, idx) => {
+          const old = obstacleMeshes[idx];
+          if (old) scene.remove(old);
+          const bClone = assets.barrier!.clone();
+          const bBox = new THREE.Box3().setFromObject(bClone);
+          const bSize = new THREE.Vector3();
+          bBox.getSize(bSize);
+          const sx = (box.halfW * 2) / Math.max(0.1, bSize.x);
+          const sz = (box.halfD * 2) / Math.max(0.1, bSize.z);
+          bClone.scale.set(sx, 1.35 / Math.max(0.1, bSize.y), sz);
+          bClone.position.set(box.x, 0, box.z);
+          scene.add(bClone);
+          obstacleMeshes[idx] = bClone;
+        });
+      }
+
+      if (assets.barrel) {
+        const barrelSpots: Array<[number, number]> = [
+          [-12, -12], [-10.8, -12.3],
+          [12, -12], [11.2, -11],
+          [-12, 12], [-11, 11.1],
+          [12, 12], [12.3, 10.7],
+        ];
+        for (const [bx, bz] of barrelSpots) {
+          const barrel = assets.barrel.clone();
+          barrel.scale.setScalar(1.35);
+          barrel.position.set(bx, 0, bz);
+          barrel.rotation.y = Math.random() * Math.PI * 2;
+          scene.add(barrel);
+        }
+      }
+
+      // Upgrade player avatars with animated Soldier.glb
+      if (assets.soldier) {
+        let pIdx = 0;
+        for (const p of playerEntities.values()) {
+          const colorNum = new THREE.Color(p.color || PLAYER_COLORS[pIdx % PLAYER_COLORS.length]).getHex();
+          const animChar = cloneAnimatedCharacter(assets.soldier, {
+            scale: 1.08,
+            tintHex: colorNum,
+          });
+          p.modelHolder.clear();
+          p.modelHolder.add(animChar.root);
+          p.mixer = animChar.mixer;
+          p.actions = animChar.actions;
+          const idle = animChar.actions['idle'];
+          if (idle) {
+            idle.play();
+            p.activeAnim = 'idle';
+          }
+          pIdx += 1;
+        }
+      }
     });
 
     // Keyboard fallback for local desktop/TV testing
@@ -627,31 +722,60 @@ export function Zombie3DArena({
         (1 + Math.min(0.45, (wave - 1) * 0.04));
 
       const group = new THREE.Group();
-      const bodyMat = new THREE.MeshStandardMaterial({
-        color: baseColor,
-        roughness: 0.7,
-      });
-      const bodyMesh = new THREE.Mesh(
-        new THREE.BoxGeometry(0.85 * scale, 1.15 * scale, 0.55 * scale),
-        bodyMat
-      );
-      bodyMesh.position.y = 0.72 * scale;
-      bodyMesh.castShadow = true;
+      const flashMeshes: THREE.Mesh[] = [];
+      let mixer: THREE.AnimationMixer | undefined;
 
-      const head = new THREE.Mesh(
-        new THREE.BoxGeometry(0.56 * scale, 0.54 * scale, 0.54 * scale),
-        new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.6 })
-      );
-      head.position.y = 1.58 * scale;
-      head.castShadow = true;
+      if (loadedAssets?.soldier) {
+        const animChar = cloneAnimatedCharacter(loadedAssets.soldier, {
+          scale: 1.05 * scale,
+          tintHex: baseColor,
+          emissiveHex: kind === 'brute' ? 0x581c87 : 0x14532d,
+          emissiveIntensity: 0.25,
+        });
+        group.add(animChar.root);
+        flashMeshes.push(...animChar.meshes);
+        mixer = animChar.mixer;
+        const animName = kind === 'runner' ? 'run' : 'walk';
+        const action = animChar.actions[animName] || animChar.actions['walk'] || animChar.actions['idle'];
+        if (action) {
+          action.timeScale = kind === 'runner' ? 1.35 : kind === 'brute' ? 0.85 : 1.0;
+          action.play();
+        }
+        // Glowing red zombie eyes on head
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+        const leftEye = new THREE.Mesh(new THREE.SphereGeometry(0.05 * scale, 6, 6), eyeMat);
+        leftEye.position.set(-0.08 * scale, 1.72 * scale, 0.14 * scale);
+        const rightEye = leftEye.clone();
+        rightEye.position.x = 0.08 * scale;
+        group.add(leftEye, rightEye);
+      } else {
+        const bodyMat = new THREE.MeshStandardMaterial({
+          color: baseColor,
+          roughness: 0.7,
+        });
+        const bodyMesh = new THREE.Mesh(
+          new THREE.BoxGeometry(0.85 * scale, 1.15 * scale, 0.55 * scale),
+          bodyMat
+        );
+        bodyMesh.position.y = 0.72 * scale;
+        bodyMesh.castShadow = true;
 
-      const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
-      const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.1 * scale, 0.08 * scale, 0.08 * scale), eyeMat);
-      leftEye.position.set(-0.12 * scale, 1.6 * scale, 0.27 * scale);
-      const rightEye = leftEye.clone();
-      rightEye.position.x = 0.12 * scale;
+        const head = new THREE.Mesh(
+          new THREE.BoxGeometry(0.56 * scale, 0.54 * scale, 0.54 * scale),
+          new THREE.MeshStandardMaterial({ color: baseColor, roughness: 0.6 })
+        );
+        head.position.y = 1.58 * scale;
+        head.castShadow = true;
 
-      group.add(bodyMesh, head, leftEye, rightEye);
+        const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
+        const leftEye = new THREE.Mesh(new THREE.BoxGeometry(0.1 * scale, 0.08 * scale, 0.08 * scale), eyeMat);
+        leftEye.position.set(-0.12 * scale, 1.6 * scale, 0.27 * scale);
+        const rightEye = leftEye.clone();
+        rightEye.position.x = 0.12 * scale;
+
+        group.add(bodyMesh, head, leftEye, rightEye);
+        flashMeshes.push(bodyMesh);
+      }
 
       // Spawn along arena perimeter
       const edge = Math.floor(Math.random() * 4);
@@ -665,7 +789,8 @@ export function Zombie3DArena({
         id,
         kind,
         mesh: group,
-        bodyMesh,
+        flashMeshes,
+        mixer,
         baseColor,
         x: sx,
         z: sz,
@@ -685,18 +810,38 @@ export function Zombie3DArena({
     const spawnPickup = (x: number, z: number, kind: 'medkit' | 'xp', now: number) => {
       const group = new THREE.Group();
       const color = kind === 'medkit' ? 0x10b981 : 0xfbbf24;
-      const core = new THREE.Mesh(
-        kind === 'medkit'
-          ? new THREE.BoxGeometry(0.55, 0.35, 0.55)
-          : new THREE.OctahedronGeometry(0.32, 0),
-        new THREE.MeshStandardMaterial({
+      const modelTemplate = kind === 'medkit' ? loadedAssets?.medkit : loadedAssets?.ammoBox;
+      if (modelTemplate) {
+        const cloned = modelTemplate.clone();
+        cloned.scale.setScalar(1.8);
+        cloned.position.y = 0.35;
+        group.add(cloned);
+      } else {
+        const core = new THREE.Mesh(
+          kind === 'medkit'
+            ? new THREE.BoxGeometry(0.55, 0.35, 0.55)
+            : new THREE.OctahedronGeometry(0.32, 0),
+          new THREE.MeshStandardMaterial({
+            color,
+            emissive: color,
+            emissiveIntensity: 0.85,
+          })
+        );
+        core.position.y = 0.45;
+        group.add(core);
+      }
+      const glowRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.45, 0.6, 20),
+        new THREE.MeshBasicMaterial({
           color,
-          emissive: color,
-          emissiveIntensity: 0.85,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.75,
         })
       );
-      core.position.y = 0.45;
-      group.add(core);
+      glowRing.rotation.x = -Math.PI / 2;
+      glowRing.position.y = 0.04;
+      group.add(glowRing);
       group.position.set(x, 0, z);
       scene.add(group);
       pickups.push({
@@ -712,8 +857,13 @@ export function Zombie3DArena({
     const damageZombie = (z: ZombieEntity, dmg: number, ownerId: string, now: number) => {
       z.hp -= dmg;
       z.hitFlashUntil = now + 90;
-      (z.bodyMesh.material as THREE.MeshStandardMaterial).emissive.setHex(0xffffff);
-      (z.bodyMesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0.8;
+      for (const fm of z.flashMeshes) {
+        const mat = fm.material as THREE.MeshStandardMaterial;
+        if (mat?.emissive) {
+          mat.emissive.setHex(0xffffff);
+          mat.emissiveIntensity = 0.85;
+        }
+      }
 
       if (z.hp <= 0) {
         const killer = playerEntities.get(ownerId);
@@ -735,7 +885,7 @@ export function Zombie3DArena({
               killer.reloadingUntil = 0;
               // Swap 3D weapon mesh
               killer.weaponGroup.clear();
-              killer.weaponGroup.add(createWeaponMesh(nextWeapon.id));
+              killer.weaponGroup.add(createDetailedWeaponMesh(nextWeapon.id));
               killer.currentWeaponMeshId = nextWeapon.id;
               showBanner(`${killer.name.toUpperCase()} • LVL ${nextLevel}: ${nextWeapon.name.toUpperCase()}!`);
             } else {
@@ -899,6 +1049,21 @@ export function Zombie3DArena({
           p.mesh.position.set(p.x, 0, p.z);
           p.mesh.rotation.y = Math.atan2(p.aimX, p.aimZ);
 
+          // Update player skeletal animation (Idle vs Run)
+          if (p.mixer && p.actions) {
+            const desiredAnim = mLen > 0.12 ? 'run' : 'idle';
+            if (p.activeAnim !== desiredAnim) {
+              p.actions[p.activeAnim || 'idle']?.fadeOut(0.12);
+              p.actions[desiredAnim]?.reset().fadeIn(0.12).play();
+              p.activeAnim = desiredAnim;
+            }
+            p.mixer.update(dt);
+          }
+
+          if (p.muzzleFlash.visible && now >= p.muzzleFlashUntil) {
+            p.muzzleFlash.visible = false;
+          }
+
           // Shooting
           const weapon = getWeaponById(p.weaponId);
           if (inp.firing && p.reloadingUntil === 0 && now - p.lastShotAt >= weapon.fireRateMs) {
@@ -917,7 +1082,10 @@ export function Zombie3DArena({
 
               flashLight.color.setHex(projColor);
               flashLight.position.set(p.x + p.aimX * 0.9, 1.1, p.z + p.aimZ * 0.9);
-              flashLight.intensity = 2.4;
+              flashLight.intensity = 2.6;
+              (p.muzzleFlash.material as THREE.MeshBasicMaterial).color.setHex(projColor);
+              p.muzzleFlash.visible = true;
+              p.muzzleFlashUntil = now + 55;
 
               for (let i = 0; i < weapon.pellets; i++) {
                 const spreadOffset = (Math.random() - 0.5) * weapon.spread;
@@ -927,11 +1095,16 @@ export function Zombie3DArena({
 
                 const projMesh = new THREE.Mesh(
                   weapon.id === 'rocket'
-                    ? new THREE.SphereGeometry(0.22, 8, 8)
-                    : new THREE.BoxGeometry(0.14, 0.14, 0.42),
+                    ? new THREE.CylinderGeometry(0.12, 0.16, 0.62, 8)
+                    : weapon.id === 'plasma'
+                      ? new THREE.CylinderGeometry(0.08, 0.08, 0.75, 8)
+                      : new THREE.BoxGeometry(0.09, 0.09, 0.65),
                   new THREE.MeshBasicMaterial({ color: projColor })
                 );
-                projMesh.position.set(p.x + Math.sin(ang) * 0.9, 0.95, p.z + Math.cos(ang) * 0.9);
+                if (weapon.id === 'rocket' || weapon.id === 'plasma') {
+                  projMesh.rotation.x = Math.PI / 2;
+                }
+                projMesh.position.set(p.x + Math.sin(ang) * 0.95, 1.08, p.z + Math.cos(ang) * 0.95);
                 projMesh.rotation.y = ang;
                 scene.add(projMesh);
 
@@ -1021,10 +1194,18 @@ export function Zombie3DArena({
 
         // Update Zombies
         for (const z of zombies) {
+          if (z.mixer) {
+            z.mixer.update(dt);
+          }
           if (z.hitFlashUntil > 0 && now >= z.hitFlashUntil) {
             z.hitFlashUntil = 0;
-            (z.bodyMesh.material as THREE.MeshStandardMaterial).emissive.setHex(0x000000);
-            (z.bodyMesh.material as THREE.MeshStandardMaterial).emissiveIntensity = 0;
+            for (const fm of z.flashMeshes) {
+              const mat = fm.material as THREE.MeshStandardMaterial;
+              if (mat?.emissive) {
+                mat.emissive.setHex(z.kind === 'brute' ? 0x581c87 : loadedAssets?.soldier ? 0x14532d : 0x000000);
+                mat.emissiveIntensity = loadedAssets?.soldier ? 0.25 : 0;
+              }
+            }
           }
 
           let target: PlayerEntity | null = null;
@@ -1213,6 +1394,7 @@ export function Zombie3DArena({
     window.addEventListener('resize', onResize);
 
     return () => {
+      isDisposed = true;
       cancelAnimationFrame(rafId);
       unsubInput();
       window.removeEventListener('keydown', onKeyDown);
