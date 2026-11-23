@@ -44,7 +44,7 @@ interface PlayerEntity {
   mesh: THREE.Group;
   modelHolder: THREE.Group;
   weaponGroup: THREE.Group;
-  muzzleFlash: THREE.Mesh;
+  muzzleFlash: THREE.Group;
   muzzleFlashUntil: number;
   mixer?: THREE.AnimationMixer;
   actions?: Record<string, THREE.AnimationAction>;
@@ -90,13 +90,15 @@ interface ZombieEntity {
   xpReward: number;
   scoreReward: number;
   hitFlashUntil: number;
+  staggerUntil: number;
   lastAttackAt: number;
   wobblePhase: number;
 }
 
 interface ProjectileEntity {
-  mesh: THREE.Mesh;
+  mesh: THREE.Group;
   ownerId: string;
+  weaponId: string;
   x: number;
   z: number;
   vx: number;
@@ -364,11 +366,22 @@ export function Zombie3DArena({
       weaponGroup.position.set(0.38, 1.08, 0.22);
       weaponGroup.add(createDetailedWeaponMesh('pistol'));
 
-      const muzzleFlash = new THREE.Mesh(
-        new THREE.SphereGeometry(0.24, 8, 8),
-        new THREE.MeshBasicMaterial({ color: 0xfde047 })
-      );
-      muzzleFlash.position.set(0.38, 1.12, 1.05);
+      const muzzleFlash = new THREE.Group();
+      const flashCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const flashWingMat = new THREE.MeshBasicMaterial({
+        color: 0xfbbf24,
+        transparent: true,
+        opacity: 0.9,
+        side: THREE.DoubleSide,
+      });
+      const flashCore = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), flashCoreMat);
+      const wing1 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.16), flashWingMat);
+      const wing2 = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.55), flashWingMat);
+      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 8), flashWingMat);
+      cone.rotation.x = Math.PI / 2;
+      cone.position.z = 0.2;
+      muzzleFlash.add(flashCore, wing1, wing2, cone);
+      muzzleFlash.position.set(0.38, 1.12, 1.1);
       muzzleFlash.visible = false;
 
       group.add(modelHolder, ring, weaponGroup, muzzleFlash);
@@ -495,6 +508,7 @@ export function Zombie3DArena({
     // ─── GAME STATE ───
     const zombies: ZombieEntity[] = [];
     const dyingZombies: Array<{ mesh: THREE.Group; startedAt: number; expiresAt: number }> = [];
+    const shockwaves: Array<{ mesh: THREE.Mesh; maxScale: number; startedAt: number; expiresAt: number }> = [];
     const projectiles: ProjectileEntity[] = [];
     const particles: ParticleEntity[] = [];
     const pickups: PickupEntity[] = [];
@@ -539,6 +553,58 @@ export function Zombie3DArena({
           expiresAt: now + 350 + Math.random() * 250,
         });
       }
+    };
+
+    const spawnDirectionalImpact = (
+      x: number,
+      y: number,
+      z: number,
+      dirX: number,
+      dirZ: number,
+      color: number,
+      count: number
+    ) => {
+      const now = performance.now();
+      for (let i = 0; i < count; i++) {
+        const size = 0.06 + Math.random() * 0.09;
+        const mesh = new THREE.Mesh(
+          new THREE.SphereGeometry(size, 5, 5),
+          new THREE.MeshBasicMaterial({ color })
+        );
+        mesh.position.set(x, y, z);
+        scene.add(mesh);
+        const spread = (Math.random() - 0.5) * 1.4;
+        const spd = 3.5 + Math.random() * 5.5;
+        particles.push({
+          mesh,
+          vx: (dirX + spread) * spd,
+          vy: 1.0 + Math.random() * 3.2,
+          vz: (dirZ + spread) * spd,
+          expiresAt: now + 220 + Math.random() * 200,
+        });
+      }
+    };
+
+    const spawnShockwave = (x: number, z: number, maxScale: number, color: number) => {
+      const now = performance.now();
+      const ring = new THREE.Mesh(
+        new THREE.RingGeometry(0.3, 0.55, 28),
+        new THREE.MeshBasicMaterial({
+          color,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.9,
+        })
+      );
+      ring.rotation.x = -Math.PI / 2;
+      ring.position.set(x, 0.08, z);
+      scene.add(ring);
+      shockwaves.push({
+        mesh: ring,
+        maxScale,
+        startedAt: now,
+        expiresAt: now + 300,
+      });
     };
 
     const spawnZombie = (now: number) => {
@@ -643,6 +709,7 @@ export function Zombie3DArena({
         xpReward: kind === 'brute' ? 120 : kind === 'runner' ? 35 : 25,
         scoreReward: kind === 'brute' ? 400 : kind === 'runner' ? 140 : 100,
         hitFlashUntil: 0,
+        staggerUntil: 0,
         lastAttackAt: now,
         wobblePhase: Math.random() * Math.PI * 2,
       });
@@ -928,15 +995,15 @@ export function Zombie3DArena({
               const baseAngle = Math.atan2(p.aimX, p.aimZ);
               const projColor = new THREE.Color(weapon.color).getHex();
 
-              // Recoil kick + muzzle flash + dynamic point light
+              // Recoil kick + multi-wing muzzle flash + dynamic point light
               p.weaponGroup.position.z = 0.06;
               flashLight.color.setHex(projColor);
               flashLight.position.set(p.x + p.aimX * 1.0, 1.15, p.z + p.aimZ * 1.0);
-              flashLight.intensity = 3.2;
-              (p.muzzleFlash.material as THREE.MeshBasicMaterial).color.setHex(projColor);
-              p.muzzleFlash.scale.setScalar(weapon.id === 'rocket' ? 1.5 : 0.9 + Math.random() * 0.45);
+              flashLight.intensity = 3.5;
+              p.muzzleFlash.rotation.z = Math.random() * Math.PI;
+              p.muzzleFlash.scale.setScalar(weapon.id === 'rocket' ? 1.55 : 0.85 + Math.random() * 0.45);
               p.muzzleFlash.visible = true;
-              p.muzzleFlashUntil = now + 60;
+              p.muzzleFlashUntil = now + 55;
 
               // Eject spinning brass shell casing (for ballistic weapons)
               if (weapon.id !== 'plasma' && weapon.id !== 'rocket') {
@@ -962,28 +1029,65 @@ export function Zombie3DArena({
                 const vx = Math.sin(ang) * weapon.projectileSpeed;
                 const vz = Math.cos(ang) * weapon.projectileSpeed;
 
-                const projMesh = new THREE.Mesh(
-                  weapon.id === 'rocket'
-                    ? new THREE.CylinderGeometry(0.11, 0.15, 0.72, 8)
-                    : weapon.id === 'plasma'
-                      ? new THREE.CylinderGeometry(0.07, 0.07, 0.9, 8)
-                      : new THREE.BoxGeometry(0.07, 0.07, 0.95),
-                  new THREE.MeshBasicMaterial({
-                    color: weapon.id === 'plasma' || weapon.id === 'rocket' ? projColor : 0xfef08a,
-                  })
-                );
-                if (weapon.id === 'rocket' || weapon.id === 'plasma') {
-                  projMesh.rotation.x = Math.PI / 2;
+                const projGroup = new THREE.Group();
+                if (weapon.id === 'rocket') {
+                  const body = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.1, 0.12, 0.65, 8),
+                    new THREE.MeshStandardMaterial({ color: 0x334155, metalness: 0.7, roughness: 0.3 })
+                  );
+                  body.rotation.x = Math.PI / 2;
+                  const tip = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.11, 0.24, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xf43f5e })
+                  );
+                  tip.rotation.x = Math.PI / 2;
+                  tip.position.z = 0.44;
+                  const flame = new THREE.Mesh(
+                    new THREE.ConeGeometry(0.12, 0.45, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xfbbf24 })
+                  );
+                  flame.rotation.x = -Math.PI / 2;
+                  flame.position.z = -0.5;
+                  projGroup.add(body, tip, flame);
+                } else if (weapon.id === 'plasma') {
+                  const core = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.045, 0.045, 0.95, 8),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                  );
+                  core.rotation.x = Math.PI / 2;
+                  const halo = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.09, 0.02, 1.25, 8),
+                    new THREE.MeshBasicMaterial({ color: projColor, transparent: true, opacity: 0.6 })
+                  );
+                  halo.rotation.x = Math.PI / 2;
+                  halo.position.z = -0.15;
+                  projGroup.add(core, halo);
+                } else {
+                  const bulletCore = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.025, 0.025, 0.38, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xffffff })
+                  );
+                  bulletCore.rotation.x = Math.PI / 2;
+                  bulletCore.position.z = 0.2;
+                  const tracerTail = new THREE.Mesh(
+                    new THREE.CylinderGeometry(0.04, 0.005, 1.35, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.72 })
+                  );
+                  tracerTail.rotation.x = Math.PI / 2;
+                  tracerTail.position.z = -0.45;
+                  projGroup.add(bulletCore, tracerTail);
                 }
-                projMesh.position.set(p.x + Math.sin(ang) * 1.05, 1.08, p.z + Math.cos(ang) * 1.05);
-                projMesh.rotation.y = ang;
-                scene.add(projMesh);
+
+                projGroup.position.set(p.x + Math.sin(ang) * 1.05, 1.1, p.z + Math.cos(ang) * 1.05);
+                projGroup.rotation.y = ang;
+                scene.add(projGroup);
 
                 projectiles.push({
-                  mesh: projMesh,
+                  mesh: projGroup,
                   ownerId: p.id,
-                  x: projMesh.position.x,
-                  z: projMesh.position.z,
+                  weaponId: weapon.id,
+                  x: projGroup.position.x,
+                  z: projGroup.position.z,
                   vx,
                   vz,
                   damage: weapon.damage * levelDamageMult,
@@ -1009,7 +1113,28 @@ export function Zombie3DArena({
           const pr = projectiles[i];
           pr.x += pr.vx * dt;
           pr.z += pr.vz * dt;
-          pr.mesh.position.set(pr.x, 0.95, pr.z);
+          pr.mesh.position.set(pr.x, 1.05, pr.z);
+
+          // Rocket smoke/ember trail
+          if (pr.weaponId === 'rocket' && Math.random() < 0.65) {
+            const smoke = new THREE.Mesh(
+              new THREE.SphereGeometry(0.14 + Math.random() * 0.1, 6, 6),
+              new THREE.MeshBasicMaterial({
+                color: Math.random() < 0.4 ? 0xf97316 : 0x64748b,
+                transparent: true,
+                opacity: 0.6,
+              })
+            );
+            smoke.position.set(pr.x, 1.05, pr.z);
+            scene.add(smoke);
+            particles.push({
+              mesh: smoke,
+              vx: (Math.random() - 0.5) * 1.2,
+              vy: 0.8 + Math.random() * 1.0,
+              vz: (Math.random() - 0.5) * 1.2,
+              expiresAt: now + 260,
+            });
+          }
 
           let removeProj = now >= pr.expiresAt || Math.abs(pr.x) > 25 || Math.abs(pr.z) > 25;
 
@@ -1017,7 +1142,20 @@ export function Zombie3DArena({
             for (const box of obstacles) {
               if (Math.abs(pr.x - box.x) < box.halfW && Math.abs(pr.z - box.z) < box.halfD) {
                 removeProj = true;
-                spawnParticles(pr.x, 0.9, pr.z, pr.color, 4);
+                const pSpeed = Math.max(0.01, Math.hypot(pr.vx, pr.vz));
+                spawnDirectionalImpact(
+                  pr.x,
+                  1.0,
+                  pr.z,
+                  -pr.vx / pSpeed,
+                  -pr.vz / pSpeed,
+                  0xfde047,
+                  6
+                );
+                if (pr.splashRadius > 0) {
+                  spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
+                  spawnParticles(pr.x, 1.0, pr.z, 0xf97316, 16);
+                }
                 break;
               }
             }
@@ -1030,11 +1168,15 @@ export function Zombie3DArena({
               const dist = Math.hypot(pr.x - z.x, pr.z - z.z);
               if (dist <= z.radius + pr.radius) {
                 pr.hitIds.add(z.id);
+                const pSpeed = Math.max(0.01, Math.hypot(pr.vx, pr.vz));
+                const dirX = pr.vx / pSpeed;
+                const dirZ = pr.vz / pSpeed;
 
                 if (pr.splashRadius > 0) {
-                  // Rocket AoE Explosion!
-                  screenShake = Math.max(screenShake, 0.35);
-                  spawnParticles(pr.x, 0.9, pr.z, 0xf43f5e, 16);
+                  // Rocket AoE Explosion + Shockwave!
+                  screenShake = Math.max(screenShake, 0.42);
+                  spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
+                  spawnParticles(pr.x, 0.9, pr.z, 0xf97316, 18);
                   for (let k = zombies.length - 1; k >= 0; k--) {
                     const target = zombies[k];
                     const splashDist = Math.hypot(pr.x - target.x, pr.z - target.z);
@@ -1046,6 +1188,21 @@ export function Zombie3DArena({
                   removeProj = true;
                   break;
                 } else {
+                  // Directional impact blood/spark splatter + physical knockback!
+                  spawnDirectionalImpact(pr.x, 1.05, pr.z, dirX, dirZ, 0xb91c1c, 7);
+                  spawnDirectionalImpact(pr.x, 1.05, pr.z, -dirX, -dirZ, 0xfef08a, 3);
+                  const knockback = pr.weaponId === 'shotgun' ? 0.55 : 0.24;
+                  const pushedZ = resolveObstaclePush(
+                    z.x + dirX * knockback,
+                    z.z + dirZ * knockback,
+                    z.radius,
+                    obstacles,
+                    false
+                  );
+                  z.x = pushedZ.x;
+                  z.z = pushedZ.z;
+                  z.staggerUntil = now + 95;
+
                   const killed = damageZombie(z, pr.damage, pr.ownerId, now);
                   if (killed) zombies.splice(zi, 1);
                   if (!pr.piercing) {
@@ -1103,9 +1260,10 @@ export function Zombie3DArena({
             z.x = nextPos.x;
             z.z = nextPos.z;
             z.wobblePhase += dt * 10;
-            z.mesh.position.set(z.x, Math.abs(Math.sin(z.wobblePhase)) * 0.08, z.z);
+            z.mesh.position.set(z.x, Math.abs(Math.sin(z.wobblePhase)) * 0.06, z.z);
             z.mesh.rotation.y = Math.atan2(dx, dz);
-            z.mesh.rotation.z = Math.sin(z.wobblePhase) * 0.06;
+            z.mesh.rotation.x = now < z.staggerUntil ? -0.22 : 0;
+            z.mesh.rotation.z = Math.sin(z.wobblePhase) * 0.05;
 
             if (len <= z.radius + 0.58 && now - z.lastAttackAt >= 750 && now >= target.invulnUntil) {
               z.lastAttackAt = now;
@@ -1181,6 +1339,19 @@ export function Zombie3DArena({
           const isDim = waveVal > 0.65;
           lamp.light.intensity = isDim ? 1.8 : 9.5;
           lamp.bulbMat.color.setHex(isDim ? 0x78350f : 0xfde68a);
+        }
+
+        // Update Shockwaves
+        for (let i = shockwaves.length - 1; i >= 0; i--) {
+          const sw = shockwaves[i];
+          const t = Math.min(1, (now - sw.startedAt) / (sw.expiresAt - sw.startedAt));
+          const s = 1 + t * sw.maxScale;
+          sw.mesh.scale.set(s, s, 1);
+          (sw.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 * (1 - t));
+          if (now >= sw.expiresAt) {
+            scene.remove(sw.mesh);
+            shockwaves.splice(i, 1);
+          }
         }
 
         // Update Particles
