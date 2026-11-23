@@ -58,6 +58,13 @@ services:
     plan: free
     buildCommand: npm install --include=dev && npm run build:smartphone
     staticPublishPath: apps/smartphone/dist
+    headers:
+      - path: /sw.js
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
+      - path: /index.html
+        name: Cache-Control
+        value: no-cache, no-store, must-revalidate
     routes:
       - type: rewrite
         source: /*

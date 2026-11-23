@@ -2,7 +2,7 @@ import { useSyncExternalStore } from 'react';
 import { registerSW } from 'virtual:pwa-register';
 
 const RELOAD_COOLDOWN_KEY = 'projektbox_sw_reload_at';
-const RELOAD_COOLDOWN_MS = 15_000;
+const RELOAD_COOLDOWN_MS = 3_000;
 
 let initialized = false;
 let hasUpdateAvailable = false;
@@ -68,8 +68,30 @@ export function initPwaRegistration(): void {
   }
   initialized = true;
 
+  const triggerSafeReload = () => {
+    if (!canReloadSafelyNow()) return;
+    markReloadTimestamp();
+    window.location.reload();
+  };
+
+  navigator.serviceWorker.addEventListener('controllerchange', triggerSafeReload);
+
   updateRunner = registerSW({
     immediate: true,
+    onRegisteredSW(_swUrl, registration) {
+      if (!registration) return;
+      const checkUpdate = () => {
+        registration.update().catch(() => {});
+      };
+      checkUpdate();
+      window.addEventListener('focus', checkUpdate);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') {
+          checkUpdate();
+        }
+      });
+      window.setInterval(checkUpdate, 60_000);
+    },
     onNeedRefresh() {
       hasUpdateAvailable = true;
       notifyListeners();
@@ -79,9 +101,7 @@ export function initPwaRegistration(): void {
       }
     },
     onNeedReload() {
-      if (!canReloadSafelyNow()) return;
-      markReloadTimestamp();
-      window.location.reload();
+      triggerSafeReload();
     },
   });
 }
