@@ -48,6 +48,9 @@ interface PlayerEntity {
   muzzleFlash: THREE.Group;
   muzzleFlashUntil: number;
   mixer?: THREE.AnimationMixer;
+  animAction?: THREE.AnimationAction;
+  animName?: string;
+  animScale?: number;
   actions?: Record<string, THREE.AnimationAction>;
   activeAnim?: string;
   currentWeaponMeshId: string;
@@ -83,6 +86,9 @@ interface ZombieEntity {
   mesh: THREE.Group;
   flashMeshes: THREE.Mesh[];
   mixer?: THREE.AnimationMixer;
+  animAction?: THREE.AnimationAction;
+  animName?: string;
+  animScale?: number;
   baseColor: number;
   x: number;
   z: number;
@@ -767,10 +773,13 @@ export function Zombie3DArena({
       const group = new THREE.Group();
       const flashMeshes: THREE.Mesh[] = [];
       let mixer: THREE.AnimationMixer | undefined;
+      let animAction: THREE.AnimationAction | undefined;
+      let chosenAnimName: string | undefined;
+      const animScale = 1.05 * scale;
 
       if (loadedAssets?.soldier) {
         const animChar = cloneAnimatedCharacter(loadedAssets.soldier, {
-          scale: 1.05 * scale,
+          scale: animScale,
           tintHex: baseColor,
           emissiveHex: kind === 'brute' ? 0x581c87 : 0x14532d,
           emissiveIntensity: 0.25,
@@ -781,8 +790,10 @@ export function Zombie3DArena({
         const animName = kind === 'runner' ? 'run' : 'walk';
         const action = animChar.actions[animName] || animChar.actions['walk'] || animChar.actions['idle'];
         if (action) {
-          action.timeScale = kind === 'runner' ? 1.35 : kind === 'brute' ? 0.85 : 1.0;
+          chosenAnimName = animChar.actions[animName] ? animName : animChar.actions['walk'] ? 'walk' : 'idle';
+          action.timeScale = 1.0;
           action.play();
+          animAction = action;
         }
         // Glowing red zombie eyes on head
         const eyeMat = new THREE.MeshBasicMaterial({ color: 0xf43f5e });
@@ -833,6 +844,9 @@ export function Zombie3DArena({
         mesh: group,
         flashMeshes,
         mixer,
+        animAction,
+        animName: chosenAnimName,
+        animScale,
         baseColor,
         x: sx,
         z: sz,
@@ -1161,6 +1175,8 @@ export function Zombie3DArena({
             mx /= mLen;
             mz /= mLen;
           }
+          const prevPX = p.x;
+          const prevPZ = p.z;
           const pushed = resolveObstaclePush(
             p.x + mx * baseSpeed * dt,
             p.z + mz * baseSpeed * dt,
@@ -1169,6 +1185,7 @@ export function Zombie3DArena({
           );
           p.x = pushed.x;
           p.z = pushed.z;
+          const actualPlayerSpeed = dt > 0.0001 ? Math.hypot(p.x - prevPX, p.z - prevPZ) / dt : 0;
 
           // Aim
           const aimMag = Math.hypot(inp.aimX, inp.aimY);
@@ -1183,13 +1200,27 @@ export function Zombie3DArena({
           p.mesh.position.set(p.x, 0, p.z);
           p.mesh.rotation.y = Math.atan2(p.aimX, p.aimZ);
 
-          // Update player skeletal animation (Idle vs Run)
+          // Update player skeletal animation matched to actual ground speed (no ice-skating)
           if (p.mixer && p.actions) {
-            const desiredAnim = mLen > 0.12 ? 'run' : 'idle';
+            const playerScale = 1.08;
+            const walkStride = 1.65 * playerScale;
+            const runStride = 4.25 * playerScale;
+            const desiredAnim =
+              actualPlayerSpeed < 0.25 ? 'idle' : actualPlayerSpeed < 2.9 ? 'walk' : 'run';
             if (p.activeAnim !== desiredAnim) {
               p.actions[p.activeAnim || 'idle']?.fadeOut(0.12);
               p.actions[desiredAnim]?.reset().fadeIn(0.12).play();
               p.activeAnim = desiredAnim;
+            }
+            const activeAction = p.actions[desiredAnim];
+            if (activeAction) {
+              if (desiredAnim === 'walk') {
+                activeAction.timeScale = THREE.MathUtils.clamp(actualPlayerSpeed / walkStride, 0.4, 2.0);
+              } else if (desiredAnim === 'run') {
+                activeAction.timeScale = THREE.MathUtils.clamp(actualPlayerSpeed / runStride, 0.65, 2.5);
+              } else {
+                activeAction.timeScale = 1.0;
+              }
             }
             p.mixer.update(dt);
           }
@@ -1477,9 +1508,6 @@ export function Zombie3DArena({
         const waveSpeedRamp = Math.min(1, 0.55 + ((now - waveStartedAt) / 5000) * 0.45);
         for (let zi = zombies.length - 1; zi >= 0; zi--) {
           const z = zombies[zi];
-          if (z.mixer) {
-            z.mixer.update(dt * waveSpeedRamp);
-          }
           if (z.hitFlashUntil > 0 && now >= z.hitFlashUntil) {
             z.hitFlashUntil = 0;
             for (const fm of z.flashMeshes) {
@@ -1508,6 +1536,8 @@ export function Zombie3DArena({
             const shouldHoldForSpit = z.kind === 'spitter' && len > 6.5 && len < 13.0;
             const moveSpd = shouldHoldForSpit ? z.speed * 0.25 : z.speed * waveSpeedRamp;
 
+            const prevZX = z.x;
+            const prevZZ = z.z;
             const nextPos = resolveObstaclePush(
               z.x + (dx / len) * moveSpd * dt,
               z.z + (dz / len) * moveSpd * dt,
@@ -1517,11 +1547,21 @@ export function Zombie3DArena({
             );
             z.x = nextPos.x;
             z.z = nextPos.z;
-            z.wobblePhase += dt * 10 * waveSpeedRamp;
-            z.mesh.position.set(z.x, Math.abs(Math.sin(z.wobblePhase)) * 0.06, z.z);
+            const zActualSpeed = dt > 0.0001 ? Math.hypot(z.x - prevZX, z.z - prevZZ) / dt : 0;
+
+            if (z.mixer && z.animAction) {
+              const zStride = (z.animName === 'run' ? 4.25 : 1.65) * (z.animScale ?? 1.05);
+              z.animAction.timeScale =
+                zActualSpeed < 0.12 ? 0 : THREE.MathUtils.clamp(zActualSpeed / zStride, 0.25, 2.8);
+              z.mixer.update(dt);
+              z.mesh.position.set(z.x, 0, z.z);
+            } else {
+              z.wobblePhase += dt * Math.max(2, zActualSpeed * 2.5);
+              z.mesh.position.set(z.x, Math.abs(Math.sin(z.wobblePhase)) * 0.06, z.z);
+              z.mesh.rotation.z = Math.sin(z.wobblePhase) * 0.05;
+            }
             z.mesh.rotation.y = Math.atan2(dx, dz);
             z.mesh.rotation.x = now < z.staggerUntil ? -0.22 : 0;
-            z.mesh.rotation.z = Math.sin(z.wobblePhase) * 0.05;
 
             // Spitter ranged acid spit ability
             if (z.kind === 'spitter' && len <= 14.0 && now >= z.lastAbilityAt) {
