@@ -14,6 +14,15 @@ import {
 } from '@projektbox/shared/utils';
 import type { Player } from '@projektbox/shared/types';
 import { socketService } from '../../../services/socket';
+import floorDiffUrl from '../../../assets/textures/zombie/floor_diff.jpg';
+import floorRoughUrl from '../../../assets/textures/zombie/floor_rough.jpg';
+import floorNorUrl from '../../../assets/textures/zombie/floor_nor.jpg';
+import crateDiffUrl from '../../../assets/textures/zombie/crate_diff.jpg';
+import crateRoughUrl from '../../../assets/textures/zombie/crate_rough.jpg';
+import crateNorUrl from '../../../assets/textures/zombie/crate_nor.jpg';
+import wallDiffUrl from '../../../assets/textures/zombie/wall_diff.jpg';
+import wallRoughUrl from '../../../assets/textures/zombie/wall_rough.jpg';
+import wallNorUrl from '../../../assets/textures/zombie/wall_nor.jpg';
 
 interface Zombie3DArenaProps {
   players: Player[];
@@ -323,28 +332,66 @@ export function Zombie3DArena({
     flashLight.position.set(0, 2, 0);
     scene.add(flashLight);
 
-    // Arena Floor & Grid
+    // Poly Haven CC0 PBR Textures
+    const textureLoader = new THREE.TextureLoader();
+    const loadedTextures: THREE.Texture[] = [];
+    const loadPbrSet = (
+      diffUrl: string,
+      roughUrl: string,
+      norUrl: string,
+      repeatX: number,
+      repeatY: number
+    ) => {
+      const setup = (url: string, isColor: boolean) => {
+        const tex = textureLoader.load(url);
+        tex.wrapS = THREE.RepeatWrapping;
+        tex.wrapT = THREE.RepeatWrapping;
+        tex.repeat.set(repeatX, repeatY);
+        if (isColor) tex.colorSpace = THREE.SRGBColorSpace;
+        loadedTextures.push(tex);
+        return tex;
+      };
+      return {
+        map: setup(diffUrl, true),
+        roughnessMap: setup(roughUrl, false),
+        normalMap: setup(norUrl, false),
+      };
+    };
+
+    const floorTex = loadPbrSet(floorDiffUrl, floorRoughUrl, floorNorUrl, 8, 8);
+    const crateTex = loadPbrSet(crateDiffUrl, crateRoughUrl, crateNorUrl, 1, 1);
+    const wallTex = loadPbrSet(wallDiffUrl, wallRoughUrl, wallNorUrl, 12, 1);
+
+    // Arena Floor & Subtle Grid
     const floorGeo = new THREE.PlaneGeometry(ARENA_HALF * 2 + 2, ARENA_HALF * 2 + 2);
     const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x111c30,
-      roughness: 0.88,
-      metalness: 0.15,
+      map: floorTex.map,
+      roughnessMap: floorTex.roughnessMap,
+      normalMap: floorTex.normalMap,
+      color: 0x94a3b8,
+      roughness: 0.9,
+      metalness: 0.1,
     });
     const floor = new THREE.Mesh(floorGeo, floorMat);
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    const grid = new THREE.GridHelper(ARENA_HALF * 2, 16, 0x334155, 0x1e293b);
+    const grid = new THREE.GridHelper(ARENA_HALF * 2, 16, 0x38bdf8, 0x1e293b);
     grid.position.y = 0.02;
+    (grid.material as THREE.Material).transparent = true;
+    (grid.material as THREE.Material).opacity = 0.18;
     scene.add(grid);
 
-    // Glowing Perimeter Walls
+    // Textured Brick Perimeter Walls
     const wallMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      emissive: 0xf43f5e,
-      emissiveIntensity: 0.3,
-      roughness: 0.5,
+      map: wallTex.map,
+      roughnessMap: wallTex.roughnessMap,
+      normalMap: wallTex.normalMap,
+      color: 0xcbd5e1,
+      emissive: 0x7f1d1d,
+      emissiveIntensity: 0.25,
+      roughness: 0.85,
     });
     const wallPositions: Array<[number, number, number, number]> = [
       [0, -ARENA_HALF - 0.4, ARENA_HALF * 2 + 1.2, 0.8],
@@ -353,13 +400,14 @@ export function Zombie3DArena({
       [ARENA_HALF + 0.4, 0, 0.8, ARENA_HALF * 2 + 1.2],
     ];
     for (const [wx, wz, ww, wd] of wallPositions) {
-      const wall = new THREE.Mesh(new THREE.BoxGeometry(ww, 1.1, wd), wallMat);
-      wall.position.set(wx, 0.55, wz);
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(ww, 1.35, wd), wallMat);
+      wall.position.set(wx, 0.675, wz);
+      wall.castShadow = true;
       wall.receiveShadow = true;
       scene.add(wall);
     }
 
-    // Tactical Cover Crates
+    // Tactical Metal Cover Crates
     const obstacles: ObstacleBox[] = [
       { x: -6.5, z: -6.5, halfW: 1.1, halfD: 1.1 },
       { x: 6.5, z: -6.5, halfW: 1.1, halfD: 1.1 },
@@ -369,9 +417,12 @@ export function Zombie3DArena({
       { x: 0, z: 9, halfW: 1.8, halfD: 0.8 },
     ];
     const crateMat = new THREE.MeshStandardMaterial({
-      color: 0x334155,
-      roughness: 0.65,
-      metalness: 0.25,
+      map: crateTex.map,
+      roughnessMap: crateTex.roughnessMap,
+      normalMap: crateTex.normalMap,
+      color: 0xe2e8f0,
+      roughness: 0.55,
+      metalness: 0.65,
     });
     const crateTrimMat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
@@ -1169,6 +1220,7 @@ export function Zombie3DArena({
       window.removeEventListener('resize', onResize);
       resizeObserver?.disconnect();
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
+      loadedTextures.forEach((tex) => tex.dispose());
       renderer.dispose();
     };
   }, [players, difficulty, isGameOver, localPlayerId]);
