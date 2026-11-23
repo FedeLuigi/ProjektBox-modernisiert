@@ -94,7 +94,7 @@ export function GenericDuelBoard({
           onClick={handleAction}
           className={`h-28 w-28 landscape:h-24 landscape:w-24 rounded-2xl flex flex-col items-center justify-center gap-1.5 font-arcade uppercase tracking-wide transition-all border active:scale-95 ${
             canAct
-              ? 'bg-[#10B981] hover:bg-[#059669] text-white border-[#6EE7B7]/40 shadow-[0_12px_30px_rgba(16,185,129,0.35)] cursor-pointer hover:scale-105'
+              ? 'bg-[#10B981] hover:bg-[#059669] text-white border-[#6EE7B7]/40 shadow-sm cursor-pointer hover:scale-105'
               : 'bg-white/[0.05] text-white/35 border-white/15 cursor-not-allowed'
           }`}
         >

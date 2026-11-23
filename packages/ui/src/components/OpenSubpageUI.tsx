@@ -18,13 +18,13 @@ interface OpenButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
 
 const BUTTON_VARIANTS: Record<OpenButtonVariant, string> = {
   primary:
-    'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-[0_6px_20px_rgba(16,185,129,0.28)]',
+    'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-sm',
   amber:
-    'border border-[#FEF3C7]/40 bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] shadow-[0_6px_20px_rgba(245,158,11,0.25)]',
+    'border border-[#FEF3C7]/40 bg-[#F59E0B] text-[#0F172A] hover:bg-[#D97706] shadow-sm',
   indigo:
-    'border border-[#A5B4FC]/40 bg-[#6366F1] text-white hover:bg-[#4F46E5] shadow-[0_6px_20px_rgba(99,102,241,0.28)]',
+    'border border-[#A5B4FC]/40 bg-[#6366F1] text-white hover:bg-[#4F46E5] shadow-sm',
   rose:
-    'border border-[#FDA4AF]/40 bg-[#E11D48] text-white hover:bg-[#BE123C] shadow-[0_6px_20px_rgba(225,29,72,0.28)]',
+    'border border-[#FDA4AF]/40 bg-[#E11D48] text-white hover:bg-[#BE123C] shadow-sm',
   secondary:
     'border border-white/20 bg-white/[0.06] text-white/90 hover:bg-white/12 hover:text-white',
   'outline-amber':
@@ -49,7 +49,7 @@ export function OpenButton({
   return (
     <button
       type={type}
-      className={`font-arcade inline-flex items-center justify-center gap-2 tracking-wider uppercase transition-all cursor-pointer active:scale-[0.98] disabled:opacity-45 disabled:cursor-not-allowed disabled:active:scale-100 ${
+      className={`font-arcade inline-flex items-center justify-center gap-2 tracking-wider uppercase transition-all cursor-pointer active:scale-[0.98] disabled:opacity-45 disabled:shadow-none disabled:cursor-not-allowed disabled:active:scale-100 ${
         BUTTON_VARIANTS[variant]
       } ${BUTTON_SIZES[size]} ${fullWidth ? 'w-full' : ''} ${className}`}
       {...rest}

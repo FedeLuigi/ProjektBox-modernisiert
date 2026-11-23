@@ -1303,7 +1303,7 @@ export function DrawAndGuessBoard({
                         aria-label="Tipp absenden"
                         className={`game-key-btn flex-[2.4] min-w-0 h-10 sm:h-11 md:h-12 rounded-lg sm:rounded-xl font-arcade uppercase text-xs sm:text-sm flex items-center justify-center gap-1.5 transition-all active:scale-95 touch-manipulation ${
                           guessInput.trim()
-                            ? 'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-[0_6px_20px_rgba(16,185,129,0.28)] cursor-pointer'
+                            ? 'border border-[#6EE7B7]/40 bg-[#10B981] text-white hover:bg-[#059669] shadow-sm cursor-pointer'
                             : 'border border-white/10 bg-white/[0.04] text-white/35 cursor-not-allowed'
                         }`}
                       >
