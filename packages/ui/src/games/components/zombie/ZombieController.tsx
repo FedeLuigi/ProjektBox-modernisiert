@@ -1,4 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
+import nipplejs from 'nipplejs';
+import { AnimatePresence, motion } from 'motion/react';
 import {
   GiAmmoBox,
   GiCrosshair,
@@ -72,44 +74,100 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
   const [levelUpBanner, setLevelUpBanner] = useState<string | null>(null);
   const [damageFlash, setDamageFlash] = useState(false);
   const [teammateDowned, setTeammateDowned] = useState(false);
+  const [squadTeammates, setSquadTeammates] = useState<ZombiePlayerHudState[]>([]);
   const prevLevelRef = useRef(1);
   const prevHpRef = useRef(100);
   const damageTimerRef = useRef<number | null>(null);
 
-  const [leftStick, setLeftStick] = useState<StickState>({
+  const leftStickRef = useRef<StickState>({
     active: false,
     pointerId: null,
     x: 0,
     y: 0,
   });
-  const [rightStick, setRightStick] = useState<StickState>({
+  const rightStickRef = useRef<StickState>({
     active: false,
     pointerId: null,
     x: 0,
     y: 0,
   });
-
-  const leftStickRef = useRef<StickState>(leftStick);
-  const rightStickRef = useRef<StickState>(rightStick);
   const autoFireRef = useRef(autoFire);
   const reloadQueuedRef = useRef(false);
   const dashQueuedRef = useRef(false);
 
-  leftStickRef.current = leftStick;
-  rightStickRef.current = rightStick;
   autoFireRef.current = autoFire;
 
   const leftPadRef = useRef<HTMLDivElement | null>(null);
   const rightPadRef = useRef<HTMLDivElement | null>(null);
+
+  // Mount nipplejs dynamic/semi multi-touch joysticks
+  useEffect(() => {
+    const leftZone = leftPadRef.current;
+    const rightZone = rightPadRef.current;
+    if (!leftZone || !rightZone) return;
+
+    const leftManager = nipplejs.create({
+      zone: leftZone,
+      mode: 'semi',
+      catchDistance: 120,
+      size: 112,
+      color: '#64748b',
+      restOpacity: 0.75,
+    });
+
+    leftManager.on('move', (evt) => {
+      const vec = evt.data?.vector;
+      if (!vec) return;
+      leftStickRef.current = {
+        active: true,
+        pointerId: null,
+        x: vec.x,
+        y: -vec.y,
+      };
+    });
+    leftManager.on('end', () => {
+      leftStickRef.current = { active: false, pointerId: null, x: 0, y: 0 };
+    });
+
+    const rightManager = nipplejs.create({
+      zone: rightZone,
+      mode: 'semi',
+      catchDistance: 120,
+      size: 112,
+      color: '#ef4444',
+      restOpacity: 0.75,
+    });
+
+    rightManager.on('move', (evt) => {
+      const vec = evt.data?.vector;
+      if (!vec) return;
+      rightStickRef.current = {
+        active: true,
+        pointerId: null,
+        x: vec.x,
+        y: -vec.y,
+      };
+    });
+    rightManager.on('end', () => {
+      rightStickRef.current = { active: false, pointerId: null, x: 0, y: 0 };
+    });
+
+    return () => {
+      leftManager.destroy();
+      rightManager.destroy();
+    };
+  }, [hud.alive, hud.downed]);
 
   // Receive live HUD updates from TV
   useEffect(() => {
     const unsub = socketService.onZombieState((payload: ZombieHudStatePayload) => {
       setWave(payload.wave);
       setZombiesRemaining(payload.zombiesRemaining);
-      const anyOtherDowned = Object.values(payload.players || {}).some(
-        (pl) => pl.playerId !== myPlayerId && pl.alive && pl.downed
+      const others = Object.values(payload.players || {}).filter(
+        (pl) => pl.playerId !== myPlayerId
       );
+      setSquadTeammates(others);
+      const anyOtherDowned = others.some((pl) => pl.alive && pl.downed);
       setTeammateDowned(anyOtherDowned);
 
       const mine = payload.players?.[myPlayerId];
@@ -200,26 +258,6 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
       window.removeEventListener('keyup', onKeyUp);
     };
   }, []);
-
-  const computeStickOffset = (
-    el: HTMLDivElement | null,
-    clientX: number,
-    clientY: number
-  ): { x: number; y: number } => {
-    if (!el) return { x: 0, y: 0 };
-    const rect = el.getBoundingClientRect();
-    const cx = rect.left + rect.width / 2;
-    const cy = rect.top + rect.height / 2;
-    const maxR = Math.max(24, rect.width / 2 - 18);
-    let dx = (clientX - cx) / maxR;
-    let dy = (clientY - cy) / maxR;
-    const mag = Math.hypot(dx, dy);
-    if (mag > 1) {
-      dx /= mag;
-      dy /= mag;
-    }
-    return { x: dx, y: dy };
-  };
 
   const weapon = getWeaponById(hud.weaponId);
   const nextWeapon = ZOMBIE_WEAPONS.find((w) => w.unlockLevel > hud.level);
@@ -446,9 +484,55 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
         </div>
       </div>
 
-      {/* Character & Upgrade Menu Overlay (Military Olive-Steel & Rust Aesthetic + Bottom Safe-Area Scroll Margin) */}
+      {/* Multiplayer Squad Status Strip (CoD/L4D style) */}
+      {squadTeammates.length > 0 && (
+        <div className="relative z-10 flex shrink-0 items-center gap-1.5 overflow-x-auto no-scrollbar">
+          {squadTeammates.slice(0, 4).map((tm, idx) => {
+            const tmHpPct = Math.max(0, (tm.hp / Math.max(1, tm.maxHp)) * 100);
+            return (
+              <div
+                key={tm.playerId}
+                className={`flex items-center gap-1.5 rounded-sm border px-2 py-0.5 text-[9px] font-bold uppercase shadow-sm ${
+                  !tm.alive
+                    ? 'border-[#3F3F46] bg-black/60 text-[#64748B]'
+                    : tm.downed
+                      ? 'border-[#EF4444] bg-[#450A0A]/85 text-[#FCA5A5] animate-pulse'
+                      : 'border-[#52525B] bg-[#18181B]/85 text-[#E2E8F0]'
+                }`}
+              >
+                <span className="font-shooter-display text-[9px]">P{idx + 2}</span>
+                <span>R{tm.level}</span>
+                <div className="h-1.5 w-10 bg-black/80 border border-white/10">
+                  <div
+                    className="h-full"
+                    style={{
+                      width: `${!tm.alive ? 0 : tmHpPct}%`,
+                      backgroundColor: tm.downed
+                        ? '#EF4444'
+                        : tmHpPct <= 30
+                          ? '#EF4444'
+                          : tmHpPct <= 60
+                            ? '#F59E0B'
+                            : '#22C55E',
+                    }}
+                  />
+                </div>
+                {!tm.alive && <span className="text-[#EF4444]">K.I.A.</span>}
+                {tm.downed && <span className="text-[#FCA5A5]">RETTEN!</span>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Character & Upgrade Menu Overlay (Animated with motion/react) */}
+      <AnimatePresence>
       {showCharMenu && (
-        <div
+        <motion.div
+          initial={{ opacity: 0, y: 18, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 14, scale: 0.98 }}
+          transition={{ type: 'spring', stiffness: 320, damping: 28 }}
           className="absolute inset-0 z-50 flex flex-col gap-2.5 overflow-y-auto bg-[#101610] pl-[max(1.5rem,calc(env(safe-area-inset-left)+1rem))] pr-[max(1.5rem,calc(env(safe-area-inset-right)+1rem))] pt-[max(0.75rem,calc(env(safe-area-inset-top)+0.4rem))] pb-[max(2.75rem,calc(env(safe-area-inset-bottom)+2.25rem))] shadow-2xl"
           style={{
             backgroundImage: `linear-gradient(180deg, rgba(16,24,16,0.78) 0%, rgba(8,12,8,0.92) 100%), url(${ZOMBIE_UI_TEXTURES.rust}), url(${ZOMBIE_UI_TEXTURES.oliveSteel})`,
@@ -680,8 +764,9 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
               })}
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Teammate Downed Warning */}
       {teammateDowned && hud.alive && !hud.downed && (
@@ -736,56 +821,30 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
           </span>
         </div>
       ) : (
-        <div className="relative z-10 flex flex-1 min-h-0 items-center justify-between gap-4 px-2 py-0.5">
+        <div className="relative z-10 flex flex-1 min-h-0 items-stretch justify-between gap-3 px-1 py-0.5">
           {/* Larger Glowing Center Biohazard Emblem */}
-          <div className="pointer-events-none absolute inset-x-0 -top-1 flex justify-center">
+          <div className="pointer-events-none absolute inset-x-0 top-1 flex justify-center">
             <BiohazardEmblem className="h-20 w-20 sm:h-24 sm:w-24" />
           </div>
 
-          {/* Left Stick: Bolted Cross-Ribbed Industrial Steel Gimbal */}
-          <div className="flex flex-col items-center gap-1">
+          {/* Left Touch Zone: nipplejs Dynamic/Semi Industrial Steel Stick */}
+          <div className="flex flex-1 min-w-0 flex-col items-center justify-end gap-1">
             <div
               ref={leftPadRef}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                const off = computeStickOffset(leftPadRef.current, e.clientX, e.clientY);
-                setLeftStick({ active: true, pointerId: e.pointerId, x: off.x, y: off.y });
-              }}
-              onPointerMove={(e) => {
-                if (leftStickRef.current.pointerId !== e.pointerId) return;
-                const off = computeStickOffset(leftPadRef.current, e.clientX, e.clientY);
-                setLeftStick({ active: true, pointerId: e.pointerId, x: off.x, y: off.y });
-              }}
-              onPointerUp={(e) => {
-                if (leftStickRef.current.pointerId !== e.pointerId) return;
-                setLeftStick({ active: false, pointerId: null, x: 0, y: 0 });
-              }}
-              onPointerCancel={() => {
-                setLeftStick({ active: false, pointerId: null, x: 0, y: 0 });
-              }}
-              className="relative flex h-32 w-32 sm:h-36 sm:w-36 items-center justify-center rounded-full border-[6px] border-[#52525B] bg-gradient-to-b from-[#18181B] to-[#09090B] shadow-[0_10px_24px_rgba(0,0,0,0.9),inset_0_5px_16px_rgba(0,0,0,0.95)] touch-none"
+              className="zombie-stick-zone-left relative flex h-full min-h-[128px] w-full items-center justify-center rounded border border-white/10 bg-black/25 touch-none overflow-hidden"
             >
-              <div className="pointer-events-none absolute inset-2 rounded-full border-2 border-[#71717A]/40" />
-              <div className="pointer-events-none absolute h-full w-4 bg-gradient-to-r from-[#3F3F46] via-[#71717A] to-[#27272A] opacity-55" />
-              <div className="pointer-events-none absolute h-4 w-full bg-gradient-to-b from-[#3F3F46] via-[#71717A] to-[#27272A] opacity-55" />
-              <div
-                className="relative flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 border-[#CBD5E1]/70 shadow-[0_5px_14px_rgba(0,0,0,0.95),inset_0_2px_4px_rgba(255,255,255,0.3)] transition-transform duration-75"
-                style={{
-                  backgroundImage: `radial-gradient(circle at 35% 35%, #94A3B8 0%, #475569 55%, #1E293B 100%)`,
-                  transform: `translate(${leftStick.x * 34}px, ${leftStick.y * 34}px)`,
-                }}
-              >
-                <span className="h-5 w-5 rounded-full border border-[#CBD5E1]/60 bg-[#0F172A]/80 shadow-inner" />
+              <div className="pointer-events-none flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#64748B]/35">
+                <span className="h-3 w-3 rounded-full bg-[#64748B]/40" />
               </div>
             </div>
-            <span className="font-shooter-display text-[11px] tracking-[0.2em] text-[#CBD5E1] uppercase drop-shadow">
+            <span className="font-shooter-display text-[10px] tracking-[0.2em] text-[#CBD5E1] uppercase drop-shadow">
               BEWEGEN
             </span>
           </div>
 
           {/* Center Riveted Rusty Steel Action Plate (LADEN / DASH / AUTO) */}
           <div
-            className="clip-armor-plate relative mt-10 flex flex-col items-center gap-1.5 border-2 border-[#52525B] p-2.5 shadow-[0_8px_20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.18)]"
+            className="clip-armor-plate relative self-center flex shrink-0 flex-col items-center gap-1.5 border-2 border-[#52525B] p-2 shadow-[0_8px_20px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.18)]"
             style={{
               backgroundImage: `linear-gradient(180deg, rgba(39,39,42,0.84) 0%, rgba(20,20,24,0.95) 100%), url(${ZOMBIE_UI_TEXTURES.rustyPlate}), url(${ZOMBIE_UI_TEXTURES.brushedSteel})`,
               backgroundSize: 'cover, 160px 160px, 140px 140px',
@@ -831,40 +890,17 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
             </button>
           </div>
 
-          {/* Right Stick: Heavy Riveted Steel Red Crosshair Gimbal */}
-          <div className="flex flex-col items-center gap-1">
+          {/* Right Touch Zone: nipplejs Dynamic/Semi Red Crosshair Stick */}
+          <div className="flex flex-1 min-w-0 flex-col items-center justify-end gap-1">
             <div
               ref={rightPadRef}
-              onPointerDown={(e) => {
-                e.currentTarget.setPointerCapture(e.pointerId);
-                const off = computeStickOffset(rightPadRef.current, e.clientX, e.clientY);
-                setRightStick({ active: true, pointerId: e.pointerId, x: off.x, y: off.y });
-              }}
-              onPointerMove={(e) => {
-                if (rightStickRef.current.pointerId !== e.pointerId) return;
-                const off = computeStickOffset(rightPadRef.current, e.clientX, e.clientY);
-                setRightStick({ active: true, pointerId: e.pointerId, x: off.x, y: off.y });
-              }}
-              onPointerUp={(e) => {
-                if (rightStickRef.current.pointerId !== e.pointerId) return;
-                setRightStick({ active: false, pointerId: null, x: 0, y: 0 });
-              }}
-              onPointerCancel={() => {
-                setRightStick({ active: false, pointerId: null, x: 0, y: 0 });
-              }}
-              className="relative flex h-32 w-32 sm:h-36 sm:w-36 items-center justify-center rounded-full border-[6px] border-[#52525B] bg-gradient-to-b from-[#18181B] to-[#09090B] shadow-[0_10px_24px_rgba(0,0,0,0.9),inset_0_5px_16px_rgba(0,0,0,0.95)] touch-none"
+              className="zombie-stick-zone-right relative flex h-full min-h-[128px] w-full items-center justify-center rounded border border-[#EF4444]/15 bg-black/25 touch-none overflow-hidden"
             >
-              <div className="pointer-events-none absolute inset-2 rounded-full border-2 border-[#EF4444]/45" />
-              <div
-                className="flex h-14 w-14 sm:h-16 sm:w-16 items-center justify-center rounded-full border-2 border-[#FCA5A5]/85 bg-gradient-to-b from-[#EF4444] to-[#991B1B] text-white shadow-[0_0_24px_rgba(239,68,68,0.7),inset_0_2px_4px_rgba(255,255,255,0.3)] transition-transform duration-75"
-                style={{
-                  transform: `translate(${rightStick.x * 34}px, ${rightStick.y * 34}px)`,
-                }}
-              >
-                <GiCrosshair className="h-7 w-7" />
+              <div className="pointer-events-none flex h-24 w-24 items-center justify-center rounded-full border-2 border-dashed border-[#EF4444]/35">
+                <GiCrosshair className="h-6 w-6 text-[#EF4444]/40" />
               </div>
             </div>
-            <span className="font-shooter-display text-[11px] tracking-[0.2em] text-[#CBD5E1] uppercase drop-shadow">
+            <span className="font-shooter-display text-[10px] tracking-[0.2em] text-[#CBD5E1] uppercase drop-shadow">
               ZIELEN & FEUERN
             </span>
           </div>
