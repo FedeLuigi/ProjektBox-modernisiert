@@ -5,6 +5,7 @@ import type {
   ZombieDifficulty,
   ZombieInputPayload,
   ZombiePlayerHudState,
+  ZombiePlayerSkills,
 } from '@projektbox/shared/types';
 import {
   getLevelForXp,
@@ -71,11 +72,14 @@ interface PlayerEntity {
   kills: number;
   score: number;
   alive: boolean;
+  skillPoints: number;
+  skills: ZombiePlayerSkills;
+  overdriveUntil: number;
 }
 
 interface ZombieEntity {
   id: number;
-  kind: 'shambler' | 'runner' | 'brute';
+  kind: 'shambler' | 'runner' | 'spitter' | 'exploder' | 'brute';
   mesh: THREE.Group;
   flashMeshes: THREE.Mesh[];
   mixer?: THREE.AnimationMixer;
@@ -92,7 +96,18 @@ interface ZombieEntity {
   hitFlashUntil: number;
   staggerUntil: number;
   lastAttackAt: number;
+  lastAbilityAt: number;
   wobblePhase: number;
+}
+
+interface AcidProjectile {
+  mesh: THREE.Mesh;
+  x: number;
+  z: number;
+  vx: number;
+  vz: number;
+  damage: number;
+  expiresAt: number;
 }
 
 interface ProjectileEntity {
@@ -125,7 +140,7 @@ interface ParticleEntity {
 
 interface PickupEntity {
   id: number;
-  kind: 'medkit' | 'xp';
+  kind: 'medkit' | 'xp' | 'maxhp' | 'overdrive';
   mesh: THREE.Group;
   x: number;
   z: number;
@@ -442,6 +457,9 @@ export function Zombie3DArena({
         kills: 0,
         score: 0,
         alive: true,
+        skillPoints: 0,
+        skills: { hp: 0, damage: 0, speed: 0, ammo: 0 },
+        overdriveUntil: 0,
       });
 
       inputs.set(p.id, {
@@ -533,13 +551,16 @@ export function Zombie3DArena({
     const bloodPools: Array<{ mesh: THREE.Mesh; startedAt: number; expiresAt: number }> = [];
     const shockwaves: Array<{ mesh: THREE.Mesh; maxScale: number; startedAt: number; expiresAt: number }> = [];
     const projectiles: ProjectileEntity[] = [];
+    const acidProjectiles: AcidProjectile[] = [];
     const particles: ParticleEntity[] = [];
     const pickups: PickupEntity[] = [];
 
     let nextEntityId = 1;
     let wave = 1;
+    let waveStartedAt = performance.now();
     let zombiesToSpawn = 0;
     let nextSpawnAt = 0;
+    let nextPowerupAt = performance.now() + 7500;
     let wavePauseUntil = performance.now() + 900;
     let gameFinishedSent = false;
     let screenShake = 0;
@@ -549,8 +570,9 @@ export function Zombie3DArena({
 
     const startWave = (w: number, now: number) => {
       wave = w;
+      waveStartedAt = now;
       zombiesToSpawn = Math.round((5 + w * 3) * diffMult);
-      nextSpawnAt = now + 400;
+      nextSpawnAt = now + 450;
       showBanner(`WELLE ${w} STARTET!`);
     };
 
@@ -681,21 +703,56 @@ export function Zombie3DArena({
       const roll = Math.random();
       const isBossWave = wave % 3 === 0 && zombiesToSpawn === 1;
       const kind: ZombieEntity['kind'] =
-        isBossWave || (wave >= 4 && roll > 0.88)
+        isBossWave || (wave >= 4 && roll > 0.9)
           ? 'brute'
-          : wave >= 2 && roll > 0.65
-            ? 'runner'
-            : 'shambler';
+          : wave >= 3 && roll > 0.78
+            ? 'exploder'
+            : wave >= 2 && roll > 0.64
+              ? 'spitter'
+              : wave >= 2 && roll > 0.45
+                ? 'runner'
+                : 'shambler';
 
       const baseColor =
-        kind === 'brute' ? 0x9333ea : kind === 'runner' ? 0xf97316 : 0x22c55e;
-      const scale = kind === 'brute' ? 1.55 : kind === 'runner' ? 0.85 : 1.0;
+        kind === 'brute'
+          ? 0x9333ea
+          : kind === 'exploder'
+            ? 0xef4444
+            : kind === 'spitter'
+              ? 0x84cc16
+              : kind === 'runner'
+                ? 0xf97316
+                : 0x22c55e;
+      const scale =
+        kind === 'brute'
+          ? 1.55
+          : kind === 'exploder'
+            ? 1.24
+            : kind === 'runner'
+              ? 0.85
+              : 1.0;
       const maxHp =
-        (kind === 'brute' ? 210 : kind === 'runner' ? 42 : 68) *
+        (kind === 'brute'
+          ? 210
+          : kind === 'exploder'
+            ? 78
+            : kind === 'spitter'
+              ? 56
+              : kind === 'runner'
+                ? 42
+                : 68) *
         (1 + (wave - 1) * 0.18) *
         diffMult;
       const speed =
-        (kind === 'brute' ? 2.5 : kind === 'runner' ? 5.2 : 3.3) *
+        (kind === 'brute'
+          ? 2.5
+          : kind === 'exploder'
+            ? 3.45
+            : kind === 'spitter'
+              ? 2.9
+              : kind === 'runner'
+                ? 5.2
+                : 3.3) *
         (1 + Math.min(0.45, (wave - 1) * 0.04));
 
       const group = new THREE.Group();
@@ -773,29 +830,43 @@ export function Zombie3DArena({
         hp: maxHp,
         maxHp,
         speed,
-        damage: kind === 'brute' ? 28 : kind === 'runner' ? 14 : 18,
+        damage: kind === 'brute' ? 28 : kind === 'exploder' ? 32 : kind === 'runner' ? 14 : 18,
         radius: 0.55 * scale,
-        xpReward: kind === 'brute' ? 120 : kind === 'runner' ? 35 : 25,
-        scoreReward: kind === 'brute' ? 400 : kind === 'runner' ? 140 : 100,
+        xpReward: kind === 'brute' ? 120 : kind === 'exploder' ? 55 : kind === 'spitter' ? 45 : kind === 'runner' ? 35 : 25,
+        scoreReward: kind === 'brute' ? 400 : kind === 'exploder' ? 180 : kind === 'spitter' ? 160 : kind === 'runner' ? 140 : 100,
         hitFlashUntil: 0,
         staggerUntil: 0,
         lastAttackAt: now,
+        lastAbilityAt: now + 1200,
         wobblePhase: Math.random() * Math.PI * 2,
       });
     };
 
-    const spawnPickup = (x: number, z: number, kind: 'medkit' | 'xp', now: number) => {
+    const spawnPickup = (
+      x: number,
+      z: number,
+      kind: PickupEntity['kind'],
+      now: number
+    ) => {
       const group = new THREE.Group();
-      const color = kind === 'medkit' ? 0x10b981 : 0xfbbf24;
-      const modelTemplate = kind === 'medkit' ? loadedAssets?.medkit : loadedAssets?.ammoBox;
+      const color =
+        kind === 'medkit'
+          ? 0x10b981
+          : kind === 'maxhp'
+            ? 0x06b6d4
+            : kind === 'overdrive'
+              ? 0xa855f7
+              : 0xfbbf24;
+      const modelTemplate =
+        kind === 'medkit' || kind === 'maxhp' ? loadedAssets?.medkit : loadedAssets?.ammoBox;
       if (modelTemplate) {
         const cloned = modelTemplate.clone();
-        cloned.scale.setScalar(1.8);
+        cloned.scale.setScalar(kind === 'maxhp' ? 2.0 : 1.8);
         cloned.position.y = 0.35;
         group.add(cloned);
       } else {
         const core = new THREE.Mesh(
-          kind === 'medkit'
+          kind === 'medkit' || kind === 'maxhp'
             ? new THREE.BoxGeometry(0.55, 0.35, 0.55)
             : new THREE.OctahedronGeometry(0.32, 0),
           new THREE.MeshStandardMaterial({
@@ -851,30 +922,52 @@ export function Zombie3DArena({
           killer.xp += z.xpReward;
           const nextLevel = getLevelForXp(killer.xp);
           if (nextLevel > prevLevel) {
+            const levelGain = nextLevel - prevLevel;
             killer.level = nextLevel;
-            killer.maxHp = 100 + (nextLevel - 1) * 15;
+            killer.skillPoints += levelGain;
+            killer.maxHp += levelGain * 15;
             killer.hp = Math.min(killer.maxHp, killer.hp + 35);
             const nextWeapon = getWeaponForLevel(nextLevel);
             if (nextWeapon.id !== killer.weaponId) {
               killer.weaponId = nextWeapon.id;
-              killer.maxAmmo = nextWeapon.magSize;
-              killer.ammo = nextWeapon.magSize;
+              killer.maxAmmo = Math.round(nextWeapon.magSize * (1 + killer.skills.ammo * 0.25));
+              killer.ammo = killer.maxAmmo;
               killer.reloadingUntil = 0;
               // Swap 3D weapon mesh
               killer.weaponGroup.clear();
               killer.weaponGroup.add(createDetailedWeaponMesh(nextWeapon.id));
               killer.currentWeaponMeshId = nextWeapon.id;
-              showBanner(`${killer.name.toUpperCase()} • LVL ${nextLevel}: ${nextWeapon.name.toUpperCase()}!`);
+              showBanner(`${killer.name.toUpperCase()} • RANG ${nextLevel}: ${nextWeapon.name.toUpperCase()}!`);
             } else {
-              showBanner(`${killer.name.toUpperCase()} • LEVEL ${nextLevel}!`);
+              showBanner(`${killer.name.toUpperCase()} • RANG ${nextLevel} (+${levelGain} SKILL)!`);
+            }
+          }
+        }
+        if (z.kind === 'exploder') {
+          screenShake = Math.max(screenShake, 0.38);
+          spawnShockwave(z.x, z.z, 7.0, 0xf97316);
+          spawnParticles(z.x, 0.9, z.z, 0xf97316, 18, true);
+          for (const lp of playerEntities.values()) {
+            if (!lp.alive || now < lp.invulnUntil) continue;
+            if (Math.hypot(lp.x - z.x, lp.z - z.z) <= 3.6) {
+              lp.hp = Math.max(0, lp.hp - 26);
+              lp.invulnUntil = now + 350;
+              if (lp.hp <= 0) {
+                lp.alive = false;
+                lp.mesh.visible = false;
+                showBanner(`${lp.name.toUpperCase()} • EXPLOSION!`);
+              }
             }
           }
         }
         spawnParticles(z.x, 0.85, z.z, 0x991b1b, 14);
         spawnParticles(z.x, 0.95, z.z, 0xdc2626, 8);
         spawnBloodPool(z.x, z.z, z.kind === 'brute' ? 1.5 : 1.0);
-        if (Math.random() < 0.22) {
-          spawnPickup(z.x, z.z, Math.random() < 0.55 ? 'medkit' : 'xp', now);
+        if (Math.random() < 0.28) {
+          const pRoll = Math.random();
+          const pKind: PickupEntity['kind'] =
+            pRoll < 0.35 ? 'medkit' : pRoll < 0.65 ? 'xp' : pRoll < 0.85 ? 'maxhp' : 'overdrive';
+          spawnPickup(z.x, z.z, pKind, now);
         }
         dyingZombies.push({
           mesh: z.mesh,
@@ -932,6 +1025,47 @@ export function Zombie3DArena({
           if (localPlayerId && p.id === localPlayerId && localInputRef.current) {
             localInputRef.current.reload = false;
             localInputRef.current.dash = false;
+            localInputRef.current.selectWeaponId = undefined;
+            localInputRef.current.upgradeSkill = undefined;
+          } else {
+            const rawInput = inputs.get(p.id);
+            if (rawInput) {
+              rawInput.selectWeaponId = undefined;
+              rawInput.upgradeSkill = undefined;
+            }
+          }
+
+          // Weapon Switching (unlocked weapons)
+          if (inp.selectWeaponId && inp.selectWeaponId !== p.weaponId) {
+            const spec = getWeaponById(inp.selectWeaponId);
+            if (p.level >= spec.unlockLevel) {
+              p.weaponId = spec.id;
+              p.maxAmmo = Math.round(spec.magSize * (1 + p.skills.ammo * 0.25));
+              p.ammo = p.maxAmmo;
+              p.reloadingUntil = 0;
+              p.weaponGroup.clear();
+              p.weaponGroup.add(createDetailedWeaponMesh(spec.id));
+              p.currentWeaponMeshId = spec.id;
+            }
+          }
+
+          // Skill Upgrade Spending
+          if (inp.upgradeSkill && p.skillPoints > 0) {
+            p.skillPoints -= 1;
+            if (inp.upgradeSkill === 'hp') {
+              p.skills.hp += 1;
+              p.maxHp += 25;
+              p.hp = Math.min(p.maxHp, p.hp + 25);
+            } else if (inp.upgradeSkill === 'damage') {
+              p.skills.damage += 1;
+            } else if (inp.upgradeSkill === 'speed') {
+              p.skills.speed += 1;
+            } else if (inp.upgradeSkill === 'ammo') {
+              p.skills.ammo += 1;
+              const spec = getWeaponById(p.weaponId);
+              p.maxAmmo = Math.round(spec.magSize * (1 + p.skills.ammo * 0.25));
+              p.ammo = p.maxAmmo;
+            }
           }
 
           // Keyboard fallback for the first human player (WASD + Arrows + R + Shift)
@@ -986,7 +1120,8 @@ export function Zombie3DArena({
           // Manual Reload
           if (inp.reload && p.reloadingUntil === 0 && p.ammo < p.maxAmmo) {
             const spec = getWeaponById(p.weaponId);
-            p.reloadingUntil = now + spec.reloadMs;
+            const reloadMult = Math.max(0.5, 1 - p.skills.speed * 0.08);
+            p.reloadingUntil = now + spec.reloadMs * reloadMult;
           }
 
           // Dash
@@ -1000,9 +1135,11 @@ export function Zombie3DArena({
             spawnParticles(p.x, 0.4, p.z, 0x38bdf8, 6);
           }
 
-          // Movement
+          // Movement (with speed skill + overdrive boost)
           const isDashing = now < p.dashUntil;
-          const baseSpeed = isDashing ? 18.5 : 6.8;
+          const isOverdrive = now < p.overdriveUntil;
+          const speedMult = (1 + p.skills.speed * 0.1) * (isOverdrive ? 1.2 : 1.0);
+          const baseSpeed = isDashing ? 18.5 : 6.8 * speedMult;
           let mx = isDashing ? p.dashDirX : inp.moveX;
           let mz = isDashing ? p.dashDirZ : inp.moveY;
           const mLen = Math.hypot(mx, mz);
@@ -1051,19 +1188,22 @@ export function Zombie3DArena({
           p.weaponGroup.position.z += (0.22 - p.weaponGroup.position.z) * Math.min(1, dt * 18);
           p.weaponGroup.rotation.x += (0 - p.weaponGroup.rotation.x) * Math.min(1, dt * 16);
 
-          // Shooting
+          // Shooting (with damage & fire-rate overdrive skills)
           const weapon = getWeaponById(p.weaponId);
-          if (inp.firing && p.reloadingUntil === 0 && now - p.lastShotAt >= weapon.fireRateMs) {
+          const effectiveFireRate = isOverdrive ? weapon.fireRateMs * 0.68 : weapon.fireRateMs;
+          if (inp.firing && p.reloadingUntil === 0 && now - p.lastShotAt >= effectiveFireRate) {
             if (p.ammo <= 0) {
-              p.reloadingUntil = now + weapon.reloadMs;
+              const reloadMult = Math.max(0.5, 1 - p.skills.speed * 0.08);
+              p.reloadingUntil = now + weapon.reloadMs * reloadMult;
             } else {
               p.ammo -= 1;
               p.lastShotAt = now;
               if (p.ammo === 0) {
-                p.reloadingUntil = now + weapon.reloadMs;
+                const reloadMult = Math.max(0.5, 1 - p.skills.speed * 0.08);
+                p.reloadingUntil = now + weapon.reloadMs * reloadMult;
               }
 
-              const levelDamageMult = 1 + (p.level - 1) * 0.1;
+              const levelDamageMult = (1 + (p.level - 1) * 0.1) * (1 + p.skills.damage * 0.15);
               const baseAngle = Math.atan2(p.aimX, p.aimZ);
               const projColor = new THREE.Color(weapon.color).getHex();
 
@@ -1306,10 +1446,25 @@ export function Zombie3DArena({
           }
         }
 
-        // Update Zombies
-        for (const z of zombies) {
+        // Periodic Map Power-Ups (Medkit / Max-HP Shield / Overdrive)
+        if (now >= nextPowerupAt && pickups.length < 5) {
+          nextPowerupAt = now + 11500;
+          const angle = Math.random() * Math.PI * 2;
+          const rad = 3.5 + Math.random() * 6.5;
+          const px = Math.cos(angle) * rad;
+          const pz = Math.sin(angle) * rad;
+          const roll = Math.random();
+          const pKind: PickupEntity['kind'] =
+            roll < 0.42 ? 'maxhp' : roll < 0.78 ? 'medkit' : 'overdrive';
+          spawnPickup(px, pz, pKind, now);
+        }
+
+        // Update Zombies (wave-start slow ramp: 55% -> 100% over first 5s)
+        const waveSpeedRamp = Math.min(1, 0.55 + ((now - waveStartedAt) / 5000) * 0.45);
+        for (let zi = zombies.length - 1; zi >= 0; zi--) {
+          const z = zombies[zi];
           if (z.mixer) {
-            z.mixer.update(dt);
+            z.mixer.update(dt * waveSpeedRamp);
           }
           if (z.hitFlashUntil > 0 && now >= z.hitFlashUntil) {
             z.hitFlashUntil = 0;
@@ -1336,23 +1491,70 @@ export function Zombie3DArena({
             const dx = target.x - z.x;
             const dz = target.z - z.z;
             const len = Math.max(0.001, Math.hypot(dx, dz));
+            const shouldHoldForSpit = z.kind === 'spitter' && len > 6.5 && len < 13.0;
+            const moveSpd = shouldHoldForSpit ? z.speed * 0.25 : z.speed * waveSpeedRamp;
+
             const nextPos = resolveObstaclePush(
-              z.x + (dx / len) * z.speed * dt,
-              z.z + (dz / len) * z.speed * dt,
+              z.x + (dx / len) * moveSpd * dt,
+              z.z + (dz / len) * moveSpd * dt,
               z.radius,
               obstacles,
               false
             );
             z.x = nextPos.x;
             z.z = nextPos.z;
-            z.wobblePhase += dt * 10;
+            z.wobblePhase += dt * 10 * waveSpeedRamp;
             z.mesh.position.set(z.x, Math.abs(Math.sin(z.wobblePhase)) * 0.06, z.z);
             z.mesh.rotation.y = Math.atan2(dx, dz);
             z.mesh.rotation.x = now < z.staggerUntil ? -0.22 : 0;
             z.mesh.rotation.z = Math.sin(z.wobblePhase) * 0.05;
 
+            // Spitter ranged acid spit ability
+            if (z.kind === 'spitter' && len <= 14.0 && now >= z.lastAbilityAt) {
+              z.lastAbilityAt = now + 2600;
+              const acidMesh = new THREE.Mesh(
+                new THREE.SphereGeometry(0.18, 8, 8),
+                new THREE.MeshBasicMaterial({ color: 0x84cc16 })
+              );
+              acidMesh.position.set(z.x, 1.2, z.z);
+              scene.add(acidMesh);
+              acidProjectiles.push({
+                mesh: acidMesh,
+                x: z.x,
+                z: z.z,
+                vx: (dx / len) * 11.5,
+                vz: (dz / len) * 11.5,
+                damage: 14,
+                expiresAt: now + 1800,
+              });
+            }
+
+            // Brute shockwave stomp ability
+            if (z.kind === 'brute' && len <= 4.5 && now >= z.lastAbilityAt) {
+              z.lastAbilityAt = now + 4500;
+              screenShake = Math.max(screenShake, 0.3);
+              spawnShockwave(z.x, z.z, 6.5, 0x9333ea);
+              for (const lp of livingPlayers) {
+                if (Math.hypot(lp.x - z.x, lp.z - z.z) <= 3.8 && now >= lp.invulnUntil) {
+                  lp.hp = Math.max(0, lp.hp - 16);
+                  lp.invulnUntil = now + 350;
+                  if (lp.hp <= 0) {
+                    lp.alive = false;
+                    lp.mesh.visible = false;
+                    showBanner(`${lp.name.toUpperCase()} • SCHOCKWELLE!`);
+                  }
+                }
+              }
+            }
+
             if (len <= z.radius + 0.58 && now - z.lastAttackAt >= 750 && now >= target.invulnUntil) {
               z.lastAttackAt = now;
+              if (z.kind === 'exploder') {
+                // Exploder detonates on contact!
+                damageZombie(z, z.hp + 10, target.id, now);
+                zombies.splice(zi, 1);
+                continue;
+              }
               target.hp = Math.max(0, target.hp - z.damage);
               target.invulnUntil = now + 260;
               screenShake = Math.max(screenShake, 0.22);
@@ -1364,6 +1566,45 @@ export function Zombie3DArena({
                 showBanner(`${target.name.toUpperCase()} WURDE ÜBERRANNT!`);
               }
             }
+          }
+        }
+
+        // Update Spitter Acid Projectiles
+        for (let i = acidProjectiles.length - 1; i >= 0; i--) {
+          const ap = acidProjectiles[i];
+          ap.x += ap.vx * dt;
+          ap.z += ap.vz * dt;
+          ap.mesh.position.set(ap.x, 1.0, ap.z);
+          let hit = now >= ap.expiresAt || Math.abs(ap.x) > 22 || Math.abs(ap.z) > 22;
+          if (!hit) {
+            for (const box of obstacles) {
+              if (Math.abs(ap.x - box.x) < box.halfW && Math.abs(ap.z - box.z) < box.halfD) {
+                hit = true;
+                spawnParticles(ap.x, 0.9, ap.z, 0x84cc16, 6, true);
+                break;
+              }
+            }
+          }
+          if (!hit) {
+            for (const lp of livingPlayers) {
+              if (Math.hypot(lp.x - ap.x, lp.z - ap.z) <= 0.7 && now >= lp.invulnUntil) {
+                hit = true;
+                lp.hp = Math.max(0, lp.hp - ap.damage);
+                lp.invulnUntil = now + 260;
+                screenShake = Math.max(screenShake, 0.16);
+                spawnParticles(ap.x, 0.95, ap.z, 0x84cc16, 8, true);
+                if (lp.hp <= 0) {
+                  lp.alive = false;
+                  lp.mesh.visible = false;
+                  showBanner(`${lp.name.toUpperCase()} • SÄURETREFFER!`);
+                }
+                break;
+              }
+            }
+          }
+          if (hit) {
+            scene.remove(ap.mesh);
+            acidProjectiles.splice(i, 1);
           }
         }
 
@@ -1379,23 +1620,37 @@ export function Zombie3DArena({
           for (const lp of livingPlayers) {
             if (Math.hypot(lp.x - pk.x, lp.z - pk.z) < 1.1) {
               if (pk.kind === 'medkit') {
-                lp.hp = Math.min(lp.maxHp, lp.hp + 30);
+                if (lp.hp >= lp.maxHp) {
+                  lp.maxHp += 10;
+                  lp.hp = lp.maxHp;
+                } else {
+                  lp.hp = Math.min(lp.maxHp, lp.hp + 35);
+                }
+              } else if (pk.kind === 'maxhp') {
+                lp.maxHp += 25;
+                lp.hp = Math.min(lp.maxHp, lp.hp + 25);
+                showBanner(`${lp.name.toUpperCase()} • +25 MAX HP!`);
+              } else if (pk.kind === 'overdrive') {
+                lp.overdriveUntil = now + 8000;
+                showBanner(`${lp.name.toUpperCase()} • OVERDRIVE!`);
               } else {
-                lp.xp += 45;
-                lp.score += 50;
+                lp.xp += 50;
+                lp.score += 60;
                 const nl = getLevelForXp(lp.xp);
                 if (nl > lp.level) {
+                  const gain = nl - lp.level;
                   lp.level = nl;
-                  lp.maxHp = 100 + (nl - 1) * 15;
+                  lp.skillPoints += gain;
+                  lp.maxHp += gain * 15;
                   lp.hp = Math.min(lp.maxHp, lp.hp + 35);
                   const nw = getWeaponForLevel(nl);
                   if (nw.id !== lp.weaponId) {
                     lp.weaponId = nw.id;
-                    lp.maxAmmo = nw.magSize;
-                    lp.ammo = nw.magSize;
+                    lp.maxAmmo = Math.round(nw.magSize * (1 + lp.skills.ammo * 0.25));
+                    lp.ammo = lp.maxAmmo;
                     lp.weaponGroup.clear();
                     lp.weaponGroup.add(createDetailedWeaponMesh(nw.id));
-                    showBanner(`${lp.name.toUpperCase()} • LVL ${nl}: ${nw.name.toUpperCase()}!`);
+                    showBanner(`${lp.name.toUpperCase()} • RANG ${nl}: ${nw.name.toUpperCase()}!`);
                   }
                 }
               }
@@ -1527,6 +1782,9 @@ export function Zombie3DArena({
               score: p.score,
               alive: p.alive,
               dashReadyAt: p.dashReadyAt,
+              skillPoints: p.skillPoints,
+              skills: { ...p.skills },
+              overdriveActive: now < p.overdriveUntil,
             };
             hudPlayers[p.id] = entry;
             list.push(entry);

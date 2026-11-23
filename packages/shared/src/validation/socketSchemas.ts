@@ -245,6 +245,8 @@ export const ZombieInputSchema = z.object({
   firing: z.boolean(),
   reload: z.boolean().optional(),
   dash: z.boolean().optional(),
+  selectWeaponId: z.string().min(1).max(32).optional(),
+  upgradeSkill: z.enum(['hp', 'damage', 'speed', 'ammo']).optional(),
 });
 
 export const ZombiePlayerHudSchema = z.object({
@@ -261,6 +263,16 @@ export const ZombiePlayerHudSchema = z.object({
   score: z.number().finite().min(0).max(10000000),
   alive: z.boolean(),
   dashReadyAt: z.number().finite().optional(),
+  skillPoints: z.number().int().min(0).max(999).optional(),
+  skills: z
+    .object({
+      hp: z.number().int().min(0).max(99),
+      damage: z.number().int().min(0).max(99),
+      speed: z.number().int().min(0).max(99),
+      ammo: z.number().int().min(0).max(99),
+    })
+    .optional(),
+  overdriveActive: z.boolean().optional(),
 });
 
 export const ZombieStateSchema = z.object({

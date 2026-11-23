@@ -229,6 +229,15 @@ export type TexasHoldemMove =
 // ─── 3D ZOMBIE SURVIVAL ───
 export type ZombieDifficulty = 'normal' | 'hard' | 'nightmare';
 
+export type ZombieSkillKey = 'hp' | 'damage' | 'speed' | 'ammo';
+
+export interface ZombiePlayerSkills {
+  hp: number;
+  damage: number;
+  speed: number;
+  ammo: number;
+}
+
 export interface ZombiePlayerHudState {
   playerId: string;
   hp: number;
@@ -243,6 +252,9 @@ export interface ZombiePlayerHudState {
   score: number;
   alive: boolean;
   dashReadyAt?: number;
+  skillPoints?: number;
+  skills?: ZombiePlayerSkills;
+  overdriveActive?: boolean;
 }
 
 export interface ZombieInputPayload {
@@ -253,6 +265,8 @@ export interface ZombieInputPayload {
   firing: boolean;
   reload?: boolean;
   dash?: boolean;
+  selectWeaponId?: string;
+  upgradeSkill?: ZombieSkillKey;
 }
 
 export interface ZombieHudStatePayload {

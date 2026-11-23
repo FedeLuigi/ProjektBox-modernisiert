@@ -1059,6 +1059,8 @@ class SocketService {
     firing: boolean;
     reload?: boolean;
     dash?: boolean;
+    selectWeaponId?: string;
+    upgradeSkill?: 'hp' | 'damage' | 'speed' | 'ammo';
   }): void {
     if (!this.socket || !this.socket.connected) return;
     this.socket.volatile.emit('zombie:input', input);
@@ -1215,6 +1217,8 @@ class SocketService {
         firing: boolean;
         reload?: boolean;
         dash?: boolean;
+        selectWeaponId?: string;
+        upgradeSkill?: 'hp' | 'damage' | 'speed' | 'ammo';
       };
     }) => void
   ): () => void {

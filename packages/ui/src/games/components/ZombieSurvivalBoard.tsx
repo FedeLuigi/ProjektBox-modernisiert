@@ -33,7 +33,7 @@ export function ZombieSurvivalBoard({
   // 2. Jeder Smartphone-Teilnehmer in einer TV-Lobby ODER Nicht-Host in einer Smartphone-Lobby
   //    erhält den vollständigen Dual-Stick-Controller + Live-HUD
   if (isTvMode || !myPlayer?.isHost) {
-    return <ZombieController myPlayerId={myPlayer.id} />;
+    return <ZombieController myPlayerId={myPlayer.id} myPlayer={myPlayer} />;
   }
 
   // 3. Host in einer reinen Smartphone-Lobby (ohne TV): 3D-Arena + eigene Touch-Steuerung

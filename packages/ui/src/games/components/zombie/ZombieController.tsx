@@ -5,23 +5,30 @@ import {
   Crosshair,
   Heart,
   RotateCw,
+  Shield,
   Skull,
+  User,
+  X,
   Zap,
 } from 'lucide-react';
 import type {
+  Player,
   ZombieHudStatePayload,
   ZombiePlayerHudState,
+  ZombieSkillKey,
 } from '@projektbox/shared/types';
 import {
   getWeaponById,
   getXpBoundsForLevel,
   ZOMBIE_WEAPONS,
 } from '@projektbox/shared/utils';
+import { Avatar } from '../../../components/Avatar';
 import { socketService } from '../../../services/socket';
 import { playWinSound, triggerHapticFeedback } from '../../../utils/soundEffects';
 
 interface ZombieControllerProps {
   myPlayerId: string;
+  myPlayer?: Player;
 }
 
 interface StickState {
@@ -31,7 +38,7 @@ interface StickState {
   y: number; // -1..1
 }
 
-export function ZombieController({ myPlayerId }: ZombieControllerProps) {
+export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps) {
   const [wave, setWave] = useState(1);
   const [zombiesRemaining, setZombiesRemaining] = useState(0);
   const [hud, setHud] = useState<ZombiePlayerHudState>({
@@ -47,8 +54,11 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
     kills: 0,
     score: 0,
     alive: true,
+    skillPoints: 0,
+    skills: { hp: 0, damage: 0, speed: 0, ammo: 0 },
   });
   const [autoFire, setAutoFire] = useState(false);
+  const [showCharMenu, setShowCharMenu] = useState(false);
   const [levelUpBanner, setLevelUpBanner] = useState<string | null>(null);
   const prevLevelRef = useRef(1);
 
@@ -178,8 +188,35 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
   );
   const hpPct = Math.max(0, (hud.hp / Math.max(1, hud.maxHp)) * 100);
 
+  const sendUpgrade = (skill: ZombieSkillKey) => {
+    socketService.emitZombieInput({
+      moveX: 0,
+      moveY: 0,
+      aimX: 0,
+      aimY: 0,
+      firing: false,
+      upgradeSkill: skill,
+    });
+    triggerHapticFeedback(25);
+  };
+
+  const sendSelectWeapon = (weaponId: string) => {
+    socketService.emitZombieInput({
+      moveX: 0,
+      moveY: 0,
+      aimX: 0,
+      aimY: 0,
+      firing: false,
+      selectWeaponId: weaponId,
+    });
+    triggerHapticFeedback(20);
+  };
+
+  const skillPoints = hud.skillPoints ?? 0;
+  const skills = hud.skills ?? { hp: 0, damage: 0, speed: 0, ammo: 0 };
+
   return (
-    <div className="flex h-full min-h-0 flex-1 w-full flex-col justify-between gap-2 overflow-hidden select-none touch-none">
+    <div className="relative flex h-full min-h-0 flex-1 w-full flex-col justify-between gap-2 overflow-hidden select-none touch-none">
       {/* Top Tactical Controller HUD */}
       <div className="flex shrink-0 flex-col gap-1.5 border border-white/12 border-l-2 border-l-[#EF4444] bg-[#070B12]/85 px-3 py-2 backdrop-blur-md">
         <div className="flex items-center justify-between gap-2">
@@ -241,23 +278,147 @@ export function ZombieController({ myPlayerId }: ZombieControllerProps) {
           </div>
         </div>
 
-        {/* Active Weapon Strip */}
+        {/* Active Weapon Strip + Character Menu Trigger */}
         <div className="flex items-center justify-between gap-2 border-t border-white/10 pt-1.5">
-          <div className="flex flex-col">
-            <span className="font-mono text-xs font-bold tracking-wider uppercase" style={{ color: weapon.color }}>
+          <div className="flex flex-col min-w-0">
+            <span className="font-mono text-xs font-bold tracking-wider uppercase truncate" style={{ color: weapon.color }}>
               {weapon.name}
             </span>
             {nextWeapon && (
-              <span className="font-mono text-[10px] tracking-wider text-[#94A3B8] uppercase">
-                NÄCHSTES UPGRADE: {nextWeapon.shortName} (RANG {String(nextWeapon.unlockLevel).padStart(2, '0')})
+              <span className="font-mono text-[10px] tracking-wider text-[#94A3B8] uppercase truncate">
+                NÄCHSTE: {nextWeapon.shortName} (RANG {String(nextWeapon.unlockLevel).padStart(2, '0')})
               </span>
             )}
           </div>
-          <span className="font-mono text-sm font-bold tracking-widest text-white">
-            {hud.reloading ? 'NACHLADEN...' : `${hud.ammo} / ${hud.maxAmmo}`}
-          </span>
+          <div className="flex items-center gap-2 shrink-0">
+            <span className="font-mono text-xs sm:text-sm font-bold tracking-widest text-white">
+              {hud.reloading ? 'NACHLADEN...' : `${hud.ammo}/${hud.maxAmmo}`}
+            </span>
+            <button
+              type="button"
+              onClick={() => setShowCharMenu(true)}
+              className={`relative inline-flex items-center gap-1 border px-2.5 py-1 font-mono text-[10px] font-bold tracking-wider uppercase active:scale-95 ${
+                skillPoints > 0
+                  ? 'border-[#F59E0B] bg-[#F59E0B]/20 text-[#FDE68A]'
+                  : 'border-white/20 bg-white/[0.06] text-white'
+              }`}
+            >
+              <User className="h-3.5 w-3.5" />
+              <span>CHARAKTER</span>
+              {skillPoints > 0 && (
+                <span className="ml-0.5 rounded-full bg-[#EF4444] px-1.5 text-[9px] text-white">
+                  +{skillPoints}
+                </span>
+              )}
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Character & Upgrade Menu Overlay */}
+      {showCharMenu && (
+        <div className="absolute inset-0 z-40 flex flex-col gap-3 overflow-y-auto bg-[#070B12]/96 p-3 backdrop-blur-md">
+          <div className="flex items-center justify-between border-b border-white/15 pb-2">
+            <div className="flex items-center gap-2.5">
+              {myPlayer && <Avatar config={myPlayer.avatar} size={38} />}
+              <div className="flex flex-col leading-tight">
+                <span className="font-mono text-xs font-bold tracking-wider text-white uppercase">
+                  {myPlayer?.name || 'OPERATOR'} • RANG {String(hud.level).padStart(2, '0')}
+                </span>
+                <span className="font-mono text-[10px] tracking-wider text-[#94A3B8] uppercase">
+                  HP {hud.hp}/{hud.maxHp} • {hud.kills} KILLS • SKILL-PUNKTE: {skillPoints}
+                </span>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowCharMenu(false)}
+              className="inline-flex items-center gap-1 border border-white/20 bg-white/10 px-2.5 py-1 font-mono text-[10px] font-bold text-white uppercase active:scale-95"
+            >
+              <X className="h-3.5 w-3.5" />
+              <span>ZURÜCK</span>
+            </button>
+          </div>
+
+          {/* Skills Section */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#FDE68A] uppercase">
+              OPERATOR-SKILLS ({skillPoints} PUNKTE VERFÜGBAR)
+            </span>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { key: 'hp' as const, label: 'VITALITÄT', desc: '+25 MAX HP', val: skills.hp, icon: Heart, color: '#EF4444' },
+                { key: 'damage' as const, label: 'FEUERKRAFT', desc: '+15% SCHADEN', val: skills.damage, icon: Crosshair, color: '#F59E0B' },
+                { key: 'speed' as const, label: 'TEMPO', desc: '+10% LAUF/LADEN', val: skills.speed, icon: Zap, color: '#38BDF8' },
+                { key: 'ammo' as const, label: 'MAGAZIN', desc: '+25% MUNITION', val: skills.ammo, icon: Shield, color: '#10B981' },
+              ].map((sk) => {
+                const Icon = sk.icon;
+                return (
+                  <button
+                    key={sk.key}
+                    type="button"
+                    disabled={skillPoints <= 0}
+                    onClick={() => sendUpgrade(sk.key)}
+                    className={`flex items-center justify-between gap-2 border px-2.5 py-2 text-left transition-all ${
+                      skillPoints > 0
+                        ? 'border-[#F59E0B]/60 bg-[#F59E0B]/10 hover:bg-[#F59E0B]/20 active:scale-95'
+                        : 'border-white/10 bg-white/[0.03] opacity-65'
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className="inline-flex items-center gap-1 font-mono text-[11px] font-bold text-white uppercase">
+                        <Icon className="h-3 w-3 shrink-0" style={{ color: sk.color }} />
+                        {sk.label}
+                      </span>
+                      <span className="font-mono text-[9px] text-[#94A3B8] uppercase">
+                        {sk.desc}
+                      </span>
+                    </div>
+                    <span className="font-mono shrink-0 bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-[#FDE68A]">
+                      +{sk.val}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Weapon Arsenal Section */}
+          <div className="flex flex-col gap-1.5">
+            <span className="font-mono text-[10px] font-bold tracking-[0.2em] text-[#38BDF8] uppercase">
+              WAFFEN-ARSENAL
+            </span>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {ZOMBIE_WEAPONS.map((w) => {
+                const unlocked = hud.level >= w.unlockLevel;
+                const equipped = hud.weaponId === w.id;
+                return (
+                  <button
+                    key={w.id}
+                    type="button"
+                    disabled={!unlocked}
+                    onClick={() => sendSelectWeapon(w.id)}
+                    className={`flex flex-col gap-0.5 border px-2.5 py-1.5 text-left transition-all ${
+                      equipped
+                        ? 'border-[#38BDF8] bg-[#38BDF8]/20'
+                        : unlocked
+                          ? 'border-white/20 bg-white/[0.05] active:scale-95'
+                          : 'border-white/10 bg-white/[0.02] opacity-45'
+                    }`}
+                  >
+                    <span className="font-mono text-[11px] font-bold uppercase truncate" style={{ color: w.color }}>
+                      {w.name}
+                    </span>
+                    <span className="font-mono text-[9px] text-[#94A3B8] uppercase">
+                      {equipped ? 'AUSGERÜSTET' : unlocked ? `SCHADEN ${w.damage}` : `AB RANG ${w.unlockLevel}`}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Tactical Level-Up Alert */}
       {levelUpBanner && (
