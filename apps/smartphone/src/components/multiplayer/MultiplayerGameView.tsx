@@ -257,7 +257,7 @@ export function MultiplayerGameView({
           <button
             type="button"
             onClick={onLeave}
-            className="fixed top-2.5 right-2.5 left-auto z-40 self-end w-fit inline-flex items-center gap-1.5 border border-[#EF4444]/50 bg-[#070B12]/90 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.16em] text-[#FCA5A5] uppercase backdrop-blur-md active:scale-95"
+            className="fixed top-2.5 right-2.5 left-auto z-40 self-end w-fit inline-flex items-center gap-1.5 rounded border-2 border-[#DC2626]/80 bg-gradient-to-b from-[#450A0A]/95 to-[#270606]/95 px-2.5 py-1 font-mono text-[11px] font-black tracking-[0.16em] text-[#FCA5A5] uppercase shadow-[0_3px_10px_rgba(220,38,38,0.35)] active:scale-95"
           >
             <LogOut className="h-3.5 w-3.5 text-[#EF4444]" />
             <span>EXIT</span>
