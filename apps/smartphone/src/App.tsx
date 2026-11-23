@@ -1,9 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Loader2 } from 'lucide-react';
 import type { Lobby, NavSection } from '@projektbox/shared/types';
 import {
   AvatarCustomizerModal,
-  CrystalPanel,
-  CrystalReadout,
   GAMES,
   IslandBackground,
   SettingsSheet,
@@ -468,14 +467,22 @@ export function App() {
       <IslandBackground />
 
       {isJoiningDeepLink && !multiplayerGame && (
-        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0F172A]/75 backdrop-blur-xs select-none p-4">
-          <div className="w-full max-w-sm animate-fade-in">
-            <CrystalPanel accent="amber" title="TV CONNECT" contentClassName="gap-3">
-              <CrystalReadout label="LOBBY CODE" value={initialDeepLinkCode ?? '----'} />
-              <p className="font-arcade text-sm tracking-wider text-[#334155] uppercase mt-1">
-                JOINING TV LOBBY...
-              </p>
-            </CrystalPanel>
+        <div className="fixed inset-0 min-h-dvh z-50 flex w-full flex-col items-center justify-center bg-[#0F172A]/88 backdrop-blur-md select-none p-6">
+          <div className="flex w-full max-w-sm flex-col items-center gap-5 text-center animate-fade-in">
+            <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
+              <span className="font-arcade text-2xl tracking-wider text-white uppercase">
+                TV <span className="text-[#FBBF24]">VERBINDEN</span>
+              </span>
+            </div>
+            <span className="font-arcade rounded-2xl border-2 border-[#F59E0B]/70 bg-[#F59E0B]/15 px-7 py-2 text-3xl tracking-[0.22em] text-[#FDE68A] uppercase">
+              {initialDeepLinkCode ?? '----'}
+            </span>
+            <div className="flex items-center gap-2.5 text-[#CBD5E1]">
+              <Loader2 className="h-5 w-5 animate-spin text-[#FBBF24]" />
+              <span className="font-arcade text-xs sm:text-sm tracking-wider uppercase">
+                TRETE TV-LOBBY BEI...
+              </span>
+            </div>
           </div>
         </div>
       )}
