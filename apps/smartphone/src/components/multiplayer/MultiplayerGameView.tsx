@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, LogOut, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Loader2, LogOut, RotateCcw } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -28,7 +28,6 @@ export function MultiplayerGameView({
     socketService.isActionBlocked()
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [isZombieMenuOpen, setIsZombieMenuOpen] = useState(false);
 
   const currentUser = useUserProfile();
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
@@ -253,60 +252,16 @@ export function MultiplayerGameView({
         </header>
         )}
 
-        {/* Schwebender OPTIONEN-Button oben rechts im Vollbild-Zombie-Spiel */}
+        {/* Schwebender EXIT-Button oben rechts im Vollbild-Zombie-Controller */}
         {isZombieSurvival && !isGameOver && (
-          <>
-            <button
-              type="button"
-              onClick={() => setIsZombieMenuOpen(true)}
-              className="fixed top-2.5 right-2.5 left-auto z-40 self-end w-fit inline-flex items-center gap-1.5 border border-white/15 bg-[#070B12]/85 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-md active:scale-95"
-            >
-              <SlidersHorizontal className="h-3.5 w-3.5 text-[#F59E0B]" />
-              <span>OPTIONEN</span>
-            </button>
-
-            {isZombieMenuOpen && (
-              <div
-                role="dialog"
-                aria-modal="true"
-                aria-label="Spielmenü"
-                className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/82 p-5 backdrop-blur-md animate-fade-in"
-              >
-                <div className="flex w-full max-w-xs flex-col gap-4 border border-white/15 border-t-2 border-t-[#EF4444] bg-[#070B12] p-5 text-center shadow-2xl">
-                  <div className="flex flex-col gap-1">
-                    <span className="font-mono text-[10px] tracking-[0.22em] text-[#94A3B8] uppercase">
-                      ZOMBIE ARENA 3D • RAUM {lobby.code}
-                    </span>
-                    <h2 className="font-mono text-lg font-bold tracking-[0.18em] text-white uppercase">
-                      SPIELMENÜ
-                    </h2>
-                  </div>
-
-                  <div className="flex flex-col gap-2.5">
-                    <button
-                      type="button"
-                      onClick={() => setIsZombieMenuOpen(false)}
-                      className="inline-flex w-full items-center justify-center gap-2 border border-[#10B981]/60 bg-[#10B981]/20 px-4 py-2.5 font-mono text-xs font-bold tracking-[0.16em] text-[#6EE7B7] uppercase active:scale-95"
-                    >
-                      <Play className="h-4 w-4" />
-                      <span>WEITER SPIELEN</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setIsZombieMenuOpen(false);
-                        onLeave();
-                      }}
-                      className="inline-flex w-full items-center justify-center gap-2 border border-[#EF4444]/60 bg-[#EF4444]/20 px-4 py-2.5 font-mono text-xs font-bold tracking-[0.16em] text-[#FCA5A5] uppercase active:scale-95"
-                    >
-                      <LogOut className="h-4 w-4" />
-                      <span>LOBBY VERLASSEN</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-          </>
+          <button
+            type="button"
+            onClick={onLeave}
+            className="fixed top-2.5 right-2.5 left-auto z-40 self-end w-fit inline-flex items-center gap-1.5 border border-[#EF4444]/50 bg-[#070B12]/90 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.16em] text-[#FCA5A5] uppercase backdrop-blur-md active:scale-95"
+          >
+            <LogOut className="h-3.5 w-3.5 text-[#EF4444]" />
+            <span>EXIT</span>
+          </button>
         )}
 
         {/* 2. MITTE: OFFENE ERGEBNIS-BÜHNE ODER SPIELFELD */}
@@ -415,8 +370,8 @@ export function MultiplayerGameView({
           </main>
         ) : (
           <main
-            className={`game-landscape-main mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden ${
-              isZombieSurvival ? 'p-0' : 'items-center py-1.5 sm:py-3'
+            className={`mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden ${
+              isZombieSurvival ? 'p-0' : 'game-landscape-main items-center py-1.5 sm:py-3'
             }`}
           >
             {BoardComponent && myPlayer ? (
