@@ -1,5 +1,18 @@
 import { type ReactNode, useState } from 'react';
-import { ArrowLeft, ChevronDown, ChevronUp, Crown, Lock } from 'lucide-react';
+import {
+  ArrowLeft,
+  ChevronDown,
+  ChevronUp,
+  Clock,
+  Coins,
+  Crown,
+  Hand,
+  Layers,
+  Lock,
+  Pencil,
+  Repeat,
+  Timer,
+} from 'lucide-react';
 import {
   CASINO_BALANCE_OPTIONS,
   CASINO_DURATION_OPTIONS,
@@ -24,48 +37,91 @@ interface LobbyGameSettingsProps {
   onUpdate: (newSettings: Record<string, any>) => void;
 }
 
-function SettingRow({ label, children }: { label: string; children: ReactNode }) {
+function SettingRow({
+  label,
+  description,
+  icon,
+  children,
+}: {
+  label: string;
+  description?: string;
+  icon: ReactNode;
+  children: ReactNode;
+}) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-[136px_1fr] items-start sm:items-center gap-2">
-      <span className="font-arcade text-xs text-[#94A3B8] uppercase">{label}</span>
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 py-3">
+      <div className="flex items-center gap-3 min-w-0 shrink-0">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="font-arcade text-xs sm:text-sm tracking-wider text-white uppercase">
+            {label}
+          </div>
+          {description && (
+            <div className="text-xs text-[#94A3B8] truncate">{description}</div>
+          )}
+        </div>
+      </div>
       <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">{children}</div>
     </div>
   );
 }
 
-function OnOffButtons({
+function SettingToggleRow({
+  label,
+  description,
   enabled,
   disabled,
-  onChange,
+  icon,
+  onToggle,
 }: {
+  label: string;
+  description: string;
   enabled: boolean;
   disabled: boolean;
-  onChange: (next: boolean) => void;
+  icon: ReactNode;
+  onToggle: (next: boolean) => void;
 }) {
   return (
-    <>
-      <OpenButton
-        size="sm"
-        disabled={disabled}
-        variant={enabled ? 'primary' : 'secondary'}
-        onClick={() => onChange(true)}
+    <button
+      type="button"
+      role="switch"
+      aria-checked={enabled}
+      disabled={disabled}
+      onClick={() => onToggle(!enabled)}
+      className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-3 text-left transition-colors hover:border-white/30 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer active:scale-[0.99]"
+    >
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border transition-colors ${
+            enabled
+              ? 'border-[#F59E0B]/60 bg-[#F59E0B]/15 text-[#FDE68A]'
+              : 'border-white/15 bg-white/5 text-[#94A3B8]'
+          }`}
+        >
+          {icon}
+        </div>
+        <div className="min-w-0">
+          <div className="font-arcade text-xs sm:text-sm tracking-wider text-white uppercase">
+            {label}
+          </div>
+          <div className="text-xs text-[#94A3B8] truncate">{description}</div>
+        </div>
+      </div>
+
+      <span
+        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors ${
+          enabled ? 'border-[#F59E0B] bg-[#F59E0B]' : 'border-white/20 bg-white/10'
+        }`}
       >
-        AN
-      </OpenButton>
-      <OpenButton
-        size="sm"
-        disabled={disabled}
-        variant="secondary"
-        className={
-          !enabled
-            ? '!border-slate-300/60 !bg-slate-600/85 !text-white shadow-[0_4px_12px_rgba(15,23,42,0.35)]'
-            : '!text-white/60'
-        }
-        onClick={() => onChange(false)}
-      >
-        AUS
-      </OpenButton>
-    </>
+        <span
+          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+            enabled ? 'translate-x-6' : 'translate-x-1'
+          }`}
+        />
+      </span>
+    </button>
   );
 }
 
@@ -227,13 +283,17 @@ export function LobbyGameSettings({
         <div
           className={
             alwaysOpen
-              ? 'space-y-3 animate-fade-in'
-              : 'px-3 sm:px-4 pb-3 pt-2.5 space-y-2.5 border-t border-white/12 animate-fade-in'
+              ? 'flex flex-col animate-fade-in'
+              : 'px-3 sm:px-4 pb-3 pt-1 flex flex-col border-t border-white/12 animate-fade-in'
           }
         >
           {isDrawAndGuess ? (
             <>
-              <SettingRow label="RUNDEN">
+              <SettingRow
+                label="RUNDEN"
+                description={`${rounds} Runden pro Match`}
+                icon={<Repeat className="h-4 w-4" />}
+              >
                 {ROUND_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -247,7 +307,11 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="ZEIT">
+              <SettingRow
+                label="ZEIT"
+                description={`${roundDuration} Sekunden pro Zug`}
+                icon={<Clock className="h-4 w-4" />}
+              >
                 {DURATION_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -261,16 +325,21 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="EIGENE WÖRTER">
-                <OnOffButtons
-                  enabled={customWordsEnabled}
-                  disabled={!isHost}
-                  onChange={handleSetCustomWordsEnabled}
-                />
-              </SettingRow>
+              <SettingToggleRow
+                label="EIGENE WÖRTER"
+                description={customWordsEnabled ? 'Aktiviert – Spieler wählen selbst' : 'Deaktiviert – feste Kategorie'}
+                enabled={customWordsEnabled}
+                disabled={!isHost}
+                icon={<Pencil className="h-4 w-4" />}
+                onToggle={handleSetCustomWordsEnabled}
+              />
 
               {!customWordsEnabled && (
-                <SettingRow label="KATEGORIE">
+                <SettingRow
+                  label="KATEGORIE"
+                  description={`Aktuell: ${category}`}
+                  icon={<Layers className="h-4 w-4" />}
+                >
                   {CATEGORIES.map((cat) => (
                     <OpenButton
                       key={cat}
@@ -289,7 +358,11 @@ export function LobbyGameSettings({
             </>
           ) : isStadtLandFluss ? (
             <>
-              <SettingRow label="RUNDEN">
+              <SettingRow
+                label="RUNDEN"
+                description={`${rounds} Runden pro Match`}
+                icon={<Repeat className="h-4 w-4" />}
+              >
                 {ROUND_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -303,7 +376,11 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="ZEIT">
+              <SettingRow
+                label="ZEIT"
+                description={`${roundDuration} Sekunden pro Runde`}
+                icon={<Clock className="h-4 w-4" />}
+              >
                 {DURATION_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -317,50 +394,55 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="STOPP-KNOPF">
-                <OnOffButtons
-                  enabled={stopButtonEnabled}
-                  disabled={!isHost}
-                  onChange={handleSetStopButton}
-                />
-              </SettingRow>
+              <SettingToggleRow
+                label="STOPP-KNOPF"
+                description={stopButtonEnabled ? 'Aktiviert' : 'Deaktiviert'}
+                enabled={stopButtonEnabled}
+                disabled={!isHost}
+                icon={<Hand className="h-4 w-4" />}
+                onToggle={handleSetStopButton}
+              />
 
-              <SettingRow label="EIGENE WÖRTER">
-                <OnOffButtons
-                  enabled={customWordsEnabled}
-                  disabled={!isHost}
-                  onChange={handleSetCustomWordsEnabled}
-                />
-              </SettingRow>
+              <SettingToggleRow
+                label="EIGENE WÖRTER"
+                description={
+                  customWordsEnabled
+                    ? 'Aktiviert – reihum eigene Kategorien'
+                    : 'Deaktiviert – feste Vorlage'
+                }
+                enabled={customWordsEnabled}
+                disabled={!isHost}
+                icon={<Pencil className="h-4 w-4" />}
+                onToggle={handleSetCustomWordsEnabled}
+              />
 
-              {customWordsEnabled ? (
-                <p className="font-arcade text-[10px] text-[#6EE7B7] uppercase pt-0.5 sm:text-right">
-                  REIHUM WÄHLT VOR JEDER RUNDE EIN SPIELER EIGENE KATEGORIEN
-                </p>
-              ) : (
-                <div className="flex flex-col gap-1.5">
-                  <SettingRow label="KATEGORIEN">
-                    {SLF_PRESETS.map((preset) => (
-                      <OpenButton
-                        key={preset.id}
-                        size="sm"
-                        disabled={!isHost}
-                        variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
-                        onClick={() => handleSetPreset(preset.id)}
-                      >
-                        {preset.label}
-                      </OpenButton>
-                    ))}
-                  </SettingRow>
-                  <p className="font-arcade text-[10px] text-[#94A3B8] uppercase pt-0.5 sm:text-right">
-                    {SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
-                  </p>
-                </div>
+              {!customWordsEnabled && (
+                <SettingRow
+                  label="KATEGORIEN"
+                  description={SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
+                  icon={<Layers className="h-4 w-4" />}
+                >
+                  {SLF_PRESETS.map((preset) => (
+                    <OpenButton
+                      key={preset.id}
+                      size="sm"
+                      disabled={!isHost}
+                      variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
+                      onClick={() => handleSetPreset(preset.id)}
+                    >
+                      {preset.label}
+                    </OpenButton>
+                  ))}
+                </SettingRow>
               )}
             </>
           ) : isRoulette ? (
             <>
-              <SettingRow label="RUNDEN">
+              <SettingRow
+                label="RUNDEN"
+                description={`${rounds} Drehungen`}
+                icon={<Repeat className="h-4 w-4" />}
+              >
                 {ROULETTE_ROUND_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -374,7 +456,11 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="SETZZEIT">
+              <SettingRow
+                label="SETZZEIT"
+                description={`${roundDuration} Sekunden pro Runde`}
+                icon={<Timer className="h-4 w-4" />}
+              >
                 {CASINO_DURATION_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -388,13 +474,17 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="STARTGUTHABEN">
+              <SettingRow
+                label="STARTGUTHABEN"
+                description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
+                icon={<Coins className="h-4 w-4" />}
+              >
                 {CASINO_BALANCE_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
                     size="sm"
                     disabled={!isHost}
-                    variant={startingBalance === opt ? 'primary' : 'secondary'}
+                    variant={startingBalance === opt ? 'amber' : 'secondary'}
                     onClick={() => handleSetStartingBalance(opt)}
                   >
                     {opt.toLocaleString('de-DE')} €
@@ -404,7 +494,11 @@ export function LobbyGameSettings({
             </>
           ) : isPoker ? (
             <>
-              <SettingRow label="MAX HÄNDE">
+              <SettingRow
+                label="MAX HÄNDE"
+                description={`${rounds} Hände pro Tisch`}
+                icon={<Repeat className="h-4 w-4" />}
+              >
                 {POKER_HAND_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -418,7 +512,11 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="ZUGZEIT">
+              <SettingRow
+                label="ZUGZEIT"
+                description={`${roundDuration} Sekunden pro Zug`}
+                icon={<Timer className="h-4 w-4" />}
+              >
                 {CASINO_DURATION_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -432,7 +530,11 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="BLINDS">
+              <SettingRow
+                label="BLINDS"
+                description={`Small / Big Blind: ${smallBlind}/${smallBlind * 2} €`}
+                icon={<Layers className="h-4 w-4" />}
+              >
                 {POKER_BLIND_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
@@ -446,13 +548,17 @@ export function LobbyGameSettings({
                 ))}
               </SettingRow>
 
-              <SettingRow label="STARTGUTHABEN">
+              <SettingRow
+                label="STARTGUTHABEN"
+                description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
+                icon={<Coins className="h-4 w-4" />}
+              >
                 {CASINO_BALANCE_OPTIONS.map((opt) => (
                   <OpenButton
                     key={opt}
                     size="sm"
                     disabled={!isHost}
-                    variant={startingBalance === opt ? 'primary' : 'secondary'}
+                    variant={startingBalance === opt ? 'amber' : 'secondary'}
                     onClick={() => handleSetStartingBalance(opt)}
                   >
                     {opt.toLocaleString('de-DE')} €
@@ -461,7 +567,11 @@ export function LobbyGameSettings({
               </SettingRow>
             </>
           ) : (
-            <SettingRow label="MODUS / RUNDEN">
+            <SettingRow
+              label="MODUS / RUNDEN"
+              description={`${rounds} Runde(n)`}
+              icon={<Repeat className="h-4 w-4" />}
+            >
               {[
                 { val: 1, label: '1 RUNDE' },
                 { val: 3, label: 'BEST OF 3' },
@@ -471,7 +581,7 @@ export function LobbyGameSettings({
                   key={val}
                   size="sm"
                   disabled={!isHost}
-                  variant={rounds === val ? 'primary' : 'secondary'}
+                  variant={rounds === val ? 'amber' : 'secondary'}
                   onClick={() => handleSetRounds(val)}
                 >
                   {label}
@@ -541,11 +651,11 @@ export function LobbyOptionsModal({
           )}
         </div>
 
-        <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-5 px-2 sm:px-6 py-4">
+        <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-4 sm:gap-6 px-2 sm:px-6 py-4">
           <div className="flex flex-col items-center gap-1.5 text-center">
             <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
               <h2 className="font-arcade text-xl sm:text-3xl tracking-wider text-white uppercase">
-                SPIEL<span className="text-[#FBBF24]">OPTIONEN</span>
+                SPIELOPTIONEN
               </h2>
             </div>
             {gameTitle && (
@@ -566,7 +676,7 @@ export function LobbyOptionsModal({
 
           <div className="pt-2 w-full sm:w-56">
             <OpenButton fullWidth size="md" variant="primary" onClick={onClose}>
-              FERTIG
+              SPEICHERN
             </OpenButton>
           </div>
         </div>
