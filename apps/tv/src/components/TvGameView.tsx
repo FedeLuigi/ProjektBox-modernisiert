@@ -193,9 +193,9 @@ export function TvGameView({
 
         {/* 2. TV-BÜHNE */}
         {isDrawAndGuess ? (
-          <main className="flex flex-1 min-h-0 flex-col lg:flex-row items-stretch lg:items-center justify-center gap-6 lg:gap-10 py-4 w-full max-w-6xl mx-auto">
+          <main className="flex flex-1 min-h-0 flex-col lg:flex-row items-stretch lg:items-center justify-center gap-8 lg:gap-16 xl:gap-20 py-4 w-full max-w-6xl mx-auto">
             <div className="w-full lg:w-64 shrink-0">
-              <div className="mb-4 inline-block pb-0.5">
+              <div className="mb-5 text-center">
                 <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
                   SPIELER
                 </span>
