@@ -128,7 +128,6 @@ export function TvGameView({
 
             {isStadtLandFluss && !isGameOver && (
               <span className="font-arcade hidden lg:inline text-xs tracking-wider text-[#67E8F9] uppercase truncate">
-                RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3} •{' '}
                 {gameState?.letter ? `BUCHSTABE ${gameState.letter}` : 'KATEGORIENWAHL'}
               </span>
             )}
@@ -155,7 +154,7 @@ export function TvGameView({
           </div>
 
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-end gap-2.5">
-            {(isStadtLandFluss || isMoneyGame) &&
+            {isMoneyGame &&
               !isGameOver &&
               !isRoundOver &&
               (!isRoulette || gameState?.phase === 'betting') && (
