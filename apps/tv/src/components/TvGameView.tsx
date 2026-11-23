@@ -340,11 +340,21 @@ export function TvGameView({
               )}
 
               <div className="flex w-full flex-col sm:flex-row gap-3">
+                <OpenButton
+                  fullWidth
+                  size="lg"
+                  variant="rose"
+                  data-tv-autofocus={!lobby.isSimulated ? 'true' : undefined}
+                  onClick={onLeave}
+                >
+                  ZURÜCK ZUM MENÜ
+                </OpenButton>
                 {lobby.isSimulated && (
                   <OpenButton
                     fullWidth
                     size="lg"
-                    variant="amber"
+                    variant="primary"
+                    data-tv-autofocus="true"
                     disabled={rematchRequested}
                     onClick={() => void handleSimulatedRematch()}
                   >
@@ -352,15 +362,6 @@ export function TvGameView({
                     <span>NOCHMAL</span>
                   </OpenButton>
                 )}
-                <OpenButton
-                  fullWidth
-                  size="lg"
-                  variant="primary"
-                  data-tv-autofocus="true"
-                  onClick={onLeave}
-                >
-                  ZURÜCK ZUM MENÜ
-                </OpenButton>
               </div>
             </div>
           </div>

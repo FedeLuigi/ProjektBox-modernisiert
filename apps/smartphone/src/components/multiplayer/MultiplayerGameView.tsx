@@ -318,24 +318,25 @@ export function MultiplayerGameView({
                 </div>
               </div>
 
-              <div className="flex w-full max-w-sm flex-col sm:flex-row items-center gap-3">
+              <div className="flex w-full max-w-sm flex-col-reverse sm:flex-row items-center gap-3">
+                <OpenButton
+                  size="lg"
+                  variant="rose"
+                  onClick={onLeave}
+                  className="w-full sm:flex-1"
+                >
+                  ZURÜCK ZUM MENÜ
+                </OpenButton>
                 <OpenButton
                   fullWidth
                   size="lg"
                   variant="primary"
                   disabled={hasVotedRematch || isConnectionBlocked}
                   onClick={handleRematch}
+                  className="sm:flex-1"
                 >
                   <RotateCcw className="h-4 w-4" />
                   <span>{hasVotedRematch ? 'WARTE...' : 'REVANCHE'}</span>
-                </OpenButton>
-                <OpenButton
-                  size="lg"
-                  variant="secondary"
-                  onClick={onLeave}
-                  className="w-full sm:w-auto sm:min-w-[130px]"
-                >
-                  ZURÜCK
                 </OpenButton>
               </div>
             </div>
