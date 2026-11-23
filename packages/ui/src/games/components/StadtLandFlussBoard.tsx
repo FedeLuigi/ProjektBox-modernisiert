@@ -599,34 +599,29 @@ export function StadtLandFlussBoard({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
             {activePlayers.map((p) => {
               const isChooser = p.id === gameState.categoryChooserId;
               const totalScore = gameState.scores?.[p.id] || 0;
               return (
                 <div
                   key={p.id}
-                  className={`flex items-center justify-between gap-3 rounded-2xl border p-4 ${
-                    isChooser
-                      ? 'border-[#F59E0B]/70 bg-[#F59E0B]/15'
-                      : 'border-white/15 bg-transparent'
-                  }`}
+                  className="flex flex-col items-center gap-2 text-center min-w-0"
                 >
-                  <div className="flex items-center gap-2.5 min-w-0">
-                    <Avatar config={p.avatar} size={36} />
-                    <div className="min-w-0">
-                      <span className="font-arcade block text-sm text-white uppercase truncate">
-                        {p.name}
-                      </span>
-                      {isChooser && (
-                        <span className="font-arcade text-[10px] text-[#FDE68A] uppercase">
-                          WÄHLT KATEGORIEN...
-                        </span>
-                      )}
-                    </div>
+                  <div
+                    className={`relative rounded-full transition-all ${
+                      isChooser
+                        ? 'ring-[3px] ring-[#F59E0B] shadow-[0_0_16px_rgba(245,158,11,0.4)]'
+                        : 'ring-2 ring-white/15 opacity-70'
+                    }`}
+                  >
+                    <Avatar config={p.avatar} size={60} />
                   </div>
-                  <span className="font-arcade text-xs text-[#FDE68A] shrink-0">
-                    {totalScore} PKT
+                  <span className="font-arcade w-full truncate text-sm text-white uppercase">
+                    {p.name}
+                  </span>
+                  <span className="font-arcade text-xs text-[#FDE68A]">
+                    {isChooser ? 'WÄHLT...' : `${totalScore} PKT`}
                   </span>
                 </div>
               );
@@ -679,8 +674,8 @@ export function StadtLandFlussBoard({
             </div>
           </div>
 
-          {/* Live-Fortschritt aller Spieler ohne Wörter zu spoilern */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Live-Fortschritt aller Spieler ohne Kartenboxen */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6">
             {activePlayers.map((p) => {
               const filled = gameState.filledCounts?.[p.id] || 0;
               const isDone = gameState.submittedPlayerIds?.includes(p.id);
@@ -688,26 +683,30 @@ export function StadtLandFlussBoard({
               return (
                 <div
                   key={p.id}
-                  className={`flex flex-col gap-3 rounded-2xl border p-4 transition-all ${
-                    isDone
-                      ? 'border-[#34D399]/60 bg-[#10B981]/15'
-                      : 'border-white/15 bg-transparent'
-                  }`}
+                  className="flex flex-col items-center gap-2 text-center min-w-0"
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <Avatar config={p.avatar} size={36} />
-                      <span className="font-arcade text-sm text-white uppercase truncate">
-                        {p.name}
-                      </span>
-                    </div>
-                    <span className="font-arcade text-xs text-[#FDE68A] shrink-0">
-                      {totalScore} PKT
-                    </span>
-                  </div>
-
                   <div
-                    className="grid gap-1.5"
+                    className={`relative rounded-full transition-all ${
+                      isDone
+                        ? 'ring-[3px] ring-[#34D399] shadow-[0_0_16px_rgba(52,211,153,0.4)]'
+                        : 'ring-2 ring-white/15 opacity-80'
+                    }`}
+                  >
+                    <Avatar config={p.avatar} size={58} />
+                    {isDone && (
+                      <span className="absolute -bottom-0.5 -right-0.5 flex h-5 w-5 items-center justify-center rounded-full bg-[#10B981] text-white ring-2 ring-[#1B2B40]">
+                        <Check className="h-3 w-3 stroke-[3]" />
+                      </span>
+                    )}
+                  </div>
+                  <span className="font-arcade w-full truncate text-xs sm:text-sm text-white uppercase">
+                    {p.name}
+                  </span>
+                  <span className="font-arcade text-[11px] text-[#FDE68A]">
+                    {totalScore} PKT
+                  </span>
+                  <div
+                    className="grid w-full max-w-[120px] gap-1"
                     style={{
                       gridTemplateColumns: `repeat(${Math.max(1, categories.length)}, minmax(0, 1fr))`,
                     }}
@@ -715,24 +714,16 @@ export function StadtLandFlussBoard({
                     {categories.map((cat, idx) => (
                       <div
                         key={cat}
-                        className={`h-2.5 rounded-full transition-all ${
+                        className={`h-1.5 rounded-full transition-all ${
                           idx < filled
                             ? isDone
-                              ? 'bg-[#34D399] shadow-[0_0_8px_#34D399]'
-                              : 'bg-[#22D3EE] shadow-[0_0_8px_#22D3EE]'
+                              ? 'bg-[#34D399]'
+                              : 'bg-[#22D3EE]'
                             : 'bg-white/15'
                         }`}
                       />
                     ))}
                   </div>
-
-                  <span
-                    className={`font-arcade text-[10px] uppercase ${
-                      isDone ? 'text-[#6EE7B7]' : 'text-[#94A3B8]'
-                    }`}
-                  >
-                    {isDone ? 'FERTIG ABGEGEBEN ✓' : `${filled} / ${categories.length} AUSGEFÜLLT`}
-                  </span>
                 </div>
               );
             })}
@@ -839,27 +830,35 @@ export function StadtLandFlussBoard({
           </h2>
         </div>
 
-        <div className="flex w-full flex-col gap-2">
+        <div className="grid w-full grid-cols-2 sm:grid-cols-4 gap-x-6 gap-y-6 py-2">
           {rankedPlayers.map((p, idx) => {
             const gained = gameState.roundScores?.[p.id] || 0;
             const total = gameState.scores?.[p.id] || 0;
             return (
               <div
                 key={p.id}
-                className="flex items-center justify-between rounded-2xl border border-white/15 bg-white/[0.04] px-4 py-3"
+                className="flex flex-col items-center gap-2 text-center min-w-0"
               >
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-arcade text-sm text-[#FBBF24] w-6">#{idx + 1}</span>
-                  <Avatar config={p.avatar} size={34} />
-                  <span className="font-arcade text-sm text-white uppercase truncate">{p.name}</span>
+                <div
+                  className={`relative rounded-full ${
+                    idx === 0
+                      ? 'ring-[3px] ring-[#FBBF24] shadow-[0_0_14px_rgba(251,191,36,0.4)]'
+                      : 'ring-2 ring-white/20'
+                  }`}
+                >
+                  <Avatar config={p.avatar} size={58} />
+                  <span className="absolute -top-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#F59E0B] font-arcade text-[10px] text-[#0F172A] ring-2 ring-[#1B2B40]">
+                    #{idx + 1}
+                  </span>
                 </div>
-                <div className="flex items-center gap-3 shrink-0">
+                <span className="font-arcade w-full truncate text-xs sm:text-sm text-white uppercase">
+                  {p.name}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-arcade text-sm text-[#FDE68A]">{total} PKT</span>
                   {gained > 0 && (
-                    <span className="rounded-lg border border-[#34D399]/50 bg-[#10B981]/20 px-2 py-0.5 font-arcade text-xs text-[#6EE7B7]">
-                      +{gained}
-                    </span>
+                    <span className="font-arcade text-xs text-[#34D399]">+{gained}</span>
                   )}
-                  <span className="font-arcade text-base text-[#FDE68A]">{total} PKT</span>
                 </div>
               </div>
             );
@@ -1168,7 +1167,7 @@ export function StadtLandFlussBoard({
           </h2>
         </div>
 
-        <div className="flex w-full flex-col gap-2">
+        <div className="grid w-full grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-5 py-2">
           {rankedPlayers.map((p, idx) => {
             const gained = gameState.roundScores?.[p.id] || 0;
             const total = gameState.scores?.[p.id] || 0;
@@ -1176,28 +1175,30 @@ export function StadtLandFlussBoard({
             return (
               <div
                 key={p.id}
-                className={`flex items-center justify-between rounded-2xl border px-4 py-2.5 ${
-                  isMe
-                    ? 'border-[#22D3EE]/55 bg-[#164E63]/35'
-                    : 'border-white/15 bg-white/[0.04]'
-                }`}
+                className="flex flex-col items-center gap-2 text-center min-w-0"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <span className="font-arcade text-xs text-[#FBBF24] w-5">#{idx + 1}</span>
-                  <Avatar config={p.avatar} size={30} />
-                  <span className="font-arcade text-xs sm:text-sm text-white uppercase truncate">
-                    {p.name} {isMe ? '(DU)' : ''}
+                <div
+                  className={`relative rounded-full ${
+                    isMe
+                      ? 'ring-[3px] ring-[#22D3EE]'
+                      : 'ring-2 ring-white/20'
+                  }`}
+                >
+                  <Avatar config={p.avatar} size={52} />
+                  <span className="absolute -top-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#F59E0B] font-arcade text-[10px] text-[#0F172A] ring-2 ring-[#1B2B40]">
+                    #{idx + 1}
                   </span>
                 </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {gained > 0 && (
-                    <span className="rounded-lg border border-[#34D399]/50 bg-[#10B981]/20 px-2 py-0.5 font-arcade text-[11px] text-[#6EE7B7]">
-                      +{gained}
-                    </span>
-                  )}
-                  <span className="font-arcade text-sm sm:text-base text-[#FDE68A]">
+                <span className="font-arcade w-full truncate text-xs text-white uppercase">
+                  {p.name} {isMe ? '(DU)' : ''}
+                </span>
+                <div className="flex items-center gap-1.5">
+                  <span className="font-arcade text-xs sm:text-sm text-[#FDE68A]">
                     {total} PKT
                   </span>
+                  {gained > 0 && (
+                    <span className="font-arcade text-[11px] text-[#34D399]">+{gained}</span>
+                  )}
                 </div>
               </div>
             );

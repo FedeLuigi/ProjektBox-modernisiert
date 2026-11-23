@@ -195,29 +195,35 @@ export function TvGameView({
         {isDrawAndGuess ? (
           <main className="flex flex-1 min-h-0 flex-col lg:flex-row items-stretch lg:items-center justify-center gap-6 lg:gap-10 py-4 w-full max-w-6xl mx-auto">
             <div className="w-full lg:w-64 shrink-0">
-              <div className="mb-3 border-b-2 border-[#F59E0B] inline-block pb-0.5">
-                <span className="font-arcade text-sm tracking-wider text-white uppercase">
+              <div className="mb-4 inline-block pb-0.5">
+                <span className="font-arcade text-sm tracking-wider text-[#CBD5E1] uppercase">
                   SPIELER
                 </span>
               </div>
-              <div className="flex flex-col gap-2.5 max-h-[55vh] overflow-y-auto no-scrollbar">
+              <div className="grid grid-cols-4 lg:grid-cols-2 gap-x-4 gap-y-5 max-h-[55vh] overflow-y-auto no-scrollbar py-1">
                 {activePlayers.map((p, idx) => {
                   const isCurrentDrawer = p.id === gameState?.currentDrawerId;
                   const score = gameState?.scores?.[p.id] || 0;
                   return (
                     <div
                       key={p.id || idx}
-                      className={`w-full flex items-center justify-between rounded-xl border p-3 ${
-                        isCurrentDrawer
-                          ? 'bg-[#DB2777]/25 border-[#F472B6]/60 text-white'
-                          : 'bg-white/[0.04] border-white/12 text-white/90'
-                      }`}
+                      className="flex flex-col items-center gap-2 text-center min-w-0"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <Avatar config={p.avatar} size={36} />
-                        <span className="font-arcade text-sm uppercase truncate">{p.name}</span>
+                      <div
+                        className={`relative rounded-full transition-all ${
+                          isCurrentDrawer
+                            ? 'ring-[3px] ring-[#F472B6] shadow-[0_0_14px_rgba(244,114,182,0.45)]'
+                            : 'ring-2 ring-white/15 opacity-85'
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={56} />
                       </div>
-                      <span className="font-arcade text-sm text-[#FDE68A] uppercase">{score}</span>
+                      <span className="font-arcade w-full truncate text-xs text-white uppercase">
+                        {p.name}
+                      </span>
+                      <span className="font-arcade text-[11px] text-[#FDE68A] uppercase">
+                        {score} PKT
+                      </span>
                     </div>
                   );
                 })}
@@ -291,7 +297,7 @@ export function TvGameView({
                 </span>
               </div>
 
-              <div className="flex w-full flex-col gap-2.5 max-h-[45vh] overflow-y-auto">
+              <div className="grid w-full grid-cols-2 sm:grid-cols-4 gap-x-5 gap-y-6 max-h-[45vh] overflow-y-auto py-2">
                 {[...activePlayers]
                   .sort(
                     (a, b) =>
@@ -301,19 +307,27 @@ export function TvGameView({
                   .map((p, idx) => (
                     <div
                       key={p.id}
-                      className="flex items-center justify-between rounded-xl border border-white/15 bg-white/[0.06] px-4 py-3"
+                      className="flex flex-col items-center gap-2 text-center min-w-0"
                     >
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <span className="font-arcade text-sm text-[#FBBF24]">#{idx + 1}</span>
-                        <Avatar config={p.avatar} size={28} />
-                        <span className="font-arcade text-sm text-white uppercase truncate">
-                          {p.name}
+                      <div
+                        className={`relative rounded-full ${
+                          idx === 0
+                            ? 'ring-[3px] ring-[#FBBF24] shadow-[0_0_14px_rgba(251,191,36,0.4)]'
+                            : 'ring-2 ring-white/20'
+                        }`}
+                      >
+                        <Avatar config={p.avatar} size={58} />
+                        <span className="absolute -top-1 -left-1 flex h-6 w-6 items-center justify-center rounded-full bg-[#F59E0B] font-arcade text-[10px] text-[#0F172A] ring-2 ring-[#0F172A]">
+                          #{idx + 1}
                         </span>
                       </div>
-                      <span className="font-arcade text-lg text-[#FDE68A]">
+                      <span className="font-arcade w-full truncate text-xs sm:text-sm text-white uppercase">
+                        {p.name}
+                      </span>
+                      <span className="font-arcade text-sm text-[#FDE68A]">
                         {isMoneyGame
                           ? `${Math.round(gameState?.scores?.[p.id] ?? 0).toLocaleString('de-DE')} €`
-                          : String(gameState?.scores?.[p.id] ?? 0)}
+                          : `${String(gameState?.scores?.[p.id] ?? 0)} PKT`}
                       </span>
                     </div>
                   ))}

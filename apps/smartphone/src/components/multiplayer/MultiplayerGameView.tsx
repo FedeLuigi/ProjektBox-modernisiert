@@ -256,7 +256,7 @@ export function MultiplayerGameView({
               </div>
 
               {(isStadtLandFluss || isMoneyGame) && (
-                <div className="flex w-full flex-col gap-1.5 sm:gap-2 max-h-[30vh] sm:max-h-[38vh] overflow-y-auto">
+                <div className="grid w-full grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-5 max-h-[30vh] sm:max-h-[38vh] overflow-y-auto py-2">
                   {[...activePlayers]
                     .sort(
                       (a, b) =>
@@ -265,22 +265,26 @@ export function MultiplayerGameView({
                     .map((p, idx) => (
                       <div
                         key={p.id}
-                        className={`flex items-center justify-between rounded-xl border px-3.5 py-2 ${
-                          p.id === currentUser.id
-                            ? isMoneyGame
-                              ? 'border-[#34D399]/55 bg-[#064E3B]/45'
-                              : 'border-[#22D3EE]/55 bg-[#164E63]/35'
-                            : 'border-white/15 bg-white/[0.04]'
-                        }`}
+                        className="flex flex-col items-center gap-2 text-center min-w-0"
                       >
-                        <div className="flex items-center gap-2 min-w-0">
-                          <span className="font-arcade text-xs text-[#FBBF24]">#{idx + 1}</span>
-                          <Avatar config={p.avatar} size={24} />
-                          <span className="font-arcade text-xs text-white uppercase truncate">
-                            {p.name}
+                        <div
+                          className={`relative rounded-full ${
+                            p.id === currentUser.id
+                              ? isMoneyGame
+                                ? 'ring-[3px] ring-[#34D399]'
+                                : 'ring-[3px] ring-[#22D3EE]'
+                              : 'ring-2 ring-white/20'
+                          }`}
+                        >
+                          <Avatar config={p.avatar} size={50} />
+                          <span className="absolute -top-1 -left-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#F59E0B] font-arcade text-[10px] text-[#0F172A] ring-2 ring-[#1B2B40]">
+                            #{idx + 1}
                           </span>
                         </div>
-                        <span className="font-arcade text-sm text-[#FDE68A]">
+                        <span className="font-arcade w-full truncate text-xs text-white uppercase">
+                          {p.name}
+                        </span>
+                        <span className="font-arcade text-xs sm:text-sm text-[#FDE68A]">
                           {isMoneyGame
                             ? `${Math.round(gameState?.scores?.[p.id] ?? 0).toLocaleString('de-DE')} €`
                             : `${String(gameState?.scores?.[p.id] ?? 0)} PKT`}
