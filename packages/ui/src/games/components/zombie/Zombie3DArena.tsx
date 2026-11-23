@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
+import { BloomEffect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
 import { AlertTriangle, Biohazard, Crosshair, Heart, ShieldAlert, Skull, Zap } from 'lucide-react';
 import type {
   ZombieDifficulty,
@@ -22,6 +23,14 @@ import {
   type ZombieAssetPack,
 } from './zombieModels';
 import { buildZombieStreetMap, ZOMBIE_ALLEY_SPAWNS } from './zombieMapBuilder';
+import {
+  playDashSound,
+  playExplosionSound,
+  playReviveSound,
+  playWaveStartSound,
+  playWeaponShotSound,
+  playZombieHitSound,
+} from './zombieAudio';
 
 interface Zombie3DArenaProps {
   players: Player[];
@@ -75,9 +84,21 @@ interface PlayerEntity {
   kills: number;
   score: number;
   alive: boolean;
+  downed: boolean;
+  downedUntil: number;
+  reviveProgress: number;
+  reviveRing: THREE.Mesh;
   skillPoints: number;
   skills: ZombiePlayerSkills;
   overdriveUntil: number;
+}
+
+interface ExplosiveBarrelEntity {
+  id: number;
+  mesh: THREE.Object3D;
+  x: number;
+  z: number;
+  alive: boolean;
 }
 
 interface ZombieEntity {
@@ -273,6 +294,19 @@ export function Zombie3DArena({
     container.innerHTML = '';
     container.appendChild(renderer.domElement);
 
+    const composer = new EffectComposer(renderer);
+    composer.addPass(new RenderPass(scene, camera));
+    composer.addPass(
+      new EffectPass(
+        camera,
+        new BloomEffect({
+          mipmapBlur: true,
+          luminanceThreshold: 0.75,
+          intensity: 0.62,
+        })
+      )
+    );
+
     // Lighting
     const hemiLight = new THREE.HemisphereLight(0x64748b, 0x090d16, 0.72);
     scene.add(hemiLight);
@@ -432,7 +466,20 @@ export function Zombie3DArena({
       muzzleFlash.position.set(0.38, 1.12, 1.1);
       muzzleFlash.visible = false;
 
-      group.add(modelHolder, ring, weaponGroup, muzzleFlash);
+      const reviveRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.85, 1.15, 28),
+        new THREE.MeshBasicMaterial({
+          color: 0xef4444,
+          side: THREE.DoubleSide,
+          transparent: true,
+          opacity: 0.85,
+        })
+      );
+      reviveRing.rotation.x = -Math.PI / 2;
+      reviveRing.position.y = 0.06;
+      reviveRing.visible = false;
+
+      group.add(modelHolder, ring, reviveRing, weaponGroup, muzzleFlash);
       scene.add(group);
 
       const starterWeapon = getWeaponForLevel(1);
@@ -468,6 +515,10 @@ export function Zombie3DArena({
         kills: 0,
         score: 0,
         alive: true,
+        downed: false,
+        downedUntil: 0,
+        reviveProgress: 0,
+        reviveRing,
         skillPoints: 0,
         skills: { hp: 0, damage: 0, speed: 0, ammo: 0 },
         overdriveUntil: 0,
@@ -582,6 +633,83 @@ export function Zombie3DArena({
     const acidProjectiles: AcidProjectile[] = [];
     const particles: ParticleEntity[] = [];
     const pickups: PickupEntity[] = [];
+    const explosiveBarrels: ExplosiveBarrelEntity[] = [];
+    const BARREL_SPAWN_COORDS: Array<[number, number]> = [
+      [-6.5, -6.5],
+      [6.5, -6.5],
+      [-6.5, 6.5],
+      [6.5, 6.5],
+    ];
+
+    const respawnExplosiveBarrels = () => {
+      if (explosiveBarrels.length === 0) {
+        BARREL_SPAWN_COORDS.forEach(([bx, bz], idx) => {
+          let mesh: THREE.Object3D;
+          if (loadedAssets?.barrel) {
+            mesh = loadedAssets.barrel.clone();
+            mesh.scale.setScalar(1.35);
+            mesh.traverse((o) => {
+              if ((o as THREE.Mesh).isMesh) {
+                const m = o as THREE.Mesh;
+                const mat = (m.material as THREE.MeshStandardMaterial).clone();
+                mat.color.lerp(new THREE.Color(0xef4444), 0.45);
+                mat.emissive.setHex(0x7f1d1d);
+                mat.emissiveIntensity = 0.35;
+                m.material = mat;
+              }
+            });
+          } else {
+            mesh = new THREE.Mesh(
+              new THREE.CylinderGeometry(0.45, 0.45, 1.1, 12),
+              new THREE.MeshStandardMaterial({ color: 0xdc2626, emissive: 0x7f1d1d, emissiveIntensity: 0.4 })
+            );
+            mesh.position.y = 0.55;
+          }
+          mesh.position.set(bx, 0, bz);
+          scene.add(mesh);
+          explosiveBarrels.push({ id: idx + 1, mesh, x: bx, z: bz, alive: true });
+        });
+      } else {
+        for (const b of explosiveBarrels) {
+          if (!b.alive) {
+            b.alive = true;
+            b.mesh.visible = true;
+          }
+        }
+      }
+    };
+
+    const applyPlayerDamage = (
+      p: PlayerEntity,
+      dmg: number,
+      now: number,
+      reason: string
+    ) => {
+      if (!p.alive || p.downed || now < p.invulnUntil) return;
+      p.hp = Math.max(0, p.hp - dmg);
+      p.invulnUntil = now + 260;
+      if (p.hp <= 0) {
+        const otherStanding = Array.from(playerEntities.values()).some(
+          (other) => other.id !== p.id && other.alive && !other.downed
+        );
+        if (otherStanding) {
+          p.downed = true;
+          p.downedUntil = now + 12000;
+          p.reviveProgress = 0;
+          p.hp = 1;
+          p.reviveRing.visible = true;
+          (p.reviveRing.material as THREE.MeshBasicMaterial).color.setHex(0xef4444);
+          showBanner(`${p.name.toUpperCase()} AM BODEN • RETTEN!`);
+        } else {
+          p.alive = false;
+          p.downed = false;
+          p.reviveRing.visible = false;
+          p.mesh.visible = false;
+          spawnParticles(p.x, 1.0, p.z, 0xf43f5e, 14);
+          showBanner(`${p.name.toUpperCase()} • ${reason}`);
+        }
+      }
+    };
 
     let nextEntityId = 1;
     let wave = 1;
@@ -601,6 +729,8 @@ export function Zombie3DArena({
       waveStartedAt = now;
       zombiesToSpawn = Math.round((5 + w * 3) * diffMult);
       nextSpawnAt = now + 450;
+      respawnExplosiveBarrels();
+      playWaveStartSound();
       showBanner(`WELLE ${w} STARTET!`);
     };
 
@@ -979,18 +1109,12 @@ export function Zombie3DArena({
         }
         if (z.kind === 'exploder') {
           screenShake = Math.max(screenShake, 0.38);
+          playExplosionSound();
           spawnShockwave(z.x, z.z, 7.0, 0xf97316);
           spawnParticles(z.x, 0.9, z.z, 0xf97316, 18, true);
           for (const lp of playerEntities.values()) {
-            if (!lp.alive || now < lp.invulnUntil) continue;
             if (Math.hypot(lp.x - z.x, lp.z - z.z) <= 3.6) {
-              lp.hp = Math.max(0, lp.hp - 26);
-              lp.invulnUntil = now + 350;
-              if (lp.hp <= 0) {
-                lp.alive = false;
-                lp.mesh.visible = false;
-                showBanner(`${lp.name.toUpperCase()} • EXPLOSION!`);
-              }
+              applyPlayerDamage(lp, 26, now, 'EXPLOSION!');
             }
           }
         }
@@ -1038,12 +1162,50 @@ export function Zombie3DArena({
           }
         }
 
-        // Update Players
+        // Update Players & Co-op Revive
         const livingPlayers: PlayerEntity[] = [];
         const firstHuman = Array.from(playerEntities.values()).find((p) => !p.isBot);
 
         for (const p of playerEntities.values()) {
           if (!p.alive) continue;
+          if (p.downed) {
+            const standingTeammates = Array.from(playerEntities.values()).filter(
+              (other) => other.id !== p.id && other.alive && !other.downed
+            );
+            if (standingTeammates.length === 0 || now >= p.downedUntil) {
+              p.alive = false;
+              p.downed = false;
+              p.reviveRing.visible = false;
+              p.mesh.visible = false;
+              spawnParticles(p.x, 1.0, p.z, 0xf43f5e, 14);
+              showBanner(`${p.name.toUpperCase()} • K.I.A.!`);
+              continue;
+            }
+            const savior = standingTeammates.find(
+              (other) => Math.hypot(other.x - p.x, other.z - p.z) <= 2.2
+            );
+            const ringMat = p.reviveRing.material as THREE.MeshBasicMaterial;
+            if (savior) {
+              p.reviveProgress += dt / 2.0;
+              ringMat.color.setHex(0x22c55e);
+              p.reviveRing.scale.setScalar(1.0 + Math.sin(now * 0.015) * 0.12);
+              if (p.reviveProgress >= 1) {
+                p.downed = false;
+                p.reviveProgress = 0;
+                p.reviveRing.visible = false;
+                p.hp = Math.max(25, Math.round(p.maxHp * 0.45));
+                p.invulnUntil = now + 1500;
+                playReviveSound();
+                spawnParticles(p.x, 1.0, p.z, 0x22c55e, 14, true);
+                showBanner(`${savior.name.toUpperCase()} HAT ${p.name.toUpperCase()} WIEDERBELEBT!`);
+              }
+            } else {
+              p.reviveProgress = Math.max(0, p.reviveProgress - dt * 0.35);
+              ringMat.color.setHex(0xef4444);
+              p.reviveRing.scale.setScalar(1.0 + Math.sin(now * 0.012) * 0.15);
+            }
+            continue;
+          }
           livingPlayers.push(p);
 
           // Finish reload
@@ -1173,6 +1335,7 @@ export function Zombie3DArena({
             p.dashUntil = now + 180;
             p.dashReadyAt = now + Math.round(2600 * dashCooldownMult);
             p.invulnUntil = Math.max(p.invulnUntil, now + 240);
+            playDashSound();
             spawnParticles(p.x, 0.4, p.z, 0x38bdf8, 6);
           }
 
@@ -1265,7 +1428,8 @@ export function Zombie3DArena({
               const baseAngle = Math.atan2(p.aimX, p.aimZ);
               const projColor = new THREE.Color(weapon.color).getHex();
 
-              // Recoil kick + soft muzzle flash + dynamic point light
+              // Recoil kick + soft muzzle flash + dynamic point light + weapon audio
+              playWeaponShotSound(weapon.id);
               p.weaponGroup.position.z = 0.05;
               p.weaponGroup.rotation.x = -0.18;
               flashLight.color.setHex(projColor);
@@ -1453,6 +1617,29 @@ export function Zombie3DArena({
           }
 
           if (!removeProj) {
+            for (const b of explosiveBarrels) {
+              if (!b.alive) continue;
+              if (Math.hypot(pr.x - b.x, pr.z - b.z) <= 0.75 + pr.radius) {
+                removeProj = true;
+                b.alive = false;
+                b.mesh.visible = false;
+                screenShake = Math.max(screenShake, 0.55);
+                playExplosionSound();
+                spawnShockwave(b.x, b.z, 9.6, 0xf97316);
+                spawnParticles(b.x, 0.9, b.z, 0xf97316, 22, true);
+                for (let k = zombies.length - 1; k >= 0; k--) {
+                  const target = zombies[k];
+                  if (Math.hypot(b.x - target.x, b.z - target.z) <= 4.8) {
+                    const killed = damageZombie(target, 145, pr.ownerId, now);
+                    if (killed) zombies.splice(k, 1);
+                  }
+                }
+                break;
+              }
+            }
+          }
+
+          if (!removeProj) {
             for (let zi = zombies.length - 1; zi >= 0; zi--) {
               const z = zombies[zi];
               if (pr.hitIds.has(z.id)) continue;
@@ -1466,8 +1653,9 @@ export function Zombie3DArena({
                 if (pr.splashRadius > 0) {
                   // Rocket AoE Explosion + Shockwave!
                   screenShake = Math.max(screenShake, 0.45);
+                  playExplosionSound();
                   spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
-                  spawnParticles(pr.x, 0.9, pr.z, 0xf97316, 18, true);
+                  spawnParticles(pr.x, 0.9, z.z, 0xf97316, 18, true);
                   for (let k = zombies.length - 1; k >= 0; k--) {
                     const target = zombies[k];
                     const splashDist = Math.hypot(pr.x - target.x, pr.z - target.z);
@@ -1480,6 +1668,7 @@ export function Zombie3DArena({
                   break;
                 } else {
                   // Directional impact blood splatter + additive sparks + physical knockback!
+                  playZombieHitSound();
                   screenShake = Math.max(screenShake, 0.08);
                   spawnDirectionalImpact(pr.x, 1.05, pr.z, dirX, dirZ, 0xb91c1c, 7, false);
                   spawnDirectionalImpact(pr.x, 1.05, pr.z, -dirX, -dirZ, 0xfef08a, 3, true);
@@ -1611,13 +1800,7 @@ export function Zombie3DArena({
               spawnShockwave(z.x, z.z, 6.5, 0x9333ea);
               for (const lp of livingPlayers) {
                 if (Math.hypot(lp.x - z.x, lp.z - z.z) <= 3.8 && now >= lp.invulnUntil) {
-                  lp.hp = Math.max(0, lp.hp - 16);
-                  lp.invulnUntil = now + 350;
-                  if (lp.hp <= 0) {
-                    lp.alive = false;
-                    lp.mesh.visible = false;
-                    showBanner(`${lp.name.toUpperCase()} • SCHOCKWELLE!`);
-                  }
+                  applyPlayerDamage(lp, 16, now, 'SCHOCKWELLE!');
                 }
               }
             }
@@ -1630,16 +1813,9 @@ export function Zombie3DArena({
                 zombies.splice(zi, 1);
                 continue;
               }
-              target.hp = Math.max(0, target.hp - z.damage);
-              target.invulnUntil = now + 260;
               screenShake = Math.max(screenShake, 0.22);
               spawnParticles(target.x, 1.0, target.z, 0xef4444, 6);
-              if (target.hp <= 0) {
-                target.alive = false;
-                target.mesh.visible = false;
-                spawnParticles(target.x, 1.0, target.z, 0xf43f5e, 14);
-                showBanner(`${target.name.toUpperCase()} WURDE ÜBERRANNT!`);
-              }
+              applyPlayerDamage(target, z.damage, now, 'WURDE ÜBERRANNT!');
             }
           }
         }
@@ -1664,15 +1840,9 @@ export function Zombie3DArena({
             for (const lp of livingPlayers) {
               if (Math.hypot(lp.x - ap.x, lp.z - ap.z) <= 0.7 && now >= lp.invulnUntil) {
                 hit = true;
-                lp.hp = Math.max(0, lp.hp - ap.damage);
-                lp.invulnUntil = now + 260;
                 screenShake = Math.max(screenShake, 0.16);
                 spawnParticles(ap.x, 0.95, ap.z, 0x84cc16, 8, true);
-                if (lp.hp <= 0) {
-                  lp.alive = false;
-                  lp.mesh.visible = false;
-                  showBanner(`${lp.name.toUpperCase()} • SÄURETREFFER!`);
-                }
+                applyPlayerDamage(lp, ap.damage, now, 'SÄURETREFFER!');
                 break;
               }
             }
@@ -1875,7 +2045,7 @@ export function Zombie3DArena({
         }
       }
 
-      renderer.render(scene, camera);
+      composer.render();
       rafId = requestAnimationFrame(tick);
     };
 
@@ -1886,6 +2056,7 @@ export function Zombie3DArena({
       camera.aspect = w / h;
       camera.updateProjectionMatrix();
       renderer.setSize(w, h);
+      composer.setSize(w, h);
     };
     const resizeObserver =
       typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
@@ -1902,6 +2073,7 @@ export function Zombie3DArena({
       resizeObserver?.disconnect();
       if (bannerTimerRef.current) window.clearTimeout(bannerTimerRef.current);
       loadedTextures.forEach((tex) => tex.dispose());
+      composer.dispose();
       renderer.dispose();
     };
   }, [difficulty, localPlayerId]);

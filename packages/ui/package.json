@@ -11,6 +11,7 @@
   "dependencies": {
     "@projektbox/shared": "*",
     "lucide-react": "^1.70.0",
+    "postprocessing": "^6.39.6",
     "qrcode": "^1.5.4",
     "react-icons": "^5.7.0",
     "socket.io-client": "^4.8.4",
