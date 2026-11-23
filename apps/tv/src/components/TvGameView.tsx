@@ -115,9 +115,11 @@ export function TvGameView({
   return (
     <div
       data-tv-scope="modal"
-      className="fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden bg-[#1B2B40] text-white select-none animate-fade-in"
+      className={`fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden text-white select-none animate-fade-in ${
+        isZombieSurvival && !isGameOver ? 'bg-[#070B12]' : 'bg-[#1B2B40]'
+      }`}
     >
-      <BackgroundCometCanvas opacity={0.85} />
+      {(!isZombieSurvival || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
 
       <div
         className={

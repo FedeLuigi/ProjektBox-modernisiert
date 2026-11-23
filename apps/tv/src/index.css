@@ -19,8 +19,15 @@
   box-shadow:
     0 0 0 2.5px #FBBF24,
     0 0 16px rgba(251, 191, 36, 0.34) !important;
-  position: relative;
   z-index: 20;
+}
+
+[data-tv-app="true"] button:not(.fixed):not(.absolute):not(.sticky):focus-visible,
+[data-tv-app="true"] [role="button"]:not(.fixed):not(.absolute):not(.sticky):focus-visible,
+[data-tv-app="true"] input:not([data-tv-search-input="true"]):not(.fixed):not(.absolute):not(.sticky):focus-visible,
+[data-tv-app="true"] a:not(.fixed):not(.absolute):not(.sticky):focus-visible,
+[data-tv-app="true"] [data-tv-focused="true"]:not([data-tv-search-input="true"]):not(.fixed):not(.absolute):not(.sticky) {
+  position: relative;
 }
 
 /* Suchfeld: kein innerer Kasten um das Input-Feld, nur äußerer gelber Rand an der Such-Box */
