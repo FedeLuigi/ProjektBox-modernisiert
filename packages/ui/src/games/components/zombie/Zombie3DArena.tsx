@@ -1065,15 +1065,19 @@ export function Zombie3DArena({
               p.skills.hp += 1;
               p.maxHp += 25;
               p.hp = Math.min(p.maxHp, p.hp + 25);
+              showBanner(`${p.name.toUpperCase()} • VITALITÄT STUFE ${p.skills.hp} (+25 MAX HP)!`);
             } else if (inp.upgradeSkill === 'damage') {
               p.skills.damage += 1;
+              showBanner(`${p.name.toUpperCase()} • FEUERKRAFT STUFE ${p.skills.damage} (+${p.skills.damage * 15}% SCHADEN)!`);
             } else if (inp.upgradeSkill === 'speed') {
               p.skills.speed += 1;
+              showBanner(`${p.name.toUpperCase()} • TEMPO STUFE ${p.skills.speed} (+${p.skills.speed * 10}% TEMPO)!`);
             } else if (inp.upgradeSkill === 'ammo') {
               p.skills.ammo += 1;
               const spec = getWeaponById(p.weaponId);
               p.maxAmmo = Math.round(spec.magSize * (1 + p.skills.ammo * 0.25));
               p.ammo = p.maxAmmo;
+              showBanner(`${p.name.toUpperCase()} • MAGAZIN STUFE ${p.skills.ammo} (${p.maxAmmo} SCHUSS)!`);
             }
           }
 
@@ -1138,8 +1142,9 @@ export function Zombie3DArena({
             const dLen = Math.hypot(inp.moveX, inp.moveY);
             p.dashDirX = dLen > 0.15 ? inp.moveX / dLen : p.aimX;
             p.dashDirZ = dLen > 0.15 ? inp.moveY / dLen : p.aimZ;
+            const dashCooldownMult = Math.max(0.55, 1 - p.skills.speed * 0.08);
             p.dashUntil = now + 180;
-            p.dashReadyAt = now + 2600;
+            p.dashReadyAt = now + Math.round(2600 * dashCooldownMult);
             p.invulnUntil = Math.max(p.invulnUntil, now + 240);
             spawnParticles(p.x, 0.4, p.z, 0x38bdf8, 6);
           }

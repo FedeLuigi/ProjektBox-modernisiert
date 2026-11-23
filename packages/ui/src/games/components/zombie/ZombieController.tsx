@@ -426,18 +426,59 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
             </button>
           </div>
 
-          {/* Operator-Skills: Riveted Brushed-Steel Plates */}
+          {/* Operator-Skills: Riveted Brushed-Steel Plates with Before/After & Upgrade Stages */}
           <div className="relative z-10 flex flex-col gap-1.5">
             <span className="font-mono text-[11px] font-black tracking-[0.2em] text-[#E2E8F0] uppercase drop-shadow">
               OPERATOR-SKILLS ({skillPoints} PUNKTE VERFÜGBAR)
             </span>
             <div className="grid grid-cols-2 gap-2.5">
-              {[
-                { key: 'hp' as const, label: 'VITALITÄT', desc: '+25 MAX HP', val: skills.hp, icon: Heart, color: '#EF4444' },
-                { key: 'damage' as const, label: 'FEUERKRAFT', desc: '+15% SCHADEN', val: skills.damage, icon: Crosshair, color: '#F59E0B' },
-                { key: 'speed' as const, label: 'TEMPO', desc: '+10% LAUF/LADEN', val: skills.speed, icon: Zap, color: '#38BDF8' },
-                { key: 'ammo' as const, label: 'MAGAZIN', desc: '+25% MUNITION', val: skills.ammo, icon: Shield, color: '#22C55E' },
-              ].map((sk) => {
+              {(() => {
+                const rankMult = 1 + (hud.level - 1) * 0.1;
+                const curDmg = Math.round(weapon.damage * rankMult * (1 + skills.damage * 0.15));
+                const nextDmg = Math.round(weapon.damage * rankMult * (1 + (skills.damage + 1) * 0.15));
+                const curSpeedPct = 100 + skills.speed * 10;
+                const nextSpeedPct = 100 + (skills.speed + 1) * 10;
+                const curMag = Math.round(weapon.magSize * (1 + skills.ammo * 0.25));
+                const nextMag = Math.round(weapon.magSize * (1 + (skills.ammo + 1) * 0.25));
+                return [
+                  {
+                    key: 'hp' as const,
+                    label: 'VITALITÄT',
+                    activeBonus: `+${skills.hp * 25} MAX HP`,
+                    beforeAfter: `${hud.maxHp} → ${hud.maxHp + 25} HP`,
+                    val: skills.hp,
+                    icon: Heart,
+                    color: '#EF4444',
+                  },
+                  {
+                    key: 'damage' as const,
+                    label: 'FEUERKRAFT',
+                    activeBonus: `+${skills.damage * 15}% SCHADEN`,
+                    beforeAfter: `${curDmg} → ${nextDmg} DMG`,
+                    val: skills.damage,
+                    icon: Crosshair,
+                    color: '#F59E0B',
+                  },
+                  {
+                    key: 'speed' as const,
+                    label: 'TEMPO',
+                    activeBonus: `+${skills.speed * 10}% LAUF / -${Math.min(45, skills.speed * 8)}% LADEN`,
+                    beforeAfter: `${curSpeedPct}% → ${nextSpeedPct}% TEMPO`,
+                    val: skills.speed,
+                    icon: Zap,
+                    color: '#38BDF8',
+                  },
+                  {
+                    key: 'ammo' as const,
+                    label: 'MAGAZIN',
+                    activeBonus: `+${skills.ammo * 25}% KAPAZITÄT`,
+                    beforeAfter: `${curMag} → ${nextMag} SCHUSS`,
+                    val: skills.ammo,
+                    icon: Shield,
+                    color: '#22C55E',
+                  },
+                ];
+              })().map((sk) => {
                 const Icon = sk.icon;
                 const fillPct = Math.min(100, sk.val * 20);
                 return (
@@ -449,7 +490,7 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
                     className={`relative flex items-center justify-between gap-2 rounded border-2 px-3 py-2 text-left shadow-lg transition-all ${
                       skillPoints > 0
                         ? 'border-[#D97706] active:scale-95'
-                        : 'border-[#52525B] opacity-85'
+                        : 'border-[#52525B] opacity-90'
                     }`}
                     style={{
                       backgroundImage: `linear-gradient(180deg, rgba(63,63,70,0.8) 0%, rgba(24,24,27,0.92) 100%), url(${ZOMBIE_UI_TEXTURES.rust}), url(${ZOMBIE_UI_TEXTURES.brushedSteel})`,
@@ -458,14 +499,40 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
                     }}
                   >
                     <RivetCorners />
-                    <div className="flex flex-col min-w-0 pl-1">
-                      <span className="inline-flex items-center gap-1 font-mono text-[11px] font-black tracking-wider text-white uppercase">
-                        <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: sk.color }} />
-                        {sk.label}
+                    <div className="flex flex-1 flex-col gap-0.5 min-w-0 pl-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className="inline-flex items-center gap-1 font-mono text-[11px] font-black tracking-wider text-white uppercase">
+                          <Icon className="h-3.5 w-3.5 shrink-0" style={{ color: sk.color }} />
+                          {sk.label}
+                        </span>
+                        <span
+                          className="font-mono text-[9px] font-black uppercase"
+                          style={{ color: sk.val > 0 ? sk.color : '#94A3B8' }}
+                        >
+                          STUFE {sk.val}
+                        </span>
+                      </div>
+
+                      <span className="font-mono text-[9px] font-extrabold text-[#FDE68A] uppercase truncate">
+                        AKTIV: {sk.activeBonus}
                       </span>
-                      <span className="font-mono text-[9px] font-bold text-[#CBD5E1] uppercase">
-                        {sk.desc} (+{sk.val})
+                      <span className="font-mono text-[9px] font-bold text-[#CBD5E1] uppercase truncate">
+                        NÄCHSTE: {sk.beforeAfter}
                       </span>
+
+                      {/* Visual Upgrade Stage Segments */}
+                      <div className="mt-0.5 flex items-center gap-1">
+                        {Array.from({ length: 5 }).map((_, idx) => (
+                          <span
+                            key={idx}
+                            className="h-1.5 flex-1 rounded-[1px] border border-black/60"
+                            style={{
+                              backgroundColor:
+                                idx < sk.val ? sk.color : 'rgba(255,255,255,0.1)',
+                            }}
+                          />
+                        ))}
+                      </div>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0 pr-1">
                       <AnalogGaugeSvg pct={fillPct} accentColor={sk.color} size={24} />
@@ -494,6 +561,10 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
               {ZOMBIE_WEAPONS.map((w) => {
                 const unlocked = hud.level >= w.unlockLevel;
                 const equipped = hud.weaponId === w.id;
+                const effectiveDmg = Math.round(
+                  w.damage * (1 + (hud.level - 1) * 0.1) * (1 + skills.damage * 0.15)
+                );
+                const effectiveMag = Math.round(w.magSize * (1 + skills.ammo * 0.25));
                 return (
                   <button
                     key={w.id}
@@ -517,7 +588,7 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
                         {w.name}
                       </span>
                       <span className="font-mono text-[9px] font-bold text-[#94A3B8]">
-                        {unlocked ? `DMG ${w.damage}` : `R${w.unlockLevel}`}
+                        {unlocked ? `${effectiveDmg} DMG • ${effectiveMag}` : `R${w.unlockLevel}`}
                       </span>
                     </div>
 
