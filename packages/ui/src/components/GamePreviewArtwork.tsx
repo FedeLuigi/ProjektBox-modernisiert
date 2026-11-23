@@ -11,6 +11,112 @@ export function GamePreviewArtwork({
 }: GamePreviewArtworkProps) {
   const isHero = variant === 'hero';
 
+  if (gameId === 'zombie-survival') {
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-br from-[#0F172A] via-[#1E1B4B] to-[#3B0764] ${className}`}
+      >
+        <svg
+          viewBox={isHero ? '0 0 640 280' : '0 0 400 210'}
+          className="h-full w-full object-cover"
+          aria-hidden="true"
+        >
+          {/* 3D Perspective Grid Floor */}
+          <g stroke="#38BDF8" strokeOpacity="0.22" strokeWidth="1.5">
+            {[0, 1, 2, 3, 4, 5, 6].map((i) => (
+              <line
+                key={`h-${i}`}
+                x1="0"
+                y1={(isHero ? 150 : 112) + i * 22}
+                x2={isHero ? 640 : 400}
+                y2={(isHero ? 150 : 112) + i * 22}
+              />
+            ))}
+            {[-3, -2, -1, 0, 1, 2, 3].map((i) => (
+              <line
+                key={`v-${i}`}
+                x1={(isHero ? 320 : 200) + i * 48}
+                y1={isHero ? 140 : 104}
+                x2={(isHero ? 320 : 200) + i * 115}
+                y2={isHero ? 280 : 210}
+              />
+            ))}
+          </g>
+
+          {/* Player Hero (left) */}
+          <g transform={isHero ? 'translate(135, 118)' : 'translate(82, 88)'}>
+            <ellipse cx="26" cy="64" rx="28" ry="10" fill="#38BDF8" fillOpacity="0.3" />
+            <rect x="10" y="24" width="32" height="36" rx="8" fill="#38BDF8" />
+            <rect x="14" y="2" width="24" height="22" rx="6" fill="#F1F5F9" />
+            <rect x="22" y="8" width="16" height="7" rx="2" fill="#0284C7" />
+            {/* Blaster */}
+            <rect x="38" y="30" width="28" height="10" rx="3" fill="#334155" />
+            <rect x="44" y="32" width="18" height="4" rx="1" fill="#22D3EE" />
+          </g>
+
+          {/* Laser / Plasma Bolts */}
+          <rect
+            x={isHero ? 225 : 152}
+            y={isHero ? 148 : 114}
+            width={isHero ? 42 : 28}
+            height="6"
+            rx="3"
+            fill="#22D3EE"
+          />
+          <rect
+            x={isHero ? 295 : 198}
+            y={isHero ? 148 : 114}
+            width={isHero ? 38 : 26}
+            height="6"
+            rx="3"
+            fill="#FBBF24"
+          />
+
+          {/* Zombies (right) */}
+          <g transform={isHero ? 'translate(415, 102)' : 'translate(260, 76)'}>
+            <ellipse cx="28" cy="80" rx="30" ry="10" fill="#22C55E" fillOpacity="0.25" />
+            <rect x="10" y="32" width="36" height="44" rx="8" fill="#22C55E" />
+            <rect x="15" y="6" width="26" height="24" rx="6" fill="#16A34A" />
+            <circle cx="23" cy="17" r="3" fill="#F43F5E" />
+            <circle cx="33" cy="17" r="3" fill="#F43F5E" />
+          </g>
+          <g transform={isHero ? 'translate(495, 118)' : 'translate(314, 90)'}>
+            <rect x="8" y="28" width="30" height="36" rx="7" fill="#9333EA" />
+            <rect x="12" y="6" width="22" height="20" rx="5" fill="#7E22CE" />
+            <circle cx="19" cy="15" r="2.5" fill="#F43F5E" />
+            <circle cx="27" cy="15" r="2.5" fill="#F43F5E" />
+          </g>
+
+          {/* Level & Weapon Pill */}
+          <g transform={isHero ? 'translate(24, 22)' : 'translate(16, 16)'}>
+            <rect
+              x="0"
+              y="0"
+              width={isHero ? 156 : 122}
+              height={isHero ? 32 : 26}
+              rx="10"
+              fill="#0F172A"
+              fillOpacity="0.88"
+              stroke="#F59E0B"
+              strokeWidth="2"
+            />
+            <text
+              x={isHero ? 78 : 61}
+              y={isHero ? 21 : 17}
+              textAnchor="middle"
+              fill="#FDE68A"
+              fontSize={isHero ? 13 : 10}
+              fontWeight="900"
+              fontFamily="sans-serif"
+            >
+              LVL 5 • PLASMA
+            </text>
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (gameId === 'draw-and-guess') {
     return (
       <div

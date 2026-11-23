@@ -1051,6 +1051,29 @@ class SocketService {
     this.socket.emit('draw:undo');
   }
 
+  public emitZombieInput(input: {
+    moveX: number;
+    moveY: number;
+    aimX: number;
+    aimY: number;
+    firing: boolean;
+    reload?: boolean;
+    dash?: boolean;
+  }): void {
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.volatile.emit('zombie:input', input);
+  }
+
+  public emitZombieState(state: {
+    wave: number;
+    zombiesRemaining: number;
+    players: Record<string, any>;
+    status: 'playing' | 'won' | 'draw';
+  }): void {
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('zombie:state', state);
+  }
+
   public async requestRematch(): Promise<void> {
     if (this.isActionBlocked()) {
       throw new Error('Verbindung unsicher – bitte kurz warten.');
@@ -1179,6 +1202,34 @@ class SocketService {
 
   public onLiveUndo(cb: (data: { strokes: any[] }) => void): () => void {
     return this.addSocketListener('draw:live-undo', cb);
+  }
+
+  public onZombieInput(
+    cb: (data: {
+      playerId: string;
+      input: {
+        moveX: number;
+        moveY: number;
+        aimX: number;
+        aimY: number;
+        firing: boolean;
+        reload?: boolean;
+        dash?: boolean;
+      };
+    }) => void
+  ): () => void {
+    return this.addSocketListener('zombie:input', cb);
+  }
+
+  public onZombieState(
+    cb: (data: {
+      wave: number;
+      zombiesRemaining: number;
+      players: Record<string, any>;
+      status: 'playing' | 'won' | 'draw';
+    }) => void
+  ): () => void {
+    return this.addSocketListener('zombie:state', cb);
   }
 }
 

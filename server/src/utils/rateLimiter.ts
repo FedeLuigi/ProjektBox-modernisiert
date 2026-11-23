@@ -27,6 +27,8 @@ export type RateLimitedEvent =
   | 'draw:strokes'
   | 'draw:clear'
   | 'draw:undo'
+  | 'zombie:input'
+  | 'zombie:state'
   | 'session:ping'
   | 'default';
 
@@ -48,6 +50,8 @@ export const EVENT_RATE_LIMITS: Record<RateLimitedEvent, RateLimitRule> = {
   'game:rematch': { capacity: 4, refillRatePerSec: 1 },
   'draw:strokes': { capacity: 45, refillRatePerSec: 30 },
   'draw:clear': { capacity: 4, refillRatePerSec: 1 },
+  'zombie:input': { capacity: 60, refillRatePerSec: 40 },
+  'zombie:state': { capacity: 30, refillRatePerSec: 20 },
   'draw:undo': { capacity: 10, refillRatePerSec: 4 },
   'session:ping': { capacity: 10, refillRatePerSec: 2 },
   default: { capacity: 12, refillRatePerSec: 8 },

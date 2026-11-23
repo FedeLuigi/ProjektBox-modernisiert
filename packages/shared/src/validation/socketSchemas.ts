@@ -25,6 +25,8 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   [SOCKET_EVENTS.GAME_MOVE]: 4096,
   [SOCKET_EVENTS.GAME_REMATCH]: 512,
   [SOCKET_EVENTS.DRAW_STROKES]: 24 * 1024,
+  [SOCKET_EVENTS.ZOMBIE_INPUT]: 512,
+  [SOCKET_EVENTS.ZOMBIE_STATE]: 8192,
   [SOCKET_EVENTS.SESSION_PING]: 256,
 } as const;
 
@@ -224,7 +226,49 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
     targetBet: z.number().int().min(1).max(10000000).optional(),
     ...ActionMetaFields,
   }),
+  z.object({
+    type: z.literal('zombie_finish'),
+    wave: z.number().int().min(1).max(999),
+    scores: z.record(z.string().min(1).max(80), z.number().finite().min(0).max(10000000)),
+    kills: z.record(z.string().min(1).max(80), z.number().int().min(0).max(1000000)),
+    levels: z.record(z.string().min(1).max(80), z.number().int().min(1).max(999)),
+    weapons: z.record(z.string().min(1).max(80), z.string().min(1).max(32)),
+    ...ActionMetaFields,
+  }),
 ]);
+
+export const ZombieInputSchema = z.object({
+  moveX: z.number().finite().min(-1).max(1),
+  moveY: z.number().finite().min(-1).max(1),
+  aimX: z.number().finite().min(-1).max(1),
+  aimY: z.number().finite().min(-1).max(1),
+  firing: z.boolean(),
+  reload: z.boolean().optional(),
+  dash: z.boolean().optional(),
+});
+
+export const ZombiePlayerHudSchema = z.object({
+  playerId: z.string().min(1).max(80),
+  hp: z.number().finite().min(0).max(10000),
+  maxHp: z.number().finite().min(1).max(10000),
+  xp: z.number().finite().min(0).max(10000000),
+  level: z.number().int().min(1).max(999),
+  weaponId: z.string().min(1).max(32),
+  ammo: z.number().int().min(0).max(999),
+  maxAmmo: z.number().int().min(1).max(999),
+  reloading: z.boolean(),
+  kills: z.number().int().min(0).max(1000000),
+  score: z.number().finite().min(0).max(10000000),
+  alive: z.boolean(),
+  dashReadyAt: z.number().finite().optional(),
+});
+
+export const ZombieStateSchema = z.object({
+  wave: z.number().int().min(1).max(999),
+  zombiesRemaining: z.number().int().min(0).max(10000),
+  players: z.record(z.string().min(1).max(80), ZombiePlayerHudSchema),
+  status: z.enum(['playing', 'won', 'draw']),
+});
 
 export const StrokeSegmentSchema = z.object({
   x0: z.number().finite().min(0).max(1),

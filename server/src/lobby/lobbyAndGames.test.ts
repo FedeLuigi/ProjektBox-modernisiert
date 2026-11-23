@@ -2096,3 +2096,62 @@ test('TV-Lobby Controller-Sperre: Smartphones dürfen weder Optionen ändern, Sp
 
   manager.clearAllTimers();
 });
+
+test('Zombie Arena 3D: Level- und Waffen-Progression sowie TV-Lobby-Abschluss', async () => {
+  const { getLevelForXp, getWeaponForLevel } = await import('@projektbox/shared/utils');
+  assert.equal(getLevelForXp(0), 1);
+  assert.equal(getWeaponForLevel(1).id, 'pistol');
+  assert.equal(getLevelForXp(100), 2);
+  assert.equal(getWeaponForLevel(2).id, 'smg');
+  assert.equal(getLevelForXp(250), 3);
+  assert.equal(getWeaponForLevel(3).id, 'shotgun');
+  assert.equal(getLevelForXp(450), 4);
+  assert.equal(getWeaponForLevel(4).id, 'rifle');
+  assert.equal(getLevelForXp(750), 5);
+  assert.equal(getWeaponForLevel(5).id, 'plasma');
+  assert.equal(getLevelForXp(1150), 6);
+  assert.equal(getWeaponForLevel(6).id, 'rocket');
+
+  const manager = new LobbyManager();
+
+  const created = manager.createLobby({
+    gameId: 'zombie-survival',
+    isPrivate: false,
+    isTvMode: true,
+    userProfile: { id: 'u_ztv', name: 'TV', avatar: {} },
+    socketId: 'sock_ztv',
+  });
+  assert.equal(created.success, true);
+  const lobbyId = created.lobby!.id;
+
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_zp1', name: 'Fede', avatar: {} },
+    socketId: 'sock_zp1',
+  });
+  manager.toggleReady('sock_zp1');
+
+  const started = manager.startGame({ lobbyId, playerId: 'u_ztv' });
+  assert.equal(started.success, true);
+  assert.equal((started.lobby?.gameState as any)?.gameId, 'zombie-survival');
+
+  const finished = manager.makeMove({
+    lobbyId,
+    playerId: 'u_ztv',
+    move: {
+      type: 'zombie_finish',
+      wave: 4,
+      scores: { u_zp1: 1850 },
+      kills: { u_zp1: 16 },
+      levels: { u_zp1: 4 },
+      weapons: { u_zp1: 'rifle' },
+    },
+  });
+  assert.equal(finished.success, true);
+  assert.equal(finished.lobby?.gameState?.status, 'won');
+  assert.equal(finished.lobby?.gameState?.winnerId, 'u_zp1');
+  assert.equal((finished.lobby?.gameState as any)?.wave, 4);
+  assert.equal((finished.lobby?.gameState as any)?.weapons?.u_zp1, 'rifle');
+
+  manager.clearAllTimers();
+});

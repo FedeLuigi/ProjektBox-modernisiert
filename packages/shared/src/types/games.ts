@@ -1,6 +1,11 @@
 import type { BaseGameState } from './multiplayer.js';
 
-export type KnownGameId = 'draw-and-guess' | 'stadt-land-fluss' | 'roulette' | 'texas-holdem';
+export type KnownGameId =
+  | 'draw-and-guess'
+  | 'stadt-land-fluss'
+  | 'roulette'
+  | 'texas-holdem'
+  | 'zombie-survival';
 
 // ─── DRAW & GUESS ───
 export interface StrokeSegment {
@@ -220,3 +225,59 @@ export type TexasHoldemMove =
   | { type: 'poker_action'; action: PokerActionType; targetBet?: number }
   | { type: 'next_round' }
   | { type: 'time_up' };
+
+// ─── 3D ZOMBIE SURVIVAL ───
+export type ZombieDifficulty = 'normal' | 'hard' | 'nightmare';
+
+export interface ZombiePlayerHudState {
+  playerId: string;
+  hp: number;
+  maxHp: number;
+  xp: number;
+  level: number;
+  weaponId: string;
+  ammo: number;
+  maxAmmo: number;
+  reloading: boolean;
+  kills: number;
+  score: number;
+  alive: boolean;
+  dashReadyAt?: number;
+}
+
+export interface ZombieInputPayload {
+  moveX: number; // -1..1
+  moveY: number; // -1..1
+  aimX: number;  // -1..1
+  aimY: number;  // -1..1
+  firing: boolean;
+  reload?: boolean;
+  dash?: boolean;
+}
+
+export interface ZombieHudStatePayload {
+  wave: number;
+  zombiesRemaining: number;
+  players: Record<string, ZombiePlayerHudState>;
+  status: 'playing' | 'won' | 'draw';
+}
+
+export interface ZombieSurvivalState extends BaseGameState {
+  gameId: 'zombie-survival';
+  difficulty: ZombieDifficulty;
+  wave: number;
+  zombiesKilled: number;
+  scores: Record<string, number>;
+  kills: Record<string, number>;
+  levels: Record<string, number>;
+  weapons: Record<string, string>;
+}
+
+export type ZombieSurvivalMove = {
+  type: 'zombie_finish';
+  wave: number;
+  scores: Record<string, number>;
+  kills: Record<string, number>;
+  levels: Record<string, number>;
+  weapons: Record<string, string>;
+};

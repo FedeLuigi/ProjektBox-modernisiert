@@ -19,6 +19,8 @@ import {
   LobbyUpdateProfileSchema,
   LobbyUpdateSettingsSchema,
   SessionPingSchema,
+  ZombieInputSchema,
+  ZombieStateSchema,
 } from '@projektbox/shared/validation';
 import { LobbyManager, lobbyManager, sanitizeLobbyForClient } from '../lobby/lobbyManager.js';
 import { SimulationBotRunner } from '../lobby/simulationBotRunner.js';
@@ -979,6 +981,54 @@ export function registerSocketHandlers(
         });
       } catch (err) {
         console.error('Fehler bei draw:undo:', err);
+      }
+    });
+
+    // 6c. Live-Controller & HUD-Sync für Zombie Arena 3D
+    socket.on(SOCKET_EVENTS.ZOMBIE_INPUT, async (data: unknown) => {
+      try {
+        if (socket.data.superseded) return;
+        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.ZOMBIE_INPUT))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.ZOMBIE_INPUT])) return;
+
+        const parsed = ZombieInputSchema.safeParse(data);
+        if (!parsed.success) return;
+
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+        if (lobby.gameId !== 'zombie-survival') return;
+
+        const player = lobby.players.find((p) => p.socketId === socket.id);
+        if (!player || !player.connected || player.isTvScreen) return;
+
+        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.ZOMBIE_INPUT, {
+          playerId: player.id,
+          input: parsed.data,
+        });
+      } catch (err) {
+        console.error('Fehler bei zombie:input:', err);
+      }
+    });
+
+    socket.on(SOCKET_EVENTS.ZOMBIE_STATE, async (data: unknown) => {
+      try {
+        if (socket.data.superseded) return;
+        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.ZOMBIE_STATE))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.ZOMBIE_STATE])) return;
+
+        const parsed = ZombieStateSchema.safeParse(data);
+        if (!parsed.success) return;
+
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+        if (lobby.gameId !== 'zombie-survival') return;
+
+        const sender = lobby.players.find((p) => p.socketId === socket.id);
+        if (!sender || (!sender.isTvScreen && !sender.isHost)) return;
+
+        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.ZOMBIE_STATE, parsed.data);
+      } catch (err) {
+        console.error('Fehler bei zombie:state:', err);
       }
     });
 

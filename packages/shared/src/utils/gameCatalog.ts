@@ -143,6 +143,27 @@ export const GAMES_CATALOG_META: GameMetadata[] = [
     tone: 'indigo',
     accent: 'amber',
   },
+  {
+    id: 'zombie-survival',
+    title: 'Zombie Arena 3D',
+    subtitle: '3D-Shooter mit Smartphone-Controller',
+    description:
+      'Kämpfe in der 3D-Arena gegen Zombie-Wellen, steige durch Kills im Level auf und schalte immer stärkere Waffen frei!',
+    howToPlay:
+      'Auf dem TV-Bildschirm läuft die 3D-Zombie-Arena, während dein Smartphone als Dual-Stick-Controller dient (Links: Bewegen, Rechts: Zielen & Feuern, plus Nachladen & Dash). Für jeden Zombie-Kill sammelst du XP, steigst im Level auf und erhältst automatisch stärkere Waffen – von der Pistole bis zum Raketenwerfer!',
+    category: 'Strategie',
+    gameType: 'party',
+    gameTypeLabel: '3D ACTION',
+    players: '1–8 Spieler',
+    minPlayers: 1,
+    maxPlayers: 8,
+    duration: '5–15 Min.',
+    durationMinutes: 8,
+    supportsTv: true,
+    tags: ['3D', 'Zombie', 'Action', 'Controller', 'Waffen', 'Level-Up', 'TV-Highlight'],
+    tone: 'sunset',
+    accent: 'coral',
+  },
 ];
 
 export function getGameMetadata(gameId: string): GameMetadata | undefined {
@@ -179,6 +200,11 @@ export function getDefaultGameSettings(gameId: string): LobbySettings {
       roundDuration: 30,
       startingBalance: 1000,
       smallBlind: 10,
+    };
+  }
+  if (gameId === 'zombie-survival') {
+    return {
+      category: 'normal',
     };
   }
   return {};

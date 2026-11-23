@@ -3,6 +3,7 @@ import { drawAndGuessGame } from './definitions/drawAndGuess.js';
 import { rouletteGame } from './definitions/roulette.js';
 import { stadtLandFlussGame } from './definitions/stadtLandFluss.js';
 import { texasHoldemGame } from './definitions/texasHoldem.js';
+import { zombieSurvivalGame } from './definitions/zombieSurvival.js';
 
 function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlayers = 4): MultiplayerGameDefinition {
   return {
@@ -59,6 +60,7 @@ export class GameRegistry {
     this.register(stadtLandFlussGame);
     this.register(rouletteGame);
     this.register(texasHoldemGame);
+    this.register(zombieSurvivalGame);
   }
 
   public register(game: MultiplayerGameDefinition<any, any>): void {

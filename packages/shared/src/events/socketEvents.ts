@@ -39,6 +39,9 @@ export const SOCKET_EVENTS = {
   DRAW_LIVE_STROKES: 'draw:live-strokes',
   DRAW_LIVE_CLEAR: 'draw:live-clear',
   DRAW_LIVE_UNDO: 'draw:live-undo',
+
+  ZOMBIE_INPUT: 'zombie:input',
+  ZOMBIE_STATE: 'zombie:state',
 } as const;
 
 export type SocketEventName = (typeof SOCKET_EVENTS)[keyof typeof SOCKET_EVENTS];
