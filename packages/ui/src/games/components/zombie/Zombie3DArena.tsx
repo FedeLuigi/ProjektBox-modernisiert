@@ -20,7 +20,7 @@ import {
   loadZombieAssets,
   type ZombieAssetPack,
 } from './zombieModels';
-import { buildZombieStreetMap } from './zombieMapBuilder';
+import { buildZombieStreetMap, ZOMBIE_ALLEY_SPAWNS } from './zombieMapBuilder';
 
 interface Zombie3DArenaProps {
   players: Player[];
@@ -151,10 +151,15 @@ function resolveObstaclePush(
   x: number,
   z: number,
   radius: number,
-  obstacles: ObstacleBox[]
+  obstacles: ObstacleBox[],
+  clampBounds = true
 ): { x: number; z: number } {
-  let nx = Math.max(-ARENA_HALF + radius, Math.min(ARENA_HALF - radius, x));
-  let nz = Math.max(-ARENA_HALF + radius, Math.min(ARENA_HALF - radius, z));
+  let nx = clampBounds
+    ? Math.max(-ARENA_HALF + radius, Math.min(ARENA_HALF - radius, x))
+    : x;
+  let nz = clampBounds
+    ? Math.max(-ARENA_HALF + radius, Math.min(ARENA_HALF - radius, z))
+    : z;
 
   for (const box of obstacles) {
     const dx = nx - box.x;
@@ -614,11 +619,10 @@ export function Zombie3DArena({
         flashMeshes.push(bodyMesh);
       }
 
-      // Spawn along arena perimeter
-      const edge = Math.floor(Math.random() * 4);
-      const offset = (Math.random() * 2 - 1) * (ARENA_HALF - 1.2);
-      const sx = edge === 0 ? offset : edge === 1 ? offset : edge === 2 ? -ARENA_HALF + 0.8 : ARENA_HALF - 0.8;
-      const sz = edge === 0 ? -ARENA_HALF + 0.8 : edge === 1 ? ARENA_HALF - 0.8 : offset;
+      // Spawn deep inside one of the dark side alleys between ruined houses
+      const alley = ZOMBIE_ALLEY_SPAWNS[Math.floor(Math.random() * ZOMBIE_ALLEY_SPAWNS.length)];
+      const sx = alley.x + (Math.random() * 2 - 1) * alley.jitterX;
+      const sz = alley.z + (Math.random() * 2 - 1) * alley.jitterZ;
       group.position.set(sx, 0, sz);
       scene.add(group);
 
@@ -1007,7 +1011,7 @@ export function Zombie3DArena({
           pr.z += pr.vz * dt;
           pr.mesh.position.set(pr.x, 0.95, pr.z);
 
-          let removeProj = now >= pr.expiresAt || Math.abs(pr.x) > ARENA_HALF || Math.abs(pr.z) > ARENA_HALF;
+          let removeProj = now >= pr.expiresAt || Math.abs(pr.x) > 25 || Math.abs(pr.z) > 25;
 
           if (!removeProj) {
             for (const box of obstacles) {
@@ -1093,7 +1097,8 @@ export function Zombie3DArena({
               z.x + (dx / len) * z.speed * dt,
               z.z + (dz / len) * z.speed * dt,
               z.radius,
-              obstacles
+              obstacles,
+              false
             );
             z.x = nextPos.x;
             z.z = nextPos.z;
