@@ -30,28 +30,34 @@ function enableShadows(root: THREE.Object3D): void {
   });
 }
 
-export async function loadZombieAssets(): Promise<ZombieAssetPack> {
-  const [soldier, barrelGltf, barrierGltf, medkitGltf, ammoGltf] = await Promise.all([
-    loadGltfSafe('/models/zombie/Soldier.glb'),
-    loadGltfSafe('/models/zombie/barrel_03/barrel_03_1k.gltf'),
-    loadGltfSafe('/models/zombie/concrete_road_barrier/concrete_road_barrier_1k.gltf'),
-    loadGltfSafe('/models/zombie/medical_box/medical_box_1k.gltf'),
-    loadGltfSafe('/models/zombie/ammo_box/ammo_box_1k.gltf'),
-  ]);
+let cachedAssetsPromise: Promise<ZombieAssetPack> | null = null;
 
-  if (soldier) enableShadows(soldier.scene);
-  if (barrelGltf) enableShadows(barrelGltf.scene);
-  if (barrierGltf) enableShadows(barrierGltf.scene);
-  if (medkitGltf) enableShadows(medkitGltf.scene);
-  if (ammoGltf) enableShadows(ammoGltf.scene);
+export function loadZombieAssets(): Promise<ZombieAssetPack> {
+  if (cachedAssetsPromise) return cachedAssetsPromise;
+  cachedAssetsPromise = (async () => {
+    const [soldier, barrelGltf, barrierGltf, medkitGltf, ammoGltf] = await Promise.all([
+      loadGltfSafe('/models/zombie/Soldier.glb'),
+      loadGltfSafe('/models/zombie/barrel_03/barrel_03_1k.gltf'),
+      loadGltfSafe('/models/zombie/concrete_road_barrier/concrete_road_barrier_1k.gltf'),
+      loadGltfSafe('/models/zombie/medical_box/medical_box_1k.gltf'),
+      loadGltfSafe('/models/zombie/ammo_box/ammo_box_1k.gltf'),
+    ]);
 
-  return {
-    soldier,
-    barrel: barrelGltf ? barrelGltf.scene : null,
-    barrier: barrierGltf ? barrierGltf.scene : null,
-    medkit: medkitGltf ? medkitGltf.scene : null,
-    ammoBox: ammoGltf ? ammoGltf.scene : null,
-  };
+    if (soldier) enableShadows(soldier.scene);
+    if (barrelGltf) enableShadows(barrelGltf.scene);
+    if (barrierGltf) enableShadows(barrierGltf.scene);
+    if (medkitGltf) enableShadows(medkitGltf.scene);
+    if (ammoGltf) enableShadows(ammoGltf.scene);
+
+    return {
+      soldier,
+      barrel: barrelGltf ? barrelGltf.scene : null,
+      barrier: barrierGltf ? barrierGltf.scene : null,
+      medkit: medkitGltf ? medkitGltf.scene : null,
+      ammoBox: ammoGltf ? ammoGltf.scene : null,
+    };
+  })();
+  return cachedAssetsPromise;
 }
 
 export function cloneAnimatedCharacter(

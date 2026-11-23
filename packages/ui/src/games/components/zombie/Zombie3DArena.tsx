@@ -223,6 +223,7 @@ export function Zombie3DArena({
     players: [],
   });
   const [bannerText, setBannerText] = useState<string | null>(null);
+  const [assetsReady, setAssetsReady] = useState(false);
   const bannerTimerRef = useRef<number | null>(null);
 
   const showBanner = (text: string) => {
@@ -531,6 +532,14 @@ export function Zombie3DArena({
           pIdx += 1;
         }
       }
+
+      const startNow = performance.now();
+      lastTime = startNow;
+      nextPowerupAt = startNow + 7500;
+      wavePauseUntil = startNow + 900;
+      startWave(1, startNow);
+      setAssetsReady(true);
+      rafId = requestAnimationFrame(tick);
     });
 
     // Keyboard fallback for local desktop/TV testing
@@ -575,8 +584,6 @@ export function Zombie3DArena({
       nextSpawnAt = now + 450;
       showBanner(`WELLE ${w} STARTET!`);
     };
-
-    startWave(1, performance.now());
 
     const spawnParticles = (
       x: number,
@@ -1804,8 +1811,6 @@ export function Zombie3DArena({
       rafId = requestAnimationFrame(tick);
     };
 
-    rafId = requestAnimationFrame(tick);
-
     const onResize = () => {
       if (!container) return;
       const w = container.clientWidth || 1280;
@@ -1868,6 +1873,15 @@ export function Zombie3DArena({
     <div className="relative h-full w-full flex-1 min-h-0 overflow-hidden bg-[#070B12] select-none">
       {/* Fullscreen 3D WebGL Canvas */}
       <div ref={mountRef} className="absolute inset-0 h-full w-full" />
+
+      {!assetsReady && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-3 bg-[#070B12]">
+          <Biohazard className="h-10 w-10 text-[#EF4444] animate-spin" />
+          <span className="font-mono text-xs font-bold tracking-[0.22em] text-[#CBD5E1] uppercase">
+            LADE 3D-ARENA & MODELLE...
+          </span>
+        </div>
+      )}
 
       {/* Subtle atmospheric vignette */}
       <div
