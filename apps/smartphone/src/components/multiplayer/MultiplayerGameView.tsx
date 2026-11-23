@@ -255,7 +255,7 @@ export function MultiplayerGameView({
             <button
               type="button"
               onClick={() => setIsZombieMenuOpen(true)}
-              className="fixed top-2.5 right-2.5 z-40 inline-flex items-center gap-1.5 border border-white/15 bg-[#070B12]/85 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-md active:scale-95"
+              className="fixed top-2.5 right-2.5 left-auto z-40 self-end w-fit inline-flex items-center gap-1.5 border border-white/15 bg-[#070B12]/85 px-3 py-1.5 font-mono text-[11px] font-bold tracking-[0.16em] text-white uppercase backdrop-blur-md active:scale-95"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 text-[#F59E0B]" />
               <span>OPTIONEN</span>

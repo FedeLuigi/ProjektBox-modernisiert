@@ -190,7 +190,7 @@ export function TvGameView({
             <button
               type="button"
               onClick={() => setIsZombieMenuOpen(true)}
-              className="fixed top-3 right-3 z-40 inline-flex items-center gap-2 border border-white/15 bg-[#070B12]/85 px-3.5 py-2 font-mono text-xs font-bold tracking-[0.18em] text-white uppercase backdrop-blur-md transition-colors hover:border-[#F59E0B] hover:text-[#FDE68A] cursor-pointer"
+              className="fixed top-3 right-3 left-auto z-40 self-end w-fit inline-flex items-center gap-2 border border-white/15 bg-[#070B12]/85 px-3.5 py-2 font-mono text-xs font-bold tracking-[0.18em] text-white uppercase backdrop-blur-md transition-colors hover:border-[#F59E0B] hover:text-[#FDE68A] cursor-pointer"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 text-[#F59E0B]" />
               <span>OPTIONEN</span>
