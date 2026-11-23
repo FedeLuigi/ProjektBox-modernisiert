@@ -1930,11 +1930,10 @@ export function Zombie3DArena({
         </div>
       )}
 
-      {/* Tactical Squad Status Strip */}
+      {/* Tactical Squad Status Strip (nur im Solo-Modus ohne TV) */}
+      {localPlayerId && (
       <div
-        className={`pointer-events-none absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-end justify-center gap-2.5 ${
-          localPlayerId ? 'px-32 sm:px-40' : ''
-        }`}
+        className="pointer-events-none absolute bottom-3 left-3 right-3 z-20 flex flex-wrap items-end justify-center gap-2.5 px-32 sm:px-40"
       >
         {players
           .filter((p) => !p.isTvScreen)
@@ -2007,6 +2006,7 @@ export function Zombie3DArena({
             );
           })}
       </div>
+      )}
 
       {/* Standalone Smartphone Touch Controls (only when played without TV) */}
       {localPlayerId && (
