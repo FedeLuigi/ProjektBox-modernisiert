@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowLeft, RotateCcw, Wifi } from 'lucide-react';
+import { ArrowLeft, RotateCcw } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -34,7 +34,6 @@ export function TvGameView({
   const player1 = activePlayers[0];
   const player2 = activePlayers[1];
 
-  const currentTurnPlayer = activePlayers.find((p) => p.id === gameState?.currentTurn);
   const isGameOver = gameState?.status === 'won' || gameState?.status === 'draw';
   const isRoundOver = gameState?.roundStatus === 'round_over' || gameState?.phase === 'round_over';
   const winner = activePlayers.find((p) => p.id === gameState?.winnerId);
@@ -127,21 +126,6 @@ export function TvGameView({
               <span>EXIT TV</span>
             </OpenButton>
 
-            {isDrawAndGuess && !isGameOver && !isRoundOver && (
-              <div className="hidden lg:flex items-center gap-2.5 min-w-0">
-                <span className="font-arcade text-xs tracking-wider text-[#FBBF24] uppercase shrink-0">
-                  {gameState?.categoryName || 'WORT'}
-                </span>
-                <span className="font-arcade text-sm tracking-[0.2em] text-white uppercase truncate">
-                  {gameState?.roundStatus === 'choosing_word'
-                    ? 'WORTWAHL...'
-                    : gameState?.wordLength
-                      ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
-                      : '_ _ _ _'}
-                </span>
-              </div>
-            )}
-
             {isStadtLandFluss && !isGameOver && (
               <span className="font-arcade hidden lg:inline text-xs tracking-wider text-[#67E8F9] uppercase truncate">
                 RUNDE {gameState?.round || 1}/{gameState?.maxRounds || 3} •{' '}
@@ -232,13 +216,16 @@ export function TvGameView({
 
             <div className="flex-1 min-h-0 flex flex-col items-center justify-center max-w-2xl w-full">
               {!isRoundOver && !isGameOver && (
-                <div className="font-arcade mb-3 shrink-0 px-2 py-1 text-sm text-white uppercase flex items-center gap-2.5">
-                  <Wifi className="h-4 w-4 text-[#F472B6] animate-pulse shrink-0" />
-                  <span className="truncate">
-                    {currentTurnPlayer?.name || 'SPIELER'}{' '}
+                <div className="mb-3 shrink-0 px-2 py-1 flex items-center justify-center gap-3">
+                  <span className="font-arcade text-sm sm:text-base tracking-wider text-[#FBBF24] uppercase shrink-0">
+                    {gameState?.categoryName || 'WORT'}
+                  </span>
+                  <span className="font-arcade text-base sm:text-xl tracking-[0.22em] text-white uppercase truncate">
                     {gameState?.roundStatus === 'choosing_word'
-                      ? 'WÄHLT EIN WORT...'
-                      : 'ZEICHNET...'}
+                      ? 'WORTWAHL...'
+                      : gameState?.wordLength
+                        ? Array.from({ length: gameState.wordLength }, () => '_').join(' ')
+                        : '_ _ _ _'}
                   </span>
                 </div>
               )}
