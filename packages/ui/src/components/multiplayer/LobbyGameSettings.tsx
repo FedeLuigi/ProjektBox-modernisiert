@@ -49,21 +49,21 @@ function SettingRow({
   children: ReactNode;
 }) {
   return (
-    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 py-3">
-      <div className="flex items-center gap-3 min-w-0 shrink-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/15 py-3.5 lg:py-4">
+      <div className="flex items-center gap-3.5 min-w-0 shrink-0">
+        <div className="flex h-10 w-10 lg:h-11 lg:w-11 shrink-0 items-center justify-center rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
           {icon}
         </div>
         <div className="min-w-0">
-          <div className="font-arcade text-xs sm:text-sm tracking-wider text-white uppercase">
+          <div className="font-arcade text-sm lg:text-base tracking-wider text-white uppercase">
             {label}
           </div>
           {description && (
-            <div className="text-xs text-[#94A3B8] truncate">{description}</div>
+            <div className="text-xs lg:text-sm text-[#94A3B8] truncate">{description}</div>
           )}
         </div>
       </div>
-      <div className="flex items-center gap-1.5 flex-wrap sm:justify-end">{children}</div>
+      <div className="flex items-center gap-2 flex-wrap sm:justify-end">{children}</div>
     </div>
   );
 }
@@ -84,16 +84,16 @@ function SettingToggleRow({
   onToggle: (next: boolean) => void;
 }) {
   return (
-    <div className="flex w-full items-center justify-between gap-3 border-b border-white/15 py-3">
-      <div className="flex items-center gap-3 min-w-0">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
+    <div className="flex w-full items-center justify-between gap-4 border-b border-white/15 py-3.5 lg:py-4">
+      <div className="flex items-center gap-3.5 min-w-0">
+        <div className="flex h-10 w-10 lg:h-11 lg:w-11 shrink-0 items-center justify-center rounded-xl border border-[#F59E0B]/50 bg-[#F59E0B]/15 text-[#FDE68A]">
           {icon}
         </div>
         <div className="min-w-0">
-          <div className="font-arcade text-xs sm:text-sm tracking-wider text-white uppercase">
+          <div className="font-arcade text-sm lg:text-base tracking-wider text-white uppercase">
             {label}
           </div>
-          <div className="text-xs text-[#94A3B8] truncate">{description}</div>
+          <div className="text-xs lg:text-sm text-[#94A3B8] truncate">{description}</div>
         </div>
       </div>
 
@@ -104,12 +104,12 @@ function SettingToggleRow({
         aria-checked={enabled}
         disabled={disabled}
         onClick={() => onToggle(!enabled)}
-        className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
+        className={`relative inline-flex h-7 w-12 shrink-0 items-center rounded-full border transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed ${
           enabled ? 'border-[#F59E0B] bg-[#F59E0B]' : 'border-white/20 bg-white/10'
         }`}
       >
         <span
-          className={`inline-block h-4 w-4 transform rounded-full bg-white shadow transition-transform ${
+          className={`inline-block h-5 w-5 transform rounded-full bg-white shadow transition-transform ${
             enabled ? 'translate-x-6' : 'translate-x-1'
           }`}
         />
@@ -276,294 +276,340 @@ export function LobbyGameSettings({
         <div
           className={
             alwaysOpen
-              ? 'flex flex-col animate-fade-in'
+              ? 'w-full animate-fade-in'
               : 'px-3 sm:px-4 pb-3 pt-1 flex flex-col border-t border-white/12 animate-fade-in'
           }
         >
           {isDrawAndGuess ? (
-            <>
-              <SettingRow
-                label="RUNDEN"
-                description={`${rounds} Runden pro Match`}
-                icon={<Repeat className="h-4 w-4" />}
-              >
-                {ROUND_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={rounds === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetRounds(opt)}
-                  >
-                    {opt}
-                  </OpenButton>
-                ))}
-              </SettingRow>
-
-              <SettingRow
-                label="ZEIT"
-                description={`${roundDuration} Sekunden pro Zug`}
-                icon={<Clock className="h-4 w-4" />}
-              >
-                {DURATION_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={roundDuration === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetDuration(opt)}
-                  >
-                    {opt}S
-                  </OpenButton>
-                ))}
-              </SettingRow>
-
-              <SettingToggleRow
-                label="EIGENE WÖRTER"
-                description={customWordsEnabled ? 'Aktiviert – Spieler wählen selbst' : 'Deaktiviert – feste Kategorie'}
-                enabled={customWordsEnabled}
-                disabled={!isHost}
-                icon={<Pencil className="h-4 w-4" />}
-                onToggle={handleSetCustomWordsEnabled}
-              />
-
-              {!customWordsEnabled && (
+            <div className="grid w-full grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-14 items-start">
+              <div className="flex flex-col">
                 <SettingRow
-                  label="KATEGORIE"
-                  description={`Aktuell: ${category}`}
-                  icon={<Layers className="h-4 w-4" />}
+                  label="RUNDEN"
+                  description={`${rounds} Runden pro Match`}
+                  icon={<Repeat className="h-5 w-5" />}
                 >
-                  {CATEGORIES.map((cat) => (
+                  {ROUND_OPTIONS.map((opt) => (
                     <OpenButton
-                      key={cat}
-                      size="sm"
+                      key={opt}
+                      size="md"
                       disabled={!isHost}
-                      variant={
-                        category.toLowerCase() === cat.toLowerCase() ? 'amber' : 'secondary'
-                      }
-                      onClick={() => handleSetCategory(cat)}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
                     >
-                      {cat}
+                      {opt}
                     </OpenButton>
                   ))}
                 </SettingRow>
-              )}
-            </>
+
+                <SettingRow
+                  label="ZEIT"
+                  description={`${roundDuration} Sekunden pro Zug`}
+                  icon={<Clock className="h-5 w-5" />}
+                >
+                  {DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+
+                <SettingToggleRow
+                  label="EIGENE WÖRTER"
+                  description={
+                    customWordsEnabled ? 'Aktiviert – Spieler wählen selbst' : 'Deaktiviert – feste Kategorie'
+                  }
+                  enabled={customWordsEnabled}
+                  disabled={!isHost}
+                  icon={<Pencil className="h-5 w-5" />}
+                  onToggle={handleSetCustomWordsEnabled}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                {customWordsEnabled ? (
+                  <div className="flex items-center gap-3.5 border-b border-white/15 py-4 text-left">
+                    <div className="flex h-10 w-10 lg:h-11 lg:w-11 shrink-0 items-center justify-center rounded-xl border border-[#34D399]/50 bg-[#10B981]/15 text-[#6EE7B7]">
+                      <Pencil className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-arcade text-sm lg:text-base tracking-wider text-white uppercase">
+                        EIGENE WÖRTER AKTIV
+                      </div>
+                      <div className="text-xs lg:text-sm text-[#94A3B8]">
+                        Spieler geben vor jeder Runde eigene Begriffe ein.
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <SettingRow
+                    label="KATEGORIE"
+                    description={`Aktuell: ${category}`}
+                    icon={<Layers className="h-5 w-5" />}
+                  >
+                    {CATEGORIES.map((cat) => (
+                      <OpenButton
+                        key={cat}
+                        size="md"
+                        disabled={!isHost}
+                        variant={
+                          category.toLowerCase() === cat.toLowerCase() ? 'amber' : 'secondary'
+                        }
+                        onClick={() => handleSetCategory(cat)}
+                      >
+                        {cat}
+                      </OpenButton>
+                    ))}
+                  </SettingRow>
+                )}
+              </div>
+            </div>
           ) : isStadtLandFluss ? (
-            <>
-              <SettingRow
-                label="RUNDEN"
-                description={`${rounds} Runden pro Match`}
-                icon={<Repeat className="h-4 w-4" />}
-              >
-                {ROUND_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={rounds === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetRounds(opt)}
-                  >
-                    {opt}
-                  </OpenButton>
-                ))}
-              </SettingRow>
-
-              <SettingRow
-                label="ZEIT"
-                description={`${roundDuration} Sekunden pro Runde`}
-                icon={<Clock className="h-4 w-4" />}
-              >
-                {DURATION_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={roundDuration === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetDuration(opt)}
-                  >
-                    {opt}S
-                  </OpenButton>
-                ))}
-              </SettingRow>
-
-              <SettingToggleRow
-                label="STOPP-KNOPF"
-                description={stopButtonEnabled ? 'Aktiviert' : 'Deaktiviert'}
-                enabled={stopButtonEnabled}
-                disabled={!isHost}
-                icon={<Hand className="h-4 w-4" />}
-                onToggle={handleSetStopButton}
-              />
-
-              <SettingToggleRow
-                label="EIGENE WÖRTER"
-                description={
-                  customWordsEnabled
-                    ? 'Aktiviert – reihum eigene Kategorien'
-                    : 'Deaktiviert – feste Vorlage'
-                }
-                enabled={customWordsEnabled}
-                disabled={!isHost}
-                icon={<Pencil className="h-4 w-4" />}
-                onToggle={handleSetCustomWordsEnabled}
-              />
-
-              {!customWordsEnabled && (
+            <div className="grid w-full grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-14 items-start">
+              <div className="flex flex-col">
                 <SettingRow
-                  label="KATEGORIEN"
-                  description={SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
-                  icon={<Layers className="h-4 w-4" />}
+                  label="RUNDEN"
+                  description={`${rounds} Runden pro Match`}
+                  icon={<Repeat className="h-5 w-5" />}
                 >
-                  {SLF_PRESETS.map((preset) => (
+                  {ROUND_OPTIONS.map((opt) => (
                     <OpenButton
-                      key={preset.id}
-                      size="sm"
+                      key={opt}
+                      size="md"
                       disabled={!isHost}
-                      variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
-                      onClick={() => handleSetPreset(preset.id)}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
                     >
-                      {preset.label}
+                      {opt}
                     </OpenButton>
                   ))}
                 </SettingRow>
-              )}
-            </>
+
+                <SettingRow
+                  label="ZEIT"
+                  description={`${roundDuration} Sekunden pro Runde`}
+                  icon={<Clock className="h-5 w-5" />}
+                >
+                  {DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+
+                <SettingToggleRow
+                  label="STOPP-KNOPF"
+                  description={stopButtonEnabled ? 'Aktiviert' : 'Deaktiviert'}
+                  enabled={stopButtonEnabled}
+                  disabled={!isHost}
+                  icon={<Hand className="h-5 w-5" />}
+                  onToggle={handleSetStopButton}
+                />
+
+                <SettingToggleRow
+                  label="EIGENE WÖRTER"
+                  description={
+                    customWordsEnabled
+                      ? 'Aktiviert – reihum eigene Kategorien'
+                      : 'Deaktiviert – feste Vorlage'
+                  }
+                  enabled={customWordsEnabled}
+                  disabled={!isHost}
+                  icon={<Pencil className="h-5 w-5" />}
+                  onToggle={handleSetCustomWordsEnabled}
+                />
+              </div>
+
+              <div className="flex flex-col">
+                {customWordsEnabled ? (
+                  <div className="flex items-center gap-3.5 border-b border-white/15 py-4 text-left">
+                    <div className="flex h-10 w-10 lg:h-11 lg:w-11 shrink-0 items-center justify-center rounded-xl border border-[#34D399]/50 bg-[#10B981]/15 text-[#6EE7B7]">
+                      <Pencil className="h-5 w-5" />
+                    </div>
+                    <div>
+                      <div className="font-arcade text-sm lg:text-base tracking-wider text-white uppercase">
+                        REIHUM EIGENE KATEGORIEN
+                      </div>
+                      <div className="text-xs lg:text-sm text-[#94A3B8]">
+                        Vor jeder Runde wählt ein Spieler eigene Kategorien.
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <SettingRow
+                    label="KATEGORIEN"
+                    description={SLF_PRESETS.find((p) => p.id === categoryPreset)?.preview}
+                    icon={<Layers className="h-5 w-5" />}
+                  >
+                    {SLF_PRESETS.map((preset) => (
+                      <OpenButton
+                        key={preset.id}
+                        size="md"
+                        disabled={!isHost}
+                        variant={categoryPreset === preset.id ? 'amber' : 'secondary'}
+                        onClick={() => handleSetPreset(preset.id)}
+                      >
+                        {preset.label}
+                      </OpenButton>
+                    ))}
+                  </SettingRow>
+                )}
+              </div>
+            </div>
           ) : isRoulette ? (
-            <>
-              <SettingRow
-                label="RUNDEN"
-                description={`${rounds} Drehungen`}
-                icon={<Repeat className="h-4 w-4" />}
-              >
-                {ROULETTE_ROUND_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={rounds === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetRounds(opt)}
-                  >
-                    {opt}
-                  </OpenButton>
-                ))}
-              </SettingRow>
+            <div className="grid w-full grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-14 items-start">
+              <div className="flex flex-col">
+                <SettingRow
+                  label="RUNDEN"
+                  description={`${rounds} Drehungen`}
+                  icon={<Repeat className="h-5 w-5" />}
+                >
+                  {ROULETTE_ROUND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
+                    >
+                      {opt}
+                    </OpenButton>
+                  ))}
+                </SettingRow>
 
-              <SettingRow
-                label="SETZZEIT"
-                description={`${roundDuration} Sekunden pro Runde`}
-                icon={<Timer className="h-4 w-4" />}
-              >
-                {CASINO_DURATION_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={roundDuration === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetDuration(opt)}
-                  >
-                    {opt}S
-                  </OpenButton>
-                ))}
-              </SettingRow>
+                <SettingRow
+                  label="SETZZEIT"
+                  description={`${roundDuration} Sekunden pro Runde`}
+                  icon={<Timer className="h-5 w-5" />}
+                >
+                  {CASINO_DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+              </div>
 
-              <SettingRow
-                label="STARTGUTHABEN"
-                description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
-                icon={<Coins className="h-4 w-4" />}
-              >
-                {CASINO_BALANCE_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={startingBalance === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetStartingBalance(opt)}
-                  >
-                    {opt.toLocaleString('de-DE')} €
-                  </OpenButton>
-                ))}
-              </SettingRow>
-            </>
+              <div className="flex flex-col">
+                <SettingRow
+                  label="STARTGUTHABEN"
+                  description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
+                  icon={<Coins className="h-5 w-5" />}
+                >
+                  {CASINO_BALANCE_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={startingBalance === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetStartingBalance(opt)}
+                    >
+                      {opt.toLocaleString('de-DE')} €
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+              </div>
+            </div>
           ) : isPoker ? (
-            <>
-              <SettingRow
-                label="MAX HÄNDE"
-                description={`${rounds} Hände pro Tisch`}
-                icon={<Repeat className="h-4 w-4" />}
-              >
-                {POKER_HAND_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={rounds === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetRounds(opt)}
-                  >
-                    {opt}
-                  </OpenButton>
-                ))}
-              </SettingRow>
+            <div className="grid w-full grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-14 items-start">
+              <div className="flex flex-col">
+                <SettingRow
+                  label="MAX HÄNDE"
+                  description={`${rounds} Hände pro Tisch`}
+                  icon={<Repeat className="h-5 w-5" />}
+                >
+                  {POKER_HAND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={rounds === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetRounds(opt)}
+                    >
+                      {opt}
+                    </OpenButton>
+                  ))}
+                </SettingRow>
 
-              <SettingRow
-                label="ZUGZEIT"
-                description={`${roundDuration} Sekunden pro Zug`}
-                icon={<Timer className="h-4 w-4" />}
-              >
-                {CASINO_DURATION_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={roundDuration === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetDuration(opt)}
-                  >
-                    {opt}S
-                  </OpenButton>
-                ))}
-              </SettingRow>
+                <SettingRow
+                  label="ZUGZEIT"
+                  description={`${roundDuration} Sekunden pro Zug`}
+                  icon={<Timer className="h-5 w-5" />}
+                >
+                  {CASINO_DURATION_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={roundDuration === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetDuration(opt)}
+                    >
+                      {opt}S
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+              </div>
 
-              <SettingRow
-                label="BLINDS"
-                description={`Small / Big Blind: ${smallBlind}/${smallBlind * 2} €`}
-                icon={<Layers className="h-4 w-4" />}
-              >
-                {POKER_BLIND_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={smallBlind === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetSmallBlind(opt)}
-                  >
-                    {opt}/{opt * 2} €
-                  </OpenButton>
-                ))}
-              </SettingRow>
+              <div className="flex flex-col">
+                <SettingRow
+                  label="BLINDS"
+                  description={`Small / Big Blind: ${smallBlind}/${smallBlind * 2} €`}
+                  icon={<Layers className="h-5 w-5" />}
+                >
+                  {POKER_BLIND_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={smallBlind === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetSmallBlind(opt)}
+                    >
+                      {opt}/{opt * 2} €
+                    </OpenButton>
+                  ))}
+                </SettingRow>
 
-              <SettingRow
-                label="STARTGUTHABEN"
-                description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
-                icon={<Coins className="h-4 w-4" />}
-              >
-                {CASINO_BALANCE_OPTIONS.map((opt) => (
-                  <OpenButton
-                    key={opt}
-                    size="sm"
-                    disabled={!isHost}
-                    variant={startingBalance === opt ? 'amber' : 'secondary'}
-                    onClick={() => handleSetStartingBalance(opt)}
-                  >
-                    {opt.toLocaleString('de-DE')} €
-                  </OpenButton>
-                ))}
-              </SettingRow>
-            </>
+                <SettingRow
+                  label="STARTGUTHABEN"
+                  description={`${startingBalance.toLocaleString('de-DE')} € pro Spieler`}
+                  icon={<Coins className="h-5 w-5" />}
+                >
+                  {CASINO_BALANCE_OPTIONS.map((opt) => (
+                    <OpenButton
+                      key={opt}
+                      size="md"
+                      disabled={!isHost}
+                      variant={startingBalance === opt ? 'amber' : 'secondary'}
+                      onClick={() => handleSetStartingBalance(opt)}
+                    >
+                      {opt.toLocaleString('de-DE')} €
+                    </OpenButton>
+                  ))}
+                </SettingRow>
+              </div>
+            </div>
           ) : (
             <SettingRow
               label="MODUS / RUNDEN"
               description={`${rounds} Runde(n)`}
-              icon={<Repeat className="h-4 w-4" />}
+              icon={<Repeat className="h-5 w-5" />}
             >
               {[
                 { val: 1, label: '1 RUNDE' },
@@ -572,7 +618,7 @@ export function LobbyGameSettings({
               ].map(({ val, label }) => (
                 <OpenButton
                   key={val}
-                  size="sm"
+                  size="md"
                   disabled={!isHost}
                   variant={rounds === val ? 'amber' : 'secondary'}
                   onClick={() => handleSetRounds(val)}
@@ -623,16 +669,16 @@ export function LobbyOptionsModal({
     >
       <div
         onClick={(e) => e.stopPropagation()}
-        className="flex flex-1 min-h-0 w-full max-w-2xl flex-col justify-between"
+        className="flex flex-1 min-h-0 w-full max-w-6xl flex-col justify-between"
       >
         <div className="flex items-center justify-between gap-2">
           <button
             type="button"
             data-tv-autofocus="true"
             onClick={onClose}
-            className="font-arcade inline-flex h-9 sm:h-10 items-center gap-1.5 rounded-lg border border-white/20 bg-white/[0.05] px-3 text-xs tracking-wider text-white uppercase hover:bg-white/12 cursor-pointer active:scale-95"
+            className="font-arcade inline-flex h-9 lg:h-11 items-center gap-2 rounded-xl border border-white/25 bg-white/[0.06] px-3.5 lg:px-4 text-xs lg:text-sm tracking-wider text-white uppercase hover:bg-white/15 cursor-pointer active:scale-95"
           >
-            <ArrowLeft className="h-3.5 w-3.5" />
+            <ArrowLeft className="h-4 w-4" />
             <span>ZURÜCK</span>
           </button>
 
@@ -644,15 +690,15 @@ export function LobbyOptionsModal({
           )}
         </div>
 
-        <div className="my-auto mx-auto flex w-full max-w-xl flex-col items-center gap-4 sm:gap-6 px-2 sm:px-6 py-4">
+        <div className="my-auto mx-auto flex w-full max-w-5xl flex-col items-center gap-5 sm:gap-8 px-2 sm:px-6 py-4">
           <div className="flex flex-col items-center gap-1.5 text-center">
-            <div className="border-b-2 border-[#F59E0B] px-3 pb-1">
-              <h2 className="font-arcade text-xl sm:text-3xl tracking-wider text-white uppercase">
+            <div className="border-b-2 border-[#F59E0B] px-4 pb-1.5">
+              <h2 className="font-arcade text-2xl sm:text-3xl lg:text-4xl tracking-wider text-white uppercase">
                 SPIELOPTIONEN
               </h2>
             </div>
             {gameTitle && (
-              <p className="font-arcade text-xs sm:text-sm tracking-wider text-[#94A3B8] uppercase">
+              <p className="font-arcade text-xs sm:text-sm lg:text-base tracking-wider text-[#94A3B8] uppercase">
                 {gameTitle}
               </p>
             )}
@@ -667,8 +713,8 @@ export function LobbyOptionsModal({
             onUpdate={onUpdate}
           />
 
-          <div className="pt-2 w-full sm:w-56">
-            <OpenButton fullWidth size="md" variant="primary" onClick={onClose}>
+          <div className="pt-2 w-full sm:w-64">
+            <OpenButton fullWidth size="lg" variant="primary" onClick={onClose}>
               SPEICHERN
             </OpenButton>
           </div>
