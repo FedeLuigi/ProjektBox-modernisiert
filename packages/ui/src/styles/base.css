@@ -1141,36 +1141,3 @@ body::-webkit-scrollbar,
     0% 8px
   );
 }
-
-/* ─── ZOMBIE NIPPLEJS INDUSTRIE-JOYSTICKS ─── */
-.zombie-stick-zone-left .nipple .back,
-.zombie-stick-zone-right .nipple .back {
-  opacity: 0.92 !important;
-  box-shadow:
-    0 8px 20px rgba(0, 0, 0, 0.9),
-    inset 0 4px 14px rgba(0, 0, 0, 0.95) !important;
-}
-
-.zombie-stick-zone-left .nipple .back {
-  background: radial-gradient(circle, rgba(24, 24, 27, 0.92) 45%, rgba(63, 63, 70, 0.85) 100%) !important;
-  border: 4px solid #64748b !important;
-}
-
-.zombie-stick-zone-left .nipple .front {
-  opacity: 0.98 !important;
-  background: radial-gradient(circle at 35% 35%, #cbd5e1 0%, #475569 55%, #1e293b 100%) !important;
-  border: 2px solid rgba(203, 213, 225, 0.85) !important;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.95) !important;
-}
-
-.zombie-stick-zone-right .nipple .back {
-  background: radial-gradient(circle, rgba(24, 12, 14, 0.92) 45%, rgba(69, 10, 10, 0.8) 100%) !important;
-  border: 4px solid #b91c1c !important;
-}
-
-.zombie-stick-zone-right .nipple .front {
-  opacity: 0.98 !important;
-  background: radial-gradient(circle at 35% 35%, #fca5a5 0%, #ef4444 45%, #7f1d1d 100%) !important;
-  border: 2px solid rgba(254, 202, 202, 0.9) !important;
-  box-shadow: 0 0 18px rgba(239, 68, 68, 0.75) !important;
-}
