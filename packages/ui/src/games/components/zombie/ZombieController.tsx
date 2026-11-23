@@ -127,6 +127,9 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
+    let lastSentSig = '';
+    let lastSentAt = 0;
+
     const interval = window.setInterval(() => {
       const l = leftStickRef.current;
       const r = rightStickRef.current;
@@ -135,10 +138,10 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
       const ax = (keys.has('arrowright') ? 1 : 0) - (keys.has('arrowleft') ? 1 : 0);
       const ay = (keys.has('arrowdown') ? 1 : 0) - (keys.has('arrowup') ? 1 : 0);
 
-      const moveX = kx !== 0 ? kx : l.x;
-      const moveY = ky !== 0 ? ky : l.y;
-      const aimX = ax !== 0 ? ax : r.x;
-      const aimY = ay !== 0 ? ay : r.y;
+      const moveX = Number((kx !== 0 ? kx : l.x).toFixed(3));
+      const moveY = Number((ky !== 0 ? ky : l.y).toFixed(3));
+      const aimX = Number((ax !== 0 ? ax : r.x).toFixed(3));
+      const aimY = Number((ay !== 0 ? ay : r.y).toFixed(3));
 
       const aimMag = Math.hypot(r.x, r.y);
       const shouldFire =
@@ -147,16 +150,26 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
         ay !== 0 ||
         keys.has(' ') ||
         autoFireRef.current;
+      const reload = reloadQueuedRef.current || keys.has('r');
+      const dash = dashQueuedRef.current || keys.has('shift');
 
-      socketService.emitZombieInput({
-        moveX: Number(moveX.toFixed(3)),
-        moveY: Number(moveY.toFixed(3)),
-        aimX: Number(aimX.toFixed(3)),
-        aimY: Number(aimY.toFixed(3)),
-        firing: shouldFire,
-        reload: reloadQueuedRef.current || keys.has('r'),
-        dash: dashQueuedRef.current || keys.has('shift'),
-      });
+      const sig = `${moveX}|${moveY}|${aimX}|${aimY}|${shouldFire ? 1 : 0}|${reload ? 1 : 0}|${dash ? 1 : 0}`;
+      const now = performance.now();
+      const isIdle = moveX === 0 && moveY === 0 && aimX === 0 && aimY === 0 && !shouldFire && !reload && !dash;
+
+      if (!isIdle || sig !== lastSentSig || now - lastSentAt >= 250) {
+        lastSentSig = sig;
+        lastSentAt = now;
+        socketService.emitZombieInput({
+          moveX,
+          moveY,
+          aimX,
+          aimY,
+          firing: shouldFire,
+          reload,
+          dash,
+        });
+      }
 
       reloadQueuedRef.current = false;
       dashQueuedRef.current = false;
@@ -201,24 +214,28 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
   const xpSegments = Math.round((xpPct / 100) * 12);
 
   const sendUpgrade = (skill: ZombieSkillKey) => {
+    const l = leftStickRef.current;
+    const r = rightStickRef.current;
     socketService.emitZombieInput({
-      moveX: 0,
-      moveY: 0,
-      aimX: 0,
-      aimY: 0,
-      firing: false,
+      moveX: Number(l.x.toFixed(3)),
+      moveY: Number(l.y.toFixed(3)),
+      aimX: Number(r.x.toFixed(3)),
+      aimY: Number(r.y.toFixed(3)),
+      firing: autoFireRef.current,
       upgradeSkill: skill,
     });
     triggerHapticFeedback(25);
   };
 
   const sendSelectWeapon = (weaponId: string) => {
+    const l = leftStickRef.current;
+    const r = rightStickRef.current;
     socketService.emitZombieInput({
-      moveX: 0,
-      moveY: 0,
-      aimX: 0,
-      aimY: 0,
-      firing: false,
+      moveX: Number(l.x.toFixed(3)),
+      moveY: Number(l.y.toFixed(3)),
+      aimX: Number(r.x.toFixed(3)),
+      aimY: Number(r.y.toFixed(3)),
+      firing: autoFireRef.current,
       selectWeaponId: weaponId,
     });
     triggerHapticFeedback(20);

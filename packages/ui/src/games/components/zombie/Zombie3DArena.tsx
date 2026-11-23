@@ -213,6 +213,10 @@ export function Zombie3DArena({
   const mountRef = useRef<HTMLDivElement | null>(null);
   const onFinishRef = useRef(onFinish);
   onFinishRef.current = onFinish;
+  const playersRef = useRef(players);
+  playersRef.current = players;
+  const isGameOverRef = useRef(isGameOver);
+  isGameOverRef.current = isGameOver;
   const localInputRef = useRef<ZombieInputPayload | null>(null);
   const localLeftPadRef = useRef<HTMLDivElement | null>(null);
   const localRightPadRef = useRef<HTMLDivElement | null>(null);
@@ -246,7 +250,7 @@ export function Zombie3DArena({
     const container = mountRef.current;
     if (!container) return;
 
-    const activeList = players.filter((p) => !p.isTvScreen);
+    const activeList = playersRef.current.filter((p) => !p.isTvScreen);
     if (activeList.length === 0) return;
 
     // ─── THREE.JS SCENE SETUP ───
@@ -557,9 +561,16 @@ export function Zombie3DArena({
     window.addEventListener('keydown', onKeyDown);
     window.addEventListener('keyup', onKeyUp);
 
-    // Socket listener for Smartphone Controller Inputs
+    // Socket listener for Smartphone Controller Inputs (preserve unconsumed one-shot actions)
     const unsubInput = socketService.onZombieInput(({ playerId, input }) => {
-      inputs.set(playerId, input);
+      const prev = inputs.get(playerId);
+      inputs.set(playerId, {
+        ...input,
+        reload: Boolean(input.reload || prev?.reload),
+        dash: Boolean(input.dash || prev?.dash),
+        upgradeSkill: input.upgradeSkill || prev?.upgradeSkill,
+        selectWeaponId: input.selectWeaponId || prev?.selectWeaponId,
+      });
     });
 
     // ─── GAME STATE ───
@@ -1011,7 +1022,7 @@ export function Zombie3DArena({
       const dt = Math.min(0.05, (now - lastTime) / 1000);
       lastTime = now;
 
-      if (!isGameOver && !gameFinishedSent) {
+      if (!isGameOverRef.current && !gameFinishedSent) {
         // Wave Spawning
         if (zombiesToSpawn > 0 && now >= nextSpawnAt) {
           spawnZombie(now);
@@ -1053,6 +1064,8 @@ export function Zombie3DArena({
           } else {
             const rawInput = inputs.get(p.id);
             if (rawInput) {
+              rawInput.reload = false;
+              rawInput.dash = false;
               rawInput.selectWeaponId = undefined;
               rawInput.upgradeSkill = undefined;
             }
@@ -1425,6 +1438,14 @@ export function Zombie3DArena({
                   screenShake = Math.max(screenShake, 0.38);
                   spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
                   spawnParticles(pr.x, 1.0, pr.z, 0xf97316, 16, true);
+                  for (let k = zombies.length - 1; k >= 0; k--) {
+                    const target = zombies[k];
+                    const splashDist = Math.hypot(pr.x - target.x, pr.z - target.z);
+                    if (splashDist <= pr.splashRadius) {
+                      const killed = damageZombie(target, pr.damage, pr.ownerId, now);
+                      if (killed) zombies.splice(k, 1);
+                    }
+                  }
                 }
                 break;
               }
@@ -1883,7 +1904,7 @@ export function Zombie3DArena({
       loadedTextures.forEach((tex) => tex.dispose());
       renderer.dispose();
     };
-  }, [players, difficulty, isGameOver, localPlayerId]);
+  }, [difficulty, localPlayerId]);
 
   const computeLocalStick = (
     el: HTMLDivElement | null,
