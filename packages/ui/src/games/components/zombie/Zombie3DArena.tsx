@@ -508,6 +508,7 @@ export function Zombie3DArena({
     // ─── GAME STATE ───
     const zombies: ZombieEntity[] = [];
     const dyingZombies: Array<{ mesh: THREE.Group; startedAt: number; expiresAt: number }> = [];
+    const bloodPools: Array<{ mesh: THREE.Mesh; startedAt: number; expiresAt: number }> = [];
     const shockwaves: Array<{ mesh: THREE.Mesh; maxScale: number; startedAt: number; expiresAt: number }> = [];
     const projectiles: ProjectileEntity[] = [];
     const particles: ParticleEntity[] = [];
@@ -536,23 +537,43 @@ export function Zombie3DArena({
     const spawnParticles = (x: number, y: number, z: number, color: number, count: number) => {
       const now = performance.now();
       for (let i = 0; i < count; i++) {
-        const size = 0.14 + Math.random() * 0.14;
+        const size = 0.06 + Math.random() * 0.09;
         const mesh = new THREE.Mesh(
-          new THREE.BoxGeometry(size, size, size),
+          new THREE.SphereGeometry(size, 6, 6),
           new THREE.MeshBasicMaterial({ color })
         );
         mesh.position.set(x, y, z);
         scene.add(mesh);
         const angle = Math.random() * Math.PI * 2;
-        const spd = 2 + Math.random() * 5;
+        const spd = 2.2 + Math.random() * 5.2;
         particles.push({
           mesh,
           vx: Math.cos(angle) * spd,
-          vy: 2.5 + Math.random() * 4.5,
+          vy: 2.0 + Math.random() * 4.0,
           vz: Math.sin(angle) * spd,
-          expiresAt: now + 350 + Math.random() * 250,
+          expiresAt: now + 320 + Math.random() * 240,
         });
       }
+    };
+
+    const spawnBloodPool = (x: number, z: number, scale = 1) => {
+      const now = performance.now();
+      const pool = new THREE.Mesh(
+        new THREE.CircleGeometry((0.55 + Math.random() * 0.35) * scale, 16),
+        new THREE.MeshBasicMaterial({
+          color: 0x7f1d1d,
+          transparent: true,
+          opacity: 0.78,
+        })
+      );
+      pool.rotation.x = -Math.PI / 2;
+      pool.position.set(x, 0.03, z);
+      scene.add(pool);
+      bloodPools.push({
+        mesh: pool,
+        startedAt: now,
+        expiresAt: now + 7000,
+      });
     };
 
     const spawnDirectionalImpact = (
@@ -801,7 +822,9 @@ export function Zombie3DArena({
             }
           }
         }
-        spawnParticles(z.x, 0.9, z.z, z.baseColor, 12);
+        spawnParticles(z.x, 0.85, z.z, 0x991b1b, 14);
+        spawnParticles(z.x, 0.95, z.z, 0xdc2626, 8);
+        spawnBloodPool(z.x, z.z, z.kind === 'brute' ? 1.5 : 1.0);
         if (Math.random() < 0.22) {
           spawnPickup(z.x, z.z, Math.random() < 0.55 ? 'medkit' : 'xp', now);
         }
@@ -1026,8 +1049,9 @@ export function Zombie3DArena({
               for (let i = 0; i < weapon.pellets; i++) {
                 const spreadOffset = (Math.random() - 0.5) * weapon.spread;
                 const ang = baseAngle + spreadOffset;
-                const vx = Math.sin(ang) * weapon.projectileSpeed;
-                const vz = Math.cos(ang) * weapon.projectileSpeed;
+                const speedBoost = weapon.id === 'rocket' ? 1.0 : 1.65;
+                const vx = Math.sin(ang) * weapon.projectileSpeed * speedBoost;
+                const vz = Math.cos(ang) * weapon.projectileSpeed * speedBoost;
 
                 const projGroup = new THREE.Group();
                 if (weapon.id === 'rocket') {
@@ -1051,30 +1075,30 @@ export function Zombie3DArena({
                   projGroup.add(body, tip, flame);
                 } else if (weapon.id === 'plasma') {
                   const core = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.045, 0.045, 0.95, 8),
+                    new THREE.CylinderGeometry(0.035, 0.035, 1.3, 8),
                     new THREE.MeshBasicMaterial({ color: 0xffffff })
                   );
                   core.rotation.x = Math.PI / 2;
                   const halo = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.09, 0.02, 1.25, 8),
+                    new THREE.CylinderGeometry(0.075, 0.015, 1.75, 8),
                     new THREE.MeshBasicMaterial({ color: projColor, transparent: true, opacity: 0.6 })
                   );
                   halo.rotation.x = Math.PI / 2;
-                  halo.position.z = -0.15;
+                  halo.position.z = -0.2;
                   projGroup.add(core, halo);
                 } else {
                   const bulletCore = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.025, 0.025, 0.38, 6),
+                    new THREE.CylinderGeometry(0.016, 0.016, 0.32, 6),
                     new THREE.MeshBasicMaterial({ color: 0xffffff })
                   );
                   bulletCore.rotation.x = Math.PI / 2;
-                  bulletCore.position.z = 0.2;
+                  bulletCore.position.z = 0.22;
                   const tracerTail = new THREE.Mesh(
-                    new THREE.CylinderGeometry(0.04, 0.005, 1.35, 6),
-                    new THREE.MeshBasicMaterial({ color: 0xfde047, transparent: true, opacity: 0.72 })
+                    new THREE.CylinderGeometry(0.028, 0.002, 2.1, 6),
+                    new THREE.MeshBasicMaterial({ color: 0xfef08a, transparent: true, opacity: 0.78 })
                   );
                   tracerTail.rotation.x = Math.PI / 2;
-                  tracerTail.position.z = -0.45;
+                  tracerTail.position.z = -0.82;
                   projGroup.add(bulletCore, tracerTail);
                 }
 
@@ -1339,6 +1363,19 @@ export function Zombie3DArena({
           const isDim = waveVal > 0.65;
           lamp.light.intensity = isDim ? 1.8 : 9.5;
           lamp.bulbMat.color.setHex(isDim ? 0x78350f : 0xfde68a);
+        }
+
+        // Fade Blood Pools on Street
+        for (let i = bloodPools.length - 1; i >= 0; i--) {
+          const bp = bloodPools[i];
+          const age = (now - bp.startedAt) / (bp.expiresAt - bp.startedAt);
+          if (age > 0.6) {
+            (bp.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.78 * (1 - (age - 0.6) / 0.4));
+          }
+          if (now >= bp.expiresAt) {
+            scene.remove(bp.mesh);
+            bloodPools.splice(i, 1);
+          }
         }
 
         // Update Shockwaves
