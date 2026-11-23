@@ -113,11 +113,14 @@ interface ProjectileEntity {
 }
 
 interface ParticleEntity {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
+  material?: THREE.SpriteMaterial | THREE.MeshBasicMaterial;
   vx: number;
   vy: number;
   vz: number;
+  startedAt: number;
   expiresAt: number;
+  initialOpacity: number;
 }
 
 interface PickupEntity {
@@ -271,6 +274,23 @@ export function Zombie3DArena({
     const loadedTextures = mapHandles.textures;
     const crateMat = mapHandles.crateMat;
 
+    // Soft radial-gradient texture for smooth Sprite particles (blood, sparks, smoke, muzzle glow)
+    const softParticleCanvas = document.createElement('canvas');
+    softParticleCanvas.width = 64;
+    softParticleCanvas.height = 64;
+    const spCtx = softParticleCanvas.getContext('2d');
+    if (spCtx) {
+      const grad = spCtx.createRadialGradient(32, 32, 2, 32, 32, 30);
+      grad.addColorStop(0, 'rgba(255,255,255,1)');
+      grad.addColorStop(0.38, 'rgba(255,255,255,0.75)');
+      grad.addColorStop(0.75, 'rgba(255,255,255,0.2)');
+      grad.addColorStop(1, 'rgba(255,255,255,0)');
+      spCtx.fillStyle = grad;
+      spCtx.fillRect(0, 0, 64, 64);
+    }
+    const softParticleTex = new THREE.CanvasTexture(softParticleCanvas);
+    loadedTextures.push(softParticleTex);
+
     // Tactical Cover Obstacles
     const obstacles: ObstacleBox[] = [
       { x: -6.5, z: -6.5, halfW: 1.1, halfD: 1.1 },
@@ -367,20 +387,22 @@ export function Zombie3DArena({
       weaponGroup.add(createDetailedWeaponMesh('pistol'));
 
       const muzzleFlash = new THREE.Group();
-      const flashCoreMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
-      const flashWingMat = new THREE.MeshBasicMaterial({
-        color: 0xfbbf24,
-        transparent: true,
-        opacity: 0.9,
-        side: THREE.DoubleSide,
-      });
-      const flashCore = new THREE.Mesh(new THREE.SphereGeometry(0.14, 8, 8), flashCoreMat);
-      const wing1 = new THREE.Mesh(new THREE.PlaneGeometry(0.55, 0.16), flashWingMat);
-      const wing2 = new THREE.Mesh(new THREE.PlaneGeometry(0.16, 0.55), flashWingMat);
-      const cone = new THREE.Mesh(new THREE.ConeGeometry(0.16, 0.5, 8), flashWingMat);
-      cone.rotation.x = Math.PI / 2;
-      cone.position.z = 0.2;
-      muzzleFlash.add(flashCore, wing1, wing2, cone);
+      const flashGlowSprite = new THREE.Sprite(
+        new THREE.SpriteMaterial({
+          map: softParticleTex,
+          color: 0xfde047,
+          transparent: true,
+          opacity: 0.95,
+          blending: THREE.AdditiveBlending,
+          depthWrite: false,
+        })
+      );
+      flashGlowSprite.scale.set(0.85, 0.85, 1);
+      const flashCore = new THREE.Mesh(
+        new THREE.SphereGeometry(0.11, 8, 8),
+        new THREE.MeshBasicMaterial({ color: 0xffffff })
+      );
+      muzzleFlash.add(flashGlowSprite, flashCore);
       muzzleFlash.position.set(0.38, 1.12, 1.1);
       muzzleFlash.visible = false;
 
@@ -534,24 +556,40 @@ export function Zombie3DArena({
 
     startWave(1, performance.now());
 
-    const spawnParticles = (x: number, y: number, z: number, color: number, count: number) => {
+    const spawnParticles = (
+      x: number,
+      y: number,
+      z: number,
+      color: number,
+      count: number,
+      additive = false
+    ) => {
       const now = performance.now();
       for (let i = 0; i < count; i++) {
-        const size = 0.06 + Math.random() * 0.09;
-        const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(size, 6, 6),
-          new THREE.MeshBasicMaterial({ color })
-        );
-        mesh.position.set(x, y, z);
-        scene.add(mesh);
+        const size = 0.22 + Math.random() * 0.26;
+        const mat = new THREE.SpriteMaterial({
+          map: softParticleTex,
+          color,
+          transparent: true,
+          opacity: 0.88,
+          blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+          depthWrite: false,
+        });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(size, size, 1);
+        sprite.position.set(x, y, z);
+        scene.add(sprite);
         const angle = Math.random() * Math.PI * 2;
-        const spd = 2.2 + Math.random() * 5.2;
+        const spd = 2.0 + Math.random() * 4.8;
         particles.push({
-          mesh,
+          mesh: sprite,
+          material: mat,
           vx: Math.cos(angle) * spd,
-          vy: 2.0 + Math.random() * 4.0,
+          vy: 1.8 + Math.random() * 3.6,
           vz: Math.sin(angle) * spd,
-          expiresAt: now + 320 + Math.random() * 240,
+          startedAt: now,
+          expiresAt: now + 340 + Math.random() * 240,
+          initialOpacity: 0.88,
         });
       }
     };
@@ -583,25 +621,35 @@ export function Zombie3DArena({
       dirX: number,
       dirZ: number,
       color: number,
-      count: number
+      count: number,
+      additive = false
     ) => {
       const now = performance.now();
       for (let i = 0; i < count; i++) {
-        const size = 0.06 + Math.random() * 0.09;
-        const mesh = new THREE.Mesh(
-          new THREE.SphereGeometry(size, 5, 5),
-          new THREE.MeshBasicMaterial({ color })
-        );
-        mesh.position.set(x, y, z);
-        scene.add(mesh);
+        const size = 0.18 + Math.random() * 0.22;
+        const mat = new THREE.SpriteMaterial({
+          map: softParticleTex,
+          color,
+          transparent: true,
+          opacity: 0.92,
+          blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending,
+          depthWrite: false,
+        });
+        const sprite = new THREE.Sprite(mat);
+        sprite.scale.set(size, size, 1);
+        sprite.position.set(x, y, z);
+        scene.add(sprite);
         const spread = (Math.random() - 0.5) * 1.4;
-        const spd = 3.5 + Math.random() * 5.5;
+        const spd = 3.2 + Math.random() * 5.2;
         particles.push({
-          mesh,
+          mesh: sprite,
+          material: mat,
           vx: (dirX + spread) * spd,
-          vy: 1.0 + Math.random() * 3.2,
+          vy: 0.9 + Math.random() * 2.8,
           vz: (dirZ + spread) * spd,
-          expiresAt: now + 220 + Math.random() * 200,
+          startedAt: now,
+          expiresAt: now + 240 + Math.random() * 200,
+          initialOpacity: 0.92,
         });
       }
     };
@@ -785,12 +833,12 @@ export function Zombie3DArena({
 
     const damageZombie = (z: ZombieEntity, dmg: number, ownerId: string, now: number) => {
       z.hp -= dmg;
-      z.hitFlashUntil = now + 90;
+      z.hitFlashUntil = now + 80;
       for (const fm of z.flashMeshes) {
         const mat = fm.material as THREE.MeshStandardMaterial;
         if (mat?.emissive) {
-          mat.emissive.setHex(0xffffff);
-          mat.emissiveIntensity = 0.85;
+          mat.emissive.setHex(0xe11d48);
+          mat.emissiveIntensity = 0.38;
         }
       }
 
@@ -1001,6 +1049,7 @@ export function Zombie3DArena({
 
           // Smooth weapon recoil recovery
           p.weaponGroup.position.z += (0.22 - p.weaponGroup.position.z) * Math.min(1, dt * 18);
+          p.weaponGroup.rotation.x += (0 - p.weaponGroup.rotation.x) * Math.min(1, dt * 16);
 
           // Shooting
           const weapon = getWeaponById(p.weaponId);
@@ -1018,8 +1067,9 @@ export function Zombie3DArena({
               const baseAngle = Math.atan2(p.aimX, p.aimZ);
               const projColor = new THREE.Color(weapon.color).getHex();
 
-              // Recoil kick + multi-wing muzzle flash + dynamic point light
-              p.weaponGroup.position.z = 0.06;
+              // Recoil kick + soft muzzle flash + dynamic point light
+              p.weaponGroup.position.z = 0.05;
+              p.weaponGroup.rotation.x = -0.18;
               flashLight.color.setHex(projColor);
               flashLight.position.set(p.x + p.aimX * 1.0, 1.15, p.z + p.aimZ * 1.0);
               flashLight.intensity = 3.5;
@@ -1042,7 +1092,9 @@ export function Zombie3DArena({
                   vx: p.aimZ * (2.2 + Math.random() * 1.4),
                   vy: 2.8 + Math.random() * 1.5,
                   vz: -p.aimX * (2.2 + Math.random() * 1.4),
+                  startedAt: now,
                   expiresAt: now + 650,
+                  initialOpacity: 1,
                 });
               }
 
@@ -1139,24 +1191,31 @@ export function Zombie3DArena({
           pr.z += pr.vz * dt;
           pr.mesh.position.set(pr.x, 1.05, pr.z);
 
-          // Rocket smoke/ember trail
-          if (pr.weaponId === 'rocket' && Math.random() < 0.65) {
-            const smoke = new THREE.Mesh(
-              new THREE.SphereGeometry(0.14 + Math.random() * 0.1, 6, 6),
-              new THREE.MeshBasicMaterial({
-                color: Math.random() < 0.4 ? 0xf97316 : 0x64748b,
-                transparent: true,
-                opacity: 0.6,
-              })
-            );
+          // Rocket soft smoke/ember trail
+          if (pr.weaponId === 'rocket' && Math.random() < 0.7) {
+            const isEmber = Math.random() < 0.4;
+            const smokeMat = new THREE.SpriteMaterial({
+              map: softParticleTex,
+              color: isEmber ? 0xf97316 : 0x64748b,
+              transparent: true,
+              opacity: 0.65,
+              blending: isEmber ? THREE.AdditiveBlending : THREE.NormalBlending,
+              depthWrite: false,
+            });
+            const smoke = new THREE.Sprite(smokeMat);
+            const sSize = 0.35 + Math.random() * 0.2;
+            smoke.scale.set(sSize, sSize, 1);
             smoke.position.set(pr.x, 1.05, pr.z);
             scene.add(smoke);
             particles.push({
               mesh: smoke,
+              material: smokeMat,
               vx: (Math.random() - 0.5) * 1.2,
               vy: 0.8 + Math.random() * 1.0,
               vz: (Math.random() - 0.5) * 1.2,
-              expiresAt: now + 260,
+              startedAt: now,
+              expiresAt: now + 280,
+              initialOpacity: 0.65,
             });
           }
 
@@ -1174,11 +1233,13 @@ export function Zombie3DArena({
                   -pr.vx / pSpeed,
                   -pr.vz / pSpeed,
                   0xfde047,
-                  6
+                  6,
+                  true
                 );
                 if (pr.splashRadius > 0) {
+                  screenShake = Math.max(screenShake, 0.38);
                   spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
-                  spawnParticles(pr.x, 1.0, pr.z, 0xf97316, 16);
+                  spawnParticles(pr.x, 1.0, pr.z, 0xf97316, 16, true);
                 }
                 break;
               }
@@ -1198,9 +1259,9 @@ export function Zombie3DArena({
 
                 if (pr.splashRadius > 0) {
                   // Rocket AoE Explosion + Shockwave!
-                  screenShake = Math.max(screenShake, 0.42);
+                  screenShake = Math.max(screenShake, 0.45);
                   spawnShockwave(pr.x, pr.z, pr.splashRadius * 2.2, 0xf43f5e);
-                  spawnParticles(pr.x, 0.9, pr.z, 0xf97316, 18);
+                  spawnParticles(pr.x, 0.9, pr.z, 0xf97316, 18, true);
                   for (let k = zombies.length - 1; k >= 0; k--) {
                     const target = zombies[k];
                     const splashDist = Math.hypot(pr.x - target.x, pr.z - target.z);
@@ -1212,9 +1273,10 @@ export function Zombie3DArena({
                   removeProj = true;
                   break;
                 } else {
-                  // Directional impact blood/spark splatter + physical knockback!
-                  spawnDirectionalImpact(pr.x, 1.05, pr.z, dirX, dirZ, 0xb91c1c, 7);
-                  spawnDirectionalImpact(pr.x, 1.05, pr.z, -dirX, -dirZ, 0xfef08a, 3);
+                  // Directional impact blood splatter + additive sparks + physical knockback!
+                  screenShake = Math.max(screenShake, 0.08);
+                  spawnDirectionalImpact(pr.x, 1.05, pr.z, dirX, dirZ, 0xb91c1c, 7, false);
+                  spawnDirectionalImpact(pr.x, 1.05, pr.z, -dirX, -dirZ, 0xfef08a, 3, true);
                   const knockback = pr.weaponId === 'shotgun' ? 0.55 : 0.24;
                   const pushedZ = resolveObstaclePush(
                     z.x + dirX * knockback,
@@ -1391,15 +1453,20 @@ export function Zombie3DArena({
           }
         }
 
-        // Update Particles
+        // Update Particles with Gravity & Smooth Alpha Fade-Out
         for (let i = particles.length - 1; i >= 0; i--) {
           const pt = particles[i];
           pt.vy -= 14 * dt;
           pt.mesh.position.x += pt.vx * dt;
           pt.mesh.position.y = Math.max(0.05, pt.mesh.position.y + pt.vy * dt);
           pt.mesh.position.z += pt.vz * dt;
+          if (pt.material) {
+            const pLife = Math.min(1, (now - pt.startedAt) / Math.max(1, pt.expiresAt - pt.startedAt));
+            pt.material.opacity = Math.max(0, pt.initialOpacity * (1 - pLife));
+          }
           if (now >= pt.expiresAt) {
             scene.remove(pt.mesh);
+            pt.material?.dispose();
             particles.splice(i, 1);
           }
         }
