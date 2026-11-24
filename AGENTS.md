@@ -99,3 +99,25 @@ Regeln:
 - multiplayer.md, game-development.md, performance.md und testing.md werden bei passenden Aufgaben kontextabhängig herangezogen.
 - Skills unter .agents/skills/ enthalten wiederverwendbare Checklisten für Analyse, Features, Spiele, Bugs, Security, Performance, Migration, QA und Release.
 - Bei Konflikten gilt Sicherheit und Datenintegrität zuerst, danach diese Datei und die engste fachliche Regel.
+
+
+## 9. Integrierte Agent-Skills und Qualitätsrouting
+
+- Vor größeren Aufgaben, UI-/Game-Änderungen, Performance-Arbeiten oder Reviews zuerst
+  `.agents/skills/projectbox-skill-routing/SKILL.md` anwenden. Danach nur die passenden Skills
+  laden; Referenzdateien bei Bedarf öffnen.
+- Importierte Skills unter `.agents/skills/` werden kontextabhängig geladen, nicht pauschal alle
+  bei jeder Aufgabe.
+- React-/TypeScript-/UI-Arbeiten: `core-typescript`, `architecture-and-design`, `react`,
+  `accessibility`, `styling-and-design-tokens`, `component-api-design` nach Routing.
+- Game-/Three.js-Arbeiten: `game-ui-ux`, `game-feel`, `performance-optimization`,
+  `create-game-assets`, `threejs-scene-setup`, `threejs-materials-lighting`,
+  `threejs-gltf-loading` nach Routing.
+- Tests und Reviews: `test-quality`, `e2e-testing` (nur falls ein E2E-Framework vorhanden ist)
+  und `frontend-code-review` nach Routing.
+- Beispiele für andere Engines, Framework-Versionen, Build-Systeme oder Plattformen sind nicht
+  ungeprüft zu übernehmen. Prüfe Projektversionen, APIs, Scripts und Zielgeräte.
+- Für Socket.IO gelten weiterhin `.agents/rules/multiplayer.md` und `.agents/rules/security.md`;
+  importierte Frontend-Skills ersetzen keine serverseitige Autorisierung, Zustandsvalidierung oder
+  Reconnect-/Snapshot-Tests.
+- Herkunft und Lizenzen sind in `docs/THIRD_PARTY_AGENT_SKILLS.md` dokumentiert.
