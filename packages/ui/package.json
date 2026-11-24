@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@projektbox/shared": "*",
+    "canvas-confetti": "^1.9.4",
     "lucide-react": "^1.70.0",
     "motion": "^14.14.0",
     "pixi.js": "^8.23.0",
@@ -24,6 +25,7 @@
     "react-dom": "^19.0.0"
   },
   "devDependencies": {
+    "@types/canvas-confetti": "^1.9.0",
     "@types/qrcode": "^1.5.6",
     "@types/three": "^0.187.0"
   }

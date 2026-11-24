@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import confetti from 'canvas-confetti';
 import {
   Check,
   Clock,
@@ -241,6 +242,12 @@ export function TexasHoldemBoard({
     if (myRes.isWinner) {
       playWinSound();
       triggerHapticFeedback([18, 35, 25]);
+      confetti({
+        particleCount: 70,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FBBF24', '#FDE047', '#34D399', '#FB7185'],
+      });
     } else if (!myRes.folded && myRes.netProfit < 0) {
       playErrorSound();
     }
@@ -316,7 +323,7 @@ export function TexasHoldemBoard({
             </span>
           </div>
 
-          <span className="font-arcade text-xs sm:text-sm text-[#FDE68A] uppercase truncate">
+          <span className="font-casino text-sm sm:text-base font-bold text-[#FDE68A] tracking-wide uppercase truncate">
             {gameState?.lastActionText || PHASE_LABELS[phase]}
           </span>
 

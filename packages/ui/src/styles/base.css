@@ -1147,3 +1147,15 @@ body::-webkit-scrollbar,
   font-family: 'Luckiest Guy', 'Lilita One', 'Fredoka', Impact, sans-serif;
   letter-spacing: 0.03em;
 }
+
+/* ─── CASINO & POKER LUXURY SERIF TYPOGRAFIE ─── */
+.font-casino {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
+  letter-spacing: 0.02em;
+}
+
+/* ─── DRAW & GUESS SKETCHBOOK HANDSCHRIFT ─── */
+.font-sketch {
+  font-family: 'Caveat', 'Fredoka', cursive, sans-serif;
+  letter-spacing: 0.01em;
+}

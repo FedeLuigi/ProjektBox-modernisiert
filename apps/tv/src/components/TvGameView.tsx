@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react';
-import { ArrowLeft, Clock, Loader2, LogOut, Pencil, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Clock, Loader2, LogOut, Menu, Pencil, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -7,6 +7,7 @@ import {
   HeaderStatusOverlay,
   OpenButton,
   clientGameRegistry,
+  getGameStageBgClass,
   socketService,
 } from '@projektbox/ui';
 
@@ -24,6 +25,7 @@ export function TvGameView({
   const [lobby, setLobby] = useState<Lobby>(initialLobby);
   const [rematchRequested, setRematchRequested] = useState(false);
   const [isZombieMenuOpen, setIsZombieMenuOpen] = useState(false);
+  const [isGameMenuOpen, setIsGameMenuOpen] = useState(false);
 
   const gameState = lobby.gameState;
   const isDrawAndGuess = lobby.gameId === 'draw-and-guess';
@@ -118,20 +120,20 @@ export function TvGameView({
     <div
       data-tv-scope="modal"
       className={`fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden text-white select-none animate-fade-in ${
-        isFullScreenGame && !isGameOver ? (isGoldMiner ? 'bg-[#7D563B]' : 'bg-[#070B12]') : 'bg-[#1B2B40]'
+        !isGameOver ? getGameStageBgClass(lobby.gameId) : 'bg-[#1B2B40]'
       }`}
     >
-      {(!isFullScreenGame || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
+      {isGameOver && <BackgroundCometCanvas opacity={0.85} />}
 
       <div
         className={
           isFullScreenGame
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
-            : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3'
+            : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-4 lg:px-8 py-3'
         }
       >
-        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL (bei Vollbild-Spielen ausgeblendet) */}
-        {!isFullScreenGame && (
+        {/* 1. TV-KOPFZEILE NUR NOCH IM GAME-OVER-SCREEN; IM SPIEL SCHWEBENDES MENÜ */}
+        {isGameOver && (
         <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 pb-2.5">
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
             <OpenButton size="md" variant="secondary" onClick={onLeave} className="shrink-0 whitespace-nowrap">
@@ -186,6 +188,74 @@ export function TvGameView({
             </span>
           </div>
         </header>
+        )}
+
+        {/* Schwebendes TV-Menü für alle Standard-/Party-/Casino-Spiele */}
+        {!isFullScreenGame && !isGameOver && (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsGameMenuOpen(true)}
+              aria-label="Spielmenü öffnen"
+              className="fixed top-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] left-[max(0.75rem,calc(env(safe-area-inset-left,0px)+0.5rem))] z-40 inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#0F172A]/80 px-3.5 py-2 font-arcade text-xs tracking-wider text-white uppercase shadow-lg backdrop-blur-md transition-colors hover:border-[#FBBF24] hover:text-[#FDE68A] cursor-pointer"
+            >
+              <Menu className="h-4 w-4 text-[#FBBF24]" />
+              <span>MENÜ</span>
+            </button>
+
+            {isGameMenuOpen && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="TV-Spielmenü"
+                onClick={() => setIsGameMenuOpen(false)}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/80 p-6 backdrop-blur-md animate-fade-in"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-md rounded-3xl border border-white/15 bg-[#0F172A]/95 p-6 shadow-2xl"
+                >
+                  <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <div className="font-arcade text-lg text-white uppercase">
+                        {gameTitle || lobby.name}
+                      </div>
+                      <div className="font-arcade text-xs text-[#FDE68A] uppercase">
+                        RAUMCODE: {lobby.code}
+                      </div>
+                    </div>
+                    <HeaderStatusOverlay
+                      lobby={lobby}
+                      showWhenConnected
+                      onExitExpired={onLeave}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-3">
+                    <OpenButton
+                      size="lg"
+                      variant="primary"
+                      fullWidth
+                      data-tv-autofocus="true"
+                      onClick={() => setIsGameMenuOpen(false)}
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>WEITER SPIELEN</span>
+                    </OpenButton>
+                    <OpenButton
+                      size="lg"
+                      variant="rose"
+                      fullWidth
+                      onClick={onLeave}
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span>EXIT TV</span>
+                    </OpenButton>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Schwebender EXIT-TV-Button im Vollbild-Gold-Miner */}

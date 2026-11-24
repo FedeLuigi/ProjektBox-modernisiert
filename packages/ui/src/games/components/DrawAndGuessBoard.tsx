@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import confetti from 'canvas-confetti';
+import { GiPalette } from 'react-icons/gi';
 import {
   Check,
   Clock,
@@ -720,6 +722,12 @@ export function DrawAndGuessBoard({
       if (latestGuess.isCorrect) {
         playWinSound();
         triggerHapticFeedback([18, 35, 25]);
+        confetti({
+          particleCount: 55,
+          spread: 60,
+          origin: { y: 0.65 },
+          colors: ['#FBBF24', '#34D399', '#38BDF8', '#F472B6'],
+        });
       } else {
         playErrorSound();
         triggerHapticFeedback(25);
@@ -912,12 +920,12 @@ export function DrawAndGuessBoard({
       <div className="w-full flex items-center justify-between gap-3 shrink-0 px-1">
         <div className="flex items-center gap-2.5 min-w-0">
           <div className="hidden xs:flex items-center gap-1.5 border-b-2 border-[#F59E0B] pb-0.5 shrink-0">
-            <Paintbrush className="h-3.5 w-3.5 text-[#FBBF24]" />
+            <GiPalette className="h-4 w-4 text-[#FBBF24]" />
             <span className="text-[11px] font-arcade uppercase tracking-wider text-[#FDE68A]">
-              ZEICHNE
+              ATELIER
             </span>
           </div>
-          <span className="text-base sm:text-xl lg:text-2xl landscape:text-base font-arcade uppercase tracking-wider text-white truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
+          <span className="text-2xl sm:text-3xl lg:text-4xl landscape:text-2xl font-sketch font-bold tracking-wide text-[#FEF3C7] truncate drop-shadow-[0_2px_10px_rgba(0,0,0,0.45)]">
             {gameState?.secretWord}
           </span>
         </div>

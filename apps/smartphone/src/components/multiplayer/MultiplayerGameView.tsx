@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useState } from 'react';
-import { ArrowLeft, Loader2, RotateCcw } from 'lucide-react';
+import { ArrowLeft, Loader2, Menu, Play, RotateCcw } from 'lucide-react';
 import { GiExitDoor } from 'react-icons/gi';
 import type { Lobby } from '@projektbox/shared/types';
 import {
@@ -8,6 +8,7 @@ import {
   HeaderStatusOverlay,
   OpenButton,
   clientGameRegistry,
+  getGameStageBgClass,
   socketService,
   useUserProfile,
 } from '@projektbox/ui';
@@ -29,6 +30,7 @@ export function MultiplayerGameView({
     socketService.isActionBlocked()
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isGameMenuOpen, setIsGameMenuOpen] = useState(false);
 
   const currentUser = useUserProfile();
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
@@ -180,10 +182,10 @@ export function MultiplayerGameView({
   return (
     <div
       className={`fixed inset-0 z-50 flex w-full flex-col overflow-hidden overflow-x-hidden text-white select-none animate-fade-in ${
-        isFullScreenGame && !isGameOver ? (isGoldMiner ? 'bg-[#7D563B]' : 'bg-[#070B12]') : 'bg-[#1B2B40]'
+        !isGameOver ? getGameStageBgClass(lobby.gameId) : 'bg-[#1B2B40]'
       }`}
     >
-      {(!isFullScreenGame || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
+      {isGameOver && <BackgroundCometCanvas opacity={0.85} />}
 
       <div
         className={
@@ -192,8 +194,8 @@ export function MultiplayerGameView({
             : 'safe-game-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between'
         }
       >
-        {/* 1. OPEN-GALLERY TOP-BAR (bei Vollbild-Action-Spielen ausgeblendet) */}
-        {(!isFullScreenGame || isGameOver) && (
+        {/* 1. OPEN-GALLERY TOP-BAR NUR NOCH BEI GAME-OVER; IM SPIEL SCHWEBENDES MENÜ */}
+        {isGameOver && (
         <header className="game-landscape-header relative grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
           <div className="justify-self-start">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
@@ -253,6 +255,75 @@ export function MultiplayerGameView({
             </div>
           </div>
         </header>
+        )}
+
+        {/* Schwebender MENÜ-Button für alle Standard-/Party-/Casino-Spiele */}
+        {!isFullScreenGame && !isGameOver && (
+          <>
+            <button
+              type="button"
+              onClick={() => setIsGameMenuOpen(true)}
+              aria-label="Spielmenü öffnen"
+              className="fixed top-[max(0.65rem,calc(env(safe-area-inset-top,0px)+0.35rem))] left-[max(0.65rem,calc(env(safe-area-inset-left,0px)+0.35rem))] z-40 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#0F172A]/80 px-3 py-1.5 font-arcade text-[11px] tracking-wider text-white uppercase shadow-lg backdrop-blur-md active:scale-95 cursor-pointer"
+            >
+              <Menu className="h-3.5 w-3.5 text-[#FBBF24]" />
+              <span>MENÜ</span>
+            </button>
+
+            {isGameMenuOpen && (
+              <div
+                role="dialog"
+                aria-modal="true"
+                aria-label="Spielmenü"
+                onClick={() => setIsGameMenuOpen(false)}
+                className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/80 p-5 backdrop-blur-md animate-fade-in"
+              >
+                <div
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-full max-w-sm rounded-3xl border border-white/15 bg-[#0F172A]/95 p-5 shadow-2xl"
+                >
+                  <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+                    <div>
+                      <div className="font-arcade text-base text-white uppercase">
+                        SPIELMENÜ
+                      </div>
+                      <div className="font-arcade text-xs text-[#FDE68A] uppercase">
+                        RAUMCODE: {lobby.code}
+                      </div>
+                    </div>
+                    <HeaderStatusOverlay
+                      lobby={lobby}
+                      currentUserId={currentUser.id}
+                      message={errorMsg}
+                      showWhenConnected
+                      onExitExpired={onLeave}
+                    />
+                  </div>
+
+                  <div className="flex flex-col gap-2.5">
+                    <OpenButton
+                      size="md"
+                      variant="primary"
+                      fullWidth
+                      onClick={() => setIsGameMenuOpen(false)}
+                    >
+                      <Play className="h-4 w-4 fill-current" />
+                      <span>WEITER SPIELEN</span>
+                    </OpenButton>
+                    <OpenButton
+                      size="md"
+                      variant="rose"
+                      fullWidth
+                      onClick={onLeave}
+                    >
+                      <ArrowLeft className="h-4 w-4" />
+                      <span>SPIEL VERLASSEN</span>
+                    </OpenButton>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
         )}
 
         {/* Schwebender EXIT-Button im Vollbild-Gold-Miner */}

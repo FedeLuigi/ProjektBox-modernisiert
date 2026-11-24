@@ -1,5 +1,6 @@
 import { useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import confetti from 'canvas-confetti';
 import {
   Check,
   Clock,
@@ -1166,6 +1167,12 @@ export function RouletteBoard({
       if (myNet > 0) {
         playWinSound();
         triggerHapticFeedback([18, 35, 25]);
+        confetti({
+          particleCount: 65,
+          spread: 65,
+          origin: { y: 0.62 },
+          colors: ['#FBBF24', '#34D399', '#F43F5E', '#FDE68A'],
+        });
       } else if (myNet < 0) {
         playErrorSound();
       }
