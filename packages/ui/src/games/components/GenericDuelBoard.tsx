@@ -1,6 +1,7 @@
 import { Flag, Sparkles, Swords, Zap } from 'lucide-react';
 import type { GameRendererProps } from '../types';
 import { OpenButton } from '../../components/OpenSubpageUI';
+import { playMoveSound, triggerHapticFeedback } from '../../utils/soundEffects';
 
 export function GenericDuelBoard({
   gameState,
@@ -21,6 +22,8 @@ export function GenericDuelBoard({
 
   const handleAction = () => {
     if (!canAct) return;
+    playMoveSound();
+    triggerHapticFeedback(15);
     onMove({ score: 1, timestamp: Date.now() });
   };
 

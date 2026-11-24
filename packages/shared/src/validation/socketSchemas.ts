@@ -346,6 +346,7 @@ export const GoldMinerStateSchema = z.object({
   teamMoney: z.number().finite().min(0).max(100000000),
   phase: z.enum(['playing', 'shop', 'gameover']),
   mode: z.enum(['coop', 'versus']),
+  paused: z.boolean().optional(),
   shopOffers: z.array(
     z.object({
       id: GoldMinerShopItemIdSchema,

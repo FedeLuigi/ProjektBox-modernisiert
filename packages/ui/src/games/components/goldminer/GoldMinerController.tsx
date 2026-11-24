@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
-import { triggerHapticFeedback } from '../../../utils/soundEffects';
+import { playButtonClickSound, triggerHapticFeedback } from '../../../utils/soundEffects';
 import {
   GiAnchor,
   GiClover,
@@ -63,10 +63,14 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
   };
 
   const handleBuyItem = (itemId: GoldMinerShopItemId) => {
+    playButtonClickSound();
+    triggerHapticFeedback(20);
     socketService.emitGoldMinerInput({ buyItemId: itemId });
   };
 
   const handleNextLevel = () => {
+    playButtonClickSound();
+    triggerHapticFeedback(20);
     socketService.emitGoldMinerInput({ nextLevelReady: true });
   };
 
@@ -111,7 +115,7 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
                 Lvl {hud?.level ?? 1}
               </span>
               <span className="font-goldminer text-base text-[#DC2626] drop-shadow-[0_1px_0_rgba(255,255,255,0.65)]">
-                {Math.ceil(hud?.timeLeft ?? 60)}s
+                {hud?.paused ? 'PAUSE' : `${Math.ceil(hud?.timeLeft ?? 60)}s`}
               </span>
             </div>
           </div>

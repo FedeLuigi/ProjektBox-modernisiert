@@ -332,6 +332,7 @@ export interface GoldMinerHudStatePayload {
   teamMoney: number;
   phase: 'playing' | 'shop' | 'gameover';
   mode: GoldMinerMode;
+  paused?: boolean;
   shopOffers: Array<{ id: GoldMinerShopItemId; price: number }>;
   players: Record<string, GoldMinerPlayerHudState>;
 }

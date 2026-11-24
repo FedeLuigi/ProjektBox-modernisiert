@@ -440,6 +440,7 @@ export function GoldMinerArena({
         teamMoney,
         phase,
         mode,
+        paused: pausedRef.current,
         shopOffers,
         players: playersRecord,
       };

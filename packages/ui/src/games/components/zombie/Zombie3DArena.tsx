@@ -9,11 +9,24 @@ import type {
   ZombiePlayerSkills,
 } from '@projektbox/shared/types';
 import {
+  ZOMBIE_WEAPONS,
   getLevelForXp,
   getWeaponById,
   getWeaponForLevel,
   getXpBoundsForLevel,
 } from '@projektbox/shared/utils';
+
+const LOCAL_ZOMBIE_SKILLS: Array<{
+  id: keyof ZombiePlayerSkills;
+  label: string;
+  description: string;
+  maxRank: number;
+}> = [
+  { id: 'hp', label: 'PANZERUNG', description: '+20 Max-HP je Rang', maxRank: 5 },
+  { id: 'damage', label: 'FEUERKRAFT', description: '+12% Waffenschaden je Rang', maxRank: 5 },
+  { id: 'speed', label: 'TEMPO', description: '+8% Lauftempo je Rang', maxRank: 5 },
+  { id: 'ammo', label: 'MAGAZIN', description: '+15% Munition & Nachladen', maxRank: 5 },
+];
 import type { Player } from '@projektbox/shared/types';
 import { socketService } from '../../../services/socket';
 import {
@@ -251,6 +264,8 @@ export function Zombie3DArena({
   const localRightPadRef = useRef<HTMLDivElement | null>(null);
   const [localLeftKnob, setLocalLeftKnob] = useState({ x: 0, y: 0, pointerId: null as number | null });
   const [localRightKnob, setLocalRightKnob] = useState({ x: 0, y: 0, pointerId: null as number | null });
+  const [localAutoFire, setLocalAutoFire] = useState(false);
+  const [showLocalCharMenu, setShowLocalCharMenu] = useState(false);
 
   const [hudOverlay, setHudOverlay] = useState<{
     wave: number;
@@ -2225,7 +2240,7 @@ export function Zombie3DArena({
     return { x: dx, y: dy };
   };
 
-  const updateLocalInput = (patch: Partial<ZombieInputPayload>) => {
+  const updateLocalInput = (patch: Partial<ZombieInputPayload>, autoFireOverride?: boolean) => {
     const prev = localInputRef.current || {
       moveX: 0,
       moveY: 0,
@@ -2233,7 +2248,17 @@ export function Zombie3DArena({
       aimY: 0,
       firing: false,
     };
-    localInputRef.current = { ...prev, ...patch };
+    const nextAimX = patch.aimX !== undefined ? patch.aimX : prev.aimX;
+    const nextAimY = patch.aimY !== undefined ? patch.aimY : prev.aimY;
+    const effectiveAutoFire = autoFireOverride !== undefined ? autoFireOverride : localAutoFire;
+    localInputRef.current = {
+      ...prev,
+      ...patch,
+      firing:
+        patch.firing !== undefined
+          ? patch.firing || effectiveAutoFire
+          : effectiveAutoFire || Math.hypot(nextAimX, nextAimY) > 0.25,
+    };
   };
 
   return (
@@ -2376,7 +2401,14 @@ export function Zombie3DArena({
       )}
 
       {/* Standalone Smartphone Touch Controls (only when played without TV) */}
-      {localPlayerId && (
+      {localPlayerId && (() => {
+        const localHud = hudOverlay.players.find((p) => p.playerId === localPlayerId);
+        const localSkillPts = localHud?.skillPoints ?? 0;
+        const localSkills = localHud?.skills || { hp: 0, damage: 0, speed: 0, ammo: 0 };
+        const localLevel = localHud?.level ?? 1;
+        const localWeaponId = localHud?.weaponId ?? 'pistol';
+
+        return (
         <>
           <div
             ref={localLeftPadRef}
@@ -2401,7 +2433,7 @@ export function Zombie3DArena({
               setLocalLeftKnob({ x: 0, y: 0, pointerId: null });
               updateLocalInput({ moveX: 0, moveY: 0 });
             }}
-            className="absolute bottom-3 left-3 z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#38BDF8]/50 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
+            className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] left-[max(0.75rem,env(safe-area-inset-left,0px))] z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#38BDF8]/50 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
           >
             <div
               className="h-11 w-11 rounded-full bg-[#38BDF8]/85 shadow-lg"
@@ -2432,7 +2464,7 @@ export function Zombie3DArena({
               setLocalRightKnob({ x: 0, y: 0, pointerId: null });
               updateLocalInput({ aimX: 0, aimY: 0, firing: false });
             }}
-            className="absolute bottom-3 right-3 z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#F43F5E]/55 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
+            className="absolute bottom-[max(0.75rem,env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] z-30 flex h-28 w-28 items-center justify-center rounded-full border-2 border-[#F43F5E]/55 bg-[#0F172A]/45 backdrop-blur-sm touch-none"
           >
             <div
               className="flex h-11 w-11 items-center justify-center rounded-full bg-[#F43F5E]/85 text-white shadow-lg"
@@ -2442,24 +2474,133 @@ export function Zombie3DArena({
             </div>
           </div>
 
-          <div className="absolute bottom-34 right-3 z-30 flex items-center gap-2">
+          <div className="absolute bottom-[calc(8.5rem+env(safe-area-inset-bottom,0px))] right-[max(0.75rem,env(safe-area-inset-right,0px))] z-30 flex flex-wrap items-center justify-end gap-1.5">
+            <button
+              type="button"
+              onClick={() => {
+                const next = !localAutoFire;
+                setLocalAutoFire(next);
+                updateLocalInput({ firing: next }, next);
+              }}
+              aria-pressed={localAutoFire}
+              className={`border px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider backdrop-blur-sm active:scale-95 cursor-pointer ${
+                localAutoFire
+                  ? 'border-[#34D399] bg-[#065F46]/85 text-[#A7F3D0]'
+                  : 'border-white/25 bg-[#070B12]/80 text-[#CBD5E1]'
+              }`}
+            >
+              AUTO {localAutoFire ? 'AN' : 'AUS'}
+            </button>
+            <button
+              type="button"
+              onClick={() => setShowLocalCharMenu(true)}
+              className="relative border border-[#FBBF24]/65 bg-[#070B12]/85 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#FDE68A] backdrop-blur-sm active:scale-95 cursor-pointer"
+            >
+              CHARAKTER
+              {localSkillPts > 0 && (
+                <span className="ml-1 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[#EF4444] px-1 text-[9px] text-white">
+                  {localSkillPts}
+                </span>
+              )}
+            </button>
             <button
               type="button"
               onClick={() => updateLocalInput({ reload: true })}
-              className="border border-[#F59E0B]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#FDE68A] backdrop-blur-sm active:scale-95"
+              className="border border-[#F59E0B]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#FDE68A] backdrop-blur-sm active:scale-95 cursor-pointer"
             >
               LADEN
             </button>
             <button
               type="button"
               onClick={() => updateLocalInput({ dash: true })}
-              className="border border-[#38BDF8]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#7DD3FC] backdrop-blur-sm active:scale-95"
+              className="border border-[#38BDF8]/60 bg-[#070B12]/80 px-2.5 py-1.5 font-mono text-[10px] font-bold tracking-wider text-[#7DD3FC] backdrop-blur-sm active:scale-95 cursor-pointer"
             >
               DASH
             </button>
           </div>
+
+          {showLocalCharMenu && (
+            <div
+              role="dialog"
+              aria-modal="true"
+              aria-label="Charakter & Waffen"
+              onClick={() => setShowLocalCharMenu(false)}
+              className="fixed inset-0 z-50 flex items-center justify-center bg-[#030712]/82 p-4 backdrop-blur-md"
+            >
+              <div
+                onClick={(e) => e.stopPropagation()}
+                className="w-full max-w-lg max-h-[85vh] overflow-y-auto border border-white/15 bg-[#0B1220] p-4 text-white shadow-2xl"
+              >
+                <div className="mb-3 flex items-center justify-between border-b border-white/10 pb-2">
+                  <span className="font-mono text-xs font-bold tracking-[0.18em] text-[#FDE68A] uppercase">
+                    CHARAKTER & WAFFEN (PUNKTE: {localSkillPts})
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setShowLocalCharMenu(false)}
+                    className="border border-white/20 px-2.5 py-1 font-mono text-[10px] text-white/80 hover:text-white cursor-pointer"
+                  >
+                    SCHLIESSEN
+                  </button>
+                </div>
+
+                <div className="mb-3 grid grid-cols-2 gap-2">
+                  {LOCAL_ZOMBIE_SKILLS.map((sk) => {
+                    const rank = localSkills[sk.id] || 0;
+                    const maxed = rank >= sk.maxRank;
+                    const canBuy = localSkillPts > 0 && !maxed;
+                    return (
+                      <button
+                        key={sk.id}
+                        type="button"
+                        disabled={!canBuy}
+                        onClick={() => updateLocalInput({ upgradeSkill: sk.id })}
+                        className="flex flex-col items-start border border-white/15 bg-white/[0.04] p-2.5 text-left disabled:opacity-50 hover:border-[#FBBF24]/70 cursor-pointer"
+                      >
+                        <div className="flex w-full items-center justify-between font-mono text-xs font-bold">
+                          <span>{sk.label}</span>
+                          <span className="text-[#FDE68A]">
+                            {rank}/{sk.maxRank}
+                          </span>
+                        </div>
+                        <span className="mt-0.5 text-[11px] text-[#94A3B8]">{sk.description}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {ZOMBIE_WEAPONS.map((w) => {
+                    const unlocked = localLevel >= w.unlockLevel;
+                    const active = localWeaponId === w.id;
+                    return (
+                      <button
+                        key={w.id}
+                        type="button"
+                        disabled={!unlocked}
+                        onClick={() => updateLocalInput({ selectWeaponId: w.id })}
+                        className={`flex flex-col items-start border p-2 text-left disabled:opacity-40 cursor-pointer ${
+                          active
+                            ? 'border-[#34D399] bg-[#065F46]/40'
+                            : 'border-white/15 bg-white/[0.03] hover:border-white/40'
+                        }`}
+                      >
+                        <span className="font-mono text-[11px] font-bold" style={{ color: w.color }}>
+                          {w.shortName}
+                        </span>
+                        <span className="text-[10px] text-[#94A3B8]">
+                          {unlocked ? (active ? 'AUSGERÜSTET' : 'AUSRÜSTEN') : `AB LVL ${w.unlockLevel}`}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
         </>
-      )}
+        );
+      })()}
 
       {hudOverlay.players.length > 0 && hudOverlay.players.every((p) => !p.alive) && (
         <div className="pointer-events-none absolute inset-x-0 top-1/2 -translate-y-1/2 z-30 flex items-center justify-center">

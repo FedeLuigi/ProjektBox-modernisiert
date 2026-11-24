@@ -185,7 +185,7 @@ export function TexasHoldemBoard({
     Math.min(maxStreetBet, customRaiseTarget)
   );
 
-  const sentTimeoutKeyRef = useRef<string | null>(null);
+  const sentTimeoutRef = useRef<{ key: string; sentAt: number } | null>(null);
   const lastSoundTurnRef = useRef<string | null>(null);
   const lastShowdownSoundHandRef = useRef<number | null>(null);
 
@@ -198,8 +198,15 @@ export function TexasHoldemBoard({
       const remainingMs = phaseEndsAt - Date.now();
       setTimeLeft(Math.max(0, Math.ceil(remainingMs / 1000)));
 
-      if (!isTvScreen && !disabled && remainingMs <= 0 && sentTimeoutKeyRef.current !== key) {
-        sentTimeoutKeyRef.current = key;
+      if (
+        !isTvScreen &&
+        !disabled &&
+        remainingMs <= 0 &&
+        (!sentTimeoutRef.current ||
+          sentTimeoutRef.current.key !== key ||
+          Date.now() - sentTimeoutRef.current.sentAt >= 1600)
+      ) {
+        sentTimeoutRef.current = { key, sentAt: Date.now() };
         onMove({ type: 'time_up' });
       }
     };
@@ -785,7 +792,11 @@ export function TexasHoldemBoard({
                     type="range"
                     min={minRaiseTarget}
                     max={maxStreetBet}
-                    step={Math.max(5, smallBlind)}
+                    step={
+                      maxStreetBet - minRaiseTarget < Math.max(5, smallBlind)
+                        ? 1
+                        : Math.max(5, smallBlind)
+                    }
                     value={effectiveRaiseTarget}
                     onChange={(e) => setCustomRaiseTarget(Number(e.target.value))}
                     aria-label="Einsatzhöhe wählen"

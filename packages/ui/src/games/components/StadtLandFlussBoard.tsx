@@ -512,7 +512,7 @@ export function StadtLandFlussBoard({
 
   const [nowMs, setNowMs] = useState<number>(() => Date.now());
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const timeoutTriggeredRef = useRef<string | null>(null);
+  const timeoutTriggeredRef = useRef<{ key: string; sentAt: number } | null>(null);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -540,17 +540,23 @@ export function StadtLandFlussBoard({
     if (timeLeft > 0) return;
 
     const phaseKey = `${round}-${phase}`;
-    if (timeoutTriggeredRef.current === phaseKey) return;
+    if (
+      timeoutTriggeredRef.current &&
+      timeoutTriggeredRef.current.key === phaseKey &&
+      Date.now() - timeoutTriggeredRef.current.sentAt < 1800
+    ) {
+      return;
+    }
 
     if (
       phase === 'choosing_categories' ||
       phase === 'writing' ||
       phase === 'review'
     ) {
-      timeoutTriggeredRef.current = phaseKey;
+      timeoutTriggeredRef.current = { key: phaseKey, sentAt: Date.now() };
       onMove({ type: 'time_up' });
     } else if (phase === 'round_over') {
-      timeoutTriggeredRef.current = phaseKey;
+      timeoutTriggeredRef.current = { key: phaseKey, sentAt: Date.now() };
       onMove({ type: 'next_round' });
     }
   }, [timeLeft, isTv, isGameOver, gameState?.phaseEndsAt, round, phase, onMove]);
