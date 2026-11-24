@@ -187,11 +187,16 @@ export function TvLobbyScreen({
     (currentLobby?.gameId && GAMES.find((g) => g.id === currentLobby.gameId)) || game;
 
   if (isInGame && currentLobby) {
+    const canMinimizeActiveGame =
+      !currentLobby.isSimulated &&
+      Boolean(onMinimize) &&
+      (currentLobby.status === 'in_progress' || currentLobby.status === 'paused');
+
     return (
       <TvGameView
         lobby={currentLobby}
         gameTitle={activeGame.title}
-        onLeave={handleLeaveLobby}
+        onLeave={canMinimizeActiveGame ? handleBack : handleLeaveLobby}
       />
     );
   }

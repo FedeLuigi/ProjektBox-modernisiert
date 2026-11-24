@@ -19,6 +19,7 @@ export function GoldMinerBoard({
       <GoldMinerArena
         players={allPlayers}
         mode={gameState?.mode || 'coop'}
+        sessionKey={String(gameState?.startedAt ?? 'tv')}
         isGameOver={isGameOver}
         onFinish={(payload) => {
           onMove({
@@ -40,6 +41,7 @@ export function GoldMinerBoard({
     <GoldMinerArena
       players={allPlayers}
       mode={gameState?.mode || 'coop'}
+      sessionKey={String(gameState?.startedAt ?? 'solo')}
       isGameOver={isGameOver}
       localPlayerId={myPlayer.id}
       onFinish={(payload) => {

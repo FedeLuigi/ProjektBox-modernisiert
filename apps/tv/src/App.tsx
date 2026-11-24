@@ -219,7 +219,7 @@ export function App() {
       return;
     }
     if (tvGame) {
-      if (activeLobby?.status === 'in_progress' || activeLobby?.isSimulated) {
+      if (activeLobby?.isSimulated) {
         void socketService.leaveLobby();
         setActiveLobby(null);
         setRestoredLobby(null);

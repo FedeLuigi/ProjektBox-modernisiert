@@ -30,10 +30,23 @@ import { goldMinerAudio } from './goldMinerAudio';
 interface GoldMinerArenaProps {
   players: Player[];
   mode: GoldMinerMode;
+  sessionKey?: string;
   isGameOver: boolean;
   localPlayerId?: string;
   onFinish: (payload: { level: number; scores: Record<string, number> }) => void;
 }
+
+interface GoldMinerSavedSnapshot {
+  level: number;
+  timeLeft: number;
+  targetMoney: number;
+  phase: 'playing' | 'shop' | 'gameover';
+  objects: MineObject[];
+  shopOffers: Array<{ id: GoldMinerShopItemId; price: number }>;
+  miners: MinerRuntime[];
+}
+
+const goldMinerSessionSnapshots = new Map<string, GoldMinerSavedSnapshot>();
 
 const LOGICAL_W = 1280;
 const LOGICAL_H = 720;
@@ -280,6 +293,7 @@ function drawMineObject(g: Graphics, obj: MineObject, timeSec: number): void {
 export function GoldMinerArena({
   players,
   mode,
+  sessionKey,
   isGameOver,
   localPlayerId,
   onFinish,
@@ -315,33 +329,46 @@ export function GoldMinerArena({
             } as Player,
           ];
 
-    const miners: MinerRuntime[] = roster.map((p, idx) => ({
-      playerId: p.id,
-      name: p.name,
-      color: p.color || '#FACC15',
-      anchorX: ((idx + 1) / (roster.length + 1)) * LOGICAL_W,
-      anchorY: SURFACE_Y - 12,
-      angle: ((idx % 2 === 0 ? -1 : 1) * 0.45),
-      angleDir: idx % 2 === 0 ? 1 : -1,
-      hookState: 'swing',
-      hookLength: 36,
-      carryingId: null,
-      money: 0,
-      dynamite: 2,
-      hasStrength: false,
-      hasClover: false,
-      hasRockBook: false,
-      hasDiamondPolish: false,
-      readyForNextLevel: false,
-      winchSpin: 0,
-    }));
+    const saved = sessionKey ? goldMinerSessionSnapshots.get(sessionKey) : undefined;
 
-    let level = 1;
-    let timeLeft = 60;
-    let targetMoney = getGoldMinerLevelTarget(level, miners.length, mode);
-    let phase: 'playing' | 'shop' | 'gameover' = 'playing';
-    let objects: MineObject[] = generateLevelObjects(level);
-    let shopOffers = generateShopOffers(level);
+    const miners: MinerRuntime[] = roster.map((p, idx) => {
+      const prev = saved?.miners.find((m) => m.playerId === p.id);
+      if (prev) {
+        return {
+          ...prev,
+          name: p.name,
+          color: p.color || prev.color,
+          anchorX: ((idx + 1) / (roster.length + 1)) * LOGICAL_W,
+        };
+      }
+      return {
+        playerId: p.id,
+        name: p.name,
+        color: p.color || '#FACC15',
+        anchorX: ((idx + 1) / (roster.length + 1)) * LOGICAL_W,
+        anchorY: SURFACE_Y - 12,
+        angle: (idx % 2 === 0 ? -1 : 1) * 0.45,
+        angleDir: idx % 2 === 0 ? 1 : -1,
+        hookState: 'swing',
+        hookLength: 36,
+        carryingId: null,
+        money: 0,
+        dynamite: 2,
+        hasStrength: false,
+        hasClover: false,
+        hasRockBook: false,
+        hasDiamondPolish: false,
+        readyForNextLevel: false,
+        winchSpin: 0,
+      };
+    });
+
+    let level = saved?.level ?? 1;
+    let timeLeft = saved?.timeLeft ?? 60;
+    let targetMoney = saved?.targetMoney ?? getGoldMinerLevelTarget(level, miners.length, mode);
+    let phase: 'playing' | 'shop' | 'gameover' = saved?.phase ?? 'playing';
+    let objects: MineObject[] = saved ? saved.objects.map((o) => ({ ...o })) : generateLevelObjects(level);
+    let shopOffers = saved?.shopOffers ?? generateShopOffers(level);
     const popups: FloatingPopup[] = [];
     const explosions: ExplosionEffect[] = [];
     let shakeTime = 0;
@@ -843,11 +870,24 @@ export function GoldMinerArena({
     })();
 
     return () => {
+      if (sessionKey && phase !== 'gameover') {
+        goldMinerSessionSnapshots.set(sessionKey, {
+          level,
+          timeLeft,
+          targetMoney,
+          phase,
+          objects: objects.map((o) => ({ ...o })),
+          shopOffers,
+          miners: miners.map((m) => ({ ...m })),
+        });
+      } else if (sessionKey && phase === 'gameover') {
+        goldMinerSessionSnapshots.delete(sessionKey);
+      }
       destroyed = true;
       unsubInput();
       app.destroy(true);
     };
-  }, [players, mode, isGameOver, localPlayerId, onFinish]);
+  }, [players, mode, sessionKey, isGameOver, localPlayerId, onFinish]);
 
   // Solo / Host keyboard controls
   useEffect(() => {

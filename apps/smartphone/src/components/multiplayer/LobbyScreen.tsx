@@ -257,11 +257,16 @@ export function LobbyScreen({
   const isTvScreenHost = Boolean(currentLobby?.isTvMode && myRawPlayer?.isTvScreen);
 
   if (isInGame && currentLobby) {
+    const canMinimizeActiveGame =
+      !currentLobby.isSimulated &&
+      Boolean(onMinimize) &&
+      (currentLobby.status === 'in_progress' || currentLobby.status === 'paused');
+
     return (
       <MultiplayerGameView
         lobby={currentLobby}
         gameTitle={activeGame.title}
-        onLeave={handleLeaveGame}
+        onLeave={canMinimizeActiveGame ? handleBack : handleLeaveGame}
       />
     );
   }
