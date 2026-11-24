@@ -260,7 +260,11 @@ export function MultiplayerGameView({
           <button
             type="button"
             onClick={onLeave}
-            className="font-goldminer fixed bottom-4 left-4 z-40 inline-flex items-center gap-1.5 rounded-xl border-2 border-[#78350F] bg-[#B45309]/90 px-3 py-1.5 text-sm text-amber-100 shadow-lg backdrop-blur-sm active:scale-95"
+            className={`font-goldminer fixed z-40 inline-flex items-center gap-1.5 rounded-xl border-2 border-[#78350F] bg-[#B45309]/95 px-3 py-1.5 text-sm text-amber-100 shadow-lg backdrop-blur-sm active:scale-95 ${
+              lobby.isTvMode || !myPlayer?.isHost
+                ? 'top-[max(0.7rem,calc(env(safe-area-inset-top)+0.45rem))] left-[max(0.75rem,calc(env(safe-area-inset-left)+0.5rem))]'
+                : 'bottom-4 left-4'
+            }`}
           >
             <ArrowLeft className="h-4 w-4" />
             <span>EXIT</span>

@@ -228,7 +228,9 @@ function drawMineObject(g: Graphics, obj: MineObject, timeSec: number): void {
       .fill(0xf59e0b)
       .stroke({ width: 2, color: 0x92400e });
     // Red ? mark
-    g.arc(x, y - 1, 6, Math.PI * 0.9, Math.PI * 2.15).stroke({ width: 3.5, color: 0xdc2626 });
+    g.moveTo(x - 5.5, y - 3)
+      .arc(x, y - 1, 6, Math.PI * 0.9, Math.PI * 2.15)
+      .stroke({ width: 3.5, color: 0xdc2626 });
     g.circle(x, y + 11, 2.5).fill(0xdc2626);
     return;
   }
@@ -538,7 +540,11 @@ export function GoldMinerArena({
 
       // Blue domes behind each miner
       for (const m of miners) {
-        bgLayer.arc(m.anchorX, SURFACE_Y - 4, 78, Math.PI, 0).fill(0x1d358a);
+        bgLayer
+          .moveTo(m.anchorX - 78, SURFACE_Y - 4)
+          .arc(m.anchorX, SURFACE_Y - 4, 78, Math.PI, 0)
+          .closePath()
+          .fill(0x1d358a);
       }
 
       setHudState(buildHudSnapshot());
@@ -752,9 +758,18 @@ export function GoldMinerArena({
           minersLayer.roundRect(mx - 18, my - 38, 36, 26, 8).fill(playerHex).stroke({ width: 2, color: 0x1e293b });
           minersLayer.circle(mx, my - 52, 14).fill(0xfdba74).stroke({ width: 2, color: 0x7c2d12 });
           // Beard
-          minersLayer.arc(mx, my - 49, 12, 0, Math.PI).fill(0xe2e8f0);
+          minersLayer
+            .moveTo(mx + 12, my - 49)
+            .arc(mx, my - 49, 12, 0, Math.PI)
+            .closePath()
+            .fill(0xe2e8f0);
           // Miner hat
-          minersLayer.arc(mx, my - 56, 15, Math.PI, 0).fill(0xf1f5f9).stroke({ width: 2, color: 0x475569 });
+          minersLayer
+            .moveTo(mx - 15, my - 56)
+            .arc(mx, my - 56, 15, Math.PI, 0)
+            .closePath()
+            .fill(0xf1f5f9)
+            .stroke({ width: 2, color: 0x475569 });
           minersLayer.circle(mx, my - 64, 4).fill(0xfef08a);
 
           // Winch drum
