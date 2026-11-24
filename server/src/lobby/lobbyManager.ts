@@ -8,7 +8,6 @@ import {
   BaseGameState,
   GameResultRecord,
   Lobby,
-  LobbyStatus,
   LobbySummary,
   Player,
 } from '../types/multiplayer.js';
@@ -611,7 +610,7 @@ export class LobbyManager {
       isTvMode: isTv,
       settings: {
         ...getDefaultSettings(params.gameId),
-        ...(params.settings || {}),
+        ...params.settings,
       },
       gameState: null,
       rematchVotes: [],

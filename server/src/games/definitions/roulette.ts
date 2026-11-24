@@ -328,7 +328,7 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
         return { valid: false, error: 'Nicht genügend Guthaben für diesen Chip.', state };
       }
 
-      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const currentPlayerBets = { ...state.bets[playerId] };
       if (!(move.betKey in currentPlayerBets) && Object.keys(currentPlayerBets).length >= 160) {
         return { valid: false, error: 'Maximale Anzahl Wettfelder erreicht.', state };
       }
@@ -365,7 +365,7 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
         return { valid: false, error: 'Ungültiges Wettfeld.', state };
       }
 
-      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const currentPlayerBets = { ...state.bets[playerId] };
       const existing = currentPlayerBets[move.betKey] || 0;
       if (existing <= 0) {
         return { valid: false, error: 'Kein eigener Einsatz auf diesem Feld.', state };
@@ -418,7 +418,7 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
         return { valid: false, error: 'Ungültiges Wettfeld.', state };
       }
 
-      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const currentPlayerBets = { ...state.bets[playerId] };
       const existing = currentPlayerBets[move.fromBetKey] || 0;
       if (existing <= 0) {
         return { valid: false, error: 'Kein eigener Einsatz auf dem Ausgangsfeld.', state };
@@ -487,7 +487,7 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
 
       const lastAction = stack[stack.length - 1];
       const nextStack = stack.slice(0, -1);
-      const currentPlayerBets = { ...(state.bets[playerId] || {}) };
+      const currentPlayerBets = { ...state.bets[playerId] };
       const existing = currentPlayerBets[lastAction.betKey] || 0;
       const refund = Math.min(existing, lastAction.amount);
 

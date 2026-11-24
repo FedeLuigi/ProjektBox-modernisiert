@@ -30,7 +30,7 @@ function createStandardGame(id: string, title?: string, minPlayers = 2, maxPlaye
         return { valid: false, error: 'Das Spiel ist bereits beendet.', state };
       }
       const nextPlayer = players.find((p) => p.id !== playerId) || players[0];
-      const newScores = { ...(state.scores || {}) };
+      const newScores = { ...state.scores };
       if (typeof move?.score === 'number') {
         newScores[playerId] = move?.finish || move?.isAbsolute
           ? move.score

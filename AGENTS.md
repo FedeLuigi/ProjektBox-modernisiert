@@ -22,7 +22,7 @@ Dieses Dokument definiert verbindliche Architektur-, Design- und Qualitätsregel
 Aktuell definierte Root-Scripts:
 ```bash
 npm run build   # shared -> tv -> smartphone -> server
-npm run lint    # derzeit oxlint in apps/tv und apps/smartphone
+npm run lint    # oxlint in apps/tv, apps/smartphone, packages/shared, packages/ui und server
 npm test        # shared-Build und Server-Tests in src/lobby/*.test.ts und src/database/*.test.ts
 ```
 Weitere hilfreiche Befehle:
@@ -31,7 +31,7 @@ Weitere hilfreiche Befehle:
 
 Regeln:
 - Scripts vor Änderungen an package.json erneut prüfen.
-- npm run lint ist derzeit kein vollständiger Lint-Lauf für Server und Packages.
+- npm run lint prüft apps/tv, apps/smartphone, packages/shared, packages/ui und server.
 - Tests liegen aktuell im Server-Bereich; ergänze Tests dort, wo bestehende Architektur es vorsieht.
 - Führe passende Checks nach dem letzten Edit aus. Berichte exakt, welche Befehle liefen und ob sie bestanden, fehlschlugen oder nicht ausgeführt wurden.
 - Behaupte niemals, Tests, CI oder Deployment seien erfolgreich, wenn kein Ergebnis vorliegt.

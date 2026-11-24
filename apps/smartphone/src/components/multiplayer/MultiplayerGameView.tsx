@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { ArrowLeft, Loader2, RotateCcw } from 'lucide-react';
 import { GiExitDoor } from 'react-icons/gi';
 import type { Lobby } from '@projektbox/shared/types';
@@ -394,18 +394,29 @@ export function MultiplayerGameView({
             }`}
           >
             {BoardComponent && myPlayer ? (
-              <BoardComponent
-                gameId={lobby.gameId}
-                gameState={gameState}
-                myPlayer={myPlayer}
-                opponent={opponent}
-                allPlayers={activePlayers}
-                isMyTurn={isMyTurn}
-                isGameOver={isGameOver}
-                onMove={handleSendMove}
-                disabled={isSubmitting || isConnectionBlocked || isLobbyPaused}
-                isTvMode={lobby.isTvMode}
-              />
+              <Suspense
+                fallback={
+                  <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8">
+                    <Loader2 className="h-7 w-7 animate-spin text-[#FBBF24]" />
+                    <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
+                      SPIELFELD WIRD GELADEN...
+                    </span>
+                  </div>
+                }
+              >
+                <BoardComponent
+                  gameId={lobby.gameId}
+                  gameState={gameState}
+                  myPlayer={myPlayer}
+                  opponent={opponent}
+                  allPlayers={activePlayers}
+                  isMyTurn={isMyTurn}
+                  isGameOver={isGameOver}
+                  onMove={handleSendMove}
+                  disabled={isSubmitting || isConnectionBlocked || isLobbyPaused}
+                  isTvMode={lobby.isTvMode}
+                />
+              </Suspense>
             ) : (
               <div className="flex flex-col items-center gap-3 py-8">
                 <Loader2 className="h-7 w-7 animate-spin text-[#FBBF24]" />

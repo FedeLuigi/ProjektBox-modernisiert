@@ -986,100 +986,76 @@ export function registerSocketHandlers(
       }
     });
 
-    // 6c. Live-Controller & HUD-Sync für Zombie Arena 3D
-    socket.on(SOCKET_EVENTS.ZOMBIE_INPUT, async (data: unknown) => {
-      try {
-        if (socket.data.superseded) return;
-        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.ZOMBIE_INPUT))) return;
-        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.ZOMBIE_INPUT])) return;
+    // 6c. Live-Controller & HUD-Sync für Echtzeit-Action-Spiele (Zombie Arena 3D & Gold Miner)
+    const registerRealtimeGameRelays = (
+      gameId: 'zombie-survival' | 'gold-miner',
+      inputEvent: keyof typeof EVENT_MAX_PAYLOAD_BYTES,
+      stateEvent: keyof typeof EVENT_MAX_PAYLOAD_BYTES,
+      inputSchema: { safeParse: (data: unknown) => { success: boolean; data?: unknown } },
+      stateSchema: { safeParse: (data: unknown) => { success: boolean; data?: unknown } }
+    ) => {
+      socket.on(inputEvent, async (data: unknown) => {
+        try {
+          if (socket.data.superseded) return;
+          if (!(await consumeRateLimit(socket.id, inputEvent))) return;
+          if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[inputEvent])) return;
 
-        const parsed = ZombieInputSchema.safeParse(data);
-        if (!parsed.success) return;
+          const parsed = inputSchema.safeParse(data);
+          if (!parsed.success) return;
 
-        const lobby = manager.getLobbyBySocket(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
-        if (lobby.gameId !== 'zombie-survival') return;
+          const lobby = manager.getLobbyBySocket(socket.id);
+          if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+          if (lobby.gameId !== gameId) return;
 
-        const player = lobby.players.find((p) => p.socketId === socket.id);
-        if (!player || !player.connected || player.isTvScreen) return;
+          const player = lobby.players.find((p) => p.socketId === socket.id);
+          if (!player || !player.connected || player.isTvScreen) return;
 
-        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.ZOMBIE_INPUT, {
-          playerId: player.id,
-          input: parsed.data,
-        });
-      } catch (err) {
-        console.error('Fehler bei zombie:input:', err);
-      }
-    });
+          socket.to(`lobby:${lobby.id}`).emit(inputEvent, {
+            playerId: player.id,
+            input: parsed.data,
+          });
+        } catch (err) {
+          console.error(`Fehler bei ${String(inputEvent)}:`, err);
+        }
+      });
 
-    socket.on(SOCKET_EVENTS.ZOMBIE_STATE, async (data: unknown) => {
-      try {
-        if (socket.data.superseded) return;
-        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.ZOMBIE_STATE))) return;
-        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.ZOMBIE_STATE])) return;
+      socket.on(stateEvent, async (data: unknown) => {
+        try {
+          if (socket.data.superseded) return;
+          if (!(await consumeRateLimit(socket.id, stateEvent))) return;
+          if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[stateEvent])) return;
 
-        const parsed = ZombieStateSchema.safeParse(data);
-        if (!parsed.success) return;
+          const parsed = stateSchema.safeParse(data);
+          if (!parsed.success) return;
 
-        const lobby = manager.getLobbyBySocket(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
-        if (lobby.gameId !== 'zombie-survival') return;
+          const lobby = manager.getLobbyBySocket(socket.id);
+          if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+          if (lobby.gameId !== gameId) return;
 
-        const sender = lobby.players.find((p) => p.socketId === socket.id);
-        if (!sender || (!sender.isTvScreen && !sender.isHost)) return;
+          const sender = lobby.players.find((p) => p.socketId === socket.id);
+          if (!sender || (!sender.isTvScreen && !sender.isHost)) return;
 
-        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.ZOMBIE_STATE, parsed.data);
-      } catch (err) {
-        console.error('Fehler bei zombie:state:', err);
-      }
-    });
+          socket.to(`lobby:${lobby.id}`).emit(stateEvent, parsed.data);
+        } catch (err) {
+          console.error(`Fehler bei ${String(stateEvent)}:`, err);
+        }
+      });
+    };
 
-    socket.on(SOCKET_EVENTS.GOLDMINER_INPUT, async (data: unknown) => {
-      try {
-        if (socket.data.superseded) return;
-        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.GOLDMINER_INPUT))) return;
-        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.GOLDMINER_INPUT])) return;
-
-        const parsed = GoldMinerInputSchema.safeParse(data);
-        if (!parsed.success) return;
-
-        const lobby = manager.getLobbyBySocket(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
-        if (lobby.gameId !== 'gold-miner') return;
-
-        const player = lobby.players.find((p) => p.socketId === socket.id);
-        if (!player || !player.connected || player.isTvScreen) return;
-
-        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.GOLDMINER_INPUT, {
-          playerId: player.id,
-          input: parsed.data,
-        });
-      } catch (err) {
-        console.error('Fehler bei goldminer:input:', err);
-      }
-    });
-
-    socket.on(SOCKET_EVENTS.GOLDMINER_STATE, async (data: unknown) => {
-      try {
-        if (socket.data.superseded) return;
-        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.GOLDMINER_STATE))) return;
-        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.GOLDMINER_STATE])) return;
-
-        const parsed = GoldMinerStateSchema.safeParse(data);
-        if (!parsed.success) return;
-
-        const lobby = manager.getLobbyBySocket(socket.id);
-        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
-        if (lobby.gameId !== 'gold-miner') return;
-
-        const sender = lobby.players.find((p) => p.socketId === socket.id);
-        if (!sender || (!sender.isTvScreen && !sender.isHost)) return;
-
-        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.GOLDMINER_STATE, parsed.data);
-      } catch (err) {
-        console.error('Fehler bei goldminer:state:', err);
-      }
-    });
+    registerRealtimeGameRelays(
+      'zombie-survival',
+      SOCKET_EVENTS.ZOMBIE_INPUT,
+      SOCKET_EVENTS.ZOMBIE_STATE,
+      ZombieInputSchema,
+      ZombieStateSchema
+    );
+    registerRealtimeGameRelays(
+      'gold-miner',
+      SOCKET_EVENTS.GOLDMINER_INPUT,
+      SOCKET_EVENTS.GOLDMINER_STATE,
+      GoldMinerInputSchema,
+      GoldMinerStateSchema
+    );
 
     // 7. Revanche / Nochmal spielen
     socket.on(

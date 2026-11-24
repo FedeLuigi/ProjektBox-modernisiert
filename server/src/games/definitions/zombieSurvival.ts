@@ -53,9 +53,18 @@ export const zombieSurvivalGame: MultiplayerGameDefinition<
     };
   },
 
-  validateAndApplyMove({ state, players, move }) {
+  validateAndApplyMove({ state, players, playerId, move }) {
     if (state.status !== 'playing') {
       return { valid: false, error: 'Das Spiel ist bereits beendet.', state };
+    }
+
+    const actor = players.find((p) => p.id === playerId);
+    if (actor && !actor.isHost) {
+      return {
+        valid: false,
+        error: 'Nur der TV-Screen oder Host darf das Match beenden.',
+        state,
+      };
     }
 
     if (!move || move.type !== 'zombie_finish') {
@@ -69,17 +78,21 @@ export const zombieSurvivalGame: MultiplayerGameDefinition<
 
     let totalKills = 0;
     for (const p of players) {
-      if (typeof move.scores?.[p.id] === 'number') {
-        nextScores[p.id] = Math.max(0, Math.round(move.scores[p.id]));
+      const rawScore = move.scores?.[p.id];
+      if (typeof rawScore === 'number' && Number.isFinite(rawScore)) {
+        nextScores[p.id] = Math.min(1_000_000_000, Math.max(0, Math.round(rawScore)));
       }
-      if (typeof move.kills?.[p.id] === 'number') {
-        nextKills[p.id] = Math.max(0, Math.round(move.kills[p.id]));
+      const rawKills = move.kills?.[p.id];
+      if (typeof rawKills === 'number' && Number.isFinite(rawKills)) {
+        nextKills[p.id] = Math.min(100_000, Math.max(0, Math.round(rawKills)));
       }
-      if (typeof move.levels?.[p.id] === 'number') {
-        nextLevels[p.id] = Math.max(1, Math.round(move.levels[p.id]));
+      const rawLevel = move.levels?.[p.id];
+      if (typeof rawLevel === 'number' && Number.isFinite(rawLevel)) {
+        nextLevels[p.id] = Math.min(99, Math.max(1, Math.round(rawLevel)));
       }
-      if (typeof move.weapons?.[p.id] === 'string') {
-        nextWeapons[p.id] = move.weapons[p.id];
+      const rawWeapon = move.weapons?.[p.id];
+      if (typeof rawWeapon === 'string' && rawWeapon.trim().length > 0) {
+        nextWeapons[p.id] = rawWeapon.trim().slice(0, 32);
       }
       totalKills += nextKills[p.id] || 0;
     }
@@ -90,6 +103,10 @@ export const zombieSurvivalGame: MultiplayerGameDefinition<
     const topScore = sorted[0] ? nextScores[sorted[0].id] || 0 : 0;
     const tiedTop = sorted.filter((p) => (nextScores[p.id] || 0) === topScore);
     const isDraw = players.length > 1 && tiedTop.length > 1;
+    const safeWave =
+      typeof move.wave === 'number' && Number.isFinite(move.wave)
+        ? Math.min(999, Math.max(1, Math.round(move.wave)))
+        : state.wave;
 
     return {
       valid: true,
@@ -97,7 +114,7 @@ export const zombieSurvivalGame: MultiplayerGameDefinition<
         ...state,
         status: isDraw ? 'draw' : 'won',
         winnerId: isDraw ? null : sorted[0]?.id || null,
-        wave: Math.max(1, Math.round(move.wave || state.wave)),
+        wave: safeWave,
         zombiesKilled: totalKills,
         scores: nextScores,
         kills: nextKills,

@@ -1,12 +1,25 @@
-import type { ComponentType } from 'react';
+import { lazy, type ComponentType } from 'react';
 import type { GameRendererProps } from './types';
-import { DrawAndGuessBoard } from './components/DrawAndGuessBoard';
-import { RouletteBoard } from './components/RouletteBoard';
-import { StadtLandFlussBoard } from './components/StadtLandFlussBoard';
-import { TexasHoldemBoard } from './components/TexasHoldemBoard';
-import { ZombieSurvivalBoard } from './components/ZombieSurvivalBoard';
-import { GoldMinerBoard } from './components/GoldMinerBoard';
 import { GenericDuelBoard } from './components/GenericDuelBoard';
+
+const DrawAndGuessBoard = lazy(() =>
+  import('./components/DrawAndGuessBoard').then((m) => ({ default: m.DrawAndGuessBoard }))
+);
+const RouletteBoard = lazy(() =>
+  import('./components/RouletteBoard').then((m) => ({ default: m.RouletteBoard }))
+);
+const StadtLandFlussBoard = lazy(() =>
+  import('./components/StadtLandFlussBoard').then((m) => ({ default: m.StadtLandFlussBoard }))
+);
+const TexasHoldemBoard = lazy(() =>
+  import('./components/TexasHoldemBoard').then((m) => ({ default: m.TexasHoldemBoard }))
+);
+const ZombieSurvivalBoard = lazy(() =>
+  import('./components/ZombieSurvivalBoard').then((m) => ({ default: m.ZombieSurvivalBoard }))
+);
+const GoldMinerBoard = lazy(() =>
+  import('./components/GoldMinerBoard').then((m) => ({ default: m.GoldMinerBoard }))
+);
 
 export class ClientGameRegistry {
   private renderers = new Map<string, ComponentType<GameRendererProps<any, any>>>();

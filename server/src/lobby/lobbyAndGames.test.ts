@@ -997,7 +997,7 @@ test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abst
     },
   });
   assert.equal(draftBen.success, true);
-  assert.equal((draftBen.lobby?.gameState as any).filledCounts.u_slf2, 2);
+  assert.equal((draftBen.lobby?.gameState as any)?.filledCounts.u_slf2, 2);
 
   // Stopp darf NICHT ausgelöst werden solange nicht alle 5 Kategorien ausgefüllt sind
   const invalidStop = manager.makeMove({
@@ -1055,11 +1055,11 @@ test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abst
   // Beide bestätigen Auswertung -> 'round_over' -> 'next_round' -> Spielende ('finished')
   manager.makeMove({ lobbyId, playerId: 'u_slf1', move: { type: 'review_ready' } });
   const roundOver = manager.makeMove({ lobbyId, playerId: 'u_slf2', move: { type: 'review_ready' } });
-  assert.equal((roundOver.lobby?.gameState as any).phase, 'round_over');
+  assert.equal((roundOver.lobby?.gameState as any)?.phase, 'round_over');
 
   const gameFinished = manager.makeMove({ lobbyId, playerId: 'u_slf1', move: { type: 'next_round' } });
   assert.equal(gameFinished.lobby?.status, 'finished');
-  assert.equal((gameFinished.lobby?.gameState as any).phase, 'game_over');
+  assert.equal((gameFinished.lobby?.gameState as any)?.phase, 'game_over');
   assert.equal(gameFinished.lobby?.gameState?.winnerId, 'u_slf1'); // 35 vs 15 Punkte
 
   // 2) TV-Modus mit 1 TV + 2 Smartphones starten
@@ -1092,7 +1092,7 @@ test('Stadt, Land, Fluss: Kategorien-Wertung (20/10/5/0), Stopp-Knopf, Veto-Abst
   const tvStarted = manager.startGame('tv_s');
   assert.equal(tvStarted.success, true);
   assert.equal(tvStarted.lobby?.isTvMode, true);
-  assert.equal((tvStarted.lobby?.gameState as any).phase, 'writing');
+  assert.equal((tvStarted.lobby?.gameState as any)?.phase, 'writing');
 
   // 3) Direkter Check auf onPlayerLeave bei 3 Spielern: Spiel läuft weiter und geht bei Bedarf in 'review'
   const threePlayers: Player[] = [
@@ -1215,7 +1215,7 @@ test('Stadt, Land, Fluss: Eigene Wörter Option (An/Aus), reihum Kategorien-Wahl
   });
   manager.makeMove({ lobbyId, playerId: 'u_slf_c1', move: { type: 'review_ready' } });
   const r1Over = manager.makeMove({ lobbyId, playerId: 'u_slf_c2', move: { type: 'review_ready' } });
-  assert.equal((r1Over.lobby?.gameState as any).phase, 'round_over');
+  assert.equal((r1Over.lobby?.gameState as any)?.phase, 'round_over');
 
   // Runde 2 -> nächster Spieler (Ben) darf Kategorien wählen!
   const round2 = manager.makeMove({ lobbyId, playerId: 'u_slf_c1', move: { type: 'next_round' } });
@@ -1769,7 +1769,7 @@ test("Poker Texas Hold'em: Hand-Evaluator, Karten-Privatsphäre (TV/Gegner), Bli
     move: { type: 'poker_action', action: 'raise', targetBet: 60 },
   });
   assert.equal(raiseRes.success, true);
-  assert.equal((raiseRes.lobby?.gameState as TexasHoldemState).pot, 80);
+  assert.equal((raiseRes.lobby?.gameState as TexasHoldemState | undefined)?.pot, 80);
 
   const foldRes = manager.makeMove({
     lobbyId,
@@ -2135,6 +2135,17 @@ test('Zombie Arena 3D: Level- und Waffen-Progression sowie TV-Lobby-Abschluss', 
   assert.equal(started.success, true);
   assert.equal((started.lobby?.gameState as any)?.gameId, 'zombie-survival');
 
+  const deniedFinish = manager.makeMove({
+    lobbyId,
+    playerId: 'u_zp1',
+    move: {
+      type: 'zombie_finish',
+      wave: 99,
+      scores: { u_zp1: 999999 },
+    },
+  });
+  assert.equal(deniedFinish.success, false);
+
   const finished = manager.makeMove({
     lobbyId,
     playerId: 'u_ztv',
@@ -2152,6 +2163,57 @@ test('Zombie Arena 3D: Level- und Waffen-Progression sowie TV-Lobby-Abschluss', 
   assert.equal(finished.lobby?.gameState?.winnerId, 'u_zp1');
   assert.equal((finished.lobby?.gameState as any)?.wave, 4);
   assert.equal((finished.lobby?.gameState as any)?.weapons?.u_zp1, 'rifle');
+
+  manager.clearAllTimers();
+});
+
+test('Gold Miner: TV/Host-Autorisierung beim Spielende und Score-Berechnung', async () => {
+  const manager = new LobbyManager();
+  const tvCreate = manager.createLobby({
+    gameId: 'gold-miner',
+    isPrivate: false,
+    isTvMode: true,
+    userProfile: { id: 'u_gmtv', name: 'TV Screen', avatar: {} },
+    socketId: 's_gmtv',
+  });
+  assert.equal(tvCreate.success, true);
+  const lobbyId = tvCreate.lobby!.id;
+
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_gmp1', name: 'Miner', avatar: {} },
+    socketId: 's_gmp1',
+  });
+  manager.toggleReady('s_gmp1');
+
+  const started = manager.startGame({ lobbyId, playerId: 'u_gmtv' });
+  assert.equal(started.success, true);
+  assert.equal((started.lobby?.gameState as any)?.gameId, 'gold-miner');
+
+  const denied = manager.makeMove({
+    lobbyId,
+    playerId: 'u_gmp1',
+    move: {
+      type: 'goldminer_finish',
+      level: 5,
+      scores: { u_gmp1: 50000 },
+    },
+  });
+  assert.equal(denied.success, false);
+
+  const finished = manager.makeMove({
+    lobbyId,
+    playerId: 'u_gmtv',
+    move: {
+      type: 'goldminer_finish',
+      level: 3,
+      scores: { u_gmp1: 2450 },
+    },
+  });
+  assert.equal(finished.success, true);
+  assert.equal(finished.lobby?.gameState?.status, 'won');
+  assert.equal(finished.lobby?.gameState?.winnerId, 'u_gmp1');
+  assert.equal((finished.lobby?.gameState as any)?.level, 3);
 
   manager.clearAllTimers();
 });

@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { ArrowLeft, Clock, LogOut, Pencil, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
+import { Suspense, useEffect, useState } from 'react';
+import { ArrowLeft, Clock, Loader2, LogOut, Pencil, Play, RotateCcw, SlidersHorizontal } from 'lucide-react';
 import type { Lobby } from '@projektbox/shared/types';
 import {
   Avatar,
@@ -347,18 +347,29 @@ export function TvGameView({
 
               <div className="w-full flex-1 min-h-0 flex items-center justify-center pointer-events-none">
                 {BoardComponent && (
-                  <BoardComponent
-                    gameId={lobby.gameId}
-                    gameState={gameState}
-                    myPlayer={{ id: 'tv_screen', socketId: '', name: 'TV', avatar: {}, isReady: true, isHost: true, connected: true, isTvScreen: true }}
-                    opponent={player2}
-                    allPlayers={activePlayers}
-                    isMyTurn={false}
-                    isGameOver={isGameOver}
-                    onMove={() => {}}
-                    disabled={true}
-                    isTvMode={true}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8">
+                        <Loader2 className="h-7 w-7 animate-spin text-[#FBBF24]" />
+                        <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
+                          SPIELFELD WIRD GELADEN...
+                        </span>
+                      </div>
+                    }
+                  >
+                    <BoardComponent
+                      gameId={lobby.gameId}
+                      gameState={gameState}
+                      myPlayer={{ id: 'tv_screen', socketId: '', name: 'TV', avatar: {}, isReady: true, isHost: true, connected: true, isTvScreen: true }}
+                      opponent={player2}
+                      allPlayers={activePlayers}
+                      isMyTurn={false}
+                      isGameOver={isGameOver}
+                      onMove={() => {}}
+                      disabled={true}
+                      isTvMode={true}
+                    />
+                  </Suspense>
                 )}
               </div>
             </div>
@@ -377,18 +388,29 @@ export function TvGameView({
               }
             >
               {BoardComponent && (
-                <BoardComponent
-                  gameId={lobby.gameId}
-                  gameState={gameState}
-                  myPlayer={{ id: 'tv_screen', socketId: '', name: 'TV', avatar: {}, isReady: true, isHost: true, connected: true, isTvScreen: true }}
-                  opponent={player2 || player1}
-                  allPlayers={activePlayers}
-                  isMyTurn={false}
-                  isGameOver={isGameOver}
-                  onMove={() => {}}
-                  disabled={true}
-                  isTvMode={true}
-                />
+                <Suspense
+                  fallback={
+                    <div className="flex flex-1 flex-col items-center justify-center gap-3 py-8">
+                      <Loader2 className="h-7 w-7 animate-spin text-[#FBBF24]" />
+                      <span className="font-arcade text-sm text-[#CBD5E1] uppercase">
+                        SPIELFELD WIRD GELADEN...
+                      </span>
+                    </div>
+                  }
+                >
+                  <BoardComponent
+                    gameId={lobby.gameId}
+                    gameState={gameState}
+                    myPlayer={{ id: 'tv_screen', socketId: '', name: 'TV', avatar: {}, isReady: true, isHost: true, connected: true, isTvScreen: true }}
+                    opponent={player2 || player1}
+                    allPlayers={activePlayers}
+                    isMyTurn={false}
+                    isGameOver={isGameOver}
+                    onMove={() => {}}
+                    disabled={true}
+                    isTvMode={true}
+                  />
+                </Suspense>
               )}
             </div>
           </main>

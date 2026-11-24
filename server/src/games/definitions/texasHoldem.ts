@@ -870,7 +870,6 @@ export const texasHoldemGame: MultiplayerGameDefinition<TexasHoldemState, TexasH
     const ableToAct = aliveIds.filter((id) => !allInSet.has(id));
     const streetDone =
       aliveIds.length <= 1 ||
-      ableToAct.length === 0 ||
       ableToAct.every(
         (id) => actedSet.has(id) && (state.streetBets[id] || 0) >= state.currentBet
       );

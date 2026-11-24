@@ -19,7 +19,7 @@
     "dev:tv": "npm --prefix apps/tv run dev",
     "dev:smartphone": "npm --prefix apps/smartphone run dev",
     "dev:server": "npm --prefix server run dev",
-    "lint": "npm --prefix apps/tv run lint && npm --prefix apps/smartphone run lint",
+    "lint": "npm --prefix apps/tv run lint && npm --prefix apps/smartphone run lint && npx oxlint packages/shared/src packages/ui/src server/src",
     "test": "npm run build:shared && npm --prefix server test",
     "prisma:migrate:deploy": "npm --prefix server run prisma:migrate:deploy",
     "prisma:migrate:status": "npm --prefix server run prisma:migrate:status",

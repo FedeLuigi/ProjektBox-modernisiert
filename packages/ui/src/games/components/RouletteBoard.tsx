@@ -1175,7 +1175,7 @@ export function RouletteBoard({
   );
 
   const { displayedMyBets, effectiveBalance } = useMemo(() => {
-    const mergedMyBets: Record<string, number> = { ...(activeTableBets[myId] || {}) };
+    const mergedMyBets: Record<string, number> = { ...activeTableBets[myId] };
     let nextBalance = myBalance;
 
     for (const op of activeOptimisticOps) {

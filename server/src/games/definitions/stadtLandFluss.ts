@@ -539,7 +539,7 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         return { valid: true, state };
       }
 
-      const catVotes = { ...(state.rejectVotes[move.category] || {}) };
+      const catVotes = { ...state.rejectVotes[move.category] };
       const currentVoters = catVotes[move.targetPlayerId] || [];
       const alreadyVoted = currentVoters.includes(playerId);
 

@@ -2176,6 +2176,17 @@ export function Zombie3DArena({
       for (const p of playerEntities.values()) {
         p.plateTex.dispose();
       }
+      scene.traverse((obj) => {
+        if ((obj as THREE.Mesh).isMesh) {
+          const mesh = obj as THREE.Mesh;
+          mesh.geometry?.dispose();
+          if (Array.isArray(mesh.material)) {
+            mesh.material.forEach((mat) => mat.dispose());
+          } else {
+            mesh.material?.dispose();
+          }
+        }
+      });
       composer.dispose();
       renderer.dispose();
     };
