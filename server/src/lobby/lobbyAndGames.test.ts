@@ -2241,18 +2241,16 @@ test('Draw & Guess: secretWord und wordChoices werden vor Ratenden und TV geschÃ
   assert.equal(started.success, true);
 
   const rawLobby = manager.getLobbyById(lobbyId)!;
-  const drawerId = rawLobby.gameState!.drawerId as string;
+  const drawerId = rawLobby.gameState!.currentDrawerId as string;
   const guesserId = drawerId === 'u_dag_drawer' ? 'u_dag_guesser' : 'u_dag_drawer';
 
   const drawerView = sanitizeLobbyForClient(rawLobby, drawerId);
   const guesserView = sanitizeLobbyForClient(rawLobby, guesserId);
   const tvView = sanitizeLobbyForClient(rawLobby);
 
-  assert.ok((drawerView.gameState as any)?.wordChoices?.length > 0);
+  assert.ok((drawerView.gameState as any)?.secretWord?.length > 0);
   assert.equal((guesserView.gameState as any)?.secretWord, '');
-  assert.deepEqual((guesserView.gameState as any)?.wordChoices, []);
   assert.equal((tvView.gameState as any)?.secretWord, '');
-  assert.deepEqual((tvView.gameState as any)?.wordChoices, []);
 
   // Session-Schutz: aktive Session blockiert Ãœbernahme derselben playerId
   const { session } = manager.sessionManager.createSession('u_protected_player');

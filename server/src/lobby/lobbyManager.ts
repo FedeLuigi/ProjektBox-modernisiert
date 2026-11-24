@@ -116,7 +116,7 @@ export function sanitizeLobbyForClient(lobby: Lobby, viewerPlayerId?: string): L
   if (safeGameState && lobby.gameId === 'draw-and-guess') {
     const phase = safeGameState.phase;
     const isRevealedPhase = phase === 'round_over' || phase === 'game_over';
-    const isDrawer = Boolean(viewerPlayerId && viewerPlayerId === safeGameState.drawerId);
+    const isDrawer = Boolean(viewerPlayerId && viewerPlayerId === safeGameState.currentDrawerId);
     if (!isRevealedPhase && !isDrawer) {
       safeGameState = {
         ...safeGameState,
