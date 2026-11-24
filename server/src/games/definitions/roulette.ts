@@ -648,7 +648,10 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
         : [...state.lockedPlayerIds, playerId];
       const updated: RouletteState = { ...state, lockedPlayerIds: nextLocked };
 
-      const allLocked = players.every((p) => nextLocked.includes(p.id));
+      const activeHumanPlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+      const allLocked = (activeHumanPlayers.length > 0 ? activeHumanPlayers : players).every((p) =>
+        nextLocked.includes(p.id)
+      );
       if (allLocked) {
         return { valid: true, state: transitionToSpinning(updated) };
       }
@@ -677,7 +680,10 @@ export const rouletteGame: MultiplayerGameDefinition<RouletteState, RouletteMove
         : [...state.nextReadyIds, playerId];
       const updated: RouletteState = { ...state, nextReadyIds: nextReady };
 
-      const allReady = players.every((p) => nextReady.includes(p.id));
+      const activeHumanPlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+      const allReady = (activeHumanPlayers.length > 0 ? activeHumanPlayers : players).every((p) =>
+        nextReady.includes(p.id)
+      );
       if (allReady) {
         return { valid: true, state: advanceAfterResult(updated, players) };
       }

@@ -12,11 +12,12 @@ export function GenericDuelBoard({
   onMove,
   disabled,
 }: GameRendererProps) {
+  const isTv = Boolean(myPlayer?.isTvScreen);
   const scores = gameState?.scores || {};
   const myScore = scores[myPlayer.id] || 0;
   const oppScore = opponent ? scores[opponent.id] || 0 : 0;
   const soloMode = Boolean(isSolo || !opponent);
-  const canAct = (soloMode || isMyTurn) && !isGameOver && !disabled;
+  const canAct = !isTv && (soloMode || isMyTurn) && !isGameOver && !disabled;
 
   const handleAction = () => {
     if (!canAct) return;
@@ -78,7 +79,7 @@ export function GenericDuelBoard({
 
         {soloMode && (
           <div className="hidden landscape:block">
-            <OpenButton size="sm" variant="secondary" fullWidth onClick={handleFinishSolo}>
+            <OpenButton size="sm" variant="secondary" fullWidth disabled={Boolean(disabled)} onClick={handleFinishSolo}>
               <Flag className="h-3.5 w-3.5" />
               <span>BEENDEN</span>
             </OpenButton>
@@ -100,7 +101,7 @@ export function GenericDuelBoard({
         >
           <Zap className="h-7 w-7 fill-current" />
           <span className="text-xs">
-            {soloMode ? '+1 PUNKT' : isMyTurn ? 'AKTION' : 'WARTEN...'}
+            {isTv ? 'TV-ANSICHT' : soloMode ? '+1 PUNKT' : isMyTurn ? 'AKTION' : 'WARTEN...'}
           </span>
         </button>
 
@@ -113,7 +114,7 @@ export function GenericDuelBoard({
 
       {soloMode ? (
         <div className="w-full landscape:hidden">
-          <OpenButton size="sm" variant="secondary" fullWidth onClick={handleFinishSolo}>
+          <OpenButton size="sm" variant="secondary" fullWidth disabled={Boolean(disabled)} onClick={handleFinishSolo}>
             <Flag className="h-3.5 w-3.5" />
             <span>BEENDEN</span>
           </OpenButton>

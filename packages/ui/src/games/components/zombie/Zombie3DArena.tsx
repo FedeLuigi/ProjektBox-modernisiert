@@ -1226,12 +1226,11 @@ export function Zombie3DArena({
           zombiesToSpawn -= 1;
           nextSpawnAt = now + Math.max(260, 1050 - wave * 75);
         } else if (zombiesToSpawn === 0 && zombies.length === 0) {
-          if (now >= wavePauseUntil) {
-            if (wavePauseUntil > 0 && now - wavePauseUntil < 100) {
-              startWave(wave + 1, now);
-            } else {
-              wavePauseUntil = now + 2200;
-            }
+          if (wavePauseUntil === 0) {
+            wavePauseUntil = now + 2200;
+          } else if (now >= wavePauseUntil) {
+            wavePauseUntil = 0;
+            startWave(wave + 1, now);
           }
         }
 

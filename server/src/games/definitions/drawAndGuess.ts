@@ -395,6 +395,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
       gameId: 'draw-and-guess',
       currentTurn: drawer,
       currentDrawerId: drawer,
+      drawerIndex: 0,
       ...roundFields,
       categoryFilter,
       customWordsEnabled,
@@ -560,7 +561,8 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
         roundWinnerName = player?.name;
 
         // Haben alle Rater das Wort erraten?
-        const totalGuessers = Math.max(1, players.length - 1);
+        const activePlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+        const totalGuessers = Math.max(1, activePlayers.length - 1);
         if (newCorrectIds.length >= totalGuessers) {
           newRoundStatus = 'round_over';
         }
@@ -632,9 +634,11 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
         return { valid: true, state };
       }
 
-      const currentDrawerIndex = players.findIndex((p) => p.id === state.currentDrawerId);
-      const nextDrawerIndex = (currentDrawerIndex + 1) % players.length;
-      const nextDrawer = players[nextDrawerIndex];
+      const activePlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+      const rotationPlayers = activePlayers.length > 0 ? activePlayers : players;
+      const currentDrawerIndex = rotationPlayers.findIndex((p) => p.id === state.currentDrawerId);
+      const nextDrawerIndex = (currentDrawerIndex + 1) % rotationPlayers.length;
+      const nextDrawer = rotationPlayers[nextDrawerIndex];
 
       const nextRoundNum = state.round + 1;
       const isGameOver = nextRoundNum > state.maxRounds;
@@ -687,6 +691,7 @@ export const drawAndGuessGame: MultiplayerGameDefinition<DrawAndGuessState, Draw
           ...state,
           currentTurn: nextDrawer.id,
           currentDrawerId: nextDrawer.id,
+          drawerIndex: nextDrawerIndex,
           ...nextRoundFields,
           round: nextRoundNum,
           roundDuration,

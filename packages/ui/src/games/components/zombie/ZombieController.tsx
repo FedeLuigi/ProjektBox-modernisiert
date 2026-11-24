@@ -76,6 +76,7 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
   const prevLevelRef = useRef(1);
   const prevHpRef = useRef(100);
   const damageTimerRef = useRef<number | null>(null);
+  const levelUpTimerRef = useRef<number | null>(null);
 
   const [leftStick, setLeftStick] = useState<StickState>({
     active: false,
@@ -129,13 +130,15 @@ export function ZombieController({ myPlayerId, myPlayer }: ZombieControllerProps
           setLevelUpBanner(`LEVEL ${mine.level}! ${unlocked.name.toUpperCase()}`);
           playWinSound();
           triggerHapticFeedback([30, 40, 60]);
-          window.setTimeout(() => setLevelUpBanner(null), 3000);
+          if (levelUpTimerRef.current) window.clearTimeout(levelUpTimerRef.current);
+          levelUpTimerRef.current = window.setTimeout(() => setLevelUpBanner(null), 3000);
         }
       }
     });
     return () => {
       unsub();
       if (damageTimerRef.current) window.clearTimeout(damageTimerRef.current);
+      if (levelUpTimerRef.current) window.clearTimeout(levelUpTimerRef.current);
     };
   }, [myPlayerId]);
 

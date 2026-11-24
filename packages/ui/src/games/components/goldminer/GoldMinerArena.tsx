@@ -1033,7 +1033,7 @@ export function GoldMinerArena({
             e.stopPropagation();
             actionsRef.current?.useDynamite(localPlayerId);
           }}
-          className="font-goldminer absolute right-4 bottom-4 flex items-center gap-2 rounded-2xl border-b-4 border-red-900 bg-red-600 px-4 py-2.5 text-base text-white shadow-xl disabled:opacity-45"
+          className="font-goldminer absolute right-[max(1rem,calc(env(safe-area-inset-right,0px)+0.75rem))] bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.75rem))] flex items-center gap-2 rounded-2xl border-b-4 border-red-900 bg-red-600 px-4 py-2.5 text-base text-white shadow-xl disabled:opacity-45"
         >
           <GiDynamite className="h-6 w-6" />
           Dynamit ({localMiner?.dynamite ?? 0})
@@ -1072,7 +1072,16 @@ export function GoldMinerArena({
                         : offer.id === 'rock_book'
                           ? GiSpellBook
                           : GiDiamondHard;
-                const canClick = Boolean(localPlayerId && localMiner && localMiner.money >= offer.price);
+                const alreadyOwned = Boolean(
+                  localMiner &&
+                    ((offer.id === 'strength' && localMiner.hasStrength) ||
+                      (offer.id === 'clover' && localMiner.hasClover) ||
+                      (offer.id === 'rock_book' && localMiner.hasRockBook) ||
+                      (offer.id === 'diamond_polish' && localMiner.hasDiamondPolish))
+                );
+                const canClick = Boolean(
+                  localPlayerId && localMiner && !alreadyOwned && localMiner.money >= offer.price
+                );
 
                 return (
                   <button
@@ -1089,7 +1098,9 @@ export function GoldMinerArena({
                         <div className="text-xs text-amber-200/80">{spec.description}</div>
                       </div>
                     </div>
-                    <span className="font-goldminer text-lg text-yellow-300">${offer.price}</span>
+                    <span className="font-goldminer text-lg text-yellow-300">
+                      {alreadyOwned ? 'Aktiv' : `$${offer.price}`}
+                    </span>
                   </button>
                 );
               })}
@@ -1104,8 +1115,13 @@ export function GoldMinerArena({
               <button
                 type="button"
                 onClick={() => {
-                  const firstId = localPlayerId || Object.keys(hudState.players)[0];
-                  if (firstId) actionsRef.current?.nextLevelReady(firstId);
+                  if (localPlayerId) {
+                    actionsRef.current?.nextLevelReady(localPlayerId);
+                  } else {
+                    for (const pid of Object.keys(hudState.players)) {
+                      actionsRef.current?.nextLevelReady(pid);
+                    }
+                  }
                 }}
                 className="font-goldminer shrink-0 rounded-2xl border-b-4 border-emerald-900 bg-emerald-500 px-6 py-3 text-lg text-white shadow-lg active:translate-y-0.5"
               >

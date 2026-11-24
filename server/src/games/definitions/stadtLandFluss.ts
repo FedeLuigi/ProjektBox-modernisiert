@@ -467,7 +467,10 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         submittedPlayerIds: nextSubmitted,
       };
 
-      const allSubmitted = players.every((p) => nextSubmitted.includes(p.id));
+      const activeHumanPlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+      const allSubmitted = (activeHumanPlayers.length > 0 ? activeHumanPlayers : players).every((p) =>
+        nextSubmitted.includes(p.id)
+      );
       if (move.triggerStop || allSubmitted) {
         return {
           valid: true,
@@ -588,7 +591,10 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         reviewReadyIds: nextReady,
       };
 
-      const allReady = players.every((p) => nextReady.includes(p.id));
+      const activeHumanPlayers = players.filter((p) => !p.isTvScreen && p.connectionState !== 'offline');
+      const allReady = (activeHumanPlayers.length > 0 ? activeHumanPlayers : players).every((p) =>
+        nextReady.includes(p.id)
+      );
       if (allReady) {
         return {
           valid: true,

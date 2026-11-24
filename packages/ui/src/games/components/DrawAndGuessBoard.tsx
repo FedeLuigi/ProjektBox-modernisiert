@@ -204,7 +204,7 @@ export function DrawAndGuessBoard({
   allPlayers,
   isGameOver,
   onMove,
-  disabled: _disabled,
+  disabled,
   isTvMode,
 }: GameRendererProps<DrawAndGuessState>) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -217,6 +217,16 @@ export function DrawAndGuessBoard({
   const flushTimeoutRef = useRef<any>(null);
   const renderedRoundRef = useRef<number | null>(null);
   const renderedCountRef = useRef<number>(0);
+  const lastProcessedGuessIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (flushTimeoutRef.current) {
+        clearTimeout(flushTimeoutRef.current);
+        flushTimeoutRef.current = null;
+      }
+    };
+  }, []);
 
   const [canvasSize, setCanvasSize] = useState<{ width: number; height: number } | null>(null);
   const [currentColor, setCurrentColor] = useState('#000000');
@@ -492,7 +502,7 @@ export function DrawAndGuessBoard({
   };
 
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-    if (!isDrawer || isRoundOver) return;
+    if (disabled || !isDrawer || isRoundOver) return;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
     isDrawingRef.current = true;
     const coords = getCanvasCoords(e);
@@ -600,7 +610,7 @@ export function DrawAndGuessBoard({
   };
 
   const handleUndo = () => {
-    if (!isDrawer || isRoundOver) return;
+    if (disabled || !isDrawer || isRoundOver) return;
     flushStrokes();
 
     const currentStrokes = gameState?.strokes || [];
@@ -629,7 +639,7 @@ export function DrawAndGuessBoard({
   };
 
   const handleClear = () => {
-    if (!isDrawer || isRoundOver) return;
+    if (disabled || !isDrawer || isRoundOver) return;
     const canvas = canvasRef.current;
     if (canvas) {
       const ctx = canvas.getContext('2d');
@@ -650,10 +660,10 @@ export function DrawAndGuessBoard({
 
   const handleGuessSubmit = useCallback(() => {
     const text = guessInput.trim();
-    if (!text || isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
+    if (disabled || !text || isDrawer || hasGuessedCorrectly || isRoundOver || isChoosingWord) return;
     onMove({ type: 'guess', text });
     setGuessInput('');
-  }, [guessInput, isDrawer, hasGuessedCorrectly, isRoundOver, isChoosingWord, onMove]);
+  }, [disabled, guessInput, isDrawer, hasGuessedCorrectly, isRoundOver, isChoosingWord, onMove]);
 
   const handleKeyboardChar = useCallback(
     (char: string) => {
@@ -704,6 +714,8 @@ export function DrawAndGuessBoard({
 
   useEffect(() => {
     if (!latestGuess) return;
+    if (latestGuess.id === lastProcessedGuessIdRef.current) return;
+    lastProcessedGuessIdRef.current = latestGuess.id;
     if (latestGuess.playerId === myPlayer?.id) {
       if (latestGuess.isCorrect) {
         playWinSound();

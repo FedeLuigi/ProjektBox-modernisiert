@@ -1227,7 +1227,7 @@ export function RouletteBoard({
   const myLastRoundBets = gameState?.lastRoundBets?.[myId] || {};
   const canRebet = sumBets(myLastRoundBets) > 0 && sumBets(myLastRoundBets) <= effectiveBalance + displayedWagered;
   const canDouble = myWagered > 0 && myWagered <= effectiveBalance;
-  const isLocked = !isMultiplayer && (gameState?.lockedPlayerIds || []).includes(myId);
+  const isLocked = (gameState?.lockedPlayerIds || []).includes(myId);
   const isNextReady = (gameState?.nextReadyIds || []).includes(myId);
   const isBettingOpen = !isTvScreen && !disabled && phase === 'betting' && !isLocked;
   const canPlaceChip = isBettingOpen && effectiveBalance > 0;
@@ -1793,8 +1793,7 @@ export function RouletteBoard({
           <Trash2 className={isPortraitVariant ? 'h-3.5 w-3.5' : 'h-3 w-3'} />
         </button>
 
-        {!isMultiplayer &&
-          (isPortraitVariant ? (
+        {isPortraitVariant ? (
             <button
               type="button"
               disabled={Boolean(disabled) || phase !== 'betting' || isLocked}
@@ -1802,8 +1801,8 @@ export function RouletteBoard({
                 setOptimisticOps([]);
                 onMove({ type: 'lock_bets' });
               }}
-              title="Jetzt drehen"
-              aria-label="Jetzt drehen"
+              title={isLocked ? 'Einsätze bestätigt' : isMultiplayer ? 'Bereit / Drehen' : 'Jetzt drehen'}
+              aria-label={isLocked ? 'Einsätze bestätigt' : isMultiplayer ? 'Bereit / Drehen' : 'Jetzt drehen'}
               className="font-arcade inline-flex h-10 w-10 min-[390px]:h-11 min-[390px]:w-11 sm:h-12 sm:w-12 items-center justify-center rounded-full border border-[#34D399]/75 bg-[#059669] text-white hover:bg-[#10B981] disabled:opacity-40 cursor-pointer transition-transform active:scale-95"
             >
               <Check className="h-4 w-4 stroke-[3]" />
@@ -1824,7 +1823,7 @@ export function RouletteBoard({
                 {phase === 'spinning' ? 'DREHT...' : isLocked ? 'BEREIT' : 'DREHEN!'}
               </span>
             </OpenButton>
-          ))}
+          )}
       </>
     );
   };
