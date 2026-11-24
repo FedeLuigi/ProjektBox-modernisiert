@@ -732,6 +732,17 @@ export function StadtLandFlussBoard({
   // A) TV-SCREEN ANSICHT (GROSSFORMAT FÜR WOHNZIMMER-BILDSCHIRM)
   // ───────────────────────────────────────────────────────────────
   if (isTv) {
+    const renderTvThemeButton = () => (
+      <button
+        type="button"
+        onClick={cycleTheme}
+        title="Designart wechseln"
+        className={`rounded-xl border px-3.5 py-1.5 font-arcade text-xs sm:text-sm uppercase cursor-pointer transition-all hover:scale-[1.03] active:scale-95 ${theme.timerNormal}`}
+      >
+        STIL: {theme.label}
+      </button>
+    );
+
     const renderTvTimerPill = () => (
       <span
         className={`font-arcade shrink-0 inline-flex items-center gap-1.5 rounded-xl border px-4 py-1.5 text-sm sm:text-base ${
@@ -818,9 +829,7 @@ export function StadtLandFlussBoard({
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`rounded-xl border px-3 py-1 font-arcade text-xs uppercase ${theme.timerNormal}`}>
-                STIL: {theme.label}
-              </span>
+              {renderTvThemeButton()}
               {renderTvTimerPill()}
             </div>
           </div>
@@ -854,9 +863,7 @@ export function StadtLandFlussBoard({
               </span>
             </div>
             <div className="flex items-center gap-3">
-              <span className={`rounded-xl border px-3 py-1 font-arcade text-xs uppercase ${theme.timerNormal}`}>
-                STIL: {theme.label}
-              </span>
+              {renderTvThemeButton()}
               {renderTvTimerPill()}
             </div>
           </div>
@@ -909,6 +916,7 @@ export function StadtLandFlussBoard({
             </div>
 
             <div className="flex items-center gap-3">
+              {renderTvThemeButton()}
               <span className={`rounded-xl border px-3.5 py-1.5 font-arcade text-xs sm:text-sm uppercase ${theme.readyPill}`}>
                 BEREIT: {gameState.reviewReadyIds?.length || 0}/{activePlayers.length}
               </span>
