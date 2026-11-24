@@ -172,26 +172,28 @@ export function MultiplayerGameView({
   const isWinner = gameState?.status === 'won' && gameState.winnerId === currentUser.id;
   const isDraw = gameState?.status === 'draw';
   const isZombieSurvival = lobby.gameId === 'zombie-survival';
+  const isGoldMiner = lobby.gameId === 'gold-miner';
+  const isFullScreenGame = isZombieSurvival || isGoldMiner;
 
   const BoardComponent = clientGameRegistry.get(lobby.gameId);
 
   return (
     <div
       className={`fixed inset-0 z-50 flex w-full flex-col overflow-hidden overflow-x-hidden text-white select-none animate-fade-in ${
-        isZombieSurvival && !isGameOver ? 'bg-[#070B12]' : 'bg-[#1B2B40]'
+        isFullScreenGame && !isGameOver ? (isGoldMiner ? 'bg-[#7D563B]' : 'bg-[#070B12]') : 'bg-[#1B2B40]'
       }`}
     >
-      {(!isZombieSurvival || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
+      {(!isFullScreenGame || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
 
       <div
         className={
-          isZombieSurvival && !isGameOver
+          isFullScreenGame && !isGameOver
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
             : 'safe-game-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between'
         }
       >
-        {/* 1. OPEN-GALLERY TOP-BAR (bei Zombie 3D ausgeblendet für echtes Vollbild) */}
-        {(!isZombieSurvival || isGameOver) && (
+        {/* 1. OPEN-GALLERY TOP-BAR (bei Vollbild-Action-Spielen ausgeblendet) */}
+        {(!isFullScreenGame || isGameOver) && (
         <header className="game-landscape-header relative grid shrink-0 grid-cols-[1fr_auto_1fr] items-center gap-2 mb-2">
           <div className="justify-self-start">
             <OpenButton size="sm" variant="secondary" onClick={onLeave}>
@@ -251,6 +253,18 @@ export function MultiplayerGameView({
             </div>
           </div>
         </header>
+        )}
+
+        {/* Schwebender EXIT-Button im Vollbild-Gold-Miner */}
+        {isGoldMiner && !isGameOver && (
+          <button
+            type="button"
+            onClick={onLeave}
+            className="font-goldminer fixed bottom-4 left-4 z-40 inline-flex items-center gap-1.5 rounded-xl border-2 border-[#78350F] bg-[#B45309]/90 px-3 py-1.5 text-sm text-amber-100 shadow-lg backdrop-blur-sm active:scale-95"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>EXIT</span>
+          </button>
         )}
 
         {/* Schwebender EXIT-Button oben rechts im Vollbild-Zombie-Controller */}
@@ -372,7 +386,7 @@ export function MultiplayerGameView({
         ) : (
           <main
             className={`mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden ${
-              isZombieSurvival ? 'p-0' : 'game-landscape-main items-center py-1.5 sm:py-3'
+              isFullScreenGame ? 'p-0' : 'game-landscape-main items-center py-1.5 sm:py-3'
             }`}
           >
             {BoardComponent && myPlayer ? (

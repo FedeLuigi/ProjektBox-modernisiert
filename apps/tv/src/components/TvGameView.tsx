@@ -31,6 +31,8 @@ export function TvGameView({
   const isRoulette = lobby.gameId === 'roulette';
   const isTexasHoldem = lobby.gameId === 'texas-holdem';
   const isZombieSurvival = lobby.gameId === 'zombie-survival';
+  const isGoldMiner = lobby.gameId === 'gold-miner';
+  const isFullScreenGame = isZombieSurvival || isGoldMiner;
   const isMoneyGame = isRoulette || isTexasHoldem;
   const activePlayers = lobby.players.filter((p) => !p.isTvScreen);
   const player1 = activePlayers[0];
@@ -116,20 +118,20 @@ export function TvGameView({
     <div
       data-tv-scope="modal"
       className={`fixed inset-0 z-50 flex w-full flex-col justify-between overflow-hidden text-white select-none animate-fade-in ${
-        isZombieSurvival && !isGameOver ? 'bg-[#070B12]' : 'bg-[#1B2B40]'
+        isFullScreenGame && !isGameOver ? (isGoldMiner ? 'bg-[#7D563B]' : 'bg-[#070B12]') : 'bg-[#1B2B40]'
       }`}
     >
-      {(!isZombieSurvival || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
+      {(!isFullScreenGame || isGameOver) && <BackgroundCometCanvas opacity={0.85} />}
 
       <div
         className={
-          isZombieSurvival
+          isFullScreenGame
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
             : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-6 lg:px-10 py-3'
         }
       >
-        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL (bei Zombie 3D ausgeblendet für echtes Vollbild) */}
-        {!isZombieSurvival && (
+        {/* 1. TV-KOPFZEILE MIT IMMER MITTIG ZENTRIERTEM SPIELTITEL (bei Vollbild-Spielen ausgeblendet) */}
+        {!isFullScreenGame && (
         <header className="relative flex flex-col sm:grid sm:grid-cols-[1fr_auto_1fr] shrink-0 items-center gap-3 pb-2.5">
           <div className="flex w-full sm:w-auto min-w-0 items-center justify-between sm:justify-start gap-3">
             <OpenButton size="md" variant="secondary" onClick={onLeave} className="shrink-0 whitespace-nowrap">
@@ -184,6 +186,18 @@ export function TvGameView({
             </span>
           </div>
         </header>
+        )}
+
+        {/* Schwebender EXIT-TV-Button im Vollbild-Gold-Miner */}
+        {isGoldMiner && !isGameOver && (
+          <button
+            type="button"
+            onClick={onLeave}
+            className="font-goldminer fixed bottom-4 left-4 z-40 inline-flex items-center gap-2 rounded-xl border-2 border-[#78350F] bg-[#B45309]/90 px-3.5 py-2 text-sm text-amber-100 shadow-lg backdrop-blur-sm hover:bg-[#92400E] cursor-pointer"
+          >
+            <ArrowLeft className="h-4 w-4" />
+            <span>EXIT TV</span>
+          </button>
         )}
 
         {/* Schwebender OPTIONEN-Button oben rechts im Vollbild-Zombie-Spiel */}
@@ -352,12 +366,12 @@ export function TvGameView({
         ) : (
           <main
             className={`flex flex-1 min-h-0 flex-col items-center w-full ${
-              isZombieSurvival ? 'overflow-hidden p-0' : 'overflow-y-auto py-3'
+              isFullScreenGame ? 'overflow-hidden p-0' : 'overflow-y-auto py-3'
             }`}
           >
             <div
               className={
-                isZombieSurvival
+                isFullScreenGame
                   ? 'flex h-full w-full flex-1 min-h-0 flex-col'
                   : 'my-auto flex w-full flex-col items-center'
               }
