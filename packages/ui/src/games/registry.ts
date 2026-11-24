@@ -5,6 +5,7 @@ import { RouletteBoard } from './components/RouletteBoard';
 import { StadtLandFlussBoard } from './components/StadtLandFlussBoard';
 import { TexasHoldemBoard } from './components/TexasHoldemBoard';
 import { ZombieSurvivalBoard } from './components/ZombieSurvivalBoard';
+import { GoldMinerBoard } from './components/GoldMinerBoard';
 import { GenericDuelBoard } from './components/GenericDuelBoard';
 
 export class ClientGameRegistry {
@@ -16,6 +17,7 @@ export class ClientGameRegistry {
     this.register('roulette', RouletteBoard);
     this.register('texas-holdem', TexasHoldemBoard);
     this.register('zombie-survival', ZombieSurvivalBoard);
+    this.register('gold-miner', GoldMinerBoard);
   }
 
   public register(gameId: string, component: ComponentType<GameRendererProps<any, any>>): void {

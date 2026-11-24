@@ -27,6 +27,8 @@ export const EVENT_MAX_PAYLOAD_BYTES = {
   [SOCKET_EVENTS.DRAW_STROKES]: 24 * 1024,
   [SOCKET_EVENTS.ZOMBIE_INPUT]: 512,
   [SOCKET_EVENTS.ZOMBIE_STATE]: 8192,
+  [SOCKET_EVENTS.GOLDMINER_INPUT]: 512,
+  [SOCKET_EVENTS.GOLDMINER_STATE]: 8192,
   [SOCKET_EVENTS.SESSION_PING]: 256,
 } as const;
 
@@ -235,6 +237,12 @@ export const GameMoveSchema = z.discriminatedUnion('type', [
     weapons: z.record(z.string().min(1).max(80), z.string().min(1).max(32)),
     ...ActionMetaFields,
   }),
+  z.object({
+    type: z.literal('goldminer_finish'),
+    level: z.number().int().min(1).max(999),
+    scores: z.record(z.string().min(1).max(80), z.number().finite().min(0).max(100000000)),
+    ...ActionMetaFields,
+  }),
 ]);
 
 export const ZombieInputSchema = z.object({
@@ -298,4 +306,51 @@ export const StrokeSegmentSchema = z.object({
 
 export const DrawStrokesSchema = z.object({
   strokes: z.array(StrokeSegmentSchema).min(1).max(120),
+});
+
+export const GoldMinerShopItemIdSchema = z.enum([
+  'dynamite',
+  'strength',
+  'clover',
+  'rock_book',
+  'diamond_polish',
+]);
+
+export const GoldMinerInputSchema = z.object({
+  dropHook: z.boolean().optional(),
+  useDynamite: z.boolean().optional(),
+  buyItemId: GoldMinerShopItemIdSchema.optional(),
+  nextLevelReady: z.boolean().optional(),
+  togglePause: z.boolean().optional(),
+});
+
+export const GoldMinerPlayerHudSchema = z.object({
+  playerId: z.string().min(1).max(80),
+  name: z.string().min(1).max(80),
+  color: z.string().min(1).max(32),
+  money: z.number().finite().min(0).max(100000000),
+  dynamite: z.number().int().min(0).max(99),
+  hasStrength: z.boolean(),
+  hasClover: z.boolean(),
+  hasRockBook: z.boolean(),
+  hasDiamondPolish: z.boolean(),
+  hookState: z.enum(['swing', 'extend', 'retract']),
+  carryingKind: z.string().max(32).nullable().optional(),
+  readyForNextLevel: z.boolean().optional(),
+});
+
+export const GoldMinerStateSchema = z.object({
+  level: z.number().int().min(1).max(999),
+  timeLeft: z.number().finite().min(0).max(999),
+  targetMoney: z.number().finite().min(0).max(100000000),
+  teamMoney: z.number().finite().min(0).max(100000000),
+  phase: z.enum(['playing', 'shop', 'gameover']),
+  mode: z.enum(['coop', 'versus']),
+  shopOffers: z.array(
+    z.object({
+      id: GoldMinerShopItemIdSchema,
+      price: z.number().finite().min(0).max(100000),
+    }),
+  ),
+  players: z.record(z.string().min(1).max(80), GoldMinerPlayerHudSchema),
 });

@@ -21,6 +21,8 @@ import {
   SessionPingSchema,
   ZombieInputSchema,
   ZombieStateSchema,
+  GoldMinerInputSchema,
+  GoldMinerStateSchema,
 } from '@projektbox/shared/validation';
 import { LobbyManager, lobbyManager, sanitizeLobbyForClient } from '../lobby/lobbyManager.js';
 import { SimulationBotRunner } from '../lobby/simulationBotRunner.js';
@@ -1029,6 +1031,53 @@ export function registerSocketHandlers(
         socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.ZOMBIE_STATE, parsed.data);
       } catch (err) {
         console.error('Fehler bei zombie:state:', err);
+      }
+    });
+
+    socket.on(SOCKET_EVENTS.GOLDMINER_INPUT, async (data: unknown) => {
+      try {
+        if (socket.data.superseded) return;
+        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.GOLDMINER_INPUT))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.GOLDMINER_INPUT])) return;
+
+        const parsed = GoldMinerInputSchema.safeParse(data);
+        if (!parsed.success) return;
+
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+        if (lobby.gameId !== 'gold-miner') return;
+
+        const player = lobby.players.find((p) => p.socketId === socket.id);
+        if (!player || !player.connected || player.isTvScreen) return;
+
+        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.GOLDMINER_INPUT, {
+          playerId: player.id,
+          input: parsed.data,
+        });
+      } catch (err) {
+        console.error('Fehler bei goldminer:input:', err);
+      }
+    });
+
+    socket.on(SOCKET_EVENTS.GOLDMINER_STATE, async (data: unknown) => {
+      try {
+        if (socket.data.superseded) return;
+        if (!(await consumeRateLimit(socket.id, SOCKET_EVENTS.GOLDMINER_STATE))) return;
+        if (!isPayloadWithinLimit(data, EVENT_MAX_PAYLOAD_BYTES[SOCKET_EVENTS.GOLDMINER_STATE])) return;
+
+        const parsed = GoldMinerStateSchema.safeParse(data);
+        if (!parsed.success) return;
+
+        const lobby = manager.getLobbyBySocket(socket.id);
+        if (!lobby || !lobby.gameState || lobby.status !== 'in_progress') return;
+        if (lobby.gameId !== 'gold-miner') return;
+
+        const sender = lobby.players.find((p) => p.socketId === socket.id);
+        if (!sender || (!sender.isTvScreen && !sender.isHost)) return;
+
+        socket.to(`lobby:${lobby.id}`).emit(SOCKET_EVENTS.GOLDMINER_STATE, parsed.data);
+      } catch (err) {
+        console.error('Fehler bei goldminer:state:', err);
       }
     });
 

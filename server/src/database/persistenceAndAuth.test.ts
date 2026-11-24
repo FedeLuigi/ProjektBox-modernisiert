@@ -137,7 +137,7 @@ test('Cross-Origin Session (SameSite=None + X-Session-Token + Bearer + Socket Au
     const gamesRes = await fetch(`${baseUrl}/api/games`);
     assert.equal(gamesRes.status, 200);
     const gamesBody = (await gamesRes.json()) as { games: Array<{ id: string }> };
-    assert.equal(gamesBody.games.length, 5);
+    assert.equal(gamesBody.games.length, 6);
 
     const healthRes = await fetch(`${baseUrl}/api/health`);
     assert.equal(healthRes.status, 200);

@@ -11,6 +11,98 @@ export function GamePreviewArtwork({
 }: GamePreviewArtworkProps) {
   const isHero = variant === 'hero';
 
+  if (gameId === 'gold-miner') {
+    const w = isHero ? 640 : 400;
+    const h = isHero ? 280 : 210;
+    const hudH = isHero ? 66 : 50;
+    return (
+      <div
+        className={`relative w-full overflow-hidden bg-gradient-to-b from-[#FF9F0A] via-[#A67855] to-[#6E492F] ${className}`}
+      >
+        <svg viewBox={`0 0 ${w} ${h}`} className="h-full w-full object-cover" aria-hidden="true">
+          {/* Orange Surface Header */}
+          <rect x="0" y="0" width={w} height={hudH} fill="#FF9F0A" />
+          <rect x="0" y={hudH - 4} width={w} height="4" fill="#C2410C" />
+          {/* Blue Dome behind Miner */}
+          <path
+            d={`M ${w / 2 - (isHero ? 56 : 42)} ${hudH} A ${isHero ? 56 : 42} ${isHero ? 52 : 40} 0 0 1 ${w / 2 + (isHero ? 56 : 42)} ${hudH} Z`}
+            fill="#1D358A"
+          />
+          {/* Miner silhouette & winch */}
+          <circle cx={w / 2} cy={hudH - (isHero ? 32 : 24)} r={isHero ? 12 : 9} fill="#FDBA74" />
+          <path
+            d={`M ${w / 2 - (isHero ? 14 : 10)} ${hudH - (isHero ? 36 : 27)} Q ${w / 2} ${hudH - (isHero ? 48 : 36)} ${w / 2 + (isHero ? 14 : 10)} ${hudH - (isHero ? 36 : 27)} Z`}
+            fill="#E5E7EB"
+          />
+          <rect x={w / 2 - (isHero ? 16 : 12)} y={hudH - (isHero ? 20 : 15)} width={isHero ? 32 : 24} height={isHero ? 16 : 12} rx="4" fill="#B45309" />
+          <rect x={w / 2 - (isHero ? 12 : 9)} y={hudH - (isHero ? 14 : 10)} width={isHero ? 24 : 18} height={isHero ? 11 : 8} rx="2" fill="#334155" />
+
+          {/* Layered Brown Earth */}
+          <rect x="0" y={hudH} width={w} height={h - hudH} fill="#9A7255" />
+          <path
+            d={`M 0 ${hudH + 26} Q ${w * 0.25} ${hudH + 14} ${w * 0.5} ${hudH + 28} T ${w} ${hudH + 22} L ${w} ${h} L 0 ${h} Z`}
+            fill="#7D563B"
+          />
+          <path
+            d={`M 0 ${h - 46} Q ${w * 0.35} ${h - 62} ${w * 0.7} ${h - 40} T ${w} ${h - 54} L ${w} ${h} L 0 ${h} Z`}
+            fill="#946B4F"
+          />
+
+          {/* Hook Line */}
+          <line
+            x1={w / 2}
+            y1={hudH - 2}
+            x2={w * 0.36}
+            y2={hudH + (isHero ? 105 : 74)}
+            stroke="#1E293B"
+            strokeWidth="2.5"
+          />
+          {/* Gold Nuggets */}
+          <path
+            d={`M ${w * 0.28} ${hudH + (isHero ? 115 : 80)} q 22 -14 42 4 q 10 22 -10 34 q -26 6 -38 -12 q -8 -16 6 -26 z`}
+            fill="#FACC15"
+            stroke="#CA8A04"
+            strokeWidth="2.5"
+          />
+          <path
+            d={`M ${w * 0.68} ${hudH + (isHero ? 126 : 88)} q 18 -10 32 4 q 8 16 -8 24 q -20 4 -28 -10 q -6 -12 4 -18 z`}
+            fill="#FDE047"
+            stroke="#CA8A04"
+            strokeWidth="2"
+          />
+          {/* Diamonds */}
+          <polygon
+            points={`${w * 0.22},${hudH + 42} ${w * 0.22 + 12},${hudH + 42} ${w * 0.22 + 17},${hudH + 49} ${w * 0.22 + 6},${hudH + 60} ${w * 0.22 - 5},${hudH + 49}`}
+            fill="#67E8F9"
+            stroke="#0891B2"
+            strokeWidth="1.5"
+          />
+          <polygon
+            points={`${w * 0.8},${hudH + 50} ${w * 0.8 + 12},${hudH + 50} ${w * 0.8 + 17},${hudH + 57} ${w * 0.8 + 6},${hudH + 68} ${w * 0.8 - 5},${hudH + 57}`}
+            fill="#67E8F9"
+            stroke="#0891B2"
+            strokeWidth="1.5"
+          />
+          {/* TNT Barrel */}
+          <g transform={`translate(${w * 0.54}, ${hudH + (isHero ? 82 : 58)})`}>
+            <rect x="-14" y="-18" width="28" height="34" rx="5" fill="#B45309" stroke="#78350F" strokeWidth="2" />
+            <rect x="-14" y="-6" width="28" height="10" fill="#FEF3C7" />
+            <text x="0" y="2" textAnchor="middle" fontSize="8" fontWeight="900" fill="#DC2626">
+              TNT
+            </text>
+          </g>
+          {/* Mystery ? Bag */}
+          <g transform={`translate(${w * 0.14}, ${hudH + (isHero ? 96 : 66)})`}>
+            <circle cx="0" cy="4" r="14" fill="#FDE68A" stroke="#92400E" strokeWidth="2" />
+            <text x="0" y="9" textAnchor="middle" fontSize="14" fontWeight="900" fill="#DC2626">
+              ?
+            </text>
+          </g>
+        </svg>
+      </div>
+    );
+  }
+
   if (gameId === 'zombie-survival') {
     return (
       <div

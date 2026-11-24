@@ -1141,3 +1141,9 @@ body::-webkit-scrollbar,
     0% 8px
   );
 }
+
+/* ─── GOLD MINER CARTOON TYPOGRAFIE ─── */
+.font-goldminer {
+  font-family: 'Luckiest Guy', 'Lilita One', 'Fredoka', Impact, sans-serif;
+  letter-spacing: 0.03em;
+}

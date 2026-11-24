@@ -29,6 +29,8 @@ export type RateLimitedEvent =
   | 'draw:undo'
   | 'zombie:input'
   | 'zombie:state'
+  | 'goldminer:input'
+  | 'goldminer:state'
   | 'session:ping'
   | 'default';
 
@@ -52,6 +54,8 @@ export const EVENT_RATE_LIMITS: Record<RateLimitedEvent, RateLimitRule> = {
   'draw:clear': { capacity: 4, refillRatePerSec: 1 },
   'zombie:input': { capacity: 60, refillRatePerSec: 40 },
   'zombie:state': { capacity: 30, refillRatePerSec: 20 },
+  'goldminer:input': { capacity: 60, refillRatePerSec: 40 },
+  'goldminer:state': { capacity: 30, refillRatePerSec: 20 },
   'draw:undo': { capacity: 10, refillRatePerSec: 4 },
   'session:ping': { capacity: 10, refillRatePerSec: 2 },
   default: { capacity: 12, refillRatePerSec: 8 },

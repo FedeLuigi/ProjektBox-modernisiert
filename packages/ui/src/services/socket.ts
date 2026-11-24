@@ -1076,6 +1076,31 @@ class SocketService {
     this.socket.emit('zombie:state', state);
   }
 
+  public emitGoldMinerInput(input: {
+    dropHook?: boolean;
+    useDynamite?: boolean;
+    buyItemId?: 'dynamite' | 'strength' | 'clover' | 'rock_book' | 'diamond_polish';
+    nextLevelReady?: boolean;
+    togglePause?: boolean;
+  }): void {
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('goldminer:input', input);
+  }
+
+  public emitGoldMinerState(state: {
+    level: number;
+    timeLeft: number;
+    targetMoney: number;
+    teamMoney: number;
+    phase: 'playing' | 'shop' | 'gameover';
+    mode: 'coop' | 'versus';
+    shopOffers: Array<{ id: 'dynamite' | 'strength' | 'clover' | 'rock_book' | 'diamond_polish'; price: number }>;
+    players: Record<string, any>;
+  }): void {
+    if (!this.socket || !this.socket.connected) return;
+    this.socket.emit('goldminer:state', state);
+  }
+
   public async requestRematch(): Promise<void> {
     if (this.isActionBlocked()) {
       throw new Error('Verbindung unsicher – bitte kurz warten.');
@@ -1234,6 +1259,36 @@ class SocketService {
     }) => void
   ): () => void {
     return this.addSocketListener('zombie:state', cb);
+  }
+
+  public onGoldMinerInput(
+    cb: (data: {
+      playerId: string;
+      input: {
+        dropHook?: boolean;
+        useDynamite?: boolean;
+        buyItemId?: 'dynamite' | 'strength' | 'clover' | 'rock_book' | 'diamond_polish';
+        nextLevelReady?: boolean;
+        togglePause?: boolean;
+      };
+    }) => void
+  ): () => void {
+    return this.addSocketListener('goldminer:input', cb);
+  }
+
+  public onGoldMinerState(
+    cb: (data: {
+      level: number;
+      timeLeft: number;
+      targetMoney: number;
+      teamMoney: number;
+      phase: 'playing' | 'shop' | 'gameover';
+      mode: 'coop' | 'versus';
+      shopOffers: Array<{ id: 'dynamite' | 'strength' | 'clover' | 'rock_book' | 'diamond_polish'; price: number }>;
+      players: Record<string, any>;
+    }) => void
+  ): () => void {
+    return this.addSocketListener('goldminer:state', cb);
   }
 }
 

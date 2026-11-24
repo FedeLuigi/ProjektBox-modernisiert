@@ -164,6 +164,27 @@ export const GAMES_CATALOG_META: GameMetadata[] = [
     tone: 'sunset',
     accent: 'coral',
   },
+  {
+    id: 'gold-miner',
+    title: 'Gold Miner',
+    subtitle: 'Schatzjagd mit Seilwinde & Dynamit',
+    description:
+      'Schwinge den Greifhaken, schnapp dir Goldnuggets, Diamanten und ?-Säcke, sprenge schwere Felsen mit Dynamit und knacke gemeinsam das Level-Ziel!',
+    howToPlay:
+      'Auf dem TV-Screen schwingt deine Seilwinde über den Erdschichten. Tippe auf dem Smartphone auf HAKEN WERFEN, um Gold, Diamanten, Maulwürfe oder ?-Säcke hochzuziehen – aber pass auf TNT-Fässer auf! Hängt ein schwerer Stein am Haken, kannst du ihn mit DYNAMIT wegsprengen. Zwischen den Leveln kaufst du im Shop Krafttrank, Glücksklee & Dynamit.',
+    category: 'Strategie',
+    gameType: 'party',
+    gameTypeLabel: 'ARCADE CO-OP',
+    players: '1–8 Spieler',
+    minPlayers: 1,
+    maxPlayers: 8,
+    duration: '5–15 Min.',
+    durationMinutes: 8,
+    supportsTv: true,
+    tags: ['Gold Miner', 'Arcade', 'Koop', 'Schatzjagd', 'TV-Highlight'],
+    tone: 'sunset',
+    accent: 'amber',
+  },
 ];
 
 export function getGameMetadata(gameId: string): GameMetadata | undefined {
@@ -205,6 +226,11 @@ export function getDefaultGameSettings(gameId: string): LobbySettings {
   if (gameId === 'zombie-survival') {
     return {
       category: 'normal',
+    };
+  }
+  if (gameId === 'gold-miner') {
+    return {
+      category: 'coop',
     };
   }
   return {};

@@ -5,7 +5,8 @@ export type KnownGameId =
   | 'stadt-land-fluss'
   | 'roulette'
   | 'texas-holdem'
-  | 'zombie-survival';
+  | 'zombie-survival'
+  | 'gold-miner';
 
 // ─── DRAW & GUESS ───
 export interface StrokeSegment {
@@ -297,4 +298,61 @@ export type ZombieSurvivalMove = {
   kills: Record<string, number>;
   levels: Record<string, number>;
   weapons: Record<string, string>;
+};
+
+// ─── GOLD MINER MULTIPLAYER ───
+export type GoldMinerMode = 'coop' | 'versus';
+
+export type GoldMinerShopItemId =
+  | 'dynamite'
+  | 'strength'
+  | 'clover'
+  | 'rock_book'
+  | 'diamond_polish';
+
+export interface GoldMinerPlayerHudState {
+  playerId: string;
+  name: string;
+  color: string;
+  money: number;
+  dynamite: number;
+  hasStrength: boolean;
+  hasClover: boolean;
+  hasRockBook: boolean;
+  hasDiamondPolish: boolean;
+  hookState: 'swing' | 'extend' | 'retract';
+  carryingKind?: string | null;
+  readyForNextLevel?: boolean;
+}
+
+export interface GoldMinerHudStatePayload {
+  level: number;
+  timeLeft: number;
+  targetMoney: number;
+  teamMoney: number;
+  phase: 'playing' | 'shop' | 'gameover';
+  mode: GoldMinerMode;
+  shopOffers: Array<{ id: GoldMinerShopItemId; price: number }>;
+  players: Record<string, GoldMinerPlayerHudState>;
+}
+
+export interface GoldMinerInputPayload {
+  dropHook?: boolean;
+  useDynamite?: boolean;
+  buyItemId?: GoldMinerShopItemId;
+  nextLevelReady?: boolean;
+  togglePause?: boolean;
+}
+
+export interface GoldMinerState extends BaseGameState {
+  gameId: 'gold-miner';
+  mode: GoldMinerMode;
+  level: number;
+  scores: Record<string, number>;
+}
+
+export type GoldMinerMove = {
+  type: 'goldminer_finish';
+  level: number;
+  scores: Record<string, number>;
 };

@@ -42,6 +42,8 @@ export const SOCKET_EVENTS = {
 
   ZOMBIE_INPUT: 'zombie:input',
   ZOMBIE_STATE: 'zombie:state',
+  GOLDMINER_INPUT: 'goldminer:input',
+  GOLDMINER_STATE: 'goldminer:state',
 } as const;
 
 export type SocketEventName = (typeof SOCKET_EVENTS)[keyof typeof SOCKET_EVENTS];
