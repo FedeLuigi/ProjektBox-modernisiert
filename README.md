@@ -21,7 +21,7 @@ ProjektBox-modernisiert/
 │       ├── api/                # REST-Endpunkte (/api/session, /api/games, /api/players, /api/leaderboard, /api/health)
 │       ├── auth/               # SessionManager, Cross-Domain Cookies (SameSite=None) & Bearer/Token-Auth
 │       ├── database/           # Zentraler PrismaClient (DATABASE_URL gepoolt), HybridPersistenceStore, Repositories
-│       ├── games/              # Autoritative Spiellogik (4 Spiele) & GamePhaseScheduler
+│       ├── games/              # Autoritative Spiellogik (6 Spiele) & GamePhaseScheduler
 │       ├── lobby/              # LobbyManager, Bot-Simulation & StatePersistenceStore (Redis/JSON Fallback)
 │       └── sockets/            # Socket.io Event-Handler & Per-Viewer-Sanitizing
 ├── packages/
@@ -29,6 +29,7 @@ ProjektBox-modernisiert/
 │   └── ui/                     # @projektbox/ui: Crystal-UI Komponenten, Avatar-System, Socket-Client & Game Boards
 ├── docs/
 │   └── NEON_AND_RENDER_GUIDE.md # Neon-Datenbank, Backup/Recovery & Render-Deployment-Anleitung
+├── AGENTS.md                   # Architektur-, Multi-Game- & Multiplayer-Entwicklungsregeln
 ├── render.yaml                 # Render Blueprint für Backend + TV Static Site + Smartphone Static Site
 └── package.json                # Root npm Workspaces & Build/Dev/Test-Skripte
 ```
@@ -43,6 +44,8 @@ ProjektBox-modernisiert/
 | **Stadt, Land, Fluss** | `stadt-land-fluss` | 2–8 | Gleichzeitiges Ausfüllen am Smartphone, Stopp-Knopf, gemeinsames Aufdecken & Veto-Abstimmung am TV/Handy (20/10/5/0 Pkt). |
 | **Casino Roulette** | `roulette` | 1–8 | Paralleles Multiplayer-Setzen am gemeinsamen Tisch, Spieler-eigene Chipfarben, Drag-and-drop (Setzen/Verschieben/Zurückziehen) & Live-Synchronisation. |
 | **Poker Texas Hold'em** | `texas-holdem` | 2–8 | No-Limit Texas Hold'em mit geheimen Pocket-Karten am Handy, Gemeinschaftskarten am TV, Side-Pots & automatischem Showdown. |
+| **Zombie Arena 3D** | `zombie-survival` | 1–8 | 3D-Action-Shooter am TV mit Smartphone-Dual-Stick-Controller, Zombie-Wellen, XP-Level-Ups & Waffen-Progression. |
+| **Gold Miner** | `gold-miner` | 1–8 | Koop-Arcade-Schatzjagd mit Seilwinde, Dynamit gegen Felsen, TNT-Fässern & Upgrade-Shop zwischen den Leveln. |
 
 ---
 

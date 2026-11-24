@@ -12,7 +12,6 @@
     "@projektbox/shared": "*",
     "lucide-react": "^1.70.0",
     "motion": "^14.14.0",
-    "nipplejs": "^1.0.4",
     "pixi.js": "^8.23.0",
     "postprocessing": "^6.39.6",
     "qrcode": "^1.5.4",
