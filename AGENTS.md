@@ -1,47 +1,101 @@
-# ProjektBox — Entwicklungsregeln
+# AGENTS.md — ProjektBox Plattform- & Entwicklungsregeln
 
-Gilt für TV (apps/tv), Smartphone/PWA (apps/smartphone), Server und Packages. Details in .agents/rules; Abläufe in .agents/skills.
+Dieses Dokument definiert verbindliche Architektur-, Design- und Qualitätsregeln für ProjektBox: eine Multi-Game-Plattform für Smart-TVs (apps/tv), Smartphones (apps/smartphone) und Echtzeit-Multiplayer (server). Thematische Ergänzungen liegen in .agents/rules/; wiederverwendbare Abläufe in .agents/skills/.
 
-## Arbeitsmodus
-- Autonomie full: analysiere, plane, implementiere, teste und dokumentiere selbstständig; triff reversible Detailentscheidungen ohne Rückfrage.
-- Team single: ein integrierter Entwicklerprozess; .agents/agents sind optionale Rollenperspektiven.
-- Deployment full-deploy: bei ausdrücklich beauftragtem Deployment autonom bis zum bestätigten Rollout. Ein Code-Auftrag allein autorisiert kein Deployment. Stoppe bei fehlenden Credentials/Berechtigungen, unklarem Ziel, fehlgeschlagenen Pflichtchecks, Datenverlustgefahr oder Sicherheitsvorfällen.
-- Standardmäßig Feature-Branch statt main. Fremde Änderungen nicht überschreiben. Betroffene Dateien, Aufrufer, Tests und Scripts vor Änderungen lesen.
+## 1. Arbeitsmodus und Plattformgrenzen
 
-## Monorepo
-- npm Workspaces: packages/*, apps/* und server.
-- packages/shared: framework-neutrale TypeScript-Verträge, Spieltypen, Socket-Events, Zod-Schemas und Utilities; kein React/DOM/Three.js.
-- packages/ui: gemeinsame UI-/Design-System-Komponenten, Socket-Client und Spiel-Renderer.
-- apps/tv: TV-/Beamer-Frontend mit Fernbedienungs- und Fokusnavigation.
-- apps/smartphone: Touch-Controller und PWA.
-- server: Express, Socket.IO, Prisma sowie Lobby- und Game-Logik.
-- Shared enthält kanonische Verträge; Server implementiert autoritative Regeln; UI/Apps präsentieren Zustand und senden Eingaben.
-- Bei Shared-Vertragsänderungen alle Produzenten, Konsumenten und Serialisierungswege prüfen.
+- **Autonomie: full.** Analysiere, plane, implementiere, teste und dokumentiere Aufgaben selbstständig. Triff reversible technische Detailentscheidungen ohne Rückfrage; dokumentiere Annahmen.
+- **Team: single.** Arbeite als integrierter Entwickler mit Architektur-, Frontend-, Backend-, Game- und QA-Perspektive. .agents/agents enthält optionale Rollenprofile, keine Voraussetzung für parallele Agenten.
+- **Deployment: full-deploy.** Bei ausdrücklich beauftragtem Deployment autonom bis zum bestätigten Rollout. Ein Code-Auftrag allein autorisiert kein Deployment. Stoppe bei fehlenden Credentials/Berechtigungen, unklarem Ziel, fehlgeschlagenen Pflichtchecks, Datenverlustgefahr oder Sicherheitsvorfällen.
+- Arbeite standardmäßig auf Feature-Branches, nicht direkt auf main. Überschreibe keine fremden Änderungen.
+- Lies vor Änderungen betroffene Dateien, Aufrufer, Tests und Scripts. Bei unklaren risikoarmen Details sichere, rückwärtskompatible Annahmen treffen.
+- Monorepo nutzt npm Workspaces: packages/*, apps/* und server.
+- packages/shared (@projektbox/shared): gemeinsame TypeScript-Typen, Game-Specs, Konstanten, Socket-Events und Utilities. Kein React, DOM oder Three.js.
+- packages/ui (@projektbox/ui): gemeinsame Plattform-Komponenten, Design-System und Client-Spielmodule unter src/games/.
+- apps/tv (@projektbox/tv): TV-/Beamer-Frontend mit Fernbedienungs-Fokusnavigation ([data-tv-app="true"]).
+- apps/smartphone (@projektbox/smartphone): Mobile Touch-/Controller-App inklusive PWA (VitePWA).
+- server (@projektbox/server): autoritativer Node.js-/Socket.IO-/Prisma-Server.
+- Halte Abhängigkeiten gerichtet: gemeinsame Verträge nach shared; autoritative Regeln auf den Server; Darstellung/Eingabe in UI und Apps.
 
-## Spiele und UX
-- Neue Spiele integrieren Shared-Katalog/Typen, Server-Definition/Registry und UI-Renderer/Registry.
-- TV-Bühne, Host-Smartphone und Smartphones aller Mitspieler unterstützen; keine Steuerung nur für Spieler 1.
-- Spielstyles kapseln; globale Selektoren body, button, :root oder [data-tv-app] nicht überschreiben.
-- Safe Areas, Touch-Ziele, TV-Fokus, Responsivität und klaren Exit-/Optionen-Zugang berücksichtigen.
-- TV-Fokus-CSS darf fixed/absolute/sticky Elemente nicht unbeabsichtigt verschieben.
+## 2. Pflichtprüfungen und tatsächlicher Umfang
 
-## Multiplayer, Sicherheit, Performance
-- Clientdaten sind nicht vertrauenswürdig. Zod-Validierung plus Identitäts-, Rollen-, Lobby-, Phasen- und Wertebereichsprüfung.
-- Server berechnet wettbewerbsrelevante Scores, Gewinner und Belohnungen selbst.
-- Neue Socket-Events brauchen Schema, Auth-/Lobby-Kontext, Rate-Limit, Payload-Grenzen, Fehlerbehandlung und Tests. RateLimiter aus server/src/utils/rateLimiter.ts verwenden.
-- Keine Secrets in Git, Logs, Fehlermeldungen oder Client-Bundles.
-- Three.js-/Canvas-Loops nicht über React-State pro Frame steuern; Refs/Engine-State nutzen und UI-/Socket-Sync drosseln.
-- Szenen-Initialisierung stabilisieren, ohne notwendige useEffect-Dependencies pauschal zu entfernen.
-- PWA autoUpdate garantiert keine atomare Versionsgleichheit aller Clients.
-- Listener, Timer, AnimationFrames, Renderer, Geometrien und Materialien bereinigen.
+Aktuell definierte Root-Scripts:
+```bash
+npm run build   # shared -> tv -> smartphone -> server
+npm run lint    # derzeit oxlint in apps/tv und apps/smartphone
+npm test        # shared-Build und Server-Tests in src/lobby/*.test.ts und src/database/*.test.ts
+```
+Weitere hilfreiche Befehle:
+- npm run dev — startet Server, Smartphone und TV parallel.
+- npm run build:shared — nach Änderungen in packages/shared.
 
-## Verifizierte Root-Scripts
-- npm run build: Shared, TV, Smartphone und Server.
-- npm run lint: derzeit nur apps/tv und apps/smartphone.
-- npm test: Shared-Build und Server-Tests aus src/lobby/*.test.ts sowie src/database/*.test.ts.
-- Nach Shared-Änderungen npm run build:shared.
-- Keine umfassendere Lint-/Testabdeckung behaupten als vorhanden. Passende Checks nach dem letzten Edit ausführen und exakt berichten.
-- Niemals Tests, CI oder Deployments als erfolgreich melden, wenn kein Ergebnis vorliegt.
+Regeln:
+- Scripts vor Änderungen an package.json erneut prüfen.
+- npm run lint ist derzeit kein vollständiger Lint-Lauf für Server und Packages.
+- Tests liegen aktuell im Server-Bereich; ergänze Tests dort, wo bestehende Architektur es vorsieht.
+- Führe passende Checks nach dem letzten Edit aus. Berichte exakt, welche Befehle liefen und ob sie bestanden, fehlschlugen oder nicht ausgeführt wurden.
+- Behaupte niemals, Tests, CI oder Deployment seien erfolgreich, wenn kein Ergebnis vorliegt.
 
-## Abschluss
-Diff, Fehlerpfade, Validierung, Berechtigungen, Accessibility und Regressionen prüfen. Dokumentation aktualisieren. Technische Schulden konkret notieren. Bericht enthält Änderungen, Prüfungen, Risiken sowie Branch/Commit/PR/Deployment-URL, sofern vorhanden.
+## 3. Neue Spiele und individuelle Game-Designs
+
+1. **Design-Isolation pro Spiel**
+   - Plattform-Lobby und Navigation nutzen das gemeinsame ProjektBox-UI.
+   - Innerhalb eines Spiels darf und soll ein zum Genre passendes eigenes Design verwendet werden (z. B. Casino-Filz, Cartoon-Arcade, Industrial-Zombie-3D, Sci-Fi, Western).
+   - Keine globalen Styles (body, button, input, :root oder [data-tv-app]) für ein einzelnes Spiel überschreiben.
+   - Alle spielspezifischen CSS-Klassen eindeutig präfixieren (z. B. zombie-*, roulette-*).
+2. **Drei-Schichten-Registrierung**
+   - Shared: Typen, Game-Spec/Katalog-Eintrag und gemeinsame Verträge in packages/shared.
+   - Server: autoritative Spieldefinition in server/src/games/definitions/ und Registrierung in server/src/games/registry.ts.
+   - Client: Renderer in packages/ui/src/games/components/ und Registrierung in packages/ui/src/games/registry.ts.
+3. **TV- und Smartphone-Unterstützung**
+   - Jedes Spiel muss auf TV-Screen (myPlayer?.isTvScreen) und jedem verbundenen Smartphone (Host und Mitspieler 2..N) bedienbar sein.
+   - Steuerungselemente niemals nur für Spieler 1 freischalten.
+   - Bei Spielen mit TV-Bühne rendert TV die Hauptansicht; Smartphones liefern Touch-Controller.
+4. **Mobile Vollbild-, Safe-Area- und Landscape-Regeln**
+   - Hintergrundbilder/-texturen dürfen randlos unter Notch und Home-Leiste laufen (z. B. fixed inset-0).
+   - Interaktive Elemente, Joysticks, HUDs und Buttons müssen env(safe-area-inset-top/right/bottom/left) und ausreichenden Randabstand berücksichtigen.
+   - Vollbild-Spiele blenden unnötige Plattform-Header aus und bieten klaren EXIT- oder OPTIONEN-Zugang.
+
+## 4. Multiplayer, Netzwerk und Performance
+
+1. Keine Typ-Duplikate: Socket-Payloads, Lobby- und Spielzustände ausschließlich aus @projektbox/shared.
+2. Keine React-useState-Updates in 60-FPS-Game-Loops: Three.js-/Canvas-Schleifen (requestAnimationFrame) lesen/schreiben über useRef oder lokale mutable Entities. React-HUDs und Socket-State-Syncs drosseln (~10–15 Hz), nicht 60 FPS.
+3. **Reconnect-sichere Szeneninitialisierung:** Initialisierungs-useEffects für Spielfeld/3D-Szene dürfen nicht durch häufig wechselnde Lobby-/Game-State-Objekte ungewollt neu starten. Stabile Initialisierungsabhängigkeiten und Refs gezielt einsetzen. Keine pauschale Regel, benötigte Dependencies zu entfernen oder zu unterdrücken.
+4. Controller senden keine redundanten Null-Pakete im Leerlauf (Änderungserkennung plus angemessener Keepalive).
+5. Einmal-Aktionen (reload, dash, upgradeSkill, selectWeaponId) dürfen nicht durch nachfolgende Bewegungs-Pakete überschrieben werden, bevor der Game-Tick sie verarbeitet hat.
+6. Jedes neue Socket-Event braucht Zod-Schema-Validierung, Authentisierung/Autorisierung, Lobby-Kontextprüfung und Rate-Limit (server/src/utils/rateLimiter.ts).
+7. **Serverautorität:** Clients liefern Eingaben, nicht vertrauenswürdige Resultate. Scores, Gewinner, Währungen, Belohnungen und kritische Zustandsübergänge serverseitig validieren/berechnen.
+8. PWA Auto-Update: bestehende VitePWA-Konfiguration (registerType autoUpdate, skipWaiting, clientsClaim) nicht ohne Grund entfernen. Auto-Update bedeutet keine atomare Versionsgleichheit aller Clients; Reconnects und laufende Sessions berücksichtigen.
+9. CORS/Origin, Session-/Token-Verarbeitung, Payload-Größen, Logging und Fehlerantworten sicher halten. Keine Secrets in Logs, Client-Bundles oder Commits.
+
+## 5. Assets, 3D-Qualität und TV-Fokus
+
+- Bevorzuge hochwertige, lizenzrechtlich zulässige Assets (z. B. CC0-Modelle, PBR-Texturen) statt Platzhalter. Herkunft und Lizenz bei Bedarf dokumentieren.
+- Statische 3D-Modelle folgen der bestehenden Ablagekonvention: apps/tv/public/models/<game>/ und apps/smartphone/public/models/<game>/.
+- UI-Texturen für Vite-Bundling gehören nach packages/ui/src/assets/textures/<game>/.
+- Vorhandene Asset-Strukturen prüfen, bevor neue Ordner/Dateinamen eingeführt werden.
+- TV-Fokus-CSS in apps/tv/src/index.css darf position: relative niemals pauschal auf Elemente mit .fixed, .absolute oder .sticky anwenden, da schwebende Buttons sonst in den Flex-Fluss rutschen und Vollbild-Spielfelder verschieben.
+- Three.js-Geometrien, Materialien, Texturen, Renderer, Listener und AnimationFrames bei Szenenwechseln zuverlässig freigeben.
+
+## 6. Test- und Workflow-Disziplin
+
+- Jedes neue Spiel oder jede neue Spielmechanik bekommt mindestens einen passenden Server-Logik-/Integrationstest, üblicherweise in server/src/lobby/lobbyAndGames.test.ts oder einer passenden Testdatei.
+- Bei paketübergreifenden Änderungen Shared-Verträge und alle Konsumenten prüfen und nachziehen.
+- Testfälle für Happy Path, Grenzwerte, ungültige Payloads, falsche Rollen/Phasen, doppelte Events, Disconnect/Reconnect und parallele Eingaben ergänzen, soweit relevant.
+- Für UI-Änderungen TV-Fokus, Touch, Safe Areas, Responsivität und Lade-/Fehlerzustände prüfen.
+- Keine ungeprüften Abschlüsse melden.
+
+## 7. Abschluss und Dokumentation
+
+- Diff, Seiteneffekte, Fehlerpfade, Validierung, Berechtigungen, Accessibility und Regressionen prüfen.
+- Dokumentation aktualisieren, wenn Verhalten, Setup, Konfiguration oder Architektur sich ändert.
+- Technische Schulden und bewusst vertagte Arbeiten konkret festhalten.
+- Commit-Nachrichten beschreiben die Änderung.
+- Abschlussbericht enthält Zusammenfassung, betroffene Bereiche, ausgeführte Checks mit Ergebnissen, Risiken/offene Punkte sowie Branch/Commit/PR/Deployment-URL, soweit tatsächlich vorhanden.
+
+## 8. Vertiefende Leitlinien
+
+- .agents/rules/architecture.md, security.md und code-quality.md gelten dauerhaft.
+- multiplayer.md, game-development.md, performance.md und testing.md werden bei passenden Aufgaben kontextabhängig herangezogen.
+- Skills unter .agents/skills/ enthalten wiederverwendbare Checklisten für Analyse, Features, Spiele, Bugs, Security, Performance, Migration, QA und Release.
+- Bei Konflikten gilt Sicherheit und Datenintegrität zuerst, danach diese Datei und die engste fachliche Regel.
