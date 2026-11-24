@@ -83,7 +83,10 @@ export function registerSocketHandlers(
     buildPayload: (scopedLobby: Lobby) => Record<string, any>
   ) {
     const sourceLobby = manager.getLobbyById(rawOrSafeLobby.id) || rawOrSafeLobby;
-    if (sourceLobby.gameId !== 'texas-holdem' || !sourceLobby.gameState) {
+    const needsPerViewerSanitize =
+      (sourceLobby.gameId === 'texas-holdem' || sourceLobby.gameId === 'draw-and-guess') &&
+      Boolean(sourceLobby.gameState);
+    if (!needsPerViewerSanitize) {
       io.to(`lobby:${sourceLobby.id}`).emit(
         eventName,
         buildPayload(sanitizeLobbyForClient(sourceLobby))

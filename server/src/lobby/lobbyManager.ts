@@ -112,6 +112,20 @@ export function sanitizeLobbyForClient(lobby: Lobby, viewerPlayerId?: string): L
     };
   }
 
+  // Geheimes Wort & Wortauswahl bei Draw & Guess vor Ratenden und TV schützen (erst bei round_over/game_over aufdecken)
+  if (safeGameState && lobby.gameId === 'draw-and-guess') {
+    const phase = safeGameState.phase;
+    const isRevealedPhase = phase === 'round_over' || phase === 'game_over';
+    const isDrawer = Boolean(viewerPlayerId && viewerPlayerId === safeGameState.drawerId);
+    if (!isRevealedPhase && !isDrawer) {
+      safeGameState = {
+        ...safeGameState,
+        secretWord: '',
+        wordChoices: [],
+      };
+    }
+  }
+
   return {
     ...lobby,
     gameState: safeGameState,
@@ -170,6 +184,12 @@ export class LobbyManager {
       options.emptyLobbyExpireMs ??
       (Number(process.env.EMPTY_LOBBY_EXPIRE_MS) || DEFAULT_EMPTY_LOBBY_EXPIRE_MS);
     this.lobbyExpireMs = options.lobbyExpireMs ?? DEFAULT_LOBBY_EXPIRE_MS;
+
+    const cleanupInterval = setInterval(() => {
+      this.cleanupExpiredLobbies();
+      this.sessionManager.cleanupExpiredSessions();
+    }, 5 * 60 * 1000);
+    cleanupInterval.unref();
   }
 
   public setCallbacks(callbacks: LobbyManagerCallbacks): void {
@@ -724,7 +744,7 @@ export class LobbyManager {
 
       if (supersededSocketId) {
         this.socketToPlayer.delete(supersededSocketId);
-        this.supersededSocketIds.add(supersededSocketId);
+        this.markSocketSuperseded(supersededSocketId);
       }
 
       existingPlayer.socketId = params.socketId;
@@ -1417,6 +1437,7 @@ export class LobbyManager {
       this.clearHostTransferTimer(lobby.id);
       this.removeLobbyIndexes(lobby);
       this.persistSnapshot();
+      this.callbacks.onLobbyExpired?.(sanitizeLobbyForClient(lobby));
       return {
         lobbyId: lobby.id,
         lobby,
@@ -1587,19 +1608,16 @@ export class LobbyManager {
       lobby.players = lobby.players.filter((p) => p.id !== player.id);
     }
 
-    // Falls kein aktiver/verbundener Spieler mehr da ist, als inaktiv markieren (für Bereinigung)
     const remainingNonOffline = lobby.players.filter((p) => p.connectionState !== 'offline');
     if (remainingNonOffline.length === 0) {
       this.archiveCompletedGameIfNeeded(lobby);
       this.clearHostTransferTimer(lobby.id);
-      if (lobby.status === 'waiting') {
-        lobby.status = 'expired';
-        this.removeLobbyIndexes(lobby);
-        this.persistSnapshot();
-        this.callbacks.onPlayerExpired?.(sanitizeLobbyForClient(lobby), { ...player, sessionId: undefined });
-        this.callbacks.onLobbyExpired?.(sanitizeLobbyForClient(lobby));
-        return { expired: true, lobby, player };
-      }
+      lobby.status = 'expired';
+      this.removeLobbyIndexes(lobby);
+      this.persistSnapshot();
+      this.callbacks.onPlayerExpired?.(sanitizeLobbyForClient(lobby), { ...player, sessionId: undefined });
+      this.callbacks.onLobbyExpired?.(sanitizeLobbyForClient(lobby));
+      return { expired: true, lobby, player };
     } else if (lobby.hostId === player.id) {
       // Falls Host abgelaufen ist und Host-Wechsel noch nicht stattfand -> sofort übertragen
       this.transferHostIfNeeded(lobby.id);
@@ -1756,7 +1774,7 @@ export class LobbyManager {
       player.socketId && player.socketId !== params.socketId ? player.socketId : undefined;
     if (supersededSocketId) {
       this.socketToPlayer.delete(supersededSocketId);
-      this.supersededSocketIds.add(supersededSocketId);
+      this.markSocketSuperseded(supersededSocketId);
     }
 
     this.clearReconnectTimer(lobby.id, player.id);
@@ -1950,6 +1968,13 @@ export class LobbyManager {
         isTvMode: Boolean(lobby.isTvMode),
       });
     }
+  }
+
+  private markSocketSuperseded(socketId: string): void {
+    this.supersededSocketIds.add(socketId);
+    setTimeout(() => {
+      this.supersededSocketIds.delete(socketId);
+    }, 60_000).unref();
   }
 
   private removeLobbyIndexes(lobby: Lobby): void {

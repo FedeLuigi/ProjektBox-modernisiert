@@ -121,6 +121,16 @@ export class SessionManager {
     return Math.floor(this.sessionTtlMs / 1000);
   }
 
+  public hasActiveSessionForPlayer(playerId: string): boolean {
+    const now = Date.now();
+    for (const session of this.sessions.values()) {
+      if (!session.revoked && session.expiresAt > now && session.playerId === playerId) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   public createSession(preferredPlayerId?: string): {
     session: PersistedSessionRecord;
     rawSessionToken: string;

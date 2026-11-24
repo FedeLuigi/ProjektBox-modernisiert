@@ -2217,3 +2217,47 @@ test('Gold Miner: TV/Host-Autorisierung beim Spielende und Score-Berechnung', as
 
   manager.clearAllTimers();
 });
+
+test('Draw & Guess: secretWord und wordChoices werden vor Ratenden und TV geschützt', async () => {
+  const { sanitizeLobbyForClient } = await import('./lobbyManager.js');
+  const manager = new LobbyManager();
+  const created = manager.createLobby({
+    gameId: 'draw-and-guess',
+    isPrivate: false,
+    userProfile: { id: 'u_dag_drawer', name: 'Drawer', avatar: {} },
+    socketId: 's_dag_drawer',
+  });
+  assert.equal(created.success, true);
+  const lobbyId = created.lobby!.id;
+
+  manager.joinLobby({
+    lobbyIdOrCode: lobbyId,
+    userProfile: { id: 'u_dag_guesser', name: 'Guesser', avatar: {} },
+    socketId: 's_dag_guesser',
+  });
+  manager.toggleReady('s_dag_guesser');
+
+  const started = manager.startGame({ lobbyId, playerId: 'u_dag_drawer' });
+  assert.equal(started.success, true);
+
+  const rawLobby = manager.getLobbyById(lobbyId)!;
+  const drawerId = rawLobby.gameState!.drawerId as string;
+  const guesserId = drawerId === 'u_dag_drawer' ? 'u_dag_guesser' : 'u_dag_drawer';
+
+  const drawerView = sanitizeLobbyForClient(rawLobby, drawerId);
+  const guesserView = sanitizeLobbyForClient(rawLobby, guesserId);
+  const tvView = sanitizeLobbyForClient(rawLobby);
+
+  assert.ok((drawerView.gameState as any)?.wordChoices?.length > 0);
+  assert.equal((guesserView.gameState as any)?.secretWord, '');
+  assert.deepEqual((guesserView.gameState as any)?.wordChoices, []);
+  assert.equal((tvView.gameState as any)?.secretWord, '');
+  assert.deepEqual((tvView.gameState as any)?.wordChoices, []);
+
+  // Session-Schutz: aktive Session blockiert Übernahme derselben playerId
+  const { session } = manager.sessionManager.createSession('u_protected_player');
+  assert.equal(manager.sessionManager.hasActiveSessionForPlayer(session.playerId), true);
+  assert.equal(manager.sessionManager.hasActiveSessionForPlayer('u_unknown_player'), false);
+
+  manager.clearAllTimers();
+});

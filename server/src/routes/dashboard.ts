@@ -96,7 +96,7 @@ export function getDashboardData() {
         color: p.color,
         symbol: p.symbol,
         score: (lobby.gameState?.scores as Record<string, number> | undefined)?.[p.id] ?? 0,
-        socketId: p.socketId,
+        socketId: p.socketId ? `***${p.socketId.slice(-4)}` : '',
       })),
       gameState: lobby.gameState
         ? {
@@ -104,7 +104,6 @@ export function getDashboardData() {
             round: lobby.gameState.round,
             currentTurn: lobby.gameState.currentTurn,
             categoryName: lobby.gameState.categoryName,
-            wordHint: lobby.gameState.wordHint,
             currentDrawerId: lobby.gameState.currentDrawerId,
             scores: lobby.gameState.scores,
             winnerId: lobby.gameState.winnerId,
@@ -178,13 +177,37 @@ export function getDashboardData() {
 
 export const dashboardRouter = Router();
 
+export function isDashboardAuthorized(req: Request): boolean {
+  const adminToken = process.env.ADMIN_TOKEN?.trim();
+  if (!adminToken) {
+    return process.env.NODE_ENV !== 'production';
+  }
+  const authHeader = req.headers.authorization;
+  const bearer = authHeader?.startsWith('Bearer ') ? authHeader.slice(7).trim() : '';
+  const headerToken =
+    typeof req.headers['x-admin-token'] === 'string' ? req.headers['x-admin-token'].trim() : '';
+  const queryToken = typeof req.query?.token === 'string' ? req.query.token.trim() : '';
+  return bearer === adminToken || headerToken === adminToken || queryToken === adminToken;
+}
+
+function requireDashboardAuth(req: Request, res: Response, next: () => void): void {
+  if (!isDashboardAuthorized(req)) {
+    res.status(403).json({
+      success: false,
+      error: 'Admin-Autorisierung erforderlich (ADMIN_TOKEN).',
+    });
+    return;
+  }
+  next();
+}
+
 // JSON-API für Live-Updates
-dashboardRouter.get('/data', (_req: Request, res: Response) => {
+dashboardRouter.get('/data', requireDashboardAuth, (_req: Request, res: Response) => {
   res.json(getDashboardData());
 });
 
 // Admin-Aktion: Abgelaufene Lobbys bereinigen
-dashboardRouter.post('/cleanup', (_req: Request, res: Response) => {
+dashboardRouter.post('/cleanup', requireDashboardAuth, (_req: Request, res: Response) => {
   const removedIds = lobbyManager.cleanupExpiredLobbies();
   res.json({
     success: true,
@@ -197,7 +220,7 @@ dashboardRouter.post('/cleanup', (_req: Request, res: Response) => {
 });
 
 // Admin-Aktion: Bestimmte Lobby schließen
-dashboardRouter.post('/close-lobby', (req: Request, res: Response) => {
+dashboardRouter.post('/close-lobby', requireDashboardAuth, (req: Request, res: Response) => {
   const { lobbyId } = req.body ?? {};
   if (!lobbyId || typeof lobbyId !== 'string') {
     res.status(400).json({ success: false, error: 'lobbyId fehlt' });
@@ -208,7 +231,11 @@ dashboardRouter.post('/close-lobby', (req: Request, res: Response) => {
 });
 
 // HTML-Dashboard Handler
-export function handleDashboardPage(_req: Request, res: Response): void {
+export function handleDashboardPage(req: Request, res: Response): void {
+  if (!isDashboardAuthorized(req)) {
+    res.status(403).send('<h1>403 Forbidden</h1><p>Admin-Autorisierung erforderlich.</p>');
+    return;
+  }
   const data = getDashboardData();
   const html = renderDashboardHtml(data);
   res.setHeader('Content-Type', 'text/html; charset=utf-8');

@@ -16,7 +16,7 @@ import {
   upsertPersistentPlayerProfile,
 } from '../database/playerRepository.js';
 import { isDatabaseConfigured, isDatabaseConnected } from '../database/prismaClient.js';
-import { getDashboardData } from '../routes/dashboard.js';
+import { getDashboardData, isDashboardAuthorized } from '../routes/dashboard.js';
 
 export const apiRouter = Router();
 
@@ -120,7 +120,9 @@ function handleSessionEnsure(req: Request, res: Response, createIfMissing: boole
   const preferredId =
     typeof req.body?.playerId === 'string' ? req.body.playerId.trim() : undefined;
   const safePreferredId =
-    preferredId && !lobbyManager.isPlayerIdClaimedByAnotherSession(preferredId)
+    preferredId &&
+    !lobbyManager.isPlayerIdClaimedByAnotherSession(preferredId) &&
+    !lobbyManager.sessionManager.hasActiveSessionForPlayer(preferredId)
       ? preferredId
       : undefined;
 
@@ -247,8 +249,11 @@ apiRouter.get('/health', (_req: Request, res: Response) => {
   });
 });
 
-apiRouter.get('/dashboard', (_req: Request, res: Response) => {
-  res.json(getDashboardData());
+apiRouter.get('/dashboard', (req: Request, res: Response) => {
+  if (!isDashboardAuthorized(req)) {
+    return res.status(403).json({ error: 'Admin-Autorisierung erforderlich (ADMIN_TOKEN).' });
+  }
+  return res.json(getDashboardData());
 });
 
 apiRouter.get('/server-info', (req: Request, res: Response) => {

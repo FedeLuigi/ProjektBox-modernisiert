@@ -305,6 +305,8 @@ export function GoldMinerArena({
 
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const onFinishRef = useRef(onFinish);
+  onFinishRef.current = onFinish;
 
   const actionsRef = useRef<{
     dropHook: (playerId: string) => void;
@@ -576,6 +578,9 @@ export function GoldMinerArena({
 
       setHudState(buildHudSnapshot());
 
+      const tntLabelById = new Map<string, Text>();
+      const popupTextByRef = new Map<(typeof popups)[number], Text>();
+
       app.ticker.add((ticker) => {
         if (destroyed) return;
         const dt = Math.min(ticker.deltaMS / 1000, 0.05);
@@ -733,7 +738,7 @@ export function GoldMinerArena({
                 for (const m of miners) {
                   scores[m.playerId] = m.money;
                 }
-                onFinish({ level, scores });
+                onFinishRef.current({ level, scores });
               }
             }
           }
@@ -752,24 +757,36 @@ export function GoldMinerArena({
 
         // Render objects
         objectsLayer.clear();
-        tntLabelsLayer.removeChildren();
+        const activeTntIds = new Set<string>();
         for (const obj of objects) {
           if (!obj.alive) continue;
           drawMineObject(objectsLayer, obj, totalTimeSec);
           if (obj.kind === 'tnt') {
-            const label = new Text({
-              text: 'TNT',
-              style: {
-                fontFamily: 'Luckiest Guy, Fredoka, sans-serif',
-                fontSize: 13,
-                fill: 0xdc2626,
-                fontWeight: 'bold',
-              },
-            });
-            label.anchor.set(0.5);
+            activeTntIds.add(obj.id);
+            let label = tntLabelById.get(obj.id);
+            if (!label) {
+              label = new Text({
+                text: 'TNT',
+                style: {
+                  fontFamily: 'Luckiest Guy, Fredoka, sans-serif',
+                  fontSize: 13,
+                  fill: 0xdc2626,
+                  fontWeight: 'bold',
+                },
+              });
+              label.anchor.set(0.5);
+              tntLabelById.set(obj.id, label);
+              tntLabelsLayer.addChild(label);
+            }
             label.x = obj.x;
             label.y = obj.y;
-            tntLabelsLayer.addChild(label);
+          }
+        }
+        for (const [id, label] of tntLabelById.entries()) {
+          if (!activeTntIds.has(id)) {
+            tntLabelsLayer.removeChild(label);
+            label.destroy();
+            tntLabelById.delete(id);
           }
         }
 
@@ -840,22 +857,33 @@ export function GoldMinerArena({
           });
         }
 
-        popupsLayer.removeChildren();
+        const activePopups = new Set(popups);
+        for (const [popRef, txt] of popupTextByRef.entries()) {
+          if (!activePopups.has(popRef)) {
+            popupsLayer.removeChild(txt);
+            txt.destroy();
+            popupTextByRef.delete(popRef);
+          }
+        }
         for (const pop of popups) {
-          const txt = new Text({
-            text: pop.text,
-            style: {
-              fontFamily: 'Luckiest Guy, Fredoka, sans-serif',
-              fontSize: 30,
-              fill: pop.color,
-              stroke: { color: 0x000000, width: 5 },
-            },
-          });
-          txt.anchor.set(0.5);
+          let txt = popupTextByRef.get(pop);
+          if (!txt) {
+            txt = new Text({
+              text: pop.text,
+              style: {
+                fontFamily: 'Luckiest Guy, Fredoka, sans-serif',
+                fontSize: 30,
+                fill: pop.color,
+                stroke: { color: 0x000000, width: 5 },
+              },
+            });
+            txt.anchor.set(0.5);
+            popupTextByRef.set(pop, txt);
+            popupsLayer.addChild(txt);
+          }
           txt.x = pop.x;
           txt.y = pop.y;
           txt.alpha = Math.min(1, pop.ttl * 1.4);
-          popupsLayer.addChild(txt);
         }
 
         // Sync HUD + Multiplayer state ~10 times per sec
@@ -887,7 +915,7 @@ export function GoldMinerArena({
       unsubInput();
       app.destroy(true);
     };
-  }, [players, mode, sessionKey, isGameOver, localPlayerId, onFinish]);
+  }, [players, mode, sessionKey, isGameOver, localPlayerId]);
 
   // Solo / Host keyboard controls
   useEffect(() => {
