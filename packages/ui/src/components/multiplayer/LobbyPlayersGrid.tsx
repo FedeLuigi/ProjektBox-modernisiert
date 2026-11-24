@@ -59,9 +59,21 @@ export function LobbyPlayersGrid({
             return (
               <div
                 key={p.id || idx}
+                role={isInteractive ? 'button' : undefined}
+                tabIndex={isInteractive ? 0 : undefined}
                 onClick={isInteractive ? onEditMe : undefined}
+                onKeyDown={
+                  isInteractive
+                    ? (e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          onEditMe?.();
+                        }
+                      }
+                    : undefined
+                }
                 title={isInteractive ? 'Klicken, um Name und Avatar anzupassen' : undefined}
-                className={`flex flex-col items-center gap-2.5 text-center min-w-0 ${
+                className={`flex flex-col items-center gap-2.5 text-center min-w-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24] ${
                   isInteractive ? 'cursor-pointer group' : ''
                 }`}
               >

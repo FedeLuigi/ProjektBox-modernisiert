@@ -140,7 +140,7 @@ export function SimulationModal({
 
         {/* Spiele-Kacheln: 1 Tipp startet direkt in die Simulation */}
         <div className="grid w-full grid-cols-1 sm:grid-cols-2 gap-3.5 sm:gap-4 my-auto pb-2">
-          {GAMES.map((game) => {
+          {GAMES.map((game, index) => {
             const palette = ACCENT_PALETTES[game.accent];
             const effectiveBots = getEffectiveBotCount(game);
             const isThisStarting = isStarting && startingGameId === game.id;
@@ -154,6 +154,7 @@ export function SimulationModal({
               <button
                 key={game.id}
                 type="button"
+                data-tv-autofocus={index === 0 ? 'true' : undefined}
                 disabled={isStarting}
                 onClick={() => onStartSimulation(game, isTvMode, effectiveBots)}
                 className="group flex items-center gap-3 rounded-2xl border border-white/15 bg-white/[0.04] p-2.5 sm:p-3 text-left transition-all hover:border-[#38BDF8]/60 hover:bg-white/[0.08] disabled:opacity-60 cursor-pointer active:scale-[0.98]"

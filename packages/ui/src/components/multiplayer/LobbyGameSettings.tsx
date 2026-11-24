@@ -715,7 +715,7 @@ export function LobbyOptionsModal({
 
           <div className="pt-2 w-full sm:w-64">
             <OpenButton fullWidth size="lg" variant="primary" onClick={onClose}>
-              SPEICHERN
+              FERTIG
             </OpenButton>
           </div>
         </div>

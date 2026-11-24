@@ -3,12 +3,14 @@
  * Benötigt keine externen MP3/WAV-Dateien und funktioniert offline auf TV & Smartphones.
  */
 
+import { isSoundEnabled } from '../../../utils/soundEffects';
+
 let audioCtx: AudioContext | null = null;
 let noiseBuffer: AudioBuffer | null = null;
 const lastPlayedAt: Record<string, number> = {};
 
 function getCtx(): AudioContext | null {
-  if (typeof window === 'undefined') return null;
+  if (typeof window === 'undefined' || !isSoundEnabled()) return null;
   if (!audioCtx) {
     const Ctor = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
     if (!Ctor) return null;

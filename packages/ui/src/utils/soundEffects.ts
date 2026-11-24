@@ -284,11 +284,28 @@ export function installGlobalAudioHandlers(): () => void {
     }
   };
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    if (isSoundEnabled()) {
+      startBackgroundMusic();
+    }
+    const active = document.activeElement;
+    if (!(active instanceof Element)) return;
+    const btn = active.closest('button, [role="button"], [role="switch"]');
+    if (!btn) return;
+    if ((btn as HTMLButtonElement).disabled) return;
+    if (btn.getAttribute('aria-disabled') === 'true') return;
+    if (btn.getAttribute('data-no-click-sound') === 'true') return;
+    playButtonClickSound();
+  };
+
   document.addEventListener('pointerdown', handlePointerDown, { capture: true });
+  document.addEventListener('keydown', handleKeyDown, { capture: true });
   document.addEventListener('visibilitychange', handleVisibility);
 
   return () => {
     document.removeEventListener('pointerdown', handlePointerDown, { capture: true });
+    document.removeEventListener('keydown', handleKeyDown, { capture: true });
     document.removeEventListener('visibilitychange', handleVisibility);
     stopBackgroundMusic();
   };

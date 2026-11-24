@@ -310,7 +310,7 @@ export function TvLobbyScreen({
                     ref={qrCanvasRef}
                     data-join-url={joinUrl}
                     aria-label={`QR-Code zum Beitreten: ${joinUrl}`}
-                    className="h-64 w-64 sm:h-80 sm:w-80 lg:h-[360px] lg:w-[360px] xl:h-[420px] xl:w-[420px] block"
+                    className="h-[clamp(180px,38vh,360px)] w-[clamp(180px,38vh,360px)] block"
                   />
                 </div>
 

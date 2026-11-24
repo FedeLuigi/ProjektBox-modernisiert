@@ -456,7 +456,7 @@ export function App() {
   }, [hasActiveOverlay]);
 
   return (
-    <div className="relative flex h-full min-h-lvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-[#1E293B] select-none">
+    <div className="relative flex h-full min-h-lvh w-full flex-col overflow-hidden overflow-x-hidden bg-[#1B2B40] text-white select-none">
       {showSplash && (
         <SplashScreen
           onPrepareExit={handleSplashPrepareExit}

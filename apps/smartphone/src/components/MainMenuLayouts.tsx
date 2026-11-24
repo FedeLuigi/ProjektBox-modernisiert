@@ -227,8 +227,17 @@ export function OpenGalleryLayout({
               return (
                 <div
                   key={game.id}
+                  role="button"
+                  tabIndex={0}
                   onClick={() => onSelectGame(game.id)}
-                  className="group flex flex-col gap-2.5 cursor-pointer"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      onSelectGame(game.id);
+                    }
+                  }}
+                  aria-label={`${game.title} öffnen`}
+                  className="group flex flex-col gap-2.5 cursor-pointer rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FBBF24]"
                 >
                   <div className="relative aspect-[16/10] w-full overflow-hidden rounded-2xl border border-white/15 shadow-[0_14px_30px_rgba(0,0,0,0.4)] transition-transform duration-200 group-hover:-translate-y-1">
                     <GamePreviewArtwork
@@ -242,8 +251,9 @@ export function OpenGalleryLayout({
                         e.stopPropagation();
                         onToggleFavorite(game.id);
                       }}
-                      aria-label="Favorit umschalten"
-                      className={`absolute top-2.5 right-2.5 flex h-8 w-8 items-center justify-center rounded-full border backdrop-blur-xs transition cursor-pointer ${
+                      aria-label={`${game.title} als Favorit ${isFav ? 'entfernen' : 'markieren'}`}
+                      aria-pressed={isFav}
+                      className={`absolute top-2.5 right-2.5 flex h-9 w-9 items-center justify-center rounded-full border backdrop-blur-xs transition cursor-pointer ${
                         isFav
                           ? 'border-[#FDA4AF] bg-[#E11D48]/85 text-white'
                           : 'border-white/25 bg-[#0F172A]/60 text-white/80 hover:text-white'

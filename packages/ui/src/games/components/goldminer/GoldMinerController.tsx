@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion } from 'motion/react';
+import { triggerHapticFeedback } from '../../../utils/soundEffects';
 import {
   GiAnchor,
   GiClover,
@@ -51,17 +52,13 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
   const targetMoney = hud?.targetMoney ?? 650;
 
   const handleDropHook = () => {
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate(25);
-    }
+    triggerHapticFeedback(25);
     socketService.emitGoldMinerInput({ dropHook: true });
   };
 
   const handleUseDynamite = () => {
     if (dynamiteCount <= 0 || hookState !== 'retract') return;
-    if (typeof navigator !== 'undefined' && navigator.vibrate) {
-      navigator.vibrate([40, 20, 60]);
-    }
+    triggerHapticFeedback([40, 20, 60]);
     socketService.emitGoldMinerInput({ useDynamite: true });
   };
 

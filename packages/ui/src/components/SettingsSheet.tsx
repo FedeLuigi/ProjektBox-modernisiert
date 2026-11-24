@@ -116,7 +116,7 @@ export function SettingsSheet({
             />
 
             <SettingToggleRow
-              label="SOUNDEFFEKTE & HAPTIK"
+              label="HAPTIK & VIBRATION"
               description={vibrationEnabled ? 'Aktiviert' : 'Deaktiviert'}
               enabled={vibrationEnabled}
               onToggle={onToggleVibration}
@@ -144,7 +144,7 @@ export function SettingsSheet({
 
           <div className="w-full max-w-xs pt-2">
             <OpenButton size="lg" variant="primary" onClick={onClose} fullWidth>
-              SPEICHERN
+              FERTIG
             </OpenButton>
           </div>
         </div>

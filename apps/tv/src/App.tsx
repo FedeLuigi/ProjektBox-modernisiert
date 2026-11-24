@@ -53,7 +53,14 @@ export function App() {
     }
   });
 
-  const [vibrationEnabled, setVibrationEnabled] = useState(false);
+  const [vibrationEnabled, setVibrationEnabled] = useState(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.VIBRATION_ENABLED);
+      return saved !== null ? saved === 'true' : false;
+    } catch {
+      return false;
+    }
+  });
 
   const recentPlayedMap = useMemo(() => {
     const map = new Map<string, number>();
@@ -371,7 +378,14 @@ export function App() {
           syncBackgroundMusic(enabled);
         }}
         vibrationEnabled={vibrationEnabled}
-        onToggleVibration={(enabled) => setVibrationEnabled(enabled)}
+        onToggleVibration={(enabled) => {
+          setVibrationEnabled(enabled);
+          try {
+            localStorage.setItem(STORAGE_KEYS.VIBRATION_ENABLED, String(enabled));
+          } catch {
+            // ignore
+          }
+        }}
       />
     </div>
   );

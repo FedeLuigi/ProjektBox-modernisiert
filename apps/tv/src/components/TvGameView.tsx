@@ -193,7 +193,7 @@ export function TvGameView({
           <button
             type="button"
             onClick={onLeave}
-            className="font-goldminer fixed bottom-4 left-4 z-40 inline-flex items-center gap-2 rounded-xl border-2 border-[#78350F] bg-[#B45309]/90 px-3.5 py-2 text-sm text-amber-100 shadow-lg backdrop-blur-sm hover:bg-[#92400E] cursor-pointer"
+            className="font-goldminer fixed bottom-[max(1rem,calc(env(safe-area-inset-bottom,0px)+0.75rem))] left-[max(1rem,calc(env(safe-area-inset-left,0px)+0.75rem))] z-40 inline-flex items-center gap-2 rounded-xl border-2 border-[#78350F] bg-[#B45309]/90 px-3.5 py-2 text-sm text-amber-100 shadow-lg backdrop-blur-sm hover:bg-[#92400E] cursor-pointer"
           >
             <ArrowLeft className="h-4 w-4" />
             <span>EXIT TV</span>
@@ -206,7 +206,7 @@ export function TvGameView({
             <button
               type="button"
               onClick={() => setIsZombieMenuOpen(true)}
-              className="fixed top-3 right-3 left-auto z-40 self-end w-fit inline-flex items-center gap-2 border border-white/15 bg-[#070B12]/85 px-3.5 py-2 font-mono text-xs font-bold tracking-[0.18em] text-white uppercase backdrop-blur-md transition-colors hover:border-[#F59E0B] hover:text-[#FDE68A] cursor-pointer"
+              className="fixed top-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] right-[max(0.75rem,calc(env(safe-area-inset-right,0px)+0.5rem))] left-auto z-40 self-end w-fit inline-flex items-center gap-2 border border-white/15 bg-[#070B12]/85 px-3.5 py-2 font-mono text-xs font-bold tracking-[0.18em] text-white uppercase backdrop-blur-md transition-colors hover:border-[#F59E0B] hover:text-[#FDE68A] cursor-pointer"
             >
               <SlidersHorizontal className="h-3.5 w-3.5 text-[#F59E0B]" />
               <span>OPTIONEN</span>

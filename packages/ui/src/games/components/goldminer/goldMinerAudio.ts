@@ -1,11 +1,12 @@
 // Procedural Web Audio API sound effects for Gold Miner
+import { isSoundEnabled } from '../../../utils/soundEffects';
 
 class GoldMinerAudio {
   private ctx: AudioContext | null = null;
   public muted = false;
 
   private ensureContext(): AudioContext | null {
-    if (this.muted || typeof window === 'undefined') return null;
+    if (this.muted || !isSoundEnabled() || typeof window === 'undefined') return null;
     if (!this.ctx) {
       const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
       if (!AudioCtx) return null;

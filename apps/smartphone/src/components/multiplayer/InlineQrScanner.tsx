@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CameraOff, ZoomIn, ZoomOut } from 'lucide-react';
 import jsQR from 'jsqr';
-import { OpenButton, parseLobbyCode } from '@projektbox/ui';
+import { OpenButton, parseLobbyCode, triggerHapticFeedback } from '@projektbox/ui';
 
 interface InlineQrScannerProps {
   onScanSuccess: (code: string) => void;
@@ -141,13 +141,7 @@ export function InlineQrScanner({
 
         if (detectedCode) {
           setHasScanned(true);
-          try {
-            if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
-              navigator.vibrate(25);
-            }
-          } catch {
-            // ignore
-          }
+          triggerHapticFeedback(25);
           stopCamera();
           onScanSuccessRef.current(detectedCode);
           return;

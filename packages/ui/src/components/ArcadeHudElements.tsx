@@ -264,6 +264,9 @@ export function ArcadeMenuModal({
 
   return (
     <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="Spielfilter"
       className="fixed inset-0 z-50 flex items-center justify-center bg-[#0F172A]/75 p-4 landscape:p-2 overflow-y-auto backdrop-blur-xs animate-fade-in"
       onClick={onClose}
     >

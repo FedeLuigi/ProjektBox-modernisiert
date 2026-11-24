@@ -345,7 +345,7 @@ export function AvatarCustomizerModal({
                               }}
                               title={`Avatar "${ca.name}" löschen`}
                               aria-label={`Avatar ${ca.name} löschen`}
-                              className="absolute -top-1.5 -right-1.5 z-10 flex h-5 w-5 items-center justify-center rounded-full border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] shadow-xs hover:bg-[#FEE2E2] cursor-pointer"
+                              className="absolute -top-2 -right-2 z-10 flex h-7 w-7 items-center justify-center rounded-full border-2 border-[#334155] bg-[#F8FAFC] text-[#E11D48] shadow-xs hover:bg-[#FEE2E2] cursor-pointer"
                             >
                               <X className="h-3 w-3 stroke-[2.8]" />
                             </button>
