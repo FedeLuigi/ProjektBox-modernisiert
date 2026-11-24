@@ -8,7 +8,7 @@ description: >-
 # ProjectBox Skill Routing
 
 Load only the smallest relevant set of installed skills. Read each selected `SKILL.md`;
-open its `references/` files only when deeper guidance is needed.
+the imported `SKILL.md` is the available unit; upstream reference subfiles are not vendored in this integration. Do not assume those optional files exist locally.
 
 ## Project fingerprint
 

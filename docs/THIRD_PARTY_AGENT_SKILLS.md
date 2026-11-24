@@ -1,7 +1,7 @@
 # Integrierte Agent Skills – Quellen und Lizenzen
 
-Ausgewählte Original-Skills wurden in `.agents/skills/` integriert. Die Original-Skilltexte und
-Referenzdateien bleiben unverändert; die ProjektBox-spezifische Auswahl steht in
+Ausgewählte Original-Skills wurden in `.agents/skills/` integriert. Die ausgewählten Originaldateien `SKILL.md` bleiben unverändert. Optionale Upstream-Referenzdateien
+wurden in diesem ersten Import bewusst nicht mitkopiert, um die Integration schlank zu halten; die ProjektBox-spezifische Auswahl steht in
 `.agents/skills/projectbox-skill-routing/SKILL.md`.
 
 ## Game development
