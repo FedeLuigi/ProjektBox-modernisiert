@@ -1247,5 +1247,6 @@ export function registerSocketHandlers(
   // Verhindert hängende Timer beim Test-Shutdown
   io.httpServer?.once('close', () => {
     phaseScheduler.clearAll();
+    botRunner.clearAll();
   });
 }

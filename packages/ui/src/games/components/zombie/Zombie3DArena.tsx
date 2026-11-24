@@ -1769,6 +1769,14 @@ export function Zombie3DArena({
 
           if (removeProj) {
             scene.remove(pr.mesh);
+            pr.mesh.traverse((o) => {
+              if ((o as THREE.Mesh).isMesh) {
+                (o as THREE.Mesh).geometry?.dispose();
+                const mat = (o as THREE.Mesh).material;
+                if (Array.isArray(mat)) mat.forEach((m) => m.dispose());
+                else mat?.dispose();
+              }
+            });
             projectiles.splice(i, 1);
           }
         }
@@ -2028,6 +2036,8 @@ export function Zombie3DArena({
           }
           if (now >= bp.expiresAt) {
             scene.remove(bp.mesh);
+            bp.mesh.geometry?.dispose();
+            (bp.mesh.material as THREE.Material)?.dispose();
             bloodPools.splice(i, 1);
           }
         }
@@ -2041,6 +2051,8 @@ export function Zombie3DArena({
           (sw.mesh.material as THREE.MeshBasicMaterial).opacity = Math.max(0, 0.9 * (1 - t));
           if (now >= sw.expiresAt) {
             scene.remove(sw.mesh);
+            sw.mesh.geometry?.dispose();
+            (sw.mesh.material as THREE.Material)?.dispose();
             shockwaves.splice(i, 1);
           }
         }
@@ -2184,6 +2196,8 @@ export function Zombie3DArena({
           } else {
             mesh.material?.dispose();
           }
+        } else if ((obj as THREE.Sprite).isSprite) {
+          (obj as THREE.Sprite).material?.dispose();
         }
       });
       composer.dispose();

@@ -1065,6 +1065,17 @@ export function RouletteBoard({
   const dragPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
   const dragCleanupRef = useRef<(() => void) | null>(null);
   const dropSeqRef = useRef(0);
+  const optimisticTimersRef = useRef<Set<number>>(new Set());
+
+  useEffect(() => {
+    const timers = optimisticTimersRef.current;
+    return () => {
+      for (const timerId of timers) {
+        window.clearTimeout(timerId);
+      }
+      timers.clear();
+    };
+  }, []);
 
   // Timer + autoritative Phasenübergänge auslösen (nur aktive Smartphone-Clients, TV bleibt reiner Zuschauer)
   useEffect(() => {
@@ -1246,14 +1257,19 @@ export function RouletteBoard({
     ]);
 
     const cleanupTimer = window.setTimeout(() => {
+      optimisticTimersRef.current.delete(cleanupTimer);
       setOptimisticOps((prev) => prev.filter((item) => item.id !== opId));
     }, 1800);
+    optimisticTimersRef.current.add(cleanupTimer);
 
     Promise.resolve(onMove(movePayload)).finally(() => {
-      window.setTimeout(() => {
+      const settleTimer = window.setTimeout(() => {
+        optimisticTimersRef.current.delete(settleTimer);
+        optimisticTimersRef.current.delete(cleanupTimer);
         window.clearTimeout(cleanupTimer);
         setOptimisticOps((prev) => prev.filter((item) => item.id !== opId));
       }, 45);
+      optimisticTimersRef.current.add(settleTimer);
     });
   };
 
