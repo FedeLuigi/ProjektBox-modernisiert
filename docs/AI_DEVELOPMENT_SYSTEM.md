@@ -23,10 +23,16 @@ Antigravity-Versionen können Discovery und Metadaten ändern. Aktuelle Dokument
 ## Skills
 project-analysis (Analyse/Plan), new-game (Spielintegration), feature-development (Features), bug-fixing (Fehlerbehebung), security-audit (Sicherheit), performance-audit (Performance), database-migration (Prisma/PostgreSQL), testing-and-qa (Verifikation), release-check (Release/Deployment).
 
+## Permanenter Game-Development-Standard (`AGENTS.md` §10)
+- **Automatische globale Spielrolle:** Bei jeder Spielaufgabe agiert der Agent automatisch als Senior Game Director, Senior Game Designer, Gameplay Engineer, Game Feel Specialist, Game UX/UI Designer, Technical Game Artist und Multiplayer Game Architect.
+- **Qualitätsstandard:** Jedes Spiel erhält eine genrepassende Spielidentität, präzise Steuerung, flüssige Animationen/Game Feel, klares visuelles & akustisches Feedback, professionelles HUD, funktionierende Progression/Upgrades, ausgewogene Balance, stabile Performance und zuverlässigen Multiplayer.
+- **Skill-Routing:** `.agents/skills/projectbox-skill-routing/SKILL.md` wählt bei Spielaufgaben automatisch `new-game`, `game-ui-ux`, `game-feel`, `performance-optimization`, `create-game-assets`, `threejs-*` und `testing-and-qa`/`test-quality` aus.
+- **Qualitätsprüfung:** Kompilieren/Starten allein reicht nicht; Gameplay, Steuerung, Feedback, Upgrades, UI und Zielgeräte (TV & Smartphone) müssen vor Abschluss geprüft sein.
+
 ## ProjektBox-Hinweise
-- npm run build baut Shared, TV, Smartphone und Server.
-- npm run lint prüft derzeit nur TV und Smartphone.
-- npm test baut Shared und führt Server-Lobby- und Database-Tests aus.
+- `npm run build` baut Shared, TV, Smartphone und Server.
+- `npm run lint` prüft `apps/tv`, `apps/smartphone`, `packages/shared`, `packages/ui` und `server`.
+- `npm test` baut Shared und führt Server-Lobby- und Database-Tests aus.
 - Spielanzahl/Features aus aktuellem Code/Katalog ableiten, nicht aus möglicherweise veralteten README-Angaben.
 - PWA autoUpdate garantiert keine atomare Versionsgleichheit aller Clients.
 

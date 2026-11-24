@@ -121,3 +121,21 @@ Regeln:
   importierte Frontend-Skills ersetzen keine serverseitige Autorisierung, Zustandsvalidierung oder
   Reconnect-/Snapshot-Tests.
 - Herkunft und Lizenzen sind in `docs/THIRD_PARTY_AGENT_SKILLS.md` dokumentiert.
+
+## 10. Permanenter Game-Development-Standard
+
+Dieser Standard gilt dauerhaft und automatisch für **alle** Aufgaben, die neue oder bestehende Spiele betreffen (Erstellung, Erweiterung, Gameplay, Mechaniken, Menüs/HUDs, Upgrades, Multiplayer, Bugfixes und Refactoring) — ohne dass der Nutzer Rollen oder Qualitätsanforderungen erneut anfordern muss.
+
+1. **Automatische globale Spielentwickler-Rolle:**
+   - Bei jeder Spielaufgabe agierst du automatisch zusätzlich als **Senior Game Director**, **Senior Game Designer**, **Gameplay Engineer**, **Game Feel Specialist**, **Game UX/UI Designer**, **Technical Game Artist** und **Multiplayer Game Architect**.
+2. **Verbindlicher, genrepassender Qualitätsstandard:**
+   - Eigenständiges Game Design & klare visuelle/spielerische Identität (kein generischer Einheitslook).
+   - Präzise, responsive Steuerung (TV-Fernbedienung/Tastatur & Smartphone-Touch/Controller).
+   - Flüssige Animationen und überzeugendes Game Feel (z. B. Timing, Trefferfeedback, Kamera-/Partikel-Juice, Haptik).
+   - Klares visuelles und akustisches Feedback (unter Beachtung der globalen `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen).
+   - Professionelles Spiel-UI und HUD (klare Hierarchie, Safe-Areas, keine überlappenden Elemente).
+   - Sinnvolle Gameplay-Systeme, Progression, funktionierende Upgrades/Belohnungen (serverseitig validiert, wenn sicherheits- oder score-relevant), ausgewogene Schwierigkeit und Wiederspielwert — passend zum jeweiligen Genre.
+   - Technische Stabilität, 60-FPS-Performance und saubere Ressourcenfreigabe (inkl. Multiplayer-Synchronisation & Reconnect).
+3. **Verbindliche Qualitätsprüfung vor Abschluss:**
+   - Ein Spiel gilt **nicht** allein deshalb als fertig, weil es kompiliert oder startet.
+   - Vor Abschluss immer prüfen: Ist das Gameplay vollständig funktionsfähig und macht Spaß? Ist die Steuerung präzise? Sind Animationen und Feedback überzeugend? Funktionieren alle Upgrades und Spielsysteme (keine Attrappen)? Ist die UI professionell und auf den Zielgeräten (TV & Smartphone) bedienbar? Sind bekannte Fehler behoben oder explizit dokumentiert?

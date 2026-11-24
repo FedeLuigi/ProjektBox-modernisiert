@@ -30,6 +30,8 @@ runtime is Three.js inside React. Re-check manifests and source if this architec
 | UI, navigation, HUD, modal, menu | `accessibility` + `game-ui-ux`; add `react` for implementation |
 | CSS, responsive layout, design tokens | `styling-and-design-tokens` + `accessibility` |
 | Loading, bundle size, rendering cost | `web-performance`; add `performance-optimization` for game loops |
+| New game or full game overhaul | `new-game` + `game-ui-ux` + `game-feel` + `performance-optimization` + `testing-and-qa` (+ `threejs-*` / `create-game-assets` for 3D/visuals) |
+| Any game task (gameplay, mechanics, upgrades, balance, menus, bugfix, refactoring) | `game-ui-ux` + `game-feel` + `performance-optimization` + `test-quality` (plus `threejs-*` / `create-game-assets` if 3D/assets are touched) |
 | Three.js scene, lifecycle, camera, renderer | `threejs-scene-setup` |
 | Three.js GLTF/GLB and animation loading | `threejs-gltf-loading` |
 | Three.js materials, lights, visual quality | `threejs-materials-lighting` |
@@ -39,6 +41,13 @@ runtime is Three.js inside React. Re-check manifests and source if this architec
 | Browser E2E tests (only if a supported framework exists) | `e2e-testing` + `test-quality` |
 | Full frontend diff review | `frontend-code-review` + applicable skills |
 | Socket.IO, lobby state, reconnect, authoritative state | Existing `.agents/rules/multiplayer.md`, `security.md`, and `.agents/skills/testing-and-qa/SKILL.md` |
+
+## Permanent Game Quality Gate
+
+For every game task (`AGENTS.md` §10), automatically apply the multi-discipline game perspective (Director, Designer, Gameplay Engineer, Game Feel, Game UX/UI, Technical Artist, Multiplayer Architect) and verify before completion:
+- Gameplay works end-to-end, feels responsive and fun, and matches the genre's identity.
+- Controls, animations, audio/haptics, HUD, and all upgrades/progression systems have real, verifiable effect.
+- TV and Smartphone layouts, safe areas, focus/touch navigation, and multiplayer/reconnect edge cases are verified.
 
 ## ProjectBox precedence
 
