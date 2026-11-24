@@ -9,6 +9,7 @@ import {
   Hand,
   Layers,
   Lock,
+  Palette,
   Pencil,
   Repeat,
   Timer,
@@ -161,6 +162,7 @@ export function LobbyGameSettings({
   const category = settings?.category || 'Alle';
   const stopButtonEnabled = settings?.stopButtonEnabled !== false;
   const categoryPreset = settings?.categoryPreset || 'klassisch';
+  const slfTheme = settings?.theme || 'studio-open';
 
   const handleSetRounds = (val: number) => {
     if (!isHost) return;
@@ -190,6 +192,13 @@ export function LobbyGameSettings({
   const handleSetPreset = (presetId: string) => {
     if (!isHost) return;
     onUpdate({ ...settings, categoryPreset: presetId });
+  };
+
+  const handleSetSlTheme = (
+    themeId: 'studio-open' | 'klassik-papier' | 'neon-quizshow' | 'minimal-editorial'
+  ) => {
+    if (!isHost) return;
+    onUpdate({ ...settings, theme: themeId });
   };
 
   const handleSetStartingBalance = (val: number) => {
@@ -465,6 +474,31 @@ export function LobbyGameSettings({
                     ))}
                   </SettingRow>
                 )}
+
+                <SettingRow
+                  label="DESIGNART"
+                  description="Offener Stil für TV & Smartphone"
+                  icon={<Palette className="h-5 w-5" />}
+                >
+                  {(
+                    [
+                      { id: 'studio-open', label: 'STUDIO' },
+                      { id: 'klassik-papier', label: 'PAPIER' },
+                      { id: 'neon-quizshow', label: 'NEON' },
+                      { id: 'minimal-editorial', label: 'MINIMAL' },
+                    ] as const
+                  ).map((t) => (
+                    <OpenButton
+                      key={t.id}
+                      size="md"
+                      disabled={!isHost}
+                      variant={slfTheme === t.id ? 'amber' : 'secondary'}
+                      onClick={() => handleSetSlTheme(t.id)}
+                    >
+                      {t.label}
+                    </OpenButton>
+                  ))}
+                </SettingRow>
               </div>
             </div>
           ) : isRoulette ? (

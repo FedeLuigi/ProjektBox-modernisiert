@@ -126,6 +126,7 @@ export const LobbyUpdateSettingsSchema = z.object({
     customWordsEnabled: z.boolean().optional(),
     stopButtonEnabled: z.boolean().optional(),
     categoryPreset: z.enum(['klassisch', 'party', 'bunt']).optional(),
+    theme: z.enum(['studio-open', 'klassik-papier', 'neon-quizshow', 'minimal-editorial']).optional(),
     startingBalance: z.number().int().min(100).max(100000).optional(),
     smallBlind: z.number().int().min(5).max(500).optional(),
   }),

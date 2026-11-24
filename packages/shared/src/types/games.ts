@@ -62,6 +62,11 @@ export type DrawAndGuessMove =
 
 // ─── STADT, LAND, FLUSS ───
 export type StadtLandFlussPreset = 'klassisch' | 'party' | 'bunt';
+export type StadtLandFlussTheme =
+  | 'studio-open'
+  | 'klassik-papier'
+  | 'neon-quizshow'
+  | 'minimal-editorial';
 
 export interface EvaluatedAnswer {
   text: string;
@@ -81,6 +86,7 @@ export interface StadtLandFlussState extends BaseGameState {
   categoryChooserId?: string | null;
   categoryChooserName?: string;
   categoryPreset: StadtLandFlussPreset;
+  theme?: StadtLandFlussTheme;
   categories: string[];
   letter: string;
   usedLetters: string[];

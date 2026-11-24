@@ -206,6 +206,7 @@ export function getDefaultGameSettings(gameId: string): LobbySettings {
       roundDuration: 60,
       stopButtonEnabled: true,
       categoryPreset: 'klassisch',
+      theme: 'studio-open',
     };
   }
   if (gameId === 'roulette') {

@@ -308,6 +308,12 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
     const stopButtonEnabled = settings?.stopButtonEnabled !== false;
     const customWordsEnabled = settings?.customWordsEnabled === true;
     const { presetKey, categories } = getPresetCategories(settings?.categoryPreset);
+    const theme =
+      settings?.theme === 'klassik-papier' ||
+      settings?.theme === 'neon-quizshow' ||
+      settings?.theme === 'minimal-editorial'
+        ? settings.theme
+        : 'studio-open';
     const now = Date.now();
     const firstTurn =
       starterId && players.some((p) => p.id === starterId) ? starterId : players[0].id;
@@ -328,6 +334,7 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
         categoryChooserId: chooser?.id || firstTurn,
         categoryChooserName: chooser?.name || players[0].name,
         categoryPreset: presetKey,
+        theme,
         categories,
         letter: '',
         usedLetters: [],
@@ -358,6 +365,7 @@ export const stadtLandFlussGame: MultiplayerGameDefinition<
       stopButtonEnabled,
       customWordsEnabled: false,
       categoryPreset: presetKey,
+      theme,
       categories,
       letter,
       usedLetters: [letter],

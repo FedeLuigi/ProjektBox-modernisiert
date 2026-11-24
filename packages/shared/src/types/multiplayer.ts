@@ -126,6 +126,7 @@ export interface LobbySettings {
   customWordsEnabled?: boolean;
   stopButtonEnabled?: boolean;
   categoryPreset?: 'klassisch' | 'party' | 'bunt';
+  theme?: 'studio-open' | 'klassik-papier' | 'neon-quizshow' | 'minimal-editorial';
   startingBalance?: number;
   smallBlind?: number;
   [key: string]: any;
