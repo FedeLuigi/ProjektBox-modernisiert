@@ -44,10 +44,11 @@ runtime is Three.js inside React. Re-check manifests and source if this architec
 
 ## Permanent Game Quality Gate
 
-For every game task (`AGENTS.md` §10), automatically apply the multi-discipline game perspective (Director, Designer, Gameplay Engineer, Game Feel, Game UX/UI, Technical Artist, Multiplayer Architect) and verify before completion:
-- Gameplay works end-to-end, feels responsive and fun, and matches the genre's identity.
-- Controls, animations, audio/haptics, HUD, and all upgrades/progression systems have real, verifiable effect.
-- TV and Smartphone layouts, safe areas, focus/touch navigation, and multiplayer/reconnect edge cases are verified.
+For every game task (`AGENTS.md` §10), automatically apply the multi-discipline studio perspective (Director, Designer, Gameplay Engineer, Game Feel, Game UX/UI, Technical Artist, Multiplayer Architect) and verify before completion:
+- Reference & benchmark research and public/license-free asset quality are applied instead of improvised primitive placeholders.
+- Gameplay works end-to-end across a full match (start -> midgame -> upgrades/progression -> end -> rematch -> reconnect), feels responsive and fun, and matches the genre's identity without restricting future genres.
+- Controls, animations, audio mix/haptics, HUD, colorblind safety, and all upgrades/progression systems have real, verifiable effect.
+- TV and Smartphone layouts, safe areas, focus/touch navigation, and performance/resource cleanup budgets are verified.
 
 ## ProjectBox precedence
 

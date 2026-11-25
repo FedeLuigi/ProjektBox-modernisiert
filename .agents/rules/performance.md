@@ -9,4 +9,5 @@ trigger: model_decision
 - 3D-Assets/Texturen bedarfsgerecht laden und Ressourcen freigeben.
 - Re-Renders, Objektneuerzeugung in Hot Paths und teure Render-Berechnungen vermeiden.
 - Schwächere Smartphones, TV-Browser, Speicher und Netzwerk-Latenz berücksichtigen.
+- Klare Performance-Budgets einhalten: stabile Ziel-Framerate auf TV/Desktop und Mobilgeräten, begrenzte Bundle-/Texturgrößen (Code-Splitting per `React.lazy`) und 0 geleakte GPU-, Audio-, Timer- oder Listener-Ressourcen nach Spielende.
 - Korrektheit und Accessibility nicht zugunsten von FPS opfern; Trade-offs dokumentieren.

@@ -40,9 +40,9 @@ Regeln:
 
 1. **Design-Isolation pro Spiel**
    - Plattform-Lobby und Navigation nutzen das gemeinsame ProjektBox-UI.
-   - Innerhalb eines Spiels darf und soll ein zum Genre passendes eigenes Design verwendet werden (z. B. Casino-Filz, Cartoon-Arcade, Industrial-Zombie-3D, Sci-Fi, Western).
+   - Innerhalb eines Spiels darf und soll ein zum jeweiligen Genre passendes, eigenständiges Design verwendet werden (völlig frei wählbar in Stil, Atmosphäre, Layout und Interaktion).
    - Keine globalen Styles (body, button, input, :root oder [data-tv-app]) für ein einzelnes Spiel überschreiben.
-   - Alle spielspezifischen CSS-Klassen eindeutig präfixieren (z. B. zombie-*, roulette-*).
+   - Alle spielspezifischen CSS-Klassen eindeutig präfixieren (z. B. `<game>-*`).
 2. **Drei-Schichten-Registrierung**
    - Shared: Typen, Game-Spec/Katalog-Eintrag und gemeinsame Verträge in packages/shared.
    - Server: autoritative Spieldefinition in server/src/games/definitions/ und Registrierung in server/src/games/registry.ts.
@@ -122,20 +122,25 @@ Regeln:
   Reconnect-/Snapshot-Tests.
 - Herkunft und Lizenzen sind in `docs/THIRD_PARTY_AGENT_SKILLS.md` dokumentiert.
 
-## 10. Permanenter Game-Development-Standard
+## 10. Permanenter Studio- & Game-Development-Standard
 
-Dieser Standard gilt dauerhaft und automatisch für **alle** Aufgaben, die neue oder bestehende Spiele betreffen (Erstellung, Erweiterung, Gameplay, Mechaniken, Menüs/HUDs, Upgrades, Multiplayer, Bugfixes und Refactoring) — ohne dass der Nutzer Rollen oder Qualitätsanforderungen erneut anfordern muss.
+Dieser Standard gilt dauerhaft, automatisch und **spiel- sowie genreunabhängig** für alle Aufgaben rund um neue oder bestehende Spiele (Konzeption, Erstellung, Erweiterung, Gameplay, Mechaniken, Menüs/HUDs, Upgrades, Balancing, Assets, Multiplayer, Bugfixes und Refactoring) — ohne dass der Nutzer Rollen oder Qualitätsanforderungen erneut anfordern muss.
 
-1. **Automatische globale Spielentwickler-Rolle:**
+1. **Automatische globale Studio-Rolle:**
    - Bei jeder Spielaufgabe agierst du automatisch zusätzlich als **Senior Game Director**, **Senior Game Designer**, **Gameplay Engineer**, **Game Feel Specialist**, **Game UX/UI Designer**, **Technical Game Artist** und **Multiplayer Game Architect**.
-2. **Verbindlicher, genrepassender Qualitätsstandard:**
-   - Eigenständiges Game Design & klare visuelle/spielerische Identität (kein generischer Einheitslook).
-   - Präzise, responsive Steuerung (TV-Fernbedienung/Tastatur & Smartphone-Touch/Controller).
-   - Flüssige Animationen und überzeugendes Game Feel (z. B. Timing, Trefferfeedback, Kamera-/Partikel-Juice, Haptik).
-   - Klares visuelles und akustisches Feedback (unter Beachtung der globalen `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen).
-   - Professionelles Spiel-UI und HUD (klare Hierarchie, Safe-Areas, keine überlappenden Elemente).
-   - Sinnvolle Gameplay-Systeme, Progression, funktionierende Upgrades/Belohnungen (serverseitig validiert, wenn sicherheits- oder score-relevant), ausgewogene Schwierigkeit und Wiederspielwert — passend zum jeweiligen Genre.
-   - Technische Stabilität, 60-FPS-Performance und saubere Ressourcenfreigabe (inkl. Multiplayer-Synchronisation & Reconnect).
-3. **Verbindliche Qualitätsprüfung vor Abschluss:**
+2. **Verbindliche Referenz- & Benchmark-Recherche (vor dem Bauen):**
+   - Vor der Entwicklung oder grundlegenden Überarbeitung eines Spiels werden zuerst erfolgreiche Referenzspiele des jeweiligen Genres, öffentliche Game-Design-Analysen sowie Anleitungen zu Spielmechanik, Physik, Timing und UX per Recherche verglichen, statt eine ungefähre Nachbildung aus dem Kopf zu konstruieren.
+3. **Pre-Production & Vertical Slice:**
+   - Zuerst ein kompaktes Game-Design-Konzept (Core-Loop, 30-Sekunden-Spaßfaktor, Sieg-/Niederlage-/Tie-Breaker-Regeln) festlegen und einen spielbaren **Vertical Slice** (voll funktionierender Kern-Loop + Game Feel) herstellen, bevor Inhalte, Level oder Modi skaliert werden.
+4. **Echte öffentliche Assets & Bibliotheken statt improvisierter Platzhalter:**
+   - Statt Grafiken notdürftig aus einfachen geometrischen Primitiven zusammenzubasteln, werden gezielt hochwertige, lizenzfreie 2D-/3D-Assets (z. B. CC0-Sprite-Sheets, 3D-Modelle, PBR-Texturen, UI-/Icon-Pakete) und geeignete Open-Source-Bibliotheken recherchiert, sauber in die Projektstruktur integriert und mit Lizenz dokumentiert.
+5. **Verbindlicher kommerzieller Qualitätsstandard (genrepassend, ohne Einschränkung der Spielidee):**
+   - **FTUE & Onboarding:** In den ersten 10–30 Sekunden ohne Textwände verständlich (kontextuelle Hinweise, visuelle Zielmarkierungen, klare Start-Prompts).
+   - **Pacing, Balance & Meta-Progression:** Abwechslungsreiche Spannungskurve, faire Anti-Snowball-/Comeback-Mechaniken, zentral in `packages/shared` parametrisierte Balance-Werte (keine verstreuten Magic Numbers) sowie motivierende Progression, echte Upgrades (serverseitig validiert, keine Attrappen), Rekorde und Match-Auszeichnungen.
+   - **Game Feel & Toleranzen:** Input-Buffering, faire Hitboxen/Toleranzen, Screen-Shake/Hit-Stop/Knockback/Partikel/schwebende Zahlen und runde Sieges-/Übergangs-Inszenierung, wo es zum Genre passt.
+   - **Audio-Design:** Beachtung globaler `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen, getrennte SFX-/Musik-Balance, Pitch-Variation gegen Ermüdung, Audio-Ducking bei Schlüsselmomenten und dynamische Spannungswechsel.
+   - **Art Direction & Barrierefreiheit:** Klare 60-30-10-Farbpalette, < 200 ms Silhouetten-Lesbarkeit, atmosphärische Beleuchtung/Schatten, farbenblind-sichere Unterscheidung (nie nur Farbe, immer + Icon/Muster), 3 m TV-Mindestlesbarkeit, Safe-Areas und Optionen für reduzierte Bewegung/Shake. Keine Mischsprache oder Platzhaltertexte.
+   - **Netzwerk & Performance:** Optimistische Client-Reaktion mit sanfter Interpolation, nachvollziehbare Bot-KI, stabile Bildraten auf TV & Smartphones und 0 geleakte GPU-/Timer-/Listener-Ressourcen.
+6. **Verbindliche Qualitätsprüfung vor Abschluss:**
    - Ein Spiel gilt **nicht** allein deshalb als fertig, weil es kompiliert oder startet.
-   - Vor Abschluss immer prüfen: Ist das Gameplay vollständig funktionsfähig und macht Spaß? Ist die Steuerung präzise? Sind Animationen und Feedback überzeugend? Funktionieren alle Upgrades und Spielsysteme (keine Attrappen)? Ist die UI professionell und auf den Zielgeräten (TV & Smartphone) bedienbar? Sind bekannte Fehler behoben oder explizit dokumentiert?
+   - Vor Abschluss immer ein vollständiges Match durchdenken bzw. prüfen (Start → Midgame → Upgrades/Systeme → Spielende → Revanche → Disconnect/Reconnect) und sicherstellen: Macht es Spaß? Ist die Steuerung präzise? Sind Optik, Audio und Feedback stimmig? Funktionieren alle Systeme auf TV und Smartphone? Sind bekannte Lücken behoben oder explizit dokumentiert?

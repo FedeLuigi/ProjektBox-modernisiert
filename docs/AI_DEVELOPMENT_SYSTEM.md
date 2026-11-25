@@ -23,11 +23,12 @@ Antigravity-Versionen können Discovery und Metadaten ändern. Aktuelle Dokument
 ## Skills
 project-analysis (Analyse/Plan), new-game (Spielintegration), feature-development (Features), bug-fixing (Fehlerbehebung), security-audit (Sicherheit), performance-audit (Performance), database-migration (Prisma/PostgreSQL), testing-and-qa (Verifikation), release-check (Release/Deployment).
 
-## Permanenter Game-Development-Standard (`AGENTS.md` §10)
-- **Automatische globale Spielrolle:** Bei jeder Spielaufgabe agiert der Agent automatisch als Senior Game Director, Senior Game Designer, Gameplay Engineer, Game Feel Specialist, Game UX/UI Designer, Technical Game Artist und Multiplayer Game Architect.
-- **Qualitätsstandard:** Jedes Spiel erhält eine genrepassende Spielidentität, präzise Steuerung, flüssige Animationen/Game Feel, klares visuelles & akustisches Feedback, professionelles HUD, funktionierende Progression/Upgrades, ausgewogene Balance, stabile Performance und zuverlässigen Multiplayer.
-- **Skill-Routing:** `.agents/skills/projectbox-skill-routing/SKILL.md` wählt bei Spielaufgaben automatisch `new-game`, `game-ui-ux`, `game-feel`, `performance-optimization`, `create-game-assets`, `threejs-*` und `testing-and-qa`/`test-quality` aus.
-- **Qualitätsprüfung:** Kompilieren/Starten allein reicht nicht; Gameplay, Steuerung, Feedback, Upgrades, UI und Zielgeräte (TV & Smartphone) müssen vor Abschluss geprüft sein.
+## Permanenter Studio- & Game-Development-Standard (`AGENTS.md` §10)
+- **Automatische globale Studio-Rolle:** Bei jeder Spielaufgabe agiert der Agent automatisch als Senior Game Director, Senior Game Designer, Gameplay Engineer, Game Feel Specialist, Game UX/UI Designer, Technical Game Artist und Multiplayer Game Architect — spiel- und genreunabhängig.
+- **Referenz-Recherche, Vertical Slice & Echte Assets:** Vor dem Bauen werden Genre-Referenzen/Anleitungen verglichen, zuerst ein spielbarer Vertical Slice aufgebaut und hochwertige lizenzfreie 2D-/3D-Assets sowie Open-Source-Bibliotheken statt improvisierter Primitiv-Platzhalter eingesetzt.
+- **Kommerzieller Qualitätsstandard:** FTUE-Onboarding (10–30 s), Pacing & Comeback-Mechaniken, zentrale Balance-Parameter in `packages/shared`, Meta-Progression/Rekorde, Game Feel, Audio-Mix (SFX/Musik, Pitch-Variation, Ducking), 60-30-10 Art Direction, Farbenblind-Sicherheit, 3 m TV-Lesbarkeit und Performance-/Cleanup-Budgets.
+- **Skill-Routing & Rules:** `game-development.md` gilt als `always_on`; `.agents/skills/projectbox-skill-routing/SKILL.md` wählt bei Spielaufgaben automatisch `new-game`, `game-ui-ux`, `game-feel`, `performance-optimization`, `create-game-assets`, `threejs-*` und `testing-and-qa`/`test-quality` aus.
+- **Qualitätsprüfung:** Kompilieren/Starten allein reicht nicht; ein vollständiges Match inkl. Steuerung, Feedback, Upgrades, UI und Zielgeräte (TV & Smartphone) muss vor Abschluss geprüft sein.
 
 ## ProjektBox-Hinweise
 - `npm run build` baut Shared, TV, Smartphone und Server.
