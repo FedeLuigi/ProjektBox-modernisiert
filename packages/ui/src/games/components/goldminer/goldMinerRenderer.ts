@@ -1,8 +1,10 @@
-import { Assets, Container, Graphics, Matrix, Text, Texture } from 'pixi.js';
+import { Assets, Container, Graphics, Matrix, Sprite, Text, Texture } from 'pixi.js';
 import goldTextureUrl from '../../../assets/textures/goldminer/gold_texture.jpg';
 import rockTextureUrl from '../../../assets/textures/goldminer/rock_texture.jpg';
 import diamondTextureUrl from '../../../assets/textures/goldminer/diamond_texture.jpg';
 import woodTextureUrl from '../../../assets/textures/goldminer/wood_texture.jpg';
+import minerWinchUrl from '../../../assets/textures/goldminer/sprites/miner_winch.png';
+import hookClawUrl from '../../../assets/textures/goldminer/sprites/hook_claw.png';
 import {
   MINE_LOGICAL_W,
   MINE_SURFACE_Y,
@@ -57,6 +59,8 @@ export interface LoadedMineTextures {
   rock: Texture | null;
   diamond: Texture | null;
   wood: Texture | null;
+  minerWinch: Texture | null;
+  hookClaw: Texture | null;
 }
 
 export async function loadGoldMinerTextures(): Promise<LoadedMineTextures> {
@@ -67,13 +71,15 @@ export async function loadGoldMinerTextures(): Promise<LoadedMineTextures> {
       return null;
     }
   };
-  const [gold, rock, diamond, wood] = await Promise.all([
+  const [gold, rock, diamond, wood, minerWinch, hookClaw] = await Promise.all([
     safeLoad(goldTextureUrl),
     safeLoad(rockTextureUrl),
     safeLoad(diamondTextureUrl),
     safeLoad(woodTextureUrl),
+    safeLoad(minerWinchUrl),
+    safeLoad(hookClawUrl),
   ]);
-  return { gold, rock, diamond, wood };
+  return { gold, rock, diamond, wood, minerWinch, hookClaw };
 }
 
 function parseHexColor(hex: string, fallback = 0xfacc15): number {
@@ -137,6 +143,8 @@ export function createMineObjectGraphic(
       r * 0.08, r * 0.92,
       -r * 0.78, r * 0.68,
     ];
+    // Warm outer gleam halo so gold pops unmistakably against dark earth
+    g.poly(pts).stroke({ width: 7, color: 0xfef08a, alpha: 0.3 });
     if (textures.gold) {
       const m = new Matrix()
         .scale((r * 2.2) / textures.gold.width, (r * 2.2) / textures.gold.height)
@@ -145,13 +153,14 @@ export function createMineObjectGraphic(
     } else {
       g.poly(pts).fill({ color: 0xfacc15 });
     }
+    // Bright golden bevel + dark outline
     g.poly(pts).stroke({ width: 3, color: 0x451a03 });
     g.poly([
-      -r * 0.45, -r * 0.55,
-      r * 0.15, -r * 0.62,
-      r * 0.35, -r * 0.25,
-      -r * 0.2, -r * 0.18,
-    ]).fill({ color: 0xfef9c3, alpha: 0.42 });
+      -r * 0.5, -r * 0.6,
+      r * 0.22, -r * 0.68,
+      r * 0.44, -r * 0.24,
+      -r * 0.18, -r * 0.14,
+    ]).fill({ color: 0xfef9c3, alpha: 0.62 });
   } else if (obj.kind.startsWith('rock_')) {
     const pts = [
       -r * 0.95, r * 0.1,
@@ -168,8 +177,15 @@ export function createMineObjectGraphic(
         .translate(-r * 1.15, -r * 1.15);
       g.poly(pts).fill({ texture: textures.rock, matrix: m });
     } else {
-      g.poly(pts).fill({ color: 0x78716c });
+      g.poly(pts).fill({ color: 0x9ca3af });
     }
+    // Crisp cool-grey top facet highlight for instant contrast against brown soil
+    g.poly([
+      -r * 0.62, -r * 0.68,
+      r * 0.14, -r * 0.86,
+      r * 0.72, -r * 0.42,
+      -r * 0.12, -r * 0.15,
+    ]).fill({ color: 0xe7e5e4, alpha: 0.32 });
     g.poly(pts).stroke({ width: 3, color: 0x1c1917 });
     g.moveTo(-r * 0.3, -r * 0.45).lineTo(r * 0.18, 0).lineTo(r * 0.42, r * 0.35);
     g.stroke({ width: 2, color: 0x292524, alpha: 0.75 });
@@ -180,6 +196,7 @@ export function createMineObjectGraphic(
       0, r * 1.05,
       -r * 0.95, -r * 0.22,
     ];
+    g.poly(pts).stroke({ width: 6, color: 0x7dd3fc, alpha: 0.35 });
     if (textures.diamond) {
       const m = new Matrix()
         .scale((r * 2.4) / textures.diamond.width, (r * 2.4) / textures.diamond.height)
@@ -191,12 +208,11 @@ export function createMineObjectGraphic(
     g.poly(pts).stroke({ width: 2.5, color: 0xe0f2fe });
     g.poly([0, -r * 0.7, r * 0.42, -r * 0.15, 0, r * 0.4, -r * 0.42, -r * 0.15]).fill({
       color: 0xffffff,
-      alpha: 0.35,
+      alpha: 0.45,
     });
   } else if (obj.kind === 'mystery_bag') {
-    // Rich leather/canvas pouch with shaded folds & golden drawstring
     g.roundRect(-r * 0.8, -r * 0.44, r * 1.6, r * 1.38, 10).fill({ color: 0x78350f });
-    g.roundRect(-r * 0.68, -r * 0.32, r * 1.3, r * 1.05, 8).fill({ color: 0x92400e });
+    g.roundRect(-r * 0.68, -r * 0.32, r * 1.3, r * 1.05, 8).fill({ color: 0xa16207 });
     g.roundRect(-r * 0.8, -r * 0.44, r * 1.6, r * 1.38, 10).stroke({
       width: 3,
       color: 0x291104,
@@ -206,14 +222,14 @@ export function createMineObjectGraphic(
       -r * 0.58, -r * 0.92,
       r * 0.58, -r * 0.92,
       r * 0.44, -r * 0.44,
-    ]).fill({ color: 0xb45309 });
+    ]).fill({ color: 0xd97706 });
     g.poly([
       -r * 0.44, -r * 0.44,
       -r * 0.58, -r * 0.92,
       r * 0.58, -r * 0.92,
       r * 0.44, -r * 0.44,
     ]).stroke({ width: 2.5, color: 0x291104 });
-    g.roundRect(-r * 0.52, -r * 0.52, r * 1.04, 6, 3).fill({ color: 0xfacc15 });
+    g.roundRect(-r * 0.52, -r * 0.52, r * 1.04, 6, 3).fill({ color: 0xfde047 });
     container.addChild(g);
 
     const q = new Text({
@@ -231,7 +247,6 @@ export function createMineObjectGraphic(
     container.addChild(q);
     return container;
   } else if (obj.kind === 'tnt') {
-    // Painterly wooden barrel with iron hoops & crimson TNT band
     if (textures.wood) {
       const m = new Matrix()
         .scale((r * 2) / textures.wood.width, (r * 2) / textures.wood.height)
@@ -243,9 +258,8 @@ export function createMineObjectGraphic(
     } else {
       g.roundRect(-r * 0.78, -r * 0.92, r * 1.56, r * 1.84, 7).fill({ color: 0x92400e });
     }
-    g.rect(-r * 0.78, -r * 0.42, r * 1.56, r * 0.84).fill({ color: 0xb91c1c });
+    g.rect(-r * 0.78, -r * 0.42, r * 1.56, r * 0.84).fill({ color: 0xdc2626 });
     g.rect(-r * 0.74, -r * 0.28, r * 1.48, r * 0.56).fill({ color: 0xfef3c7 });
-    // Iron hoops
     g.rect(-r * 0.8, -r * 0.74, r * 1.6, 5).fill({ color: 0x292524 });
     g.rect(-r * 0.8, r * 0.64, r * 1.6, 5).fill({ color: 0x292524 });
     g.roundRect(-r * 0.78, -r * 0.92, r * 1.56, r * 1.84, 7).stroke({
@@ -267,25 +281,19 @@ export function createMineObjectGraphic(
     container.addChild(label);
     return container;
   } else if (obj.kind === 'mole_diamond') {
-    // Rich shaded mole with headlamp & faceted textured diamond
-    g.ellipse(0, 4, r * 0.98, r * 0.76).fill({ color: 0x3f3a36 });
-    g.ellipse(-2, 1, r * 0.82, r * 0.56).fill({ color: 0x57534e });
+    g.ellipse(0, 4, r * 0.98, r * 0.76).fill({ color: 0x44403c });
+    g.ellipse(-2, 1, r * 0.82, r * 0.56).fill({ color: 0x78716c });
     g.ellipse(0, 4, r * 0.98, r * 0.76).stroke({ width: 2.8, color: 0x1c1917 });
-    // Paws
     g.ellipse(r * 0.52, r * 0.58, 6, 4).fill({ color: 0xd6a68d });
     g.ellipse(-r * 0.42, r * 0.62, 6, 4).fill({ color: 0xd6a68d });
-    // Hard hat (closed shape, no stray arc line!)
-    g.ellipse(0, -4, r * 0.65, r * 0.42).fill({ color: 0xeab308 });
+    g.ellipse(0, -4, r * 0.65, r * 0.42).fill({ color: 0xfacc15 });
     g.ellipse(0, -4, r * 0.65, r * 0.42).stroke({ width: 2, color: 0x451a03 });
-    g.roundRect(-r * 0.74, -5, r * 1.48, 5, 2).fill({ color: 0xfacc15 });
-    // Glowing headlamp
+    g.roundRect(-r * 0.74, -5, r * 1.48, 5, 2).fill({ color: 0xfde047 });
     g.circle(r * 0.46, -8, 4.5).fill({ color: 0xfef08a });
     g.circle(r * 0.46, -8, 4.5).stroke({ width: 1.5, color: 0x451a03 });
-    // Snout & eye
     g.circle(r * 0.82, 4, 4.5).fill({ color: 0xf472b6 });
     g.circle(r * 0.42, -1, 2.5).fill({ color: 0x09090b });
 
-    // Textured diamond carried on back
     const dPts = [0, -r * 1.15, 9, -r * 0.72, 0, -r * 0.3, -9, -r * 0.72];
     if (textures.diamond) {
       const m = new Matrix()
@@ -320,115 +328,118 @@ export function createMineObjectGraphic(
   return container;
 }
 
-export function drawMinersAndHooks(
-  g: Graphics,
-  miners: MinerRenderState[],
-  objects: MineObject[],
-  woodTexture: Texture | null
-): void {
-  g.clear();
+export class GoldMinerRigPool {
+  private rigs: Array<{
+    root: Container;
+    minerSprite: Sprite | null;
+    hookSprite: Sprite | null;
+    cableG: Graphics;
+  }> = [];
 
-  for (const m of miners) {
-    const colorHex = parseHexColor(m.color);
-    const tipX = m.anchorX + Math.sin(m.angle) * m.hookLength;
-    const tipY = m.anchorY + Math.cos(m.angle) * m.hookLength;
+  constructor(
+    container: Container,
+    textures: LoadedMineTextures,
+    maxMiners = 8
+  ) {
+    for (let i = 0; i < maxMiners; i++) {
+      const root = new Container();
+      const cableG = new Graphics();
 
-    // Subtle targeting dotted guide while swinging
-    if (m.hookState === 'swing') {
-      const gx = Math.sin(m.angle);
-      const gy = Math.cos(m.angle);
-      for (let d = 58; d <= 165; d += 22) {
-        g.circle(m.anchorX + gx * d, m.anchorY + gy * d, 2.3).fill({
-          color: 0xfef08a,
-          alpha: 0.5,
+      let minerSprite: Sprite | null = null;
+      if (textures.minerWinch) {
+        minerSprite = new Sprite(textures.minerWinch);
+        minerSprite.anchor.set(0.5, 1);
+        const scale = 86 / textures.minerWinch.height;
+        minerSprite.scale.set(scale);
+        root.addChild(minerSprite);
+      }
+
+      root.addChild(cableG);
+
+      let hookSprite: Sprite | null = null;
+      if (textures.hookClaw) {
+        hookSprite = new Sprite(textures.hookClaw);
+        hookSprite.anchor.set(0.5, 0.14);
+        const hScale = 38 / textures.hookClaw.height;
+        hookSprite.scale.set(hScale);
+        root.addChild(hookSprite);
+      }
+
+      root.visible = false;
+      container.addChild(root);
+      this.rigs.push({ root, minerSprite, hookSprite, cableG });
+    }
+  }
+
+  public sync(miners: MinerRenderState[], objects: MineObject[]): void {
+    for (let i = 0; i < this.rigs.length; i++) {
+      const rig = this.rigs[i];
+      const m = miners[i];
+      if (!m) {
+        rig.root.visible = false;
+        continue;
+      }
+      rig.root.visible = true;
+      const colorHex = parseHexColor(m.color);
+      const tipX = m.anchorX + Math.sin(m.angle) * m.hookLength;
+      const tipY = m.anchorY + Math.cos(m.angle) * m.hookLength;
+
+      if (rig.minerSprite) {
+        rig.minerSprite.x = m.anchorX;
+        rig.minerSprite.y = MINE_SURFACE_Y - 2;
+        // Subtle crank bounce when reeling in heavy items
+        const bounce = m.hookState === 'retract' ? Math.sin(m.winchSpin * 2) * 1.4 : 0;
+        rig.minerSprite.y += bounce;
+      }
+
+      rig.cableG.clear();
+
+      // Subtle targeting dotted guide while swinging
+      if (m.hookState === 'swing') {
+        const gx = Math.sin(m.angle);
+        const gy = Math.cos(m.angle);
+        for (let d = 58; d <= 165; d += 22) {
+          rig.cableG.circle(m.anchorX + gx * d, m.anchorY + gy * d, 2.3).fill({
+            color: 0xfef08a,
+            alpha: 0.55,
+          });
+        }
+      }
+
+      // Strength aura glow around miner cart
+      if (m.hasStrength) {
+        rig.cableG.circle(m.anchorX, MINE_SURFACE_Y - 36, 36).stroke({
+          width: 3,
+          color: 0xfb923c,
+          alpha: 0.65,
         });
       }
+
+      // Braided steel rope (dark outline + inner tension core)
+      const carried = m.carryingId ? objects.find((o) => o.id === m.carryingId) : null;
+      const ropeCore = carried && carried.weight >= 2.5 ? 0xf97316 : 0xe7e5e4;
+      rig.cableG
+        .moveTo(m.anchorX, m.anchorY)
+        .lineTo(tipX, tipY)
+        .stroke({ width: 5, color: 0x1c1917 });
+      rig.cableG
+        .moveTo(m.anchorX, m.anchorY)
+        .lineTo(tipX, tipY)
+        .stroke({ width: 2.6, color: ropeCore });
+
+      if (rig.hookSprite) {
+        rig.hookSprite.x = tipX;
+        rig.hookSprite.y = tipY;
+        rig.hookSprite.rotation = -m.angle;
+        const baseScale = 38 / rig.hookSprite.texture.height;
+        rig.hookSprite.scale.set(
+          m.carryingId ? baseScale * 0.88 : baseScale,
+          baseScale
+        );
+      } else {
+        rig.cableG.circle(tipX, tipY, 7).fill({ color: colorHex });
+      }
     }
-
-    // Wooden mining cart & brass frame (using wood texture if available)
-    if (woodTexture) {
-      const wm = new Matrix()
-        .scale(68 / woodTexture.width, 34 / woodTexture.height)
-        .translate(m.anchorX - 34, m.anchorY - 38);
-      g.roundRect(m.anchorX - 30, m.anchorY - 38, 60, 30, 7).fill({
-        texture: woodTexture,
-        matrix: wm,
-      });
-    } else {
-      g.roundRect(m.anchorX - 30, m.anchorY - 38, 60, 30, 7).fill({ color: 0x451a03 });
-    }
-    g.roundRect(m.anchorX - 30, m.anchorY - 38, 60, 30, 7).stroke({
-      width: 2.8,
-      color: 0x1c1917,
-    });
-    // Player color trim bar on cart
-    g.roundRect(m.anchorX - 24, m.anchorY - 35, 48, 5, 2.5).fill({ color: colorHex });
-
-    // Miner head & closed hard hat (no stray .arc() path!)
-    g.circle(m.anchorX, m.anchorY - 47, 11.5).fill({ color: 0xfde68a });
-    g.circle(m.anchorX, m.anchorY - 47, 11.5).stroke({ width: 2, color: 0x292524 });
-    g.ellipse(m.anchorX, m.anchorY - 53, 13.5, 8).fill({ color: colorHex });
-    g.ellipse(m.anchorX, m.anchorY - 53, 13.5, 8).stroke({ width: 2, color: 0x1c1917 });
-    g.roundRect(m.anchorX - 16, m.anchorY - 52, 32, 4.5, 2).fill({ color: colorHex });
-    g.roundRect(m.anchorX - 16, m.anchorY - 52, 32, 4.5, 2).stroke({
-      width: 1.5,
-      color: 0x1c1917,
-    });
-
-    // Strength aura ring
-    if (m.hasStrength) {
-      g.circle(m.anchorX, m.anchorY - 22, 24).stroke({
-        width: 2.5,
-        color: 0xfb923c,
-        alpha: 0.75,
-      });
-    }
-
-    // Brass winch wheel
-    g.circle(m.anchorX, m.anchorY - 6, 11.5).fill({ color: 0x78716c });
-    g.circle(m.anchorX, m.anchorY - 6, 11.5).stroke({ width: 2.5, color: 0x1c1917 });
-    const spokeX = Math.cos(m.winchSpin) * 9;
-    const spokeY = Math.sin(m.winchSpin) * 9;
-    g.moveTo(m.anchorX - spokeX, m.anchorY - 6 - spokeY)
-      .lineTo(m.anchorX + spokeX, m.anchorY - 6 + spokeY)
-      .stroke({ width: 2.5, color: 0xfef08a });
-
-    // Braided steel rope (dark outline + inner tension color)
-    const carried = m.carryingId ? objects.find((o) => o.id === m.carryingId) : null;
-    const ropeCore = carried && carried.weight >= 2.5 ? 0xf97316 : 0xe7e5e4;
-    g.moveTo(m.anchorX, m.anchorY).lineTo(tipX, tipY).stroke({ width: 5, color: 0x1c1917 });
-    g.moveTo(m.anchorX, m.anchorY).lineTo(tipX, tipY).stroke({ width: 2.6, color: ropeCore });
-
-    // Articulated steel 2-prong claw with dark outline
-    const perpX = Math.cos(m.angle);
-    const perpY = -Math.sin(m.angle);
-    const dirX = Math.sin(m.angle);
-    const dirY = Math.cos(m.angle);
-    const spread = m.carryingId ? 8 : 14;
-
-    // Left prong
-    g.moveTo(tipX, tipY)
-      .lineTo(tipX - perpX * spread + dirX * 10, tipY - perpY * spread + dirY * 10)
-      .lineTo(tipX - perpX * (spread * 0.45) + dirX * 18, tipY - perpY * (spread * 0.45) + dirY * 18)
-      .stroke({ width: 6, color: 0x1c1917 });
-    g.moveTo(tipX, tipY)
-      .lineTo(tipX - perpX * spread + dirX * 10, tipY - perpY * spread + dirY * 10)
-      .lineTo(tipX - perpX * (spread * 0.45) + dirX * 18, tipY - perpY * (spread * 0.45) + dirY * 18)
-      .stroke({ width: 3, color: 0xd6d3d1 });
-
-    // Right prong
-    g.moveTo(tipX, tipY)
-      .lineTo(tipX + perpX * spread + dirX * 10, tipY + perpY * spread + dirY * 10)
-      .lineTo(tipX + perpX * (spread * 0.45) + dirX * 18, tipY + perpY * (spread * 0.45) + dirY * 18)
-      .stroke({ width: 6, color: 0x1c1917 });
-    g.moveTo(tipX, tipY)
-      .lineTo(tipX + perpX * spread + dirX * 10, tipY + perpY * spread + dirY * 10)
-      .lineTo(tipX + perpX * (spread * 0.45) + dirX * 18, tipY + perpY * (spread * 0.45) + dirY * 18)
-      .stroke({ width: 3, color: 0xd6d3d1 });
-
-    // Claw swivel bolt
-    g.circle(tipX, tipY, 6).fill({ color: colorHex });
-    g.circle(tipX, tipY, 6).stroke({ width: 2, color: 0x1c1917 });
   }
 }
 
@@ -469,18 +480,19 @@ export class GoldMinerNameplatePool {
       }
       plate.root.visible = true;
       plate.root.x = m.anchorX;
-      plate.root.y = m.anchorY - 78;
+      plate.root.y = MINE_SURFACE_Y - 102;
       plate.label.text = `${m.name}  $${m.money}`;
 
-      const w = Math.max(88, plate.label.width + 22);
+      const w = Math.max(92, plate.label.width + 24);
       const h = 24;
       const colorHex = parseHexColor(m.color);
 
       plate.bg.clear();
-      plate.bg.roundRect(-w / 2, -h / 2, w, h, 8).fill({ color: 0x3b1806, alpha: 0.92 });
+      plate.bg.roundRect(-w / 2, -h / 2, w, h, 8).fill({ color: 0x3b1806, alpha: 0.94 });
       plate.bg.roundRect(-w / 2, -h / 2, w, h, 8).stroke({ width: 2.2, color: 0xd97706 });
-      plate.bg.circle(-w / 2 + 10, 0, 4).fill({ color: colorHex });
-      plate.label.x = 4;
+      plate.bg.circle(-w / 2 + 11, 0, 4).fill({ color: colorHex });
+      plate.label.x = 5;
+      plate.label.y = 0;
     }
   }
 }

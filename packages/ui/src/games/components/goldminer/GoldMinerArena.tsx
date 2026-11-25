@@ -40,9 +40,9 @@ import { evaluateGoldMinerBotAction } from './goldMinerBotAi';
 import {
   GoldMinerNameplatePool,
   GoldMinerPopupPool,
+  GoldMinerRigPool,
   buildMineDeck,
   createMineObjectGraphic,
-  drawMinersAndHooks,
   loadGoldMinerTextures,
   type ExplosionEffect,
   type FloatingPopup,
@@ -284,6 +284,8 @@ export function GoldMinerArena({
       rock: null,
       diamond: null,
       wood: null,
+      minerWinch: null,
+      hookClaw: null,
     };
 
     const rebuildObjectViews = () => {
@@ -464,7 +466,7 @@ export function GoldMinerArena({
       const worldLayer = new Container();
       const backdropLayer = new Container();
       objectLayer = new Container();
-      const hooksGraphics = new Graphics();
+      const rigLayer = new Container();
       const fxGraphics = new Graphics();
       const nameplateLayer = new Container();
       const popupLayer = new Container();
@@ -473,13 +475,14 @@ export function GoldMinerArena({
       worldLayer.addChild(
         backdropLayer,
         objectLayer,
-        hooksGraphics,
+        rigLayer,
         fxGraphics,
         nameplateLayer,
         popupLayer
       );
       app.stage.addChild(worldLayer);
 
+      const rigPool = new GoldMinerRigPool(rigLayer, loadedTextures, 8);
       const nameplatePool = new GoldMinerNameplatePool(nameplateLayer, 8);
       const popupPool = new GoldMinerPopupPool(popupLayer, 16);
       rebuildObjectViews();
@@ -705,7 +708,7 @@ export function GoldMinerArena({
         }
 
         // Draw dynamic layers
-        drawMinersAndHooks(hooksGraphics, sim.miners, sim.objects, loadedTextures.wood);
+        rigPool.sync(sim.miners, sim.objects);
         nameplatePool.sync(sim.miners);
         fxGraphics.clear();
         for (const ex of sim.explosions) {
@@ -806,20 +809,26 @@ export function GoldMinerArena({
         className="relative z-10 h-full w-full cursor-pointer"
       />
 
-      {/* Floating Top-Left Timber/Gold Progress HUD */}
-      <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-3 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/92 px-3.5 py-1.5 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-[11px] font-bold tracking-wider text-amber-300 uppercase">Lvl</span>
-          <span className="font-goldminer text-xl text-amber-200">{hud?.level ?? 1}</span>
+      {/* Floating Top-Left Timber/Gold Progress HUD (aligned font baselines) */}
+      <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-3 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/92 to-[#271003]/94 px-3.5 py-2 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
+        <div className="flex items-center gap-1.5 leading-none">
+          <span className="font-goldminer text-sm tracking-wider text-amber-300 uppercase leading-none">
+            LVL
+          </span>
+          <span className="font-goldminer text-xl text-amber-100 leading-none">
+            {hud?.level ?? 1}
+          </span>
         </div>
 
         <div className="h-5 w-px bg-amber-600/40" />
 
-        <div className="flex items-center gap-2">
-          <span className="font-goldminer text-xl text-emerald-400 drop-shadow-[0_2px_0_rgba(0,0,0,0.85)]">
+        <div className="flex items-center gap-2 leading-none">
+          <span className="font-goldminer text-xl leading-none text-emerald-400 drop-shadow-[0_2px_0_rgba(0,0,0,0.85)]">
             ${displayedMoney}
           </span>
-          <span className="text-xs font-bold text-amber-200/80">/ ${targetMoney}</span>
+          <span className="font-goldminer text-sm leading-none text-amber-200/80">
+            / ${targetMoney}
+          </span>
           <div className="hidden h-2.5 w-24 overflow-hidden rounded-full bg-black/50 ring-1 ring-amber-500/30 sm:block">
             <div
               className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
