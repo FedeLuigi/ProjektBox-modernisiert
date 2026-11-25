@@ -13,7 +13,8 @@ trigger: always_on
 ## Lesbarkeit, Kontrast & UI-Kohärenz
 - **Diegetische & stilangepasste UI-Elemente:** Spieler-Namen, Scores, Status-Badges und Panels müssen dieselbe visuelle Designsprache (Farbpalette, Materialität, Rahmen, Typografie) wie das Spiel selbst sprechen — keine generischen Standard-Pills oder fremden Dark-Boxen auf einem thematischen Spiel.
 - **Präzise Verankerung:** Spielerbezogene Infos (Name, Punktestand, Zug-Indikator) werden sauber zentriert direkt am zugehörigen Spielobjekt/Slot oder in einem symmetrisch ausgerichteten Ecken-Grid platziert, niemals verloren oder deplatziert im freien Raum.
-- **Silhouetten & Figur-Grund-Trennung:** Wichtige Spielobjekte müssen innerhalb von `< 200 ms` erkennbar sein (klare Kontur/Rim, gezielter Kontrast zum Hintergrund nach 60-30-10-Prinzip).
+- **Silhouetten, Luminanz-Kontrast & Figur-Grund-Trennung:** Wichtige Spielobjekte müssen innerhalb von `< 200 ms` erkennbar sein. Auf dunklen oder detailreichen Hintergründen dürfen Sammelobjekte und Hindernisse niemals ebenfalls düster oder zu feinkörnig wirken — sie brauchen klare **Helligkeits- (Luminanz-) und Sättigungstrennung**, saubere Konturen sowie leuchtende Highlights für wichtige Targets.
+- **Einheitliche Typo-Baseline im HUD:** Werden Display-Fonts mit Standard-UI-Fonts in derselben Zeile kombiniert (z. B. Label + Zähler + Einheit), müssen alle Elemente über konsistente `line-height` (`leading-none`), `items-center` und aufeinander abgestimmte Schriftgrößen exakt auf einer optischen Linie sitzen — ohne vertikale Baseline-Sprünge.
 - **Barrierefreiheit:** Wichtige Zustände (Gefahr, Gewicht, Aktiv/Gesperrt, Zugrecht) niemals ausschließlich über Farbe vermitteln, sondern immer mit Icon, Form oder kurzem Label kombinieren.
 - **Portrait & Landscape:** Beide Orientierungen (`landscape:` / `sm:`) aktiv unterstützen, ohne dass Inhalte abgeschnitten werden oder überlaufen (`min-h-0`, `overflow-hidden` bewusst steuern).
 
