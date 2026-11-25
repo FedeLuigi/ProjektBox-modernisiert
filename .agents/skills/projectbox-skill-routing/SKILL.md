@@ -40,7 +40,7 @@ runtime is Three.js inside React. Re-check manifests and source if this architec
 | Unit/integration test design | `test-quality` |
 | Browser E2E tests (only if a supported framework exists) | `e2e-testing` + `test-quality` |
 | Full frontend diff review | `frontend-code-review` + applicable skills |
-| Socket.IO, lobby state, reconnect, authoritative state | Existing `.agents/rules/multiplayer.md`, `security.md`, and `.agents/skills/testing-and-qa/SKILL.md` |
+| Socket.IO, lobby state, reconnect, authoritative state | Existing `.agents/rules/02-security-and-multiplayer.md` and `.agents/skills/testing-and-qa/SKILL.md` |
 
 ## Permanent Game Quality Gate
 
