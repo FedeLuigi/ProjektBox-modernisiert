@@ -2,16 +2,10 @@
 name: new-game
 description: Integriert ein Multiplayer-Spiel vollständig in Shared, Server, UI, TV und Smartphone.
 ---
-# New Game
-1. Bestehende Spiele und Registries vergleichen (`AGENTS.md` § 3, § 10 beachten).
-2. **Referenz- & Benchmark-Recherche:** Erfolgreiche Genre-Referenzen, öffentliche Game-Design-Analysen und Anleitungen zu Mechanik, Physik, Timing und UX recherchieren und vergleichen.
-3. **Pre-Production & Vertical Slice:** Core-Loop, Spielziel, verständlichen Einstieg, Pacing, Art Direction sowie optionale Progression/Upgrades **passend zum Spielprinzip** (ohne starres Schema) festlegen.
-4. **Echte öffentliche Assets:** Hochwertige lizenzfreie 2D-/3D-Assets (CC0-Sprites, 3D-Modelle, PBR-Texturen, UI-Kits) und Open-Source-Bibliotheken recherchieren und inkl. Lizenz in der Projektstruktur ablegen.
-5. Game-ID, Metadaten, Phasen, Rollen, Inputs, Fehlerfälle und zentrale Balance-Parameter in `packages/shared` (Typen, Katalog, Zod-Schemas) definieren.
-6. Server-Definition (inkl. autoritativer Validierung von Zügen, Upgrades/Käufen, Scores und Abbrüchen) und serverseitige Registry aktualisieren.
-7. UI-Renderer (per `React.lazy` in `packages/ui/src/games/registry.ts`) und passende Skills (`game-ui-ux`, `game-feel`, `performance-optimization`, `create-game-assets`, bei 3D `threejs-*`) anwenden.
-8. TV-Bühne und Controller für Host sowie alle Mitspieler (2..N) mit Safe-Areas, TV-Fokus, Farbenblind-Sicherheit und Touch-Ergonomie implementieren.
-9. Socket-Events mit Auth, Lobby-Prüfung, Rate-Limit, Payload-Grenzen und Interpolation/Bot-KI absichern.
-10. Spielstyles kapseln (`<game>-*`); Audio (`isSoundEnabled`, Mix/Pitch-Variation), Haptik (`triggerHapticFeedback`), Timer, Reconnect, Abbruch und GPU-/Listener-Cleanup behandeln.
-11. Server-Tests für normale, autoritative und ungültige Abläufe ergänzen.
-12. Shared-Build, Root-Build, Monorepo-Lint, Server-Tests sowie das vollständige Match-QA-Gate (`AGENTS.md` § 10) prüfen.
+# New Game (Studio-Produktionsplan Gate 0–5)
+1. **Gate 0 – Greenlight & Benchmark:** Bestehende Spiele/Registries prüfen (`01`–`04` Rules); 2–3 erfolgreiche Genre-Referenzen sowie öffentliche Mechanik-/UX-Anleitungen recherchieren; Core-Loop, Ziel und Dual-Screen-Rollen (TV + Smartphone `2..N`) festlegen.
+2. **Gate 1 – Asset- & Tech-Scouting:** Echte, lizenzfreie 2D-/3D-Assets (CC0-Sprites, Modelle, PBR-Texturen, UI-Kits) und Open-Source-Bibliotheken auswählen; Lizenzen und Zielpfade dokumentieren; Render-Stack (DOM/Canvas/PixiJS/Three.js) und `React.lazy`-Splitting festlegen.
+3. **Gate 2 – Vertical Slice:** Shared-Verträge (`packages/shared`), autoritative Server-Basis (`server/`) und den reinen spielbaren Kern-Loop mit präziser Steuerung und erstem Game Feel bauen, bevor Content skaliert wird.
+4. **Gate 3 – Full Production:** Zum Spielprinzip passende Systeme (Balance-Parameter in `shared`, echte Upgrades, Art Direction, gekapselte `<game>-*`-Styles, Spielmenü ohne Plattform-Header, Safe-Areas, TV-Fokus, Audio-Mix & Haptik) ausbauen; passende Module A–F anwenden.
+5. **Gate 4 – Multiplayer- & Reconnect-Hardening:** TV + Smartphones (`2..N`), `sanitizeLobbyForClient`, Server-Timer, Rate-/Payload-Limits, Bot-KI, Disconnect/Reconnect und Idempotenz absichern und in Server-Tests verifizieren.
+6. **Gate 5 – Studio QA & Gold Master:** Vollständiges Match prüfen, Ressourcen-Cleanup (`dispose()`/`destroy()`) kontrollieren sowie `npm run build`, `npm run lint` und `npm test` bestehen.

@@ -16,7 +16,7 @@ ProjektBox ist eine Multi-Game-Plattform für Smart-TVs (`apps/tv`), Smartphones
 Alle Regeln gelten **automatisch, dauerhaft und spielunabhängig** bei jedem Prompt:
 1. `.agents/rules/01-platform-and-architecture.md` — Monorepo-Grenzen, Drei-Schichten-Integration, CSS-/Style-Isolation, TypeScript- & Code-Disziplin.
 2. `.agents/rules/02-security-and-multiplayer.md` — Zero-Trust, Serverautorität, Socket.IO/Zod/Rate-Limits, Reconnect-Snapshots, Bot-KI & Sync.
-3. `.agents/rules/03-game-engineering.md` — Studio-Rolle, Referenz-Recherche, Vertical Slice, echte öffentliche/lizenzfreie Assets, Dual-Screen-Ergonomie sowie modulare Fach-Module A–F.
+3. `.agents/rules/03-game-engineering.md` — Studio-Rolle, 6-Gate Studio-Produktionsplan (Gate 0–5), echte öffentliche Assets, Dual-Screen-Ergonomie sowie modulare Fach-Module A–F.
 4. `.agents/rules/04-verification-and-delivery.md` — Pflichtchecks (`build`, `lint`, `test`), Match-QA-Gate, ehrliche Berichterstattung & Git-/Doku-Hygiene.
 
 ## 3. Skill-Routing & Befehle
