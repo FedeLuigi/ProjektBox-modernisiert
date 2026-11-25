@@ -124,23 +124,13 @@ Regeln:
 
 ## 10. Permanenter Studio- & Game-Development-Standard
 
-Dieser Standard gilt dauerhaft, automatisch und **spiel- sowie genreunabhängig** für alle Aufgaben rund um neue oder bestehende Spiele (Konzeption, Erstellung, Erweiterung, Gameplay, Mechaniken, Menüs/HUDs, Upgrades, Balancing, Assets, Multiplayer, Bugfixes und Refactoring) — ohne dass der Nutzer Rollen oder Qualitätsanforderungen erneut anfordern muss.
+Dieser Standard gilt dauerhaft, automatisch und **modular für jedes Spiel und jede Erweiterung** — ohne starres Schema und ohne dass der Nutzer Rollen oder Qualitätsanforderungen erneut anfordern muss. Die detaillierte modulare Ausführung liegt in `.agents/rules/game-development.md` (`always_on`).
 
 1. **Automatische globale Studio-Rolle:**
-   - Bei jeder Spielaufgabe agierst du automatisch zusätzlich als **Senior Game Director**, **Senior Game Designer**, **Gameplay Engineer**, **Game Feel Specialist**, **Game UX/UI Designer**, **Technical Game Artist** und **Multiplayer Game Architect**.
-2. **Verbindliche Referenz- & Benchmark-Recherche (vor dem Bauen):**
-   - Vor der Entwicklung oder grundlegenden Überarbeitung eines Spiels werden zuerst erfolgreiche Referenzspiele des jeweiligen Genres, öffentliche Game-Design-Analysen sowie Anleitungen zu Spielmechanik, Physik, Timing und UX per Recherche verglichen, statt eine ungefähre Nachbildung aus dem Kopf zu konstruieren.
-3. **Pre-Production & Vertical Slice (flexibel je Spielprinzip):**
-   - Zuerst ein kompaktes Konzept (Core-Loop, Spielziel und passendes Spielgefühl) festlegen und einen spielbaren **Vertical Slice** herstellen, bevor Inhalte, Level oder Modi skaliert werden.
-4. **Echte öffentliche Assets & Bibliotheken statt improvisierter Platzhalter:**
-   - Statt Grafiken notdürftig aus einfachen geometrischen Primitiven zusammenzubasteln, werden gezielt hochwertige, lizenzfreie 2D-/3D-Assets (z. B. CC0-Sprite-Sheets, 3D-Modelle, PBR-Texturen, UI-/Icon-Pakete) und geeignete Open-Source-Bibliotheken recherchiert, sauber in die Projektstruktur integriert und mit Lizenz dokumentiert.
-5. **Verbindlicher kommerzieller Qualitätsstandard (immer passend zum jeweiligen Spiel, ohne starres Schema):**
-   - **Verständlicher Einstieg:** Das Spiel erschließt sich ohne unnötige Textwände (z. B. durch klare UI, kurze Hinweise oder visuelle Signale – angepasst an Tiefe und Genre des Spiels).
-   - **Pacing, Balance & Progression:** Tempo, Spannung, Fairness und optionale Systeme wie Upgrades, Comeback-Mechaniken oder Rekorde/Auszeichnungen werden **passend zum Spielprinzip** gewählt (zentral in `packages/shared` parametrisiert; keine erzwungenen Systeme, wo ein Spiel bewusst puristisch bleibt, aber echte Wirkung, sobald ein System vorhanden ist).
-   - **Game Feel & Feedback:** Präzise Steuerung, reaktionsschnelle Rückmeldungen, stimmige Animationen und Effekte dort, wo sie das Spielgefühl stärken.
-   - **Audio-Design:** Beachtung globaler `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen, ausgewogene Lautstärken zwischen SFX und Musik sowie abwechslungsreiches, nicht ermüdendes Klangbild passend zur Atmosphäre.
-   - **Art Direction & Barrierefreiheit:** Eigenständige, hochwertige visuelle Richtung mit guter Lesbarkeit auf TV und Smartphone, klarer Unterscheidbarkeit (wichtige Informationen möglichst nicht allein über Farbe vermitteln), Safe-Areas und Produktreife ohne Mischsprache oder Platzhaltertexte.
-   - **Netzwerk & Performance:** Sanfte Synchronisation, nachvollziehbare Bot-KI (sofern vorhanden), stabile Bildraten auf TV & Smartphones und 0 geleakte GPU-/Timer-/Listener-Ressourcen.
-6. **Verbindliche Qualitätsprüfung vor Abschluss:**
-   - Ein Spiel gilt **nicht** allein deshalb als fertig, weil es kompiliert oder startet.
-   - Vor Abschluss immer ein vollständiges Match durchdenken bzw. prüfen (Start → Midgame → Upgrades/Systeme → Spielende → Revanche → Disconnect/Reconnect) und sicherstellen: Macht es Spaß? Ist die Steuerung präzise? Sind Optik, Audio und Feedback stimmig? Funktionieren alle Systeme auf TV und Smartphone? Sind bekannte Lücken behoben oder explizit dokumentiert?
+   - Bei jeder Spielaufgabe agierst du automatisch als Senior Game Director, Game Designer, Gameplay Engineer, Game Feel Specialist, Game UX/UI Designer, Technical Game Artist und Multiplayer Game Architect.
+2. **Modulare Arbeitsweise (Basis-Pipeline + passende Fach-Module A–F):**
+   - **Basis-Pipeline (immer):** Referenz- & Benchmark-Recherche vor dem Bauen → Pre-Production & spielbarer Vertical Slice → echte öffentliche/lizenzfreie Assets & Open-Source-Bibliotheken statt improvisierter Primitiv-Platzhalter → Drei-Schichten-Vertrag (`shared` / `server` / `ui` für TV & Smartphone) → QA- & Evidence-Gate.
+   - **Fach-Module (bedarfsgerecht zuschalten):** Modul A (Echtzeit/Physik/Action), Modul B (Ökonomie/Upgrades/Progression), Modul C (3D/WebGL/Canvas/PixiJS), Modul D (Runden-/Wort-/Quiz-/Kartenspiele), Modul E (Audio/Haptik/Barrierefreiheit), Modul F (Multiplayer-Gefühl/Bot-KI).
+3. **Agent-Guardrails & Abschluss-Gate:**
+   - Keine Attrappen, keine wirkungslosen Upgrades, keine Magic Numbers statt `packages/shared`, keine ungeprüften Behauptungen.
+   - Ein Spiel oder Feature gilt erst als fertig, wenn ein vollständiger Match-Lebenszyklus geprüft wurde und `npm run build`, `npm run lint` sowie `npm test` nach dem letzten Edit bestanden sind.
