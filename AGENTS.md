@@ -130,17 +130,17 @@ Dieser Standard gilt dauerhaft, automatisch und **spiel- sowie genreunabhängig*
    - Bei jeder Spielaufgabe agierst du automatisch zusätzlich als **Senior Game Director**, **Senior Game Designer**, **Gameplay Engineer**, **Game Feel Specialist**, **Game UX/UI Designer**, **Technical Game Artist** und **Multiplayer Game Architect**.
 2. **Verbindliche Referenz- & Benchmark-Recherche (vor dem Bauen):**
    - Vor der Entwicklung oder grundlegenden Überarbeitung eines Spiels werden zuerst erfolgreiche Referenzspiele des jeweiligen Genres, öffentliche Game-Design-Analysen sowie Anleitungen zu Spielmechanik, Physik, Timing und UX per Recherche verglichen, statt eine ungefähre Nachbildung aus dem Kopf zu konstruieren.
-3. **Pre-Production & Vertical Slice:**
-   - Zuerst ein kompaktes Game-Design-Konzept (Core-Loop, 30-Sekunden-Spaßfaktor, Sieg-/Niederlage-/Tie-Breaker-Regeln) festlegen und einen spielbaren **Vertical Slice** (voll funktionierender Kern-Loop + Game Feel) herstellen, bevor Inhalte, Level oder Modi skaliert werden.
+3. **Pre-Production & Vertical Slice (flexibel je Spielprinzip):**
+   - Zuerst ein kompaktes Konzept (Core-Loop, Spielziel und passendes Spielgefühl) festlegen und einen spielbaren **Vertical Slice** herstellen, bevor Inhalte, Level oder Modi skaliert werden.
 4. **Echte öffentliche Assets & Bibliotheken statt improvisierter Platzhalter:**
    - Statt Grafiken notdürftig aus einfachen geometrischen Primitiven zusammenzubasteln, werden gezielt hochwertige, lizenzfreie 2D-/3D-Assets (z. B. CC0-Sprite-Sheets, 3D-Modelle, PBR-Texturen, UI-/Icon-Pakete) und geeignete Open-Source-Bibliotheken recherchiert, sauber in die Projektstruktur integriert und mit Lizenz dokumentiert.
-5. **Verbindlicher kommerzieller Qualitätsstandard (genrepassend, ohne Einschränkung der Spielidee):**
-   - **FTUE & Onboarding:** In den ersten 10–30 Sekunden ohne Textwände verständlich (kontextuelle Hinweise, visuelle Zielmarkierungen, klare Start-Prompts).
-   - **Pacing, Balance & Meta-Progression:** Abwechslungsreiche Spannungskurve, faire Anti-Snowball-/Comeback-Mechaniken, zentral in `packages/shared` parametrisierte Balance-Werte (keine verstreuten Magic Numbers) sowie motivierende Progression, echte Upgrades (serverseitig validiert, keine Attrappen), Rekorde und Match-Auszeichnungen.
-   - **Game Feel & Toleranzen:** Input-Buffering, faire Hitboxen/Toleranzen, Screen-Shake/Hit-Stop/Knockback/Partikel/schwebende Zahlen und runde Sieges-/Übergangs-Inszenierung, wo es zum Genre passt.
-   - **Audio-Design:** Beachtung globaler `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen, getrennte SFX-/Musik-Balance, Pitch-Variation gegen Ermüdung, Audio-Ducking bei Schlüsselmomenten und dynamische Spannungswechsel.
-   - **Art Direction & Barrierefreiheit:** Klare 60-30-10-Farbpalette, < 200 ms Silhouetten-Lesbarkeit, atmosphärische Beleuchtung/Schatten, farbenblind-sichere Unterscheidung (nie nur Farbe, immer + Icon/Muster), 3 m TV-Mindestlesbarkeit, Safe-Areas und Optionen für reduzierte Bewegung/Shake. Keine Mischsprache oder Platzhaltertexte.
-   - **Netzwerk & Performance:** Optimistische Client-Reaktion mit sanfter Interpolation, nachvollziehbare Bot-KI, stabile Bildraten auf TV & Smartphones und 0 geleakte GPU-/Timer-/Listener-Ressourcen.
+5. **Verbindlicher kommerzieller Qualitätsstandard (immer passend zum jeweiligen Spiel, ohne starres Schema):**
+   - **Verständlicher Einstieg:** Das Spiel erschließt sich ohne unnötige Textwände (z. B. durch klare UI, kurze Hinweise oder visuelle Signale – angepasst an Tiefe und Genre des Spiels).
+   - **Pacing, Balance & Progression:** Tempo, Spannung, Fairness und optionale Systeme wie Upgrades, Comeback-Mechaniken oder Rekorde/Auszeichnungen werden **passend zum Spielprinzip** gewählt (zentral in `packages/shared` parametrisiert; keine erzwungenen Systeme, wo ein Spiel bewusst puristisch bleibt, aber echte Wirkung, sobald ein System vorhanden ist).
+   - **Game Feel & Feedback:** Präzise Steuerung, reaktionsschnelle Rückmeldungen, stimmige Animationen und Effekte dort, wo sie das Spielgefühl stärken.
+   - **Audio-Design:** Beachtung globaler `SOUND_ENABLED`/`VIBRATION_ENABLED`-Einstellungen, ausgewogene Lautstärken zwischen SFX und Musik sowie abwechslungsreiches, nicht ermüdendes Klangbild passend zur Atmosphäre.
+   - **Art Direction & Barrierefreiheit:** Eigenständige, hochwertige visuelle Richtung mit guter Lesbarkeit auf TV und Smartphone, klarer Unterscheidbarkeit (wichtige Informationen möglichst nicht allein über Farbe vermitteln), Safe-Areas und Produktreife ohne Mischsprache oder Platzhaltertexte.
+   - **Netzwerk & Performance:** Sanfte Synchronisation, nachvollziehbare Bot-KI (sofern vorhanden), stabile Bildraten auf TV & Smartphones und 0 geleakte GPU-/Timer-/Listener-Ressourcen.
 6. **Verbindliche Qualitätsprüfung vor Abschluss:**
    - Ein Spiel gilt **nicht** allein deshalb als fertig, weil es kompiliert oder startet.
    - Vor Abschluss immer ein vollständiges Match durchdenken bzw. prüfen (Start → Midgame → Upgrades/Systeme → Spielende → Revanche → Disconnect/Reconnect) und sicherstellen: Macht es Spaß? Ist die Steuerung präzise? Sind Optik, Audio und Feedback stimmig? Funktionieren alle Systeme auf TV und Smartphone? Sind bekannte Lücken behoben oder explizit dokumentiert?

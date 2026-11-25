@@ -5,7 +5,7 @@ description: Integriert ein Multiplayer-Spiel vollständig in Shared, Server, UI
 # New Game
 1. Bestehende Spiele und Registries vergleichen (`AGENTS.md` § 3, § 10 beachten).
 2. **Referenz- & Benchmark-Recherche:** Erfolgreiche Genre-Referenzen, öffentliche Game-Design-Analysen und Anleitungen zu Mechanik, Physik, Timing und UX recherchieren und vergleichen.
-3. **Pre-Production & Vertical Slice:** Core-Loop, 30-Sekunden-Spaßfaktor, FTUE-Onboarding (ohne Textwände), Pacing/Comeback-Regeln, Art Direction (60-30-10, Silhouetten-Lesbarkeit) und Meta-Progression festlegen.
+3. **Pre-Production & Vertical Slice:** Core-Loop, Spielziel, verständlichen Einstieg, Pacing, Art Direction sowie optionale Progression/Upgrades **passend zum Spielprinzip** (ohne starres Schema) festlegen.
 4. **Echte öffentliche Assets:** Hochwertige lizenzfreie 2D-/3D-Assets (CC0-Sprites, 3D-Modelle, PBR-Texturen, UI-Kits) und Open-Source-Bibliotheken recherchieren und inkl. Lizenz in der Projektstruktur ablegen.
 5. Game-ID, Metadaten, Phasen, Rollen, Inputs, Fehlerfälle und zentrale Balance-Parameter in `packages/shared` (Typen, Katalog, Zod-Schemas) definieren.
 6. Server-Definition (inkl. autoritativer Validierung von Zügen, Upgrades/Käufen, Scores und Abbrüchen) und serverseitige Registry aktualisieren.
