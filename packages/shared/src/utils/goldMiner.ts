@@ -88,3 +88,66 @@ export function getGoldMinerLevelTarget(
   const scale = 1 + Math.max(0, playerCount - 1) * 0.65;
   return Math.round(baseSingle * scale);
 }
+
+/**
+ * Classic Gold Miner weight-based retraction formula:
+ * Retraction speed = Base Reel Speed / Weight, boosted by Strength Tonic.
+ */
+export function getGoldMinerRetractSpeed(
+  weight: number | null | undefined,
+  hasStrength: boolean
+): number {
+  const emptySpeed = hasStrength ? 760 : 610;
+  if (!weight || weight <= 0) {
+    return emptySpeed;
+  }
+  const baseLoadedSpeed = 340;
+  const strengthMult = hasStrength ? 1.65 : 1.0;
+  return Math.max(72, (baseLoadedSpeed * strengthMult) / Math.max(0.85, weight));
+}
+
+export function getGoldMinerItemValue(
+  kind: GoldMinerObjectKind,
+  baseValue: number,
+  upgrades: { hasRockBook?: boolean; hasDiamondPolish?: boolean }
+): number {
+  if ((kind === 'rock_small' || kind === 'rock_large') && upgrades.hasRockBook) {
+    return Math.round(baseValue * 3);
+  }
+  if ((kind === 'diamond' || kind === 'mole_diamond') && upgrades.hasDiamondPolish) {
+    return Math.round(baseValue * 1.5);
+  }
+  return Math.round(baseValue);
+}
+
+export interface MysteryBagReward {
+  kind: 'money' | 'dynamite' | 'strength';
+  amount: number;
+  label: string;
+}
+
+export function rollMysteryBagReward(
+  hasClover: boolean,
+  rng: () => number = Math.random
+): MysteryBagReward {
+  const roll = rng();
+  if (hasClover) {
+    if (roll < 0.28) {
+      return { kind: 'strength', amount: 1, label: 'KRAFTTRANK!' };
+    }
+    if (roll < 0.5) {
+      return { kind: 'dynamite', amount: 1, label: '+1 DYNAMIT!' };
+    }
+    const cash = Math.round(450 + rng() * 450);
+    return { kind: 'money', amount: cash, label: `+$${cash} JACKPOT!` };
+  }
+
+  if (roll < 0.16) {
+    return { kind: 'strength', amount: 1, label: 'KRAFTTRANK!' };
+  }
+  if (roll < 0.36) {
+    return { kind: 'dynamite', amount: 1, label: '+1 DYNAMIT!' };
+  }
+  const cash = Math.round(100 + rng() * 320);
+  return { kind: 'money', amount: cash, label: `+$${cash}!` };
+}

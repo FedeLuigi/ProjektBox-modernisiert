@@ -2218,6 +2218,41 @@ test('Gold Miner: TV/Host-Autorisierung beim Spielende und Score-Berechnung', as
   manager.clearAllTimers();
 });
 
+test('Gold Miner: Physik-Rückzugsformel, Upgrade-Multiplikatoren & Überraschungssack', async () => {
+  const {
+    getGoldMinerRetractSpeed,
+    getGoldMinerItemValue,
+    rollMysteryBagReward,
+    getGoldMinerLevelTarget,
+  } = await import('@projektbox/shared/utils');
+
+  // Empty hook retracts faster than loaded hook; heavy rocks retract slower than diamonds; Strength boosts speed
+  const emptySpeed = getGoldMinerRetractSpeed(null, false);
+  const diamondSpeed = getGoldMinerRetractSpeed(1.0, false);
+  const heavyRockSpeed = getGoldMinerRetractSpeed(4.4, false);
+  const heavyRockStrength = getGoldMinerRetractSpeed(4.4, true);
+
+  assert.ok(emptySpeed > diamondSpeed);
+  assert.ok(diamondSpeed > heavyRockSpeed);
+  assert.ok(heavyRockStrength > heavyRockSpeed * 1.4);
+
+  // Upgrade multipliers
+  assert.equal(getGoldMinerItemValue('rock_large', 30, { hasRockBook: true }), 90);
+  assert.equal(getGoldMinerItemValue('diamond', 600, { hasDiamondPolish: true }), 900);
+  assert.equal(getGoldMinerItemValue('gold_medium', 250, { hasRockBook: true, hasDiamondPolish: true }), 250);
+
+  // Mystery bag deterministic rolls with & without clover
+  assert.equal(rollMysteryBagReward(true, () => 0.1).kind, 'strength');
+  assert.equal(rollMysteryBagReward(true, () => 0.4).kind, 'dynamite');
+  const cloverJackpot = rollMysteryBagReward(true, () => 0.8);
+  assert.equal(cloverJackpot.kind, 'money');
+  assert.ok(cloverJackpot.amount >= 450);
+
+  // Level targets scale for coop, stay fixed per player in versus
+  assert.ok(getGoldMinerLevelTarget(2, 4, 'coop') > getGoldMinerLevelTarget(2, 1, 'coop'));
+  assert.equal(getGoldMinerLevelTarget(2, 4, 'versus'), getGoldMinerLevelTarget(2, 1, 'versus'));
+});
+
 test('Draw & Guess: secretWord und wordChoices werden vor Ratenden und TV geschützt', async () => {
   const { sanitizeLobbyForClient } = await import('./lobbyManager.js');
   const manager = new LobbyManager();

@@ -17,7 +17,11 @@ import type {
   GoldMinerShopItemId,
   Player,
 } from '@projektbox/shared/types';
-import { GOLD_MINER_SHOP_ITEMS } from '@projektbox/shared/utils';
+import {
+  GOLD_MINER_OBJECT_SPECS,
+  GOLD_MINER_SHOP_ITEMS,
+  type GoldMinerObjectKind,
+} from '@projektbox/shared/utils';
 import { socketService } from '../../../services/socket';
 
 interface GoldMinerControllerProps {
@@ -50,14 +54,19 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
   const isCoop = hud?.mode !== 'versus';
   const displayedMoney = isCoop ? (hud?.teamMoney ?? myMoney) : myMoney;
   const targetMoney = hud?.targetMoney ?? 650;
+  const isPaused = Boolean(hud?.paused);
+  const carryingSpec = me?.carryingKind
+    ? GOLD_MINER_OBJECT_SPECS[me.carryingKind as GoldMinerObjectKind]
+    : undefined;
 
   const handleDropHook = () => {
+    if (isPaused) return;
     triggerHapticFeedback(25);
     socketService.emitGoldMinerInput({ dropHook: true });
   };
 
   const handleUseDynamite = () => {
-    if (dynamiteCount <= 0 || hookState !== 'retract') return;
+    if (isPaused || dynamiteCount <= 0 || hookState !== 'retract') return;
     triggerHapticFeedback([40, 20, 60]);
     socketService.emitGoldMinerInput({ useDynamite: true });
   };
@@ -249,16 +258,24 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
                 <GiGoldBar className="h-10 w-10 opacity-85 landscape:h-8 landscape:w-8" />
               </div>
               <span className="font-goldminer text-2xl tracking-wide drop-shadow-sm sm:text-3xl landscape:text-2xl">
-                {hookState === 'swing'
-                  ? 'HAKEN WERFEN!'
-                  : hookState === 'extend'
-                    ? 'GREIFER UNTERWEGS...'
-                    : 'ZIEHT EIN...'}
+                {isPaused
+                  ? 'PAUSIERT'
+                  : hookState === 'swing'
+                    ? 'HAKEN WERFEN!'
+                    : hookState === 'extend'
+                      ? 'GREIFER UNTERWEGS...'
+                      : carryingSpec
+                        ? `${carryingSpec.label.toUpperCase()}!`
+                        : 'ZIEHT EIN...'}
               </span>
               <span className="text-xs font-bold opacity-80">
-                {hookState === 'swing'
-                  ? 'Tippe im richtigen Winkel auf den Bildschirm!'
-                  : 'Warte bis der Haken zurückkehrt'}
+                {isPaused
+                  ? 'Der Host hat das Spiel pausiert'
+                  : hookState === 'swing'
+                    ? 'Tippe im richtigen Winkel auf den Bildschirm!'
+                    : carryingSpec && carryingSpec.weight >= 2.5 && dynamiteCount > 0
+                      ? 'Schweres Teil! Mit Dynamit sprengen?'
+                      : 'Warte bis der Haken zurückkehrt'}
               </span>
             </motion.button>
 
