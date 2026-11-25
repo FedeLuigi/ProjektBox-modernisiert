@@ -28,6 +28,7 @@ import {
 } from '@projektbox/shared/utils';
 import { socketService } from '../../../services/socket';
 import { goldMinerAudio } from './goldMinerAudio';
+import backdropUrl from '../../../assets/textures/goldminer/mine_backdrop.jpg';
 import {
   MINE_LOGICAL_H,
   MINE_LOGICAL_W,
@@ -37,8 +38,9 @@ import {
 } from './goldMinerLevelGen';
 import { evaluateGoldMinerBotAction } from './goldMinerBotAi';
 import {
+  GoldMinerNameplatePool,
   GoldMinerPopupPool,
-  buildMineBackdrop,
+  buildMineDeck,
   createMineObjectGraphic,
   drawMinersAndHooks,
   loadGoldMinerTextures,
@@ -278,10 +280,10 @@ export function GoldMinerArena({
     let objectLayer: Container | null = null;
     const objectViews = new Map<string, Container>();
     let loadedTextures: LoadedMineTextures = {
-      backdrop: null,
       gold: null,
       rock: null,
       diamond: null,
+      wood: null,
     };
 
     const rebuildObjectViews = () => {
@@ -436,7 +438,7 @@ export function GoldMinerArena({
           await instance.init({
             width: MINE_LOGICAL_W,
             height: MINE_LOGICAL_H,
-            backgroundColor: 0x2a1406,
+            backgroundAlpha: 0,
             antialias: true,
             resolution: Math.min(window.devicePixelRatio || 1, 2),
             autoDensity: true,
@@ -464,18 +466,21 @@ export function GoldMinerArena({
       objectLayer = new Container();
       const hooksGraphics = new Graphics();
       const fxGraphics = new Graphics();
+      const nameplateLayer = new Container();
       const popupLayer = new Container();
 
-      buildMineBackdrop(backdropLayer, loadedTextures.backdrop);
+      buildMineDeck(backdropLayer, loadedTextures.wood);
       worldLayer.addChild(
         backdropLayer,
         objectLayer,
         hooksGraphics,
         fxGraphics,
+        nameplateLayer,
         popupLayer
       );
       app.stage.addChild(worldLayer);
 
+      const nameplatePool = new GoldMinerNameplatePool(nameplateLayer, 8);
       const popupPool = new GoldMinerPopupPool(popupLayer, 16);
       rebuildObjectViews();
       syncHud(true);
@@ -700,7 +705,8 @@ export function GoldMinerArena({
         }
 
         // Draw dynamic layers
-        drawMinersAndHooks(hooksGraphics, sim.miners, sim.objects);
+        drawMinersAndHooks(hooksGraphics, sim.miners, sim.objects, loadedTextures.wood);
+        nameplatePool.sync(sim.miners);
         fxGraphics.clear();
         for (const ex of sim.explosions) {
           const progress = 1 - ex.ttl / ex.maxTtl;
@@ -780,85 +786,16 @@ export function GoldMinerArena({
   const localMiner = localPlayerId ? hud?.players[localPlayerId] : undefined;
 
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden bg-[#1c0f06] select-none">
-      {/* Compact TV / Host Top HUD */}
-      <div className="z-20 flex flex-wrap items-center justify-between gap-3 border-b-2 border-amber-700/60 bg-gradient-to-r from-[#451A03]/95 via-[#78350F]/95 to-[#451A03]/95 px-4 py-2 text-white shadow-lg">
-        <div className="flex items-center gap-4">
-          <div className="flex items-baseline gap-1.5">
-            <span className="text-xs font-bold tracking-wider text-amber-300 uppercase">Level</span>
-            <span className="font-goldminer text-2xl text-amber-200">{hud?.level ?? 1}</span>
-          </div>
+    <div className="relative flex h-full w-full overflow-hidden bg-[#1c0f06] select-none">
+      {/* Full-bleed mining cavern backdrop (zero letterboxing on any aspect ratio) */}
+      <img
+        src={backdropUrl}
+        alt=""
+        aria-hidden="true"
+        className="pointer-events-none absolute inset-0 h-full w-full object-cover"
+      />
 
-          <div className="flex items-center gap-2.5">
-            <span className="font-goldminer text-2xl text-emerald-400 drop-shadow-[0_2px_0_rgba(0,0,0,0.85)]">
-              ${displayedMoney}
-            </span>
-            <span className="text-sm font-bold text-amber-200/80">/ ${targetMoney}</span>
-            <div className="hidden h-2.5 w-28 overflow-hidden rounded-full bg-black/45 sm:block">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
-                style={{ width: `${progressPct}%` }}
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Player Score Chips */}
-        <div className="hidden items-center gap-2 lg:flex">
-          {Object.values(hud?.players ?? {}).map((p) => (
-            <div
-              key={p.playerId}
-              className="flex items-center gap-1.5 rounded-full bg-black/35 px-2.5 py-1 text-xs font-bold"
-            >
-              <span
-                className="h-2.5 w-2.5 rounded-full border border-white/70"
-                style={{ backgroundColor: p.color }}
-              />
-              <span className="max-w-[90px] truncate text-amber-100">{p.name}</span>
-              <span className="text-emerald-300">${p.money}</span>
-              {p.dynamite > 0 && (
-                <span className="flex items-center gap-0.5 text-red-400">
-                  <GiDynamite className="h-3.5 w-3.5" />
-                  {p.dynamite}
-                </span>
-              )}
-            </div>
-          ))}
-        </div>
-
-        {/* Timer + Controls */}
-        <div className="flex items-center gap-2.5">
-          <div
-            className={`font-goldminer rounded-xl px-3 py-1 text-xl shadow-inner ${
-              timeLeftSec <= 10
-                ? 'animate-pulse bg-red-600/85 text-white'
-                : 'bg-black/40 text-amber-200'
-            }`}
-          >
-            {paused ? 'PAUSE' : `${timeLeftSec}s`}
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setPaused((p) => !p)}
-            aria-label={paused ? 'Fortsetzen' : 'Pause'}
-            className="rounded-xl bg-black/35 p-2 text-amber-200 transition hover:bg-black/55"
-          >
-            {paused ? <GiPlayButton className="h-5 w-5" /> : <GiPauseButton className="h-5 w-5" />}
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setMuted((m) => !m)}
-            aria-label={muted ? 'Ton einschalten' : 'Ton ausschalten'}
-            className="rounded-xl bg-black/35 p-2 text-amber-200 transition hover:bg-black/55"
-          >
-            {muted ? <GiSoundOff className="h-5 w-5" /> : <GiSoundOn className="h-5 w-5" />}
-          </button>
-        </div>
-      </div>
-
-      {/* PixiJS Mine Canvas */}
+      {/* Transparent PixiJS Playfield */}
       <div
         ref={hostRef}
         onPointerDown={() => {
@@ -866,8 +803,62 @@ export function GoldMinerArena({
             actionsRef.current?.dropHook(localPlayerId);
           }
         }}
-        className="relative flex-1 min-h-0 w-full cursor-pointer"
+        className="relative z-10 h-full w-full cursor-pointer"
       />
+
+      {/* Floating Top-Left Timber/Gold Progress HUD */}
+      <div className="pointer-events-none absolute top-3 left-3 z-20 flex items-center gap-3 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/92 px-3.5 py-1.5 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[11px] font-bold tracking-wider text-amber-300 uppercase">Lvl</span>
+          <span className="font-goldminer text-xl text-amber-200">{hud?.level ?? 1}</span>
+        </div>
+
+        <div className="h-5 w-px bg-amber-600/40" />
+
+        <div className="flex items-center gap-2">
+          <span className="font-goldminer text-xl text-emerald-400 drop-shadow-[0_2px_0_rgba(0,0,0,0.85)]">
+            ${displayedMoney}
+          </span>
+          <span className="text-xs font-bold text-amber-200/80">/ ${targetMoney}</span>
+          <div className="hidden h-2.5 w-24 overflow-hidden rounded-full bg-black/50 ring-1 ring-amber-500/30 sm:block">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
+              style={{ width: `${progressPct}%` }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* Floating Top-Right Timer & Audio/Pause Controls */}
+      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/92 px-3 py-1.5 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
+        <div
+          className={`font-goldminer rounded-xl px-2.5 py-0.5 text-lg shadow-inner ${
+            timeLeftSec <= 10
+              ? 'animate-pulse bg-red-600/90 text-white'
+              : 'bg-black/40 text-amber-200'
+          }`}
+        >
+          {paused ? 'PAUSE' : `${timeLeftSec}s`}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => setPaused((p) => !p)}
+          aria-label={paused ? 'Fortsetzen' : 'Pause'}
+          className="rounded-xl bg-black/35 p-1.5 text-amber-200 transition hover:bg-black/60"
+        >
+          {paused ? <GiPlayButton className="h-5 w-5" /> : <GiPauseButton className="h-5 w-5" />}
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMuted((m) => !m)}
+          aria-label={muted ? 'Ton einschalten' : 'Ton ausschalten'}
+          className="rounded-xl bg-black/35 p-1.5 text-amber-200 transition hover:bg-black/60"
+        >
+          {muted ? <GiSoundOff className="h-5 w-5" /> : <GiSoundOn className="h-5 w-5" />}
+        </button>
+      </div>
 
       {/* Solo / Host Quick Dynamite Hint */}
       {localPlayerId && hud?.phase === 'playing' && localMiner && (

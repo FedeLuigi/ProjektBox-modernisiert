@@ -7,7 +7,6 @@ import {
   GiCoins,
   GiDiamondHard,
   GiDynamite,
-  GiGoldBar,
   GiMining,
   GiMuscleUp,
   GiSpellBook,
@@ -23,6 +22,7 @@ import {
   type GoldMinerObjectKind,
 } from '@projektbox/shared/utils';
 import { socketService } from '../../../services/socket';
+import backdropUrl from '../../../assets/textures/goldminer/mine_backdrop.jpg';
 
 interface GoldMinerControllerProps {
   myPlayerId: string;
@@ -54,10 +54,13 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
   const isCoop = hud?.mode !== 'versus';
   const displayedMoney = isCoop ? (hud?.teamMoney ?? myMoney) : myMoney;
   const targetMoney = hud?.targetMoney ?? 650;
+  const progressPct = Math.min(100, Math.round((displayedMoney / Math.max(1, targetMoney)) * 100));
   const isPaused = Boolean(hud?.paused);
   const carryingSpec = me?.carryingKind
     ? GOLD_MINER_OBJECT_SPECS[me.carryingKind as GoldMinerObjectKind]
     : undefined;
+  const playerColor = me?.color || myPlayer.color || '#FACC15';
+  const playerName = me?.name || myPlayer.name;
 
   const handleDropHook = () => {
     if (isPaused) return;
@@ -83,94 +86,65 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
     socketService.emitGoldMinerInput({ nextLevelReady: true });
   };
 
+  const canDynamite = !isPaused && dynamiteCount > 0 && hookState === 'retract';
+
   return (
-    <div className="flex h-full w-full flex-col justify-between overflow-hidden bg-gradient-to-b from-[#FF9F0A] via-[#9A7255] to-[#6E492F] pt-[max(0.55rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] text-white select-none">
-      <div className="mx-auto flex h-full w-full max-w-4xl flex-col justify-between gap-2 landscape:gap-2">
-        {/* Top Gold Miner HUD (pl-20 leaves clean room for floating EXIT button) */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-[#C2410C] bg-[#FF9F0A] py-2 pr-3 pl-21 shadow-md landscape:py-1.5">
+    <div
+      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#2b1407] bg-cover bg-center pt-[max(0.5rem,env(safe-area-inset-top))] pr-[max(0.75rem,env(safe-area-inset-right))] pb-[max(0.75rem,env(safe-area-inset-bottom))] pl-[max(0.75rem,env(safe-area-inset-left))] text-white select-none"
+      style={{
+        backgroundImage: `linear-gradient(to bottom, rgba(35,16,6,0.72), rgba(24,11,4,0.88)), url(${backdropUrl})`,
+      }}
+    >
+      <div className="mx-auto flex h-full w-full max-w-4xl flex-col justify-between gap-2.5">
+        {/* Top Cockpit Bar: pl-28 reserves clean collision-free space for floating EXIT button */}
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#5C280B]/95 to-[#3A1705]/95 py-2 pr-3 pl-28 shadow-[0_6px_18px_rgba(0,0,0,0.45)] sm:pl-32 landscape:py-1.5">
           <div className="flex items-center gap-3">
             <div className="flex items-center gap-1.5">
-              <GiCoins className="h-6 w-6 text-yellow-200 drop-shadow landscape:h-5 landscape:w-5" />
-              <span className="font-goldminer text-xl text-[#16A34A] drop-shadow-[0_2px_0_rgba(0,0,0,0.85)] landscape:text-lg">
+              <GiCoins className="h-5 w-5 text-amber-300 drop-shadow" />
+              <span className="font-goldminer text-xl text-emerald-400 drop-shadow-[0_2px_0_rgba(0,0,0,0.9)] landscape:text-lg">
                 ${displayedMoney}
               </span>
             </div>
-            <div className="text-xs font-bold text-[#7C2D12]">
-              Ziel:{' '}
-              <span className="font-goldminer text-sm text-[#FEF08A] drop-shadow-[0_1px_0_rgba(0,0,0,0.9)]">
-                ${targetMoney}
-              </span>
-            </div>
-            <div className="hidden items-center gap-1.5 rounded-lg bg-[#7C2D12]/20 px-2 py-0.5 sm:flex">
-              <span
-                className="h-2.5 w-2.5 rounded-full border border-white/80"
-                style={{ backgroundColor: me?.color || myPlayer.color || '#FACC15' }}
-              />
-              <span className="max-w-[110px] truncate text-xs font-bold text-amber-950">
-                {me?.name || myPlayer.name}
-              </span>
+            <div className="hidden items-center gap-2 sm:flex">
+              <span className="text-xs font-bold text-amber-200/80">/ ${targetMoney}</span>
+              <div className="h-2 w-20 overflow-hidden rounded-full bg-black/50 ring-1 ring-amber-500/30">
+                <div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-400 to-emerald-400 transition-all duration-300"
+                  style={{ width: `${progressPct}%` }}
+                />
+              </div>
             </div>
           </div>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex items-center gap-1 rounded-xl bg-[#7C2D12]/25 px-2.5 py-1">
-              <GiDynamite className="h-5 w-5 text-red-600 landscape:h-4 landscape:w-4" />
-              <span className="font-goldminer text-base text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.8)] landscape:text-sm">
-                {dynamiteCount}
-              </span>
-            </div>
-            <div className="flex items-baseline gap-2 text-right">
-              <span className="font-goldminer text-sm text-white drop-shadow-[0_1px_0_rgba(0,0,0,0.8)]">
-                Lvl {hud?.level ?? 1}
-              </span>
-              <span className="font-goldminer text-base text-[#DC2626] drop-shadow-[0_1px_0_rgba(255,255,255,0.65)]">
-                {hud?.paused ? 'PAUSE' : `${Math.ceil(hud?.timeLeft ?? 60)}s`}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Portrait Player Badge + Active Upgrades */}
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl bg-black/25 px-3 py-1.5 backdrop-blur-sm landscape:hidden">
-          <div className="flex items-center gap-2">
+          {/* Centered Player Nameplate matching TV Miner Badge */}
+          <div className="flex items-center gap-2 rounded-xl border border-amber-500/50 bg-[#271003]/90 px-3 py-1 shadow-inner">
             <span
-              className="h-3.5 w-3.5 rounded-full border border-white/80 shadow"
-              style={{ backgroundColor: me?.color || myPlayer.color || '#FACC15' }}
+              className="h-3 w-3 rounded-full border border-white/80 shadow"
+              style={{ backgroundColor: playerColor }}
             />
-            <span className="text-sm font-bold text-amber-100">{me?.name || myPlayer.name}</span>
-            {!isCoop && (
-              <span className="rounded-md bg-amber-400/20 px-1.5 py-0.5 text-xs font-bold text-amber-200">
-                ${myMoney}
-              </span>
-            )}
+            <span className="font-goldminer max-w-[120px] truncate text-sm tracking-wide text-amber-100">
+              {playerName}
+            </span>
           </div>
-          <div className="flex items-center gap-1.5 text-xs">
-            {me?.hasStrength && (
-              <span className="flex items-center gap-1 rounded-md bg-orange-600/80 px-2 py-0.5 font-bold">
-                <GiMuscleUp /> Kraft
-              </span>
-            )}
-            {me?.hasClover && (
-              <span className="flex items-center gap-1 rounded-md bg-emerald-600/80 px-2 py-0.5 font-bold">
-                <GiClover /> Glück
-              </span>
-            )}
-            {me?.hasRockBook && (
-              <span className="flex items-center gap-1 rounded-md bg-stone-600/80 px-2 py-0.5 font-bold">
-                <GiSpellBook /> Stein
-              </span>
-            )}
-            {me?.hasDiamondPolish && (
-              <span className="flex items-center gap-1 rounded-md bg-cyan-600/80 px-2 py-0.5 font-bold">
-                <GiDiamondHard /> Diamant
-              </span>
-            )}
+
+          {/* Level & Timer */}
+          <div className="flex items-center gap-2.5">
+            <span className="font-goldminer text-sm text-amber-200">Lvl {hud?.level ?? 1}</span>
+            <span
+              className={`font-goldminer rounded-lg px-2 py-0.5 text-sm shadow-inner ${
+                (hud?.timeLeft ?? 60) <= 10 && !isPaused
+                  ? 'animate-pulse bg-red-600 text-white'
+                  : 'bg-black/45 text-amber-300'
+              }`}
+            >
+              {isPaused ? 'PAUSE' : `${Math.ceil(hud?.timeLeft ?? 60)}s`}
+            </span>
           </div>
         </div>
 
-        {/* Main Body: Playing Controls OR Between-Level Shop */}
+        {/* Main Body: Shop OR Ergonomic Mining Cockpit */}
         {phase === 'shop' ? (
-          <div className="flex flex-1 min-h-0 flex-col justify-between gap-2 overflow-y-auto rounded-2xl border-2 border-[#B45309] bg-[#451A03]/85 p-3">
+          <div className="flex flex-1 min-h-0 flex-col justify-between gap-2 overflow-y-auto rounded-2xl border-2 border-[#B45309] bg-[#2D1305]/92 p-3 shadow-2xl">
             <div className="flex items-center justify-between">
               <h3 className="font-goldminer text-xl text-amber-300 drop-shadow landscape:text-lg">
                 Zwischen-Shop
@@ -200,10 +174,10 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
                     onClick={() => handleBuyItem(offer.id)}
                     className={`flex items-center justify-between rounded-xl border-2 p-2.5 text-left transition landscape:p-2 ${
                       alreadyOwned
-                        ? 'border-emerald-500/50 bg-emerald-950/60 opacity-75'
+                        ? 'border-emerald-500/60 bg-emerald-950/65 opacity-80'
                         : canAfford
-                          ? 'border-amber-400 bg-amber-900/70 active:scale-95'
-                          : 'border-stone-700 bg-stone-900/60 opacity-55'
+                          ? 'border-amber-400 bg-amber-900/75 shadow-md active:scale-95'
+                          : 'border-stone-700 bg-stone-900/65 opacity-55'
                     }`}
                   >
                     <div className="flex min-w-0 items-center gap-2">
@@ -234,71 +208,137 @@ export function GoldMinerController({ myPlayerId, myPlayer }: GoldMinerControlle
             </button>
           </div>
         ) : (
-          <div className="flex flex-1 min-h-0 flex-col gap-3 landscape:grid landscape:grid-cols-[1.65fr_1fr] landscape:gap-3">
-            {/* Huge Tactile Hook Drop Button */}
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.96 }}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                handleDropHook();
-              }}
-              className={`relative flex flex-1 flex-col items-center justify-center gap-2 rounded-3xl border-b-[6px] p-4 shadow-xl transition ${
-                hookState === 'swing'
-                  ? 'border-[#B45309] bg-gradient-to-b from-[#FACC15] to-[#EAB308] text-[#451A03]'
-                  : 'border-[#57534E] bg-[#78716C]/70 text-amber-100'
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                {hookState === 'swing' ? (
-                  <GiAnchor className="h-12 w-12 animate-bounce landscape:h-10 landscape:w-10" />
-                ) : (
-                  <GiMining className="h-12 w-12 landscape:h-10 landscape:w-10" />
-                )}
-                <GiGoldBar className="h-10 w-10 opacity-85 landscape:h-8 landscape:w-8" />
-              </div>
-              <span className="font-goldminer text-2xl tracking-wide drop-shadow-sm sm:text-3xl landscape:text-2xl">
-                {isPaused
-                  ? 'PAUSIERT'
-                  : hookState === 'swing'
-                    ? 'HAKEN WERFEN!'
-                    : hookState === 'extend'
-                      ? 'GREIFER UNTERWEGS...'
-                      : carryingSpec
-                        ? `${carryingSpec.label.toUpperCase()}!`
-                        : 'ZIEHT EIN...'}
-              </span>
-              <span className="text-xs font-bold opacity-80">
-                {isPaused
-                  ? 'Der Host hat das Spiel pausiert'
-                  : hookState === 'swing'
-                    ? 'Tippe im richtigen Winkel auf den Bildschirm!'
-                    : carryingSpec && carryingSpec.weight >= 2.5 && dynamiteCount > 0
-                      ? 'Schweres Teil! Mit Dynamit sprengen?'
-                      : 'Warte bis der Haken zurückkehrt'}
-              </span>
-            </motion.button>
+          <div className="grid flex-1 min-h-0 grid-cols-1 gap-3 sm:grid-cols-[1.55fr_1fr] landscape:grid-cols-[1.55fr_1fr]">
+            {/* Left Panel: Winch & Hook Console */}
+            <div className="flex flex-col justify-between gap-2.5 rounded-3xl border-2 border-[#B45309]/80 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/95 p-3 shadow-2xl">
+              <div className="flex items-center justify-between gap-2 px-1">
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`h-2.5 w-2.5 rounded-full ${
+                      isPaused
+                        ? 'bg-stone-400'
+                        : hookState === 'swing'
+                          ? 'animate-pulse bg-emerald-400'
+                          : 'bg-amber-400'
+                    }`}
+                  />
+                  <span className="text-xs font-bold tracking-wide text-amber-200 uppercase">
+                    {isPaused
+                      ? 'Pausiert'
+                      : hookState === 'swing'
+                        ? 'Winde bereit'
+                        : hookState === 'extend'
+                          ? 'Seil läuft aus'
+                          : carryingSpec
+                            ? `Zieht: ${carryingSpec.label}`
+                            : 'Seil holt ein'}
+                  </span>
+                </div>
 
-            {/* Dynamite Trigger Button (tall side-by-side button in landscape) */}
-            <motion.button
-              type="button"
-              whileTap={{ scale: 0.95 }}
-              disabled={dynamiteCount <= 0 || hookState !== 'retract'}
-              onPointerDown={(e) => {
-                e.preventDefault();
-                handleUseDynamite();
-              }}
-              className={`flex items-center justify-center gap-3 rounded-2xl border-b-4 py-3.5 shadow-lg transition landscape:flex-col landscape:rounded-3xl landscape:border-b-[6px] landscape:p-4 ${
-                dynamiteCount > 0 && hookState === 'retract'
-                  ? 'border-[#7F1D1D] bg-gradient-to-r from-[#EF4444] to-[#DC2626] text-white landscape:bg-gradient-to-b'
-                  : 'border-stone-800 bg-stone-800/60 text-stone-400 opacity-60'
-              }`}
-            >
-              <GiDynamite className="h-7 w-7 landscape:h-11 landscape:w-11" />
-              <span className="font-goldminer text-center text-lg tracking-wide landscape:text-xl">
-                DYNAMIT ({dynamiteCount})
-              </span>
-            </motion.button>
+                {/* Active Upgrades */}
+                <div className="flex items-center gap-1 text-[11px]">
+                  {me?.hasStrength && (
+                    <span className="flex items-center gap-1 rounded-md bg-orange-600/85 px-1.5 py-0.5 font-bold">
+                      <GiMuscleUp /> Kraft
+                    </span>
+                  )}
+                  {me?.hasClover && (
+                    <span className="flex items-center gap-1 rounded-md bg-emerald-600/85 px-1.5 py-0.5 font-bold">
+                      <GiClover /> Glück
+                    </span>
+                  )}
+                  {me?.hasRockBook && (
+                    <span className="flex items-center gap-1 rounded-md bg-stone-600/85 px-1.5 py-0.5 font-bold">
+                      <GiSpellBook /> Stein
+                    </span>
+                  )}
+                  {me?.hasDiamondPolish && (
+                    <span className="flex items-center gap-1 rounded-md bg-cyan-600/85 px-1.5 py-0.5 font-bold">
+                      <GiDiamondHard /> Diamant
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              {/* Tactile Brass Winch Trigger */}
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.96 }}
+                disabled={isPaused || hookState !== 'swing'}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleDropHook();
+                }}
+                className={`relative flex flex-1 flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-b-[6px] px-4 py-3 shadow-lg transition ${
+                  hookState === 'swing' && !isPaused
+                    ? 'border-[#92400E] bg-gradient-to-b from-[#FDE047] via-[#FACC15] to-[#D97706] text-[#451A03] shadow-[0_0_24px_rgba(250,204,21,0.28)]'
+                    : 'border-[#44403C] bg-gradient-to-b from-[#57534E]/80 to-[#292524]/90 text-amber-100/75'
+                }`}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-current/25 bg-black/10 shadow-inner">
+                  {hookState === 'swing' ? (
+                    <GiAnchor className="h-7 w-7" />
+                  ) : (
+                    <GiMining className="h-7 w-7 animate-pulse" />
+                  )}
+                </div>
+                <span className="font-goldminer text-2xl tracking-wide drop-shadow-sm landscape:text-xl">
+                  {isPaused
+                    ? 'PAUSIERT'
+                    : hookState === 'swing'
+                      ? 'HAKEN WERFEN'
+                      : hookState === 'extend'
+                        ? 'UNTERWEGS...'
+                        : carryingSpec
+                          ? carryingSpec.label.toUpperCase()
+                          : 'ZIEHT EIN...'}
+                </span>
+                <span className="text-xs font-bold opacity-80">
+                  {hookState === 'swing'
+                    ? 'Im richtigen Winkel auslösen'
+                    : carryingSpec && carryingSpec.weight >= 2.5 && dynamiteCount > 0
+                      ? 'Schweres Teil — rechts sprengbar!'
+                      : 'Warten bis der Greifer zurück ist'}
+                </span>
+              </motion.button>
+            </div>
+
+            {/* Right Panel: Dynamite Detonator Deck */}
+            <div className="flex flex-col justify-between gap-2.5 rounded-3xl border-2 border-[#B45309]/80 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/95 p-3 shadow-2xl">
+              <div className="flex items-center justify-between px-1">
+                <span className="text-xs font-bold tracking-wide text-amber-200 uppercase">
+                  Spreng-Deck
+                </span>
+                <span className="rounded-md bg-black/45 px-2 py-0.5 text-xs font-bold text-red-300">
+                  Vorrat: {dynamiteCount}
+                </span>
+              </div>
+
+              <motion.button
+                type="button"
+                whileTap={{ scale: 0.95 }}
+                disabled={!canDynamite}
+                onPointerDown={(e) => {
+                  e.preventDefault();
+                  handleUseDynamite();
+                }}
+                className={`flex flex-1 flex-col items-center justify-center gap-2 rounded-2xl border-2 border-b-[6px] p-3 shadow-lg transition ${
+                  canDynamite
+                    ? 'border-[#7F1D1D] bg-gradient-to-b from-[#F87171] via-[#EF4444] to-[#B91C1C] text-white shadow-[0_0_20px_rgba(239,68,68,0.35)]'
+                    : 'border-stone-800 bg-gradient-to-b from-stone-800/75 to-stone-900/90 text-stone-400 opacity-65'
+                }`}
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-current/25 bg-black/20">
+                  <GiDynamite className="h-7 w-7" />
+                </div>
+                <span className="font-goldminer text-xl tracking-wide">
+                  DYNAMIT ({dynamiteCount})
+                </span>
+                <span className="text-center text-[11px] font-bold opacity-80">
+                  {canDynamite ? 'Last sofort sprengen!' : 'Nur beim Einziehen aktiv'}
+                </span>
+              </motion.button>
+            </div>
           </div>
         )}
       </div>
