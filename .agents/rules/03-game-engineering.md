@@ -13,7 +13,7 @@ Jedes neue Spiel (und analog jede größere Spielerweiterung) durchläuft diese 
   - Core-Loop, Spielziel, Dual-Screen-Rollen (TV-Bühne vs. Smartphone-Controller 2..N), Steuerungsmodell und Scope festlegen.
   - *Exit-Kriterium:* Klares Spielkonzept ohne unklare Kernregeln.
 - **Gate 1 – Asset-, Audio- & Tech-Scouting:**
-  - Echte, lizenzfreie 2D-/3D-Assets (CC0-Sprites, 3D-Modelle, PBR-Texturen, UI-Kits) und passende Open-Source-Bibliotheken auswählen statt improvisierter Primitiv-Platzhalter; Lizenzen und Zielpfade (`apps/*/public/models/<game>/`, `packages/ui/src/assets/...`) festlegen.
+  - Echte, lizenzfreie 2D-/3D-Assets (CC0-Sprites, 3D-Modelle, PBR-Texturen, UI-Kits) und passende Open-Source-Bibliotheken auswählen statt improvisierter Primitiv-Platzhalter; Lizenzen und Zielpfade (`apps/*/public/models/<game>/`, `packages/ui/src/assets/...`) festlegen. Bei generierten Rasterbildern (`image-generator` erzeugt `.jpg`) für freistehende 2D-Objekte nahtlose Material-Texturen + Engine-Maskierung/Kontur bevorzugen, um Hintergrund-Artefakte auszuschließen.
   - Passende Render-/Engine-Architektur wählen (DOM/SVG, Canvas, PixiJS oder Three.js) und `React.lazy`-Code-Splitting vorsehen.
   - *Exit-Kriterium:* Asset-Paket und Tech-Stack stehen fest.
 - **Gate 2 – Spielbarer Vertical Slice (Kern-Loop zuerst):**
@@ -35,4 +35,4 @@ Jedes neue Spiel (und analog jede größere Spielerweiterung) durchläuft diese 
 - **Modul C – 3D / WebGL / Canvas / PixiJS:** Geometrien, Materialien, Texturen, Meshes und Texte poolen (keine Per-Frame-Allokationen); bei Szenenwechsel/Unmount alles vollständig über `dispose()`/`destroy()` freigeben.
 - **Modul D – Runden-, Wort-, Quiz- & Kartenspiele:** Phasenübergänge und Timer serverseitig absichern, Clock-Skew-Retries zulassen und geheime Daten pro Empfänger trennen.
 - **Modul E – Audio, Haptik & Barrierefreiheit:** Globale `isSoundEnabled()`- und `triggerHapticFeedback()`-Einstellungen strikt beachten; SFX/Musik ausgewogen mischen; wichtige Infos nie nur über Farbe vermitteln; TV-Lesbarkeit auf Distanz sicherstellen; keine Mischsprache.
-- **Modul F – Performance-Budgets:** Schwächere Smartphones und TV-Browser berücksichtigen; große Spielmodule per `React.lazy` nachladen; 0 geleakte Listener, Timer oder GPU-Objekte.
+- **Modul F – Performance- & Modularitäts-Budgets:** Schwächere Smartphones und TV-Browser berücksichtigen; große Spielmodule per `React.lazy` nachladen; 0 geleakte Listener, Timer oder GPU-Objekte. Spiellogik sauber in fokussierte Module aufteilen (z. B. Level-Generator, Bot-KI, Renderer, Audio und React-Host trennen; Richtwert max. ~400–500 Zeilen pro Datei statt unwartbarer Monolithen).

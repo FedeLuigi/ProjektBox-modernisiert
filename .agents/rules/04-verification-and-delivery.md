@@ -11,6 +11,7 @@ trigger: always_on
 ## Test- & Match-QA-Gate
 - Neue Server-Regeln, Spielmechaniken und Sicherheitsprüfungen mit Tests für Happy Path, Grenzwerte, falsche Rollen/Phasen, doppelte Events und Disconnect/Reconnect absichern; Tests niemals löschen oder abschwächen.
 - Ein Spiel oder Feature gilt nicht allein durch Kompilieren als fertig: vollständigen Match-Ablauf (Start → Midgame → Systeme/Upgrades → Spielende → Revanche → Reconnect) sowie TV-Fokus, Touch und Safe-Areas prüfen.
+- **Visuelles Browser-Gate:** Bei größeren UI-, Layout- oder Canvas-/WebGL-Änderungen nach Möglichkeit gegen den lokalen Dev-Server per `browser`-Subagent (TV- und Smartphone-Ansicht) prüfen; wird kein Browser-Check ausgeführt, das ausdrücklich im Abschlussbericht benennen.
 - Bei Shared-Änderungen immer alle Konsumenten bauen und prüfen.
 
 ## Ehrliche Berichterstattung & Git-Hygiene
