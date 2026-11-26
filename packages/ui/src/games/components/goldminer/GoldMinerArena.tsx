@@ -286,6 +286,7 @@ export function GoldMinerArena({
       wood: null,
       minerWinch: null,
       hookClaw: null,
+      moleDiamond: null,
     };
 
     const rebuildObjectViews = () => {
@@ -838,23 +839,23 @@ export function GoldMinerArena({
         </div>
       </div>
 
-      {/* Floating Top-Right Timer & Audio/Pause Controls */}
-      <div className="absolute top-3 right-3 z-20 flex items-center gap-2 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/90 to-[#271003]/92 px-3 py-1.5 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
+      {/* Floating Top-Right Timer & Audio/Pause Controls (single bar, identical item height) */}
+      <div className="absolute top-3 right-3 z-20 flex h-11 items-center gap-1 rounded-2xl border-2 border-[#B45309]/85 bg-gradient-to-b from-[#451A03]/92 to-[#271003]/94 px-3 text-white shadow-[0_6px_16px_rgba(0,0,0,0.45)]">
         <div
-          className={`font-goldminer rounded-xl px-2.5 py-0.5 text-lg shadow-inner ${
-            timeLeftSec <= 10
-              ? 'animate-pulse bg-red-600/90 text-white'
-              : 'bg-black/40 text-amber-200'
+          className={`font-goldminer flex h-9 items-center justify-center px-2 text-lg leading-none tabular-nums ${
+            timeLeftSec <= 10 ? 'animate-pulse text-red-400' : 'text-amber-200'
           }`}
         >
-          {paused ? 'PAUSE' : `${timeLeftSec}s`}
+          <span className="translate-y-[1px]">{paused ? 'PAUSE' : `${timeLeftSec}s`}</span>
         </div>
+
+        <div className="h-5 w-px bg-amber-600/40" />
 
         <button
           type="button"
           onClick={() => setPaused((p) => !p)}
           aria-label={paused ? 'Fortsetzen' : 'Pause'}
-          className="rounded-xl bg-black/35 p-1.5 text-amber-200 transition hover:bg-black/60"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-amber-200 transition hover:bg-amber-900/50"
         >
           {paused ? <GiPlayButton className="h-5 w-5" /> : <GiPauseButton className="h-5 w-5" />}
         </button>
@@ -863,7 +864,7 @@ export function GoldMinerArena({
           type="button"
           onClick={() => setMuted((m) => !m)}
           aria-label={muted ? 'Ton einschalten' : 'Ton ausschalten'}
-          className="rounded-xl bg-black/35 p-1.5 text-amber-200 transition hover:bg-black/60"
+          className="flex h-9 w-9 items-center justify-center rounded-xl text-amber-200 transition hover:bg-amber-900/50"
         >
           {muted ? <GiSoundOff className="h-5 w-5" /> : <GiSoundOn className="h-5 w-5" />}
         </button>
@@ -918,7 +919,8 @@ export function GoldMinerArena({
               )}
             </div>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {/* Open shelf grid (zero Box-in-Box borders around items) */}
+            <div className="grid grid-cols-1 gap-x-8 gap-y-3 sm:grid-cols-2 lg:grid-cols-3">
               {hud.shopOffers.map((offer) => {
                 const spec = GOLD_MINER_SHOP_ITEMS.find((i) => i.id === offer.id);
                 if (!spec) return null;
@@ -941,24 +943,28 @@ export function GoldMinerArena({
                     onClick={() => {
                       if (localPlayerId) actionsRef.current?.buyItem(localPlayerId, offer.id);
                     }}
-                    className={`flex flex-col justify-between gap-2 rounded-2xl border-2 p-3 text-left transition ${
+                    className={`flex items-center justify-between gap-3 rounded-xl border-b border-amber-700/40 px-2 py-2.5 text-left transition ${
                       owned
-                        ? 'border-emerald-500/60 bg-emerald-950/60 opacity-80'
+                        ? 'text-emerald-300 opacity-85'
                         : canBuy
-                          ? 'border-amber-400 bg-amber-900/60 hover:bg-amber-800/70 active:scale-95'
-                          : 'border-stone-700 bg-stone-900/55 opacity-60'
+                          ? 'hover:bg-amber-900/40 active:scale-95'
+                          : 'opacity-45'
                     }`}
                   >
-                    <div className="flex items-start gap-2.5">
-                      <Icon className="mt-0.5 h-7 w-7 shrink-0 text-amber-300" />
-                      <div>
-                        <div className="text-sm font-bold text-white">{spec.name}</div>
-                        <div className="text-xs text-amber-200/75">{spec.description}</div>
+                    <div className="flex min-w-0 items-center gap-3">
+                      <Icon className="h-7 w-7 shrink-0 text-amber-300" />
+                      <div className="min-w-0">
+                        <div className="truncate text-sm font-bold leading-tight text-amber-50">
+                          {spec.name}
+                        </div>
+                        <div className="line-clamp-2 text-xs leading-tight text-amber-200/75">
+                          {spec.description}
+                        </div>
                       </div>
                     </div>
-                    <div className="font-goldminer text-right text-lg text-yellow-300">
-                      {owned ? 'Aktiv' : `$${offer.price}`}
-                    </div>
+                    <span className="font-goldminer shrink-0 text-lg leading-none text-yellow-300">
+                      {owned ? 'AKTIV' : `$${offer.price}`}
+                    </span>
                   </button>
                 );
               })}

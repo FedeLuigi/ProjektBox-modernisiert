@@ -5,6 +5,7 @@ import diamondTextureUrl from '../../../assets/textures/goldminer/diamond_textur
 import woodTextureUrl from '../../../assets/textures/goldminer/wood_texture.jpg';
 import minerWinchUrl from '../../../assets/textures/goldminer/sprites/miner_winch.png';
 import hookClawUrl from '../../../assets/textures/goldminer/sprites/hook_claw.png';
+import moleDiamondUrl from '../../../assets/textures/goldminer/sprites/mole_diamond.png';
 import {
   MINE_LOGICAL_W,
   MINE_SURFACE_Y,
@@ -61,6 +62,7 @@ export interface LoadedMineTextures {
   wood: Texture | null;
   minerWinch: Texture | null;
   hookClaw: Texture | null;
+  moleDiamond: Texture | null;
 }
 
 export async function loadGoldMinerTextures(): Promise<LoadedMineTextures> {
@@ -71,15 +73,16 @@ export async function loadGoldMinerTextures(): Promise<LoadedMineTextures> {
       return null;
     }
   };
-  const [gold, rock, diamond, wood, minerWinch, hookClaw] = await Promise.all([
+  const [gold, rock, diamond, wood, minerWinch, hookClaw, moleDiamond] = await Promise.all([
     safeLoad(goldTextureUrl),
     safeLoad(rockTextureUrl),
     safeLoad(diamondTextureUrl),
     safeLoad(woodTextureUrl),
     safeLoad(minerWinchUrl),
     safeLoad(hookClawUrl),
+    safeLoad(moleDiamondUrl),
   ]);
-  return { gold, rock, diamond, wood, minerWinch, hookClaw };
+  return { gold, rock, diamond, wood, minerWinch, hookClaw, moleDiamond };
 }
 
 function parseHexColor(hex: string, fallback = 0xfacc15): number {
@@ -281,6 +284,14 @@ export function createMineObjectGraphic(
     container.addChild(label);
     return container;
   } else if (obj.kind === 'mole_diamond') {
+    if (textures.moleDiamond) {
+      const sprite = new Sprite(textures.moleDiamond);
+      sprite.anchor.set(0.5);
+      const scale = (r * 2.55) / textures.moleDiamond.height;
+      sprite.scale.set(obj.vx >= 0 ? scale : -scale, scale);
+      container.addChild(sprite);
+      return container;
+    }
     g.ellipse(0, 4, r * 0.98, r * 0.76).fill({ color: 0x44403c });
     g.ellipse(-2, 1, r * 0.82, r * 0.56).fill({ color: 0x78716c });
     g.ellipse(0, 4, r * 0.98, r * 0.76).stroke({ width: 2.8, color: 0x1c1917 });
