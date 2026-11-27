@@ -33,9 +33,22 @@ export function RouletteBoard({
 
   const [selectedChip, setSelectedChip] = useState<number | 'all'>(25);
   const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
+  const [isCompactViewport, setIsCompactViewport] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    return window.matchMedia('(max-width: 1023px), (max-height: 540px)').matches;
+  });
   const [timeLeft, setTimeLeft] = useState(() =>
     phaseEndsAt ? Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000)) : 0
   );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mq = window.matchMedia('(max-width: 1023px), (max-height: 540px)');
+    const onChange = () => setIsCompactViewport(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
+  }, []);
 
   const sentPhaseTriggerRef = useRef<{ phaseKey: string; sentAt: number } | null>(null);
   const lastOutcomeRoundRef = useRef<number | null>(null);
@@ -124,8 +137,9 @@ export function RouletteBoard({
     return null;
   }
 
-  // TV Screen OR Solo/Host (single player or host on desktop) uses the full luxury TV Stage
-  if (isTvScreen || myPlayer?.isHost || allPlayers.length <= 1) {
+  // Large TV Screen OR Desktop Host/Solo uses the full 2-column Casino Stage;
+  // Compact / Smartphone viewports (even as Host or Solo) always use the responsive Controller.
+  if (isTvScreen || (!isCompactViewport && (myPlayer?.isHost || allPlayers.length <= 1))) {
     return (
       <RouletteTvStage
         gameState={gameState}

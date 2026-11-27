@@ -71,7 +71,7 @@ export function RouletteTvStage({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#1b0704] bg-cover bg-center px-4 pt-14 pb-4 text-amber-50 select-none sm:px-6 lg:px-8 lg:pt-6"
+      className="relative flex h-full w-full flex-col justify-between overflow-y-auto lg:overflow-hidden bg-[#1b0704] bg-cover bg-center px-4 pt-14 pb-4 text-amber-50 select-none sm:px-6 lg:px-8 lg:pt-6"
       style={{
         backgroundImage: `radial-gradient(circle at 50% 45%, rgba(80,22,12,0.28), rgba(14,4,2,0.72)), url(${mahoganyBackdropUrl})`,
       }}
