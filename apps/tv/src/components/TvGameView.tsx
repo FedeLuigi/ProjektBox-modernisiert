@@ -453,12 +453,14 @@ export function TvGameView({
         ) : (
           <main
             className={`flex flex-1 min-h-0 flex-col items-center w-full ${
-              isFullScreenGame ? 'overflow-hidden p-0' : 'overflow-y-auto py-3'
+              isFullScreenGame || isRoulette || isStadtLandFluss
+                ? 'overflow-hidden p-0'
+                : 'overflow-y-auto py-3'
             }`}
           >
             <div
               className={
-                isFullScreenGame
+                isFullScreenGame || isRoulette || isStadtLandFluss
                   ? 'flex h-full w-full flex-1 min-h-0 flex-col'
                   : 'my-auto flex w-full flex-col items-center'
               }
