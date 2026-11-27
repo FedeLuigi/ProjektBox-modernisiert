@@ -127,7 +127,7 @@ export function TvGameView({
 
       <div
         className={
-          isFullScreenGame || isRoulette || isStadtLandFluss
+          isFullScreenGame || isRoulette || isStadtLandFluss || isDrawAndGuess
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
             : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-4 lg:px-8 py-3'
         }
@@ -200,7 +200,7 @@ export function TvGameView({
               className={`fixed top-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] left-[max(0.75rem,calc(env(safe-area-inset-left,0px)+0.5rem))] z-40 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs tracking-wider uppercase shadow-lg backdrop-blur-md transition-colors cursor-pointer ${
                 isRoulette
                   ? 'border-[#D4AF37]/75 bg-[#240A05]/90 font-serif font-bold text-amber-100 hover:border-[#FDE047] hover:text-[#FEF08A]'
-                  : isStadtLandFluss
+                  : isStadtLandFluss || isDrawAndGuess
                     ? 'border-[#1E3A8A]/35 bg-[#FAF6EE]/92 font-serif font-bold text-[#1E293B] hover:border-[#1E3A8A]'
                     : 'border-white/20 bg-[#0F172A]/80 font-arcade text-white hover:border-[#FBBF24] hover:text-[#FDE68A]'
               }`}
@@ -453,14 +453,14 @@ export function TvGameView({
         ) : (
           <main
             className={`flex flex-1 min-h-0 flex-col items-center w-full ${
-              isFullScreenGame || isRoulette || isStadtLandFluss
+              isFullScreenGame || isRoulette || isStadtLandFluss || isDrawAndGuess
                 ? 'overflow-hidden p-0'
                 : 'overflow-y-auto py-3'
             }`}
           >
             <div
               className={
-                isFullScreenGame || isRoulette || isStadtLandFluss
+                isFullScreenGame || isRoulette || isStadtLandFluss || isDrawAndGuess
                   ? 'flex h-full w-full flex-1 min-h-0 flex-col'
                   : 'my-auto flex w-full flex-col items-center'
               }
