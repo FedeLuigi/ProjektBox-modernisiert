@@ -10,7 +10,7 @@ Jedes neue Spiel (und analog jede größere Spielerweiterung) durchläuft diese 
 
 - **Gate 0 – Greenlight & Benchmark-Recherche:**
   - 2–3 erfolgreiche Genre-Referenzen sowie öffentliche Game-Design-Analysen, Mechanik-, Physik- und UX-Anleitungen recherchieren und auswerten.
-  - Core-Loop, Spielziel, Dual-Screen-Rollen (TV-Bühne vs. Smartphone-Controller 2..N), Steuerungsmodell und Scope festlegen.
+  - Core-Loop, Spielziel, Dual-Screen-Rollen (TV-Bühne vs. Smartphone-Controller 2..N), Steuerungsmodell (**inkl. Prüfung, ob Drag & Drop neben Tap/Klick das Spielgefühl verbessert — z. B. Chips setzen/verschieben/entfernen, Karten legen, Teile platzieren**) und Scope festlegen.
   - *Exit-Kriterium:* Klares Spielkonzept ohne unklare Kernregeln.
 - **Gate 1 – Asset-, Audio- & Tech-Scouting:**
   - Echte, lizenzfreie 2D-/3D-Assets (CC0-Sprites, 3D-Modelle, PBR-Texturen, UI-Kits) und passende Open-Source-Bibliotheken auswählen statt improvisierter Primitiv-Platzhalter; Lizenzen und Zielpfade (`apps/*/public/models/<game>/`, `packages/ui/src/assets/...`) festlegen. Bei generierten Rasterbildern (`image-generator` erzeugt `.jpg`) für freistehende 2D-Objekte nahtlose Material-Texturen + Engine-Maskierung/Kontur bevorzugen, um Hintergrund-Artefakte auszuschließen.
