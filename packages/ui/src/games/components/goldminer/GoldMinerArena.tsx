@@ -520,8 +520,10 @@ export function GoldMinerArena({
             goldMinerAudio.playTick(secLeft <= 3);
           }
 
-          // Move diamond moles
-          for (const obj of sim.objects) {
+          // Move diamond moles with lively walk-cycle bounce, tilt, squash-and-stretch & dust
+          const walkClock = performance.now() * 0.011;
+          for (let idx = 0; idx < sim.objects.length; idx++) {
+            const obj = sim.objects[idx];
             if (!obj.alive || obj.vx === 0) continue;
             const isCarried = sim.miners.some((m) => m.carryingId === obj.id);
             if (isCarried) continue;
@@ -532,8 +534,16 @@ export function GoldMinerArena({
             }
             const view = objectViews.get(obj.id);
             if (view) {
+              const phase = walkClock + idx * 1.3;
+              const dir = obj.vx >= 0 ? 1 : -1;
               view.x = obj.x;
-              view.scale.x = obj.vx >= 0 ? 1 : -1;
+              view.y = obj.y - Math.abs(Math.sin(phase)) * 5.5;
+              view.rotation = Math.sin(phase) * 0.1;
+              const stretch = Math.sin(phase * 2) * 0.055;
+              view.scale.set(dir * (1 - stretch), 1 + stretch);
+              if (Math.random() < dt * 7) {
+                addSparks(obj.x - dir * 10, obj.y + 14, 0x9a7255, 1);
+              }
             }
           }
 

@@ -417,15 +417,6 @@ export class GoldMinerRigPool {
         }
       }
 
-      // Strength aura glow around miner cart
-      if (m.hasStrength) {
-        rig.cableG.circle(m.anchorX, MINE_SURFACE_Y - 36, 36).stroke({
-          width: 3,
-          color: 0xfb923c,
-          alpha: 0.65,
-        });
-      }
-
       // Braided steel rope (dark outline + inner tension core)
       const carried = m.carryingId ? objects.find((o) => o.id === m.carryingId) : null;
       const ropeCore = carried && carried.weight >= 2.5 ? 0xf97316 : 0xe7e5e4;
@@ -492,7 +483,7 @@ export class GoldMinerNameplatePool {
       plate.root.visible = true;
       plate.root.x = m.anchorX;
       plate.root.y = MINE_SURFACE_Y - 102;
-      plate.label.text = `${m.name}  $${m.money}`;
+      plate.label.text = `${m.hasStrength ? '⚡ ' : ''}${m.name}  $${m.money}`;
 
       const w = Math.max(92, plate.label.width + 24);
       const h = 24;
