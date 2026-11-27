@@ -1,3 +1,4 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { RotateCcw, Trash2 } from 'lucide-react';
 import type { Player, RouletteMove, RouletteState } from '@projektbox/shared/types';
 import mahoganyBackdropUrl from '../../../assets/textures/roulette/mahogany_backdrop.jpg';
@@ -13,6 +14,8 @@ interface RouletteControllerProps {
   timeLeft: number;
   selectedChip: number | 'all';
   onSelectChip: (val: number | 'all') => void;
+  onTrayChipPointerDown: (val: number | 'all', e: ReactPointerEvent) => void;
+  onPlacedChipPointerDown: (betKey: string, amount: number, e: ReactPointerEvent) => void;
   highlightedBetKey: string | null;
   onPlaceBet: (betKey: string) => void;
   onRemoveBet: (betKey: string) => void;
@@ -28,6 +31,8 @@ export function RouletteController({
   timeLeft,
   selectedChip,
   onSelectChip,
+  onTrayChipPointerDown,
+  onPlacedChipPointerDown,
   highlightedBetKey,
   onPlaceBet,
   onRemoveBet,
@@ -47,10 +52,10 @@ export function RouletteController({
       }}
     >
       <div className="mx-auto flex h-full w-full max-w-5xl flex-col justify-between gap-1.5 landscape:gap-2">
-        {/* Clean single-line Mahogany HUD (pl-24 reserves MENÜ zone, uniform height) */}
-        <header className="flex h-10 shrink-0 items-center justify-between gap-2 rounded-2xl border border-[#D4AF37]/50 bg-[#190805]/90 pr-3.5 pl-24 shadow-lg sm:pl-28">
+        {/* Open Design Header Strip (no box border, fine golden hairline divider) */}
+        <header className="flex h-10 shrink-0 items-center justify-between gap-2 border-b border-[#D4AF37]/30 pr-2 pl-24 sm:pl-28">
           <div className="flex h-8 items-center gap-2.5 leading-none">
-            <span className="font-serif text-base font-black leading-none tabular-nums text-amber-300 sm:text-lg">
+            <span className="font-serif text-base font-black leading-none tabular-nums text-amber-300 drop-shadow sm:text-lg">
               {Math.round(myBalance).toLocaleString('de-DE')} €
             </span>
             <span className="text-xs font-bold leading-none tabular-nums text-amber-100/75">
@@ -72,9 +77,8 @@ export function RouletteController({
           </div>
         </header>
 
-        {/* Main Body: Single-screen-fit Table on LEFT/CENTER, Right-Handed Controls on RIGHT in Landscape */}
-        <div className="flex flex-1 min-h-0 flex-col justify-between gap-1.5 landscape:grid landscape:grid-cols-[1fr_205px] landscape:items-center landscape:gap-2.5">
-          {/* Portrait Table (no items-center on scroll container, fits single screen cleanly) */}
+        {/* Main Body: Single-screen-fit Table + Open Right-Handed Control Cluster */}
+        <div className="flex flex-1 min-h-0 flex-col justify-between gap-1.5 landscape:grid landscape:grid-cols-[1fr_196px] landscape:items-center landscape:gap-3">
           <div className="flex min-h-0 flex-1 items-start justify-center overflow-y-auto landscape:hidden">
             <RouletteTable
               bets={gameState.bets}
@@ -92,11 +96,11 @@ export function RouletteController({
                 onPlaceBet(betKey);
               }}
               onRemoveBet={onRemoveBet}
+              onPlacedChipPointerDown={onPlacedChipPointerDown}
               compact
             />
           </div>
 
-          {/* Landscape Horizontal Table */}
           <div className="hidden min-h-0 items-center justify-center landscape:flex">
             <RouletteTable
               bets={gameState.bets}
@@ -114,13 +118,13 @@ export function RouletteController({
                 onPlaceBet(betKey);
               }}
               onRemoveBet={onRemoveBet}
+              onPlacedChipPointerDown={onPlacedChipPointerDown}
               compact
             />
           </div>
 
-          {/* Right-Handed Control Deck (5 chips in ONE row/tight cluster, zero dead space) */}
-          <div className="flex shrink-0 items-center justify-between gap-2 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/90 px-2.5 py-2 shadow-xl landscape:h-full landscape:flex-col landscape:justify-evenly">
-            {/* All 5 Chips cleanly in one row on portrait, or 3+2 compact on landscape */}
+          {/* Open Design Right-Handed Controls (floating directly on velvet backdrop, zero outer box) */}
+          <div className="flex shrink-0 items-center justify-between gap-2 px-1 py-1 landscape:h-full landscape:flex-col landscape:justify-evenly">
             <div className="flex flex-nowrap items-center justify-center gap-1.5 landscape:flex-wrap">
               {CHIP_DENOMINATIONS.map((chip) => {
                 const isSelected = selectedChip === chip.value;
@@ -129,16 +133,17 @@ export function RouletteController({
                     key={String(chip.value)}
                     type="button"
                     disabled={!isBettingOpen}
+                    onPointerDown={(e) => onTrayChipPointerDown(chip.value, e)}
                     onClick={() => onSelectChip(chip.value)}
                     style={{
                       backgroundColor: chip.bg,
                       borderColor: chip.rim,
                       color: chip.text,
                     }}
-                    className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-[2.5px] border-dashed text-[10px] font-black leading-none shadow transition sm:h-10 sm:w-10 ${
+                    className={`flex h-9 w-9 shrink-0 cursor-grab touch-none items-center justify-center rounded-full border-[2.5px] border-dashed text-[10px] font-black leading-none shadow-lg transition active:cursor-grabbing sm:h-10 sm:w-10 ${
                       isSelected
                         ? 'scale-110 ring-2 ring-[#FDE047] shadow-[0_0_12px_rgba(253,224,71,0.75)]'
-                        : 'opacity-80'
+                        : 'opacity-85 hover:opacity-100'
                     }`}
                   >
                     {chip.label}
@@ -147,14 +152,13 @@ export function RouletteController({
               })}
             </div>
 
-            {/* Undo / Clear / 2x */}
             <div className="flex items-center gap-1.5">
               <button
                 type="button"
                 disabled={!isBettingOpen || myTotalBet === 0}
                 onClick={() => onMove({ type: 'undo_bet' })}
                 aria-label="Rückgängig"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109] text-amber-200 disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109]/80 text-amber-200 shadow disabled:opacity-40"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
               </button>
@@ -163,7 +167,7 @@ export function RouletteController({
                 disabled={!isBettingOpen || myTotalBet === 0}
                 onClick={() => onMove({ type: 'clear_bets' })}
                 aria-label="Einsätze löschen"
-                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109] text-amber-200 disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109]/80 text-amber-200 shadow disabled:opacity-40"
               >
                 <Trash2 className="h-3.5 w-3.5" />
               </button>
@@ -171,13 +175,12 @@ export function RouletteController({
                 type="button"
                 disabled={!isBettingOpen || myTotalBet === 0}
                 onClick={() => onMove({ type: 'double_bets' })}
-                className="flex h-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109] px-2.5 font-serif text-xs font-black text-amber-200 disabled:opacity-40"
+                className="flex h-9 items-center justify-center rounded-full border border-[#D4AF37]/50 bg-[#2A1109]/80 px-2.5 font-serif text-xs font-black text-amber-200 shadow disabled:opacity-40"
               >
                 2×
               </button>
             </div>
 
-            {/* Primary Golden DREHEN Trigger (cleanly padded text inside circle) */}
             <button
               type="button"
               disabled={phase === 'spinning' || (phase === 'betting' && isLocked)}

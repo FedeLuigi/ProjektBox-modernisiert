@@ -1,3 +1,4 @@
+import type { PointerEvent as ReactPointerEvent } from 'react';
 import { RotateCcw, Trash2, Flame, Snowflake } from 'lucide-react';
 import type { Player, RouletteMove, RouletteState } from '@projektbox/shared/types';
 import { Avatar } from '../../../components/Avatar';
@@ -17,6 +18,8 @@ interface RouletteTvStageProps {
   timeLeft: number;
   selectedChip: number | 'all';
   onSelectChip: (val: number | 'all') => void;
+  onTrayChipPointerDown: (val: number | 'all', e: ReactPointerEvent) => void;
+  onPlacedChipPointerDown: (betKey: string, amount: number, e: ReactPointerEvent) => void;
   highlightedBetKey: string | null;
   onHoverBet: (betKey: string | null) => void;
   onPlaceBet: (betKey: string) => void;
@@ -44,6 +47,8 @@ export function RouletteTvStage({
   timeLeft,
   selectedChip,
   onSelectChip,
+  onTrayChipPointerDown,
+  onPlacedChipPointerDown,
   highlightedBetKey,
   onHoverBet,
   onPlaceBet,
@@ -76,10 +81,10 @@ export function RouletteTvStage({
         backgroundImage: `radial-gradient(circle at 50% 45%, rgba(80,22,12,0.28), rgba(14,4,2,0.72)), url(${mahoganyBackdropUrl})`,
       }}
     >
-      {/* Main 2-Column Casino Layout matching reference */}
-      <div className="mx-auto grid h-full w-full max-w-[1440px] min-h-0 flex-1 grid-cols-1 items-center gap-4 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr]">
-        {/* LEFT COLUMN: Luxury Wheel + Hot/Cold Numbers */}
-        <div className="flex flex-col items-center justify-between gap-3">
+      {/* Main 2-Column Open Design Casino Stage */}
+      <div className="mx-auto grid h-full w-full max-w-[1440px] min-h-0 flex-1 grid-cols-1 items-center gap-5 lg:grid-cols-[360px_1fr] xl:grid-cols-[400px_1fr]">
+        {/* LEFT COLUMN: Luxury Wheel + Open Hot/Cold Numbers */}
+        <div className="flex flex-col items-center justify-between gap-4">
           <RouletteWheel
             phase={phase}
             winningNumber={gameState.winningNumber}
@@ -87,8 +92,8 @@ export function RouletteTvStage({
             sizeClass="w-56 h-56 sm:w-68 sm:h-68 lg:w-[310px] lg:h-[310px] xl:w-[335px] xl:h-[335px]"
           />
 
-          {/* Hot & Cold Numbers Panels */}
-          <div className="w-full max-w-[360px] space-y-2 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/85 p-3 shadow-xl">
+          {/* Open Design Hot & Cold Numbers (hairline divider, no heavy outer box) */}
+          <div className="w-full max-w-[340px] space-y-2 border-t border-[#D4AF37]/30 pt-3">
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-300 uppercase">
                 <Flame className="h-3.5 w-3.5 text-orange-400" />
@@ -108,7 +113,7 @@ export function RouletteTvStage({
               </div>
             </div>
 
-            <div className="h-px bg-amber-500/20" />
+            <div className="h-px bg-amber-500/15" />
 
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-sky-300 uppercase">
@@ -131,20 +136,19 @@ export function RouletteTvStage({
           </div>
         </div>
 
-        {/* RIGHT COLUMN: Player/Stats Header + Recent Results + Main Betting Felt */}
+        {/* RIGHT COLUMN: Open Top Bar + Recent Numbers + Main Betting Felt + Open Controls */}
         <div className="flex h-full min-h-0 flex-col justify-between gap-3">
-          {/* Top Bar: Players + Session Stats Card */}
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_320px]">
-            {/* Left Top: Active Players / Solo Bankroll & Round Timer */}
-            <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/80 px-4 py-2.5 shadow-lg">
+          {/* Open Top Row: Players/Round + Session Stats separated by subtle hairline */}
+          <div className="grid grid-cols-1 gap-4 border-b border-[#D4AF37]/30 pb-3 md:grid-cols-[1fr_auto]">
+            <div className="flex flex-wrap items-center justify-between gap-4">
               {isTvScreen && activeHumanPlayers.length > 1 ? (
-                <div className="flex flex-wrap items-center gap-3">
+                <div className="flex flex-wrap items-center gap-4">
                   {activeHumanPlayers.slice(0, 5).map((p) => {
                     const bal = gameState.balances[p.id] ?? gameState.startingBalance;
                     const isReady = gameState.lockedPlayerIds.includes(p.id);
                     return (
                       <div key={p.id} className="flex items-center gap-2">
-                        <Avatar config={p.avatar} size={28} />
+                        <Avatar config={p.avatar} size={30} />
                         <div className="leading-tight">
                           <div className="text-xs font-bold text-amber-100">
                             {p.name} {isReady ? '✓' : ''}
@@ -171,7 +175,6 @@ export function RouletteTvStage({
                 </div>
               )}
 
-              {/* Round & Phase Countdown */}
               <div className="flex items-center gap-3 leading-none">
                 <span className="text-xs font-bold tracking-wider text-amber-200/80 uppercase">
                   Runde {round}/{maxRounds}
@@ -188,8 +191,8 @@ export function RouletteTvStage({
               </div>
             </div>
 
-            {/* Right Top: Session Stats Panel (German) */}
-            <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/85 px-4 py-2 shadow-lg">
+            {/* Open Session Stats Cluster */}
+            <div className="flex items-center justify-between gap-4 border-l border-[#D4AF37]/25 pl-4">
               <div className="space-y-0.5 text-xs">
                 <div className="font-serif text-[11px] font-bold tracking-widest text-amber-300 uppercase">
                   Sitzungs-Statistik
@@ -219,7 +222,6 @@ export function RouletteTvStage({
                 </div>
               </div>
 
-              {/* Mini Trend Bar Chart */}
               <div className="flex h-12 items-end gap-1 pt-2">
                 {stats.trendBars.map((pct, i) => (
                   <div
@@ -232,8 +234,8 @@ export function RouletteTvStage({
             </div>
           </div>
 
-          {/* Recent Results Ribbon (py-1.5 px-1.5 prevents ring clipping on active number) */}
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#190805]/80 px-3 py-1">
+          {/* Open Recent Numbers Strip (py-1.5 px-1.5 prevents ring clipping) */}
+          <div className="flex items-center justify-between gap-3">
             <span className="shrink-0 font-serif text-[11px] font-bold tracking-widest text-amber-300 uppercase">
               Letzte Zahlen
             </span>
@@ -274,13 +276,13 @@ export function RouletteTvStage({
                 onPlaceBet(betKey);
               }}
               onRemoveBet={onRemoveBet}
+              onPlacedChipPointerDown={onPlacedChipPointerDown}
             />
           </div>
 
-          {/* Bottom Bar: Chips (left) + Bet Controls & Golden SPIN Button (right) */}
-          <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/85 px-4 py-2 shadow-xl">
-            {/* Chip Denominations */}
-            <div className="flex items-center gap-2">
+          {/* Open Bottom Controls: Chips (left) + Bet Amount & Golden DREHEN (right) */}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-[#D4AF37]/30 pt-2.5">
+            <div className="flex items-center gap-2.5">
               {CHIP_DENOMINATIONS.map((chip) => {
                 const isSelected = selectedChip === chip.value;
                 return (
@@ -288,6 +290,7 @@ export function RouletteTvStage({
                     key={String(chip.value)}
                     type="button"
                     disabled={isTvScreen || !isBettingOpen}
+                    onPointerDown={(e) => onTrayChipPointerDown(chip.value, e)}
                     onClick={() => onSelectChip(chip.value)}
                     style={{
                       backgroundColor: chip.bg,
@@ -298,7 +301,7 @@ export function RouletteTvStage({
                       isSelected
                         ? 'scale-110 ring-2 ring-[#FDE047] shadow-[0_0_16px_rgba(253,224,71,0.75)]'
                         : 'opacity-85 hover:opacity-100'
-                    } ${isTvScreen ? 'cursor-default' : ''}`}
+                    } ${isTvScreen ? 'cursor-default' : 'cursor-grab touch-none active:cursor-grabbing'}`}
                   >
                     {chip.label}
                   </button>
@@ -306,7 +309,6 @@ export function RouletteTvStage({
               })}
             </div>
 
-            {/* Right-Handed Action Cluster + Golden SPIN */}
             <div className="flex items-center gap-3">
               <div className="text-right leading-tight">
                 <div className="text-[10px] font-bold tracking-wider text-amber-200/70 uppercase">
@@ -324,7 +326,7 @@ export function RouletteTvStage({
                     disabled={!isBettingOpen || myTotalBet === 0}
                     onClick={() => onMove({ type: 'undo_bet' })}
                     aria-label="Rückgängig"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37]/55 bg-[#2A1109] text-amber-200 transition hover:bg-[#3F190D] disabled:opacity-40"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37]/55 bg-[#2A1109]/85 text-amber-200 transition hover:bg-[#3F190D] disabled:opacity-40"
                   >
                     <RotateCcw className="h-4 w-4" />
                   </button>
@@ -334,22 +336,19 @@ export function RouletteTvStage({
                     disabled={!isBettingOpen || myTotalBet === 0}
                     onClick={() => onMove({ type: 'clear_bets' })}
                     aria-label="Einsätze löschen"
-                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37]/55 bg-[#2A1109] text-amber-200 transition hover:bg-[#3F190D] disabled:opacity-40"
+                    className="flex h-10 w-10 items-center justify-center rounded-full border border-[#D4AF37]/55 bg-[#2A1109]/85 text-amber-200 transition hover:bg-[#3F190D] disabled:opacity-40"
                   >
                     <Trash2 className="h-4 w-4" />
                   </button>
 
                   <button
                     type="button"
-                    disabled={
-                      phase === 'spinning' ||
-                      (phase === 'betting' && isLocked)
-                    }
+                    disabled={phase === 'spinning' || (phase === 'betting' && isLocked)}
                     onClick={() => {
                       if (phase === 'betting') onMove({ type: 'lock_bets' });
                       else if (phase === 'result') onMove({ type: 'next_round' });
                     }}
-                    className="flex h-16 w-16 flex-col items-center justify-center rounded-full border-[3px] border-[#FEF08A] bg-gradient-to-b from-[#F59E0B] via-[#D97706] to-[#78350F] font-serif text-sm font-black tracking-wider text-amber-50 shadow-[0_0_24px_rgba(245,158,11,0.65)] transition hover:scale-105 active:scale-95 disabled:opacity-50"
+                    className="flex h-16 w-16 flex-col items-center justify-center rounded-full border-[3px] border-[#FEF08A] bg-gradient-to-b from-[#F59E0B] via-[#D97706] to-[#78350F] font-serif text-xs font-black tracking-wide text-amber-50 shadow-[0_0_24px_rgba(245,158,11,0.65)] transition hover:scale-105 active:scale-95 disabled:opacity-50"
                   >
                     <span className="leading-none">
                       {phase === 'result' ? 'WEITER' : isLocked ? 'BEREIT' : 'DREHEN'}

@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, type PointerEvent as ReactPointerEvent } from 'react';
 import type { Player, RouletteState } from '@projektbox/shared/types';
 import {
   buildPlayerChipMarkers,
@@ -66,6 +66,7 @@ interface RouletteTableProps {
   highlightedBetKey: string | null;
   onPlaceOrInspect: (betKey: string) => void;
   onRemoveBet?: (betKey: string) => void;
+  onPlacedChipPointerDown?: (betKey: string, amount: number, e: ReactPointerEvent) => void;
   onHoverBet?: (betKey: string | null) => void;
   compact?: boolean;
 }
@@ -74,10 +75,12 @@ function ChipStack({
   items,
   showPlayerColors,
   onClick,
+  onPointerDown,
 }: {
   items: PlacedChipItem[];
   showPlayerColors: boolean;
   onClick?: () => void;
+  onPointerDown?: (e: ReactPointerEvent) => void;
 }) {
   if (items.length === 0) return null;
   const top = items[0];
@@ -86,12 +89,17 @@ function ChipStack({
 
   return (
     <div
+      onPointerDown={(e) => {
+        if (!onPointerDown) return;
+        e.stopPropagation();
+        onPointerDown(e);
+      }}
       onClick={(e) => {
-        if (!onClick) return;
+        if (!onClick || onPointerDown) return;
         e.stopPropagation();
         onClick();
       }}
-      className="pointer-events-auto relative z-30 flex items-center justify-center"
+      className="pointer-events-auto relative z-30 flex cursor-grab items-center justify-center touch-none active:cursor-grabbing"
     >
       {items.length > 1 && (
         <div
@@ -125,6 +133,7 @@ export function RouletteTable({
   highlightedBetKey,
   onPlaceOrInspect,
   onRemoveBet,
+  onPlacedChipPointerDown,
   onHoverBet,
   compact = false,
 }: RouletteTableProps) {
@@ -155,14 +164,19 @@ export function RouletteTable({
   const renderMarkers = (betKey: string) => {
     const items = chipsByBet.get(betKey) ?? [];
     if (items.length === 0) return null;
-    const hasMyBet = items.some((item) => item.marker.isMe);
+    const myItem = items.find((item) => item.marker.isMe);
     return (
       <div className="pointer-events-none absolute inset-0 z-20 flex items-center justify-center">
         <ChipStack
           items={items}
           showPlayerColors={showPlayerColors}
           onClick={
-            isBettingOpen && hasMyBet && onRemoveBet ? () => onRemoveBet(betKey) : undefined
+            isBettingOpen && myItem && onRemoveBet ? () => onRemoveBet(betKey) : undefined
+          }
+          onPointerDown={
+            isBettingOpen && myItem && onPlacedChipPointerDown
+              ? (e) => onPlacedChipPointerDown(betKey, myItem.amount, e)
+              : undefined
           }
         />
       </div>

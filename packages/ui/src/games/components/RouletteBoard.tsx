@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
+import { createPortal } from 'react-dom';
 import confetti from 'canvas-confetti';
 import type {
   RouletteColor,
@@ -15,8 +16,33 @@ import {
 } from '../../utils/soundEffects';
 import { RouletteTvStage } from './roulette/RouletteTvStage';
 import { RouletteController } from './roulette/RouletteController';
+import { CHIP_DENOMINATIONS, formatChipAmount, getChipStyle } from './roulette/RouletteTable';
+import { rouletteAudio } from './roulette/rouletteAudio';
 
 export type { RouletteColor, RouletteSpinOutcome, RouletteState };
+
+interface DragChipState {
+  mode: 'tray' | 'placed';
+  fromBetKey?: string;
+  value?: number | 'all';
+  amount: number;
+  label: string;
+  bg: string;
+  rim: string;
+  text: string;
+}
+
+function findBetKeyAtPoint(clientX: number, clientY: number): string | null {
+  if (typeof document === 'undefined') return null;
+  const el = document.elementFromPoint(clientX, clientY);
+  return el?.closest<HTMLElement>('[data-bet-key]')?.dataset.betKey ?? null;
+}
+
+function isInsideRouletteTable(clientX: number, clientY: number): boolean {
+  if (typeof document === 'undefined') return false;
+  const el = document.elementFromPoint(clientX, clientY);
+  return el?.closest('[data-roulette-table="true"]') !== null;
+}
 
 export function RouletteBoard({
   gameState,
@@ -33,6 +59,11 @@ export function RouletteBoard({
 
   const [selectedChip, setSelectedChip] = useState<number | 'all'>(25);
   const [hoveredBetKey, setHoveredBetKey] = useState<string | null>(null);
+  const [dragChip, setDragChip] = useState<DragChipState | null>(null);
+  const [dragPos, setDragPos] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [dragHoverBetKey, setDragHoverBetKey] = useState<string | null>(null);
+  const [dragOutsideTable, setDragOutsideTable] = useState(false);
+
   const [isCompactViewport, setIsCompactViewport] = useState(() => {
     if (typeof window === 'undefined') return false;
     return window.matchMedia('(max-width: 1023px), (max-height: 540px)').matches;
@@ -40,6 +71,10 @@ export function RouletteBoard({
   const [timeLeft, setTimeLeft] = useState(() =>
     phaseEndsAt ? Math.max(0, Math.ceil((phaseEndsAt - Date.now()) / 1000)) : 0
   );
+
+  const sentPhaseTriggerRef = useRef<{ phaseKey: string; sentAt: number } | null>(null);
+  const lastOutcomeRoundRef = useRef<number | null>(null);
+  const dragCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -50,8 +85,11 @@ export function RouletteBoard({
     return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  const sentPhaseTriggerRef = useRef<{ phaseKey: string; sentAt: number } | null>(null);
-  const lastOutcomeRoundRef = useRef<number | null>(null);
+  useEffect(() => {
+    return () => {
+      dragCleanupRef.current?.();
+    };
+  }, []);
 
   // Authoritative phase timer sync (triggered by active client, TV stays passive spectator)
   useEffect(() => {
@@ -109,15 +147,18 @@ export function RouletteBoard({
   const isBettingOpen = !isTvScreen && !disabled && phase === 'betting' && !isLocked;
 
   const handlePlaceBet = useCallback(
-    (betKey: string) => {
+    (betKey: string, overrideAmount?: number) => {
       if (!isBettingOpen || !gameState) return;
       const myBalance = gameState.balances[myId] ?? gameState.startingBalance;
-      const amount = selectedChip === 'all' ? myBalance : Math.min(selectedChip, myBalance);
+      const rawAmount =
+        overrideAmount ?? (selectedChip === 'all' ? myBalance : Math.min(selectedChip, myBalance));
+      const amount = Math.min(rawAmount, myBalance);
       if (amount <= 0) {
         playErrorSound();
         return;
       }
       playMoveSound();
+      rouletteAudio.playChipPlace();
       triggerHapticFeedback(15);
       onMove({ type: 'place_bet', betKey, amount });
     },
@@ -128,53 +169,196 @@ export function RouletteBoard({
     (betKey: string) => {
       if (!isBettingOpen) return;
       playMoveSound();
+      triggerHapticFeedback(12);
       onMove({ type: 'remove_bet', betKey });
     },
     [isBettingOpen, onMove]
+  );
+
+  const startPointerDrag = useCallback(
+    (
+      e: ReactPointerEvent,
+      initialDrag: DragChipState,
+      onClickFallback: () => void
+    ) => {
+      if (!isBettingOpen) return;
+      dragCleanupRef.current?.();
+
+      const startX = e.clientX;
+      const startY = e.clientY;
+      let dragging = false;
+
+      const handleMove = (ev: PointerEvent) => {
+        const dist = Math.hypot(ev.clientX - startX, ev.clientY - startY);
+        if (!dragging && dist >= 8) {
+          dragging = true;
+          setDragChip(initialDrag);
+          triggerHapticFeedback(10);
+        }
+        if (dragging) {
+          setDragPos({ x: ev.clientX, y: ev.clientY });
+          setDragHoverBetKey(findBetKeyAtPoint(ev.clientX, ev.clientY));
+          setDragOutsideTable(
+            initialDrag.mode === 'placed' && !isInsideRouletteTable(ev.clientX, ev.clientY)
+          );
+        }
+      };
+
+      const finishDrag = (ev: PointerEvent) => {
+        cleanup();
+        if (!dragging) {
+          onClickFallback();
+          return;
+        }
+        const targetBetKey = findBetKeyAtPoint(ev.clientX, ev.clientY);
+        if (initialDrag.mode === 'tray') {
+          if (targetBetKey) {
+            handlePlaceBet(targetBetKey, initialDrag.amount);
+          }
+        } else if (initialDrag.mode === 'placed' && initialDrag.fromBetKey) {
+          if (targetBetKey && targetBetKey !== initialDrag.fromBetKey) {
+            playMoveSound();
+            rouletteAudio.playChipPlace();
+            triggerHapticFeedback(15);
+            onMove({
+              type: 'move_bet',
+              fromBetKey: initialDrag.fromBetKey,
+              toBetKey: targetBetKey,
+            });
+          } else if (!isInsideRouletteTable(ev.clientX, ev.clientY)) {
+            handleRemoveBet(initialDrag.fromBetKey);
+          }
+        }
+      };
+
+      const cleanup = () => {
+        window.removeEventListener('pointermove', handleMove);
+        window.removeEventListener('pointerup', finishDrag);
+        window.removeEventListener('pointercancel', finishDrag);
+        setDragChip(null);
+        setDragHoverBetKey(null);
+        setDragOutsideTable(false);
+        dragCleanupRef.current = null;
+      };
+
+      dragCleanupRef.current = cleanup;
+      window.addEventListener('pointermove', handleMove);
+      window.addEventListener('pointerup', finishDrag);
+      window.addEventListener('pointercancel', finishDrag);
+    },
+    [isBettingOpen, handlePlaceBet, handleRemoveBet, onMove]
+  );
+
+  const handleTrayChipPointerDown = useCallback(
+    (value: number | 'all', e: ReactPointerEvent) => {
+      if (!isBettingOpen || !gameState) return;
+      const myBalance = gameState.balances[myId] ?? gameState.startingBalance;
+      const amount = value === 'all' ? myBalance : Math.min(value, myBalance);
+      const spec = CHIP_DENOMINATIONS.find((c) => c.value === value) ?? CHIP_DENOMINATIONS[0];
+      startPointerDrag(
+        e,
+        {
+          mode: 'tray',
+          value,
+          amount,
+          label: value === 'all' ? 'MAX' : formatChipAmount(amount),
+          bg: spec.bg,
+          rim: spec.rim,
+          text: spec.text,
+        },
+        () => setSelectedChip(value)
+      );
+    },
+    [isBettingOpen, gameState, myId, startPointerDrag]
+  );
+
+  const handlePlacedChipPointerDown = useCallback(
+    (betKey: string, amount: number, e: ReactPointerEvent) => {
+      if (!isBettingOpen) return;
+      const spec = getChipStyle(amount);
+      startPointerDrag(
+        e,
+        {
+          mode: 'placed',
+          fromBetKey: betKey,
+          amount,
+          label: formatChipAmount(amount),
+          bg: spec.bg,
+          rim: spec.rim,
+          text: spec.text,
+        },
+        () => handleRemoveBet(betKey)
+      );
+    },
+    [isBettingOpen, startPointerDrag, handleRemoveBet]
   );
 
   if (!gameState) {
     return null;
   }
 
-  // Large TV Screen OR Desktop Host/Solo uses the full 2-column Casino Stage;
-  // Compact / Smartphone viewports (even as Host or Solo) always use the responsive Controller.
-  if (isTvScreen || (!isCompactViewport && (myPlayer?.isHost || allPlayers.length <= 1))) {
-    return (
-      <RouletteTvStage
-        gameState={gameState}
-        allPlayers={allPlayers}
-        myPlayer={myPlayer}
-        isTvScreen={isTvScreen}
-        isBettingOpen={isBettingOpen}
-        isLocked={isLocked}
-        timeLeft={timeLeft}
-        selectedChip={selectedChip}
-        onSelectChip={setSelectedChip}
-        highlightedBetKey={hoveredBetKey}
-        onHoverBet={setHoveredBetKey}
-        onPlaceBet={handlePlaceBet}
-        onRemoveBet={handleRemoveBet}
-        onMove={onMove}
-      />
-    );
-  }
+  const activeHighlight = dragHoverBetKey ?? hoveredBetKey;
+  const useTvStage =
+    isTvScreen || (!isCompactViewport && (myPlayer?.isHost || allPlayers.length <= 1));
 
-  // Smartphone Player Controller
   return (
-    <RouletteController
-      gameState={gameState}
-      allPlayers={allPlayers}
-      myPlayer={myPlayer}
-      isBettingOpen={isBettingOpen}
-      isLocked={isLocked}
-      timeLeft={timeLeft}
-      selectedChip={selectedChip}
-      onSelectChip={setSelectedChip}
-      highlightedBetKey={hoveredBetKey}
-      onPlaceBet={handlePlaceBet}
-      onRemoveBet={handleRemoveBet}
-      onMove={onMove}
-    />
+    <>
+      {useTvStage ? (
+        <RouletteTvStage
+          gameState={gameState}
+          allPlayers={allPlayers}
+          myPlayer={myPlayer}
+          isTvScreen={isTvScreen}
+          isBettingOpen={isBettingOpen}
+          isLocked={isLocked}
+          timeLeft={timeLeft}
+          selectedChip={selectedChip}
+          onSelectChip={setSelectedChip}
+          onTrayChipPointerDown={handleTrayChipPointerDown}
+          onPlacedChipPointerDown={handlePlacedChipPointerDown}
+          highlightedBetKey={activeHighlight}
+          onHoverBet={setHoveredBetKey}
+          onPlaceBet={(betKey) => handlePlaceBet(betKey)}
+          onRemoveBet={handleRemoveBet}
+          onMove={onMove}
+        />
+      ) : (
+        <RouletteController
+          gameState={gameState}
+          allPlayers={allPlayers}
+          myPlayer={myPlayer}
+          isBettingOpen={isBettingOpen}
+          isLocked={isLocked}
+          timeLeft={timeLeft}
+          selectedChip={selectedChip}
+          onSelectChip={setSelectedChip}
+          onTrayChipPointerDown={handleTrayChipPointerDown}
+          onPlacedChipPointerDown={handlePlacedChipPointerDown}
+          highlightedBetKey={activeHighlight}
+          onPlaceBet={(betKey) => handlePlaceBet(betKey)}
+          onRemoveBet={handleRemoveBet}
+          onMove={onMove}
+        />
+      )}
+
+      {/* Floating Drag Ghost Chip */}
+      {dragChip &&
+        typeof document !== 'undefined' &&
+        createPortal(
+          <div
+            style={{
+              left: dragPos.x,
+              top: dragPos.y,
+              backgroundColor: dragOutsideTable ? '#991B1B' : dragChip.bg,
+              borderColor: dragOutsideTable ? '#FCA5A5' : dragChip.rim,
+              color: dragOutsideTable ? '#FFFFFF' : dragChip.text,
+            }}
+            className="pointer-events-none fixed z-[9999] flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-[3px] border-dashed text-xs font-black shadow-[0_12px_28px_rgba(0,0,0,0.8)]"
+          >
+            {dragOutsideTable ? '✕' : dragChip.label}
+          </div>,
+          document.body
+        )}
+    </>
   );
 }
