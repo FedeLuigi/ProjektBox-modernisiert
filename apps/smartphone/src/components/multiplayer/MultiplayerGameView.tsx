@@ -189,7 +189,7 @@ export function MultiplayerGameView({
 
       <div
         className={
-          isFullScreenGame && !isGameOver
+          (isFullScreenGame || isRoulette) && !isGameOver
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
             : 'safe-game-shell relative z-10 mx-auto flex flex-1 min-h-0 w-full max-w-[1440px] flex-col justify-between'
         }
@@ -264,7 +264,11 @@ export function MultiplayerGameView({
               type="button"
               onClick={() => setIsGameMenuOpen(true)}
               aria-label="Spielmenü öffnen"
-              className="fixed top-[max(0.65rem,calc(env(safe-area-inset-top,0px)+0.35rem))] left-[max(0.65rem,calc(env(safe-area-inset-left,0px)+0.35rem))] z-40 inline-flex items-center gap-1.5 rounded-xl border border-white/20 bg-[#0F172A]/80 px-3 py-1.5 font-arcade text-[11px] tracking-wider text-white uppercase shadow-lg backdrop-blur-md active:scale-95 cursor-pointer"
+              className={`fixed top-[max(0.65rem,calc(env(safe-area-inset-top,0px)+0.35rem))] left-[max(0.65rem,calc(env(safe-area-inset-left,0px)+0.35rem))] z-40 inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-[11px] tracking-wider uppercase shadow-lg backdrop-blur-md active:scale-95 cursor-pointer ${
+                isRoulette
+                  ? 'border-[#D4AF37]/75 bg-[#240A05]/90 font-serif font-bold text-amber-100'
+                  : 'border-white/20 bg-[#0F172A]/80 font-arcade text-white'
+              }`}
             >
               <Menu className="h-3.5 w-3.5 text-[#FBBF24]" />
               <span>MENÜ</span>
@@ -461,7 +465,7 @@ export function MultiplayerGameView({
         ) : (
           <main
             className={`mx-auto flex w-full flex-1 min-h-0 flex-col overflow-hidden ${
-              isFullScreenGame ? 'p-0' : 'game-landscape-main items-center py-1.5 sm:py-3'
+              isFullScreenGame || isRoulette ? 'p-0' : 'game-landscape-main items-center py-1.5 sm:py-3'
             }`}
           >
             {BoardComponent && myPlayer ? (

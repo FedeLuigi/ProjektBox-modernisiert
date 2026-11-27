@@ -189,7 +189,11 @@ export function RouletteTable({
         onMouseEnter={() => onHoverBet?.(betKey)}
         onMouseLeave={() => onHoverBet?.(null)}
         className={`relative flex items-center justify-center border border-[#D4AF37]/55 font-serif font-bold text-amber-50 transition ${bgClass} ${
-          compact ? 'h-9 text-sm' : 'h-11 text-base lg:h-12 lg:text-lg'
+          compact
+            ? layout === 'portrait'
+              ? 'h-[26px] text-xs'
+              : 'h-8 text-xs'
+            : 'h-11 text-base lg:h-12 lg:text-lg'
         } ${isHighlighted ? 'ring-2 ring-inset ring-amber-300 brightness-125' : ''} ${
           isWin ? 'z-20 ring-2 ring-[#FDE047] shadow-[0_0_18px_rgba(253,224,71,0.85)]' : ''
         }`}
@@ -242,11 +246,11 @@ export function RouletteTable({
         onClick={() => onPlaceOrInspect(betKey)}
         onMouseEnter={() => onHoverBet?.(betKey)}
         onMouseLeave={() => onHoverBet?.(null)}
-        className={`relative flex items-center justify-center border border-[#D4AF37]/55 bg-[#12161E]/85 font-serif text-xs font-bold tracking-wide text-amber-100 transition hover:bg-[#1E2430] sm:text-sm ${
-          compact ? 'h-9' : 'h-10 lg:h-11'
+        className={`relative flex items-center justify-center overflow-hidden border border-[#D4AF37]/55 bg-[#12161E]/85 px-0.5 font-serif font-bold text-amber-100 transition hover:bg-[#1E2430] ${
+          compact ? 'h-7 text-[10px] tracking-tight' : 'h-10 text-xs tracking-wide sm:text-sm lg:h-11'
         } ${isHighlighted ? 'ring-2 ring-inset ring-amber-300' : ''} ${extraClass}`}
       >
-        <span className="leading-none">{label}</span>
+        <span className="truncate leading-none">{label}</span>
         {renderMarkers(betKey)}
       </button>
     );
@@ -262,7 +266,9 @@ export function RouletteTable({
           type="button"
           data-bet-key="number:0"
           onClick={() => onPlaceOrInspect('number:0')}
-          className={`relative mb-0.5 flex h-10 w-full items-center justify-center rounded-t-xl border border-[#D4AF37]/60 bg-gradient-to-b from-[#047857] to-[#064E3B] font-serif text-lg font-bold text-amber-50 ${
+          className={`relative mb-0.5 flex w-full items-center justify-center rounded-t-xl border border-[#D4AF37]/60 bg-gradient-to-b from-[#047857] to-[#064E3B] font-serif font-bold text-amber-50 ${
+            compact ? 'h-7 text-sm' : 'h-10 text-lg'
+          } ${
             showResultHighlight && winningNumber === 0
               ? 'ring-2 ring-[#FDE047] shadow-[0_0_16px_rgba(253,224,71,0.8)]'
               : ''
