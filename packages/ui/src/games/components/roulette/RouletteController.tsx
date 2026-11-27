@@ -67,7 +67,7 @@ export function RouletteController({
                 phase === 'betting' && timeLeft <= 5 ? 'animate-pulse text-red-400' : 'text-amber-300'
               }`}
             >
-              {phase === 'spinning' ? 'SPIN' : `${timeLeft}s`}
+              {phase === 'spinning' ? 'LÄUFT' : `${timeLeft}s`}
             </span>
           </div>
         </header>
@@ -186,7 +186,7 @@ export function RouletteController({
               }}
               className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full border-[3px] border-[#FEF08A] bg-gradient-to-b from-[#F59E0B] via-[#D97706] to-[#78350F] font-serif text-xs font-black tracking-wider text-amber-50 shadow-[0_0_24px_rgba(245,158,11,0.65)] transition active:scale-95 disabled:opacity-50 landscape:h-20 landscape:w-20 landscape:text-sm"
             >
-              {phase === 'result' ? 'WEITER' : isLocked ? 'BEREIT' : 'SPIN'}
+              {phase === 'result' ? 'WEITER' : isLocked ? 'BEREIT' : 'DREHEN'}
             </button>
           </div>
         </div>

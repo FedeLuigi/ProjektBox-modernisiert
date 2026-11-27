@@ -127,7 +127,7 @@ export function TvGameView({
 
       <div
         className={
-          isFullScreenGame
+          isFullScreenGame || isRoulette
             ? 'relative z-10 flex flex-1 min-h-0 w-full h-full flex-col justify-between'
             : 'safe-tv-shell relative z-10 flex flex-1 min-h-0 w-full flex-col justify-between max-w-[1600px] mx-auto px-4 lg:px-8 py-3'
         }
@@ -197,7 +197,11 @@ export function TvGameView({
               type="button"
               onClick={() => setIsGameMenuOpen(true)}
               aria-label="Spielmenü öffnen"
-              className="fixed top-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] left-[max(0.75rem,calc(env(safe-area-inset-left,0px)+0.5rem))] z-40 inline-flex items-center gap-2 rounded-xl border border-white/20 bg-[#0F172A]/80 px-3.5 py-2 font-arcade text-xs tracking-wider text-white uppercase shadow-lg backdrop-blur-md transition-colors hover:border-[#FBBF24] hover:text-[#FDE68A] cursor-pointer"
+              className={`fixed top-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.5rem))] left-[max(0.75rem,calc(env(safe-area-inset-left,0px)+0.5rem))] z-40 inline-flex items-center gap-2 rounded-xl border px-3.5 py-2 text-xs tracking-wider uppercase shadow-lg backdrop-blur-md transition-colors cursor-pointer ${
+                isRoulette
+                  ? 'border-[#D4AF37]/75 bg-[#240A05]/90 font-serif font-bold text-amber-100 hover:border-[#FDE047] hover:text-[#FEF08A]'
+                  : 'border-white/20 bg-[#0F172A]/80 font-arcade text-white hover:border-[#FBBF24] hover:text-[#FDE68A]'
+              }`}
             >
               <Menu className="h-4 w-4 text-[#FBBF24]" />
               <span>MENÜ</span>

@@ -284,17 +284,17 @@ export function RouletteTable({
         </div>
 
         <div className="mt-1 grid grid-cols-3">
-          {renderOutsideButton('dozen:1', '1st 12')}
-          {renderOutsideButton('dozen:2', '2nd 12')}
-          {renderOutsideButton('dozen:3', '3rd 12')}
+          {renderOutsideButton('dozen:1', '1–12')}
+          {renderOutsideButton('dozen:2', '13–24')}
+          {renderOutsideButton('dozen:3', '25–36')}
         </div>
         <div className="mt-0.5 grid grid-cols-3">
-          {renderOutsideButton('range:low', '1-18')}
-          {renderOutsideButton('parity:even', 'EVEN')}
+          {renderOutsideButton('range:low', '1–18')}
+          {renderOutsideButton('parity:even', 'GERADE')}
           {renderOutsideButton('color:red', 'ROT', 'bg-gradient-to-b from-[#991B1B] to-[#6B0F0F]')}
           {renderOutsideButton('color:black', 'SCHWARZ', 'bg-gradient-to-b from-[#1E2229] to-[#0E1015]')}
-          {renderOutsideButton('parity:odd', 'ODD')}
-          {renderOutsideButton('range:high', '19-36')}
+          {renderOutsideButton('parity:odd', 'UNGERADE')}
+          {renderOutsideButton('range:high', '19–36')}
         </div>
       </div>
     );
@@ -337,9 +337,9 @@ export function RouletteTable({
       <div className="mt-1 grid grid-cols-[44px_1fr_44px] sm:grid-cols-[52px_1fr_52px]">
         <div />
         <div className="grid grid-cols-3">
-          {renderOutsideButton('dozen:1', '1st 12')}
-          {renderOutsideButton('dozen:2', '2nd 12')}
-          {renderOutsideButton('dozen:3', '3rd 12')}
+          {renderOutsideButton('dozen:1', '1–12')}
+          {renderOutsideButton('dozen:2', '13–24')}
+          {renderOutsideButton('dozen:3', '25–36')}
         </div>
         <div />
       </div>
@@ -347,12 +347,12 @@ export function RouletteTable({
       <div className="mt-0.5 grid grid-cols-[44px_1fr_44px] sm:grid-cols-[52px_1fr_52px]">
         <div />
         <div className="grid grid-cols-6">
-          {renderOutsideButton('range:low', '1 to 18', 'rounded-bl-xl')}
-          {renderOutsideButton('parity:even', 'EVEN')}
+          {renderOutsideButton('range:low', '1–18', 'rounded-bl-xl')}
+          {renderOutsideButton('parity:even', 'GERADE')}
           {renderOutsideButton('color:red', '◆', 'bg-gradient-to-b from-[#991B1B] to-[#6B0F0F] text-red-200')}
           {renderOutsideButton('color:black', '◆', 'bg-gradient-to-b from-[#1E2229] to-[#0E1015] text-stone-300')}
-          {renderOutsideButton('parity:odd', 'ODD')}
-          {renderOutsideButton('range:high', '19 to 36', 'rounded-br-xl')}
+          {renderOutsideButton('parity:odd', 'UNGERADE')}
+          {renderOutsideButton('range:high', '19–36', 'rounded-br-xl')}
         </div>
         <div />
       </div>

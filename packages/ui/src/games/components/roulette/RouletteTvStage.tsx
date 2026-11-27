@@ -71,7 +71,7 @@ export function RouletteTvStage({
 
   return (
     <div
-      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#1b0704] bg-cover bg-center p-3 text-amber-50 select-none sm:p-4 lg:p-5"
+      className="relative flex h-full w-full flex-col justify-between overflow-hidden bg-[#1b0704] bg-cover bg-center px-4 pt-14 pb-4 text-amber-50 select-none sm:px-6 lg:px-8 lg:pt-6"
       style={{
         backgroundImage: `radial-gradient(circle at 50% 45%, rgba(80,22,12,0.28), rgba(14,4,2,0.72)), url(${mahoganyBackdropUrl})`,
       }}
@@ -92,7 +92,7 @@ export function RouletteTvStage({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-amber-300 uppercase">
                 <Flame className="h-3.5 w-3.5 text-orange-400" />
-                <span>Hot Numbers</span>
+                <span>Heiße Zahlen</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {stats.hotNumbers.map((entry) => (
@@ -113,7 +113,7 @@ export function RouletteTvStage({
             <div className="flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[11px] font-bold tracking-wider text-sky-300 uppercase">
                 <Snowflake className="h-3.5 w-3.5 text-sky-400" />
-                <span>Cold Numbers</span>
+                <span>Kalte Zahlen</span>
               </div>
               <div className="flex items-center gap-1.5">
                 {stats.coldNumbers.map((entry) => (
@@ -183,31 +183,31 @@ export function RouletteTvStage({
                       : 'text-amber-300'
                   }`}
                 >
-                  {phase === 'spinning' ? 'SPIN!' : `${timeLeft}s`}
+                  {phase === 'spinning' ? 'LÄUFT!' : `${timeLeft}s`}
                 </span>
               </div>
             </div>
 
-            {/* Right Top: Session Stats Panel (like reference) */}
+            {/* Right Top: Session Stats Panel (German) */}
             <div className="flex items-center justify-between gap-3 rounded-2xl border border-[#D4AF37]/45 bg-[#190805]/85 px-4 py-2 shadow-lg">
               <div className="space-y-0.5 text-xs">
                 <div className="font-serif text-[11px] font-bold tracking-widest text-amber-300 uppercase">
-                  Session Stats
+                  Sitzungs-Statistik
                 </div>
                 <div className="flex items-center justify-between gap-4 text-amber-100/80">
-                  <span>Last Win:</span>
+                  <span>Letzter Gewinn:</span>
                   <span className="font-bold tabular-nums text-amber-200">
                     {formatChips(stats.lastWin)} €
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-amber-100/80">
-                  <span>Last Bets:</span>
+                  <span>Letzter Einsatz:</span>
                   <span className="font-bold tabular-nums text-amber-200">
                     {formatChips(stats.lastBets)} €
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-amber-100/80">
-                  <span>Net Last Win:</span>
+                  <span>Netto-Ergebnis:</span>
                   <span
                     className={`font-bold tabular-nums ${
                       stats.netLastWin >= 0 ? 'text-emerald-400' : 'text-red-400'
@@ -232,12 +232,12 @@ export function RouletteTvStage({
             </div>
           </div>
 
-          {/* Recent Results Ribbon */}
-          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#190805]/80 px-3 py-1.5">
+          {/* Recent Results Ribbon (py-1.5 px-1.5 prevents ring clipping on active number) */}
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-[#D4AF37]/40 bg-[#190805]/80 px-3 py-1">
             <span className="shrink-0 font-serif text-[11px] font-bold tracking-widest text-amber-300 uppercase">
-              Recent Results
+              Letzte Zahlen
             </span>
-            <div className="flex flex-1 items-center justify-end gap-1.5 overflow-x-auto">
+            <div className="flex flex-1 items-center justify-end gap-1.5 overflow-x-auto px-1.5 py-1.5">
               {recentNumbers.length === 0 ? (
                 <span className="text-xs text-amber-200/50">Noch keine Drehung</span>
               ) : (
@@ -310,7 +310,7 @@ export function RouletteTvStage({
             <div className="flex items-center gap-3">
               <div className="text-right leading-tight">
                 <div className="text-[10px] font-bold tracking-wider text-amber-200/70 uppercase">
-                  Bet Amount
+                  Einsatz
                 </div>
                 <div className="font-serif text-lg font-black tabular-nums text-amber-300">
                   {formatChipAmount(myTotalBet)} €
@@ -352,7 +352,7 @@ export function RouletteTvStage({
                     className="flex h-16 w-16 flex-col items-center justify-center rounded-full border-[3px] border-[#FEF08A] bg-gradient-to-b from-[#F59E0B] via-[#D97706] to-[#78350F] font-serif text-sm font-black tracking-wider text-amber-50 shadow-[0_0_24px_rgba(245,158,11,0.65)] transition hover:scale-105 active:scale-95 disabled:opacity-50"
                   >
                     <span className="leading-none">
-                      {phase === 'result' ? 'WEITER' : isLocked ? 'BEREIT' : 'SPIN'}
+                      {phase === 'result' ? 'WEITER' : isLocked ? 'BEREIT' : 'DREHEN'}
                     </span>
                   </button>
                 </>
